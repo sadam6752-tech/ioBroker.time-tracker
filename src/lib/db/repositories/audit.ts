@@ -6,7 +6,9 @@ import type { Db } from "../database";
 
 /** A single change of one field. */
 export interface FieldChange {
+	/** Value before the change */
 	old: unknown;
+	/** Value after the change */
 	new: unknown;
 }
 

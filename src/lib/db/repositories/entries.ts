@@ -19,17 +19,29 @@ export type EntryDirection = "in" | "out" | "auto";
 
 /** A punch as stored in the database. */
 export interface EntryRecord {
+	/** Primary key */
 	id: number;
+	/** Owner of the punch */
 	userId: number;
+	/** Punch instant, UTC epoch seconds (authoritative) */
 	tsUtc: number;
+	/** Instant reported by the client (offline punches), informational only */
 	clientTsUtc: number | null;
+	/** Wall clock time of the user at the punch instant (derived cache) */
 	tsLocal: number;
+	/** Local date of the user at the punch instant (derived cache) */
 	localDate: string;
+	/** Direction hint for the UI (the pairing order stays authoritative) */
 	direction: EntryDirection;
+	/** Origin of the punch */
 	source: EntrySource;
+	/** Idempotency key of the client (offline queue, import) */
 	idempotencyKey: string | null;
+	/** Synchronisation state */
 	syncState: EntrySyncState;
+	/** Revision counter for optimistic locking */
 	revision: number;
+	/** Free-form note of the employee or the administrator */
 	note: string | null;
 }
 
@@ -63,6 +75,7 @@ export interface CreateEntryInput {
 
 /** Input for updating a punch (optimistic locking). */
 export interface UpdateEntryInput {
+	/** Id of the changed punch */
 	id: number;
 	/** Revision the caller has read */
 	expectedRevision: number;
@@ -75,7 +88,9 @@ export interface UpdateEntryInput {
 	};
 	/** Mandatory reason for administrative corrections */
 	reason?: string | null;
+	/** Who performs the change */
 	actorId: number;
+	/** Client IP address of the actor */
 	actorIp?: string | null;
 	/** Time zone used to recompute the local cache fields */
 	timeZone: string;
@@ -85,6 +100,12 @@ export interface UpdateEntryInput {
 
 /** Thrown when a punch was modified by someone else in the meantime. */
 export class RevisionConflictError extends Error {
+	/**
+	 * Creates the error.
+	 *
+	 * @param entryId - id of the conflicting punch
+	 * @param current - record as stored in the database
+	 */
 	constructor(
 		public readonly entryId: number,
 		public readonly current: EntryRecord,

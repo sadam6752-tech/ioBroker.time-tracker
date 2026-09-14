@@ -1,7 +1,8 @@
 # Herkunft der Spezifikation und der Umsetzung
 
-Dieses Dokument ist der Nachweis für die Clean-Room-Regel aus `PROJECT_PROMPT.md`, Abschnitt 12.5.
-Es ist bei jeder relevanten Änderung (neuer Bezug von Referenzdaten, Prüfläufe, Portierungen) fortzuschreiben.
+Dieses Dokument ist der Nachweis für die Clean-Room-Regel des Projekts (siehe `CONTRIBUTING.md`,
+Abschnitt 1). Es ist bei jeder relevanten Änderung (neuer Bezug von Referenzdaten, Prüfläufe,
+Portierungen) fortzuschreiben.
 
 ## 1. Referenzsystem (nur Referenz, **nicht** Teil dieses Repositories)
 
@@ -20,14 +21,15 @@ Es ist bei jeder relevanten Änderung (neuer Bezug von Referenzdaten, Prüfläuf
 - Berechnungsregeln: Soll pro Tag, Pausen (pro Zeitenpaar, Staffel), Saldo, Überstundenmodelle,
   Vorholzeit, Ferien, Abwesenheitsanrechnung, `end_date`
 - Bedienabläufe und **Ausgaben** der Referenzinstallation (Vergleichswerte für Golden-Tests)
-- Dokumentiert in `PROJECT_PROMPT.md`, Abschnitte 2.9, 3 und 11
+- Dokumentiert in der **internen Spezifikation** (sie liegt außerhalb dieses Repositories und wird nicht
+  veröffentlicht)
 
 ## 3. Feststellung
 
 Es wurde **kein Quellcode** des Referenzsystems übernommen — keine Programmdateien, Kommentare,
 Meldungstexte, Klassennamen oder Bezeichner. Ebenso wurden keine Legacy-Dateien automatisch
-portiert oder übersetzt. Die Umsetzung erfolgt eigenständig anhand der Spezifikation
-(`PROJECT_PROMPT.md`). Die Lizenz dieses Projekts ist **MIT** (siehe `LICENSE`).
+portiert oder übersetzt. Die Umsetzung erfolgt eigenständig anhand der internen Spezifikation.
+Die Lizenz dieses Projekts ist **MIT** (siehe `LICENSE`).
 
 Zulässig und verwendet: technische Fakten (Dateinamen/-formate, Feldindizes), Berechnungsregeln und
 Verhalten, die für die Weiterverwendung der Bestandsdaten erforderlich sind.

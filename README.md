@@ -1,69 +1,101 @@
-# Zeiterfassung – PWA + ioBroker-Adapter
+# ioBroker.zeiterfassung
 
-Monorepo für die Neuentwicklung einer Zeiterfassung: **ioBroker-Adapter `zeiterfassung`**
-(HTTP/WebSocket-API, Geschäftslogik, SQLite) und **PWA** (React + MUI, installierbar, offlinefähig)
-mit RFID/NFC-Stempeln, Berichten/Exporten und ioBroker-Integration.
+Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user, with an installable web app
+(PWA), a badge/PIN terminal, absence and vacation management, and monthly reports.
 
-- **Status:** Phase 0 (Vorbereitung) – Gerüst, Lizenz, Metadaten, Clean-Room-Regeln
-- **Spezifikation (verbindlich):** [`../PROJECT_PROMPT.md`](../PROJECT_PROMPT.md) – insbesondere
-  Abschnitt 2.9 (Legacy-Mapping), Abschnitt 3 (Domänenlogik) sowie Abschnitt 12 (Lizenz/Clean-Room)
-- **Lizenz:** MIT (siehe [`LICENSE`](LICENSE))
+> **Status: early development (Phase 0 – scaffolding).** There is no usable release yet: the adapter is
+> generated in Phase 1, the PWA in Phase 5, so the package is not installable from npm at the moment.
+> Public documentation of the adapter is this README; the detailed internal specification is **not** part
+> of this repository.
 
-## Struktur
+## Features (planned)
 
-```
-app/
-├── adapter/          ioBroker-Adapter (TypeScript) – wird in Phase 1 erzeugt
-├── pwa/              PWA (Vite + React + MUI) – Phase 5
-├── shared/           gemeinsame Typen und Validierung (zod) für Adapter und PWA
-├── docs/
-│   ├── provenance.md         Herkunft und Nachweis der unabhängigen Umsetzung
-│   └── cleanroom-report.txt  generierter Prüfbericht (nicht versioniert)
-├── tools/
-│   └── cleanroom-check.ps1   Clean-Room-Prüfung (Abschnitt 12.5)
-├── CONTRIBUTING.md
-├── LICENSE
-└── package.json
-```
+| Area | Content |
+|---|---|
+| Punching | Web app (PWA, installable, offline-capable with queued sync), kiosk terminal with badge/PIN, NFC deep links, QR code fallback |
+| Users & rights | Multi-user with roles (admin/manager/employee) and a full permission catalogue – all decisions server-side |
+| Working time | Target time from weekly hours × employment level ÷ working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
+| Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts |
+| Reports | Monthly PDF timesheet, XLS export, statistics, payouts/compensation |
+| ioBroker | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations |
+| Data | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states |
+| Migration | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification) |
 
-## Voraussetzungen
+## Requirements
 
-- Node.js **>= 20** (getestet mit 22.x), npm
-- `pwsh` (PowerShell 7) für das Clean-Room-Werkzeug – läuft unter Windows und auf Linux-CI-Runnern
-- Für die Migration: eine laufende Referenzinstallation (SMALL-Time) und die Bestandsdaten
+- ioBroker with js-controller >= 6 and Node.js >= 20
+- HTTPS for the web app (required for PWA/service worker); a reverse proxy with Let's Encrypt is recommended
+- Optional for migration: an existing SMALL-Time `Data` directory (read-only copy)
 
-## Erste Schritte
+## Installation
+
+Not yet available. Once released:
 
 ```bash
-# Clean-Room-Abgleich der eigenen Quellen gegen den Legacy-Baum (Abschnitt 12.5)
-pwsh -NoProfile -File tools/cleanroom-check.ps1 -LegacyPath ../SmallTime-master -SourcePaths adapter,pwa,shared
-
-# als CI-Variante mit Exit-Code 1 bei Treffern
-npm run cleanroom
+iobroker add zeiterfassung
 ```
 
-Der Bericht landet in `docs/cleanroom-report.txt`; das Ergebnis wird zusätzlich in
-[`docs/provenance.md`](docs/provenance.md) dokumentiert.
+## Configuration
 
-## Arbeitsweise (Kurzfassung)
+Planned instance options (`native`): HTTP port, secrets (session/HMAC), database path, instance and user
+time zones, optional legacy data directory for the import, holiday country, backup/retention settings.
 
-Verbindlich ist **Abschnitt 12.5 des Projektprompts** – Details in [`CONTRIBUTING.md`](CONTRIBUTING.md):
+## States (overview)
 
-1. Spezifikation zuerst, dann Tests (Golden-Files aus beobachteten Ausgaben), dann Implementierung.
-2. **Kein** Code, keine Kommentare, keine Bezeichner aus dem Legacy-Projekt übernehmen.
-3. Zulässig: Dateiformate und Feldindizes der Altdaten, Berechnungsregeln und Verhalten.
-4. Vor jedem Merge: Clean-Room-Prüfung (Review-Kriterium + Skript).
+| State | Type | Purpose |
+|---|---|---|
+| `zeiterfassung.0.info.connection` | boolean | adapter/service ready |
+| `zeiterfassung.0.users.<id>.working` | boolean | user currently clocked in |
+| `zeiterfassung.0.users.<id>.today.workedMin` | number | minutes worked today |
+| `zeiterfassung.0.users.<id>.year.overtimeMin` | number | accumulated overtime (minutes) |
+| `zeiterfassung.0.global.presentCount` | number | users currently present |
+| `zeiterfassung.0.event.lastPunch` | json | last punch (trigger for automations) |
+| `zeiterfassung.0.command.punch` | boolean | button: set a punch |
 
-## Nächste Schritte
+Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 
-- **Phase 0/1:** Adapter-Gerüst mit `npm create iobroker.adapter@latest` in `adapter/` erzeugen,
-  Root-Workspaces ergänzen, CI (Lint, Typecheck, Test, Build) einrichten.
-- **Phase 2:** SQLite-Schema und Migrationen aus Abschnitt 2 des Projektprompts.
-- **Phase 9/10:** Legacy-Import mit Dry-Run und Golden-Abgleich gegen `Timetable/<Jahr>`.
+## Privacy
 
-## Herkunft / Danksagung
+Everything runs on your own ioBroker host: no cloud service, no telemetry. Punch and personal data stay in
+the local SQLite file; access is role-based and corrections are audited.
 
-Dieses Projekt ist eine unabhängige Neuimplementierung. Verhalten, Berechnungsregeln und Datenformate
-wurden anhand einer laufenden SMALL-Time-Installation (SmallTime v0.9.205, © IT-Master, AGPL-3.0)
-ermittelt, um bestehende Daten weiterverwenden zu können. Es wurde **kein Quellcode** übernommen;
-die Lizenz dieses Projekts ist MIT. Nachweis: [`docs/provenance.md`](docs/provenance.md).
+## Development
+
+This repository is a monorepo:
+
+```
+adapter/   ioBroker adapter (TypeScript, Fastify, better-sqlite3) – generated in Phase 1
+pwa/       Progressive Web App (Vite + React + MUI)
+shared/    shared types and validation (zod) used by adapter and PWA
+docs/      provenance record (and the generated clean-room report)
+tools/     clean-room verification script
+```
+
+- Contributing rules: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- Clean-room verification: `npm run cleanroom`
+- Provenance and verification record: [`docs/provenance.md`](docs/provenance.md)
+
+## Changelog
+
+### 0.0.1 (unreleased)
+- Repository scaffolding: MIT license, metadata, clean-room rules and verification script
+
+## License
+
+MIT – see [`LICENSE`](LICENSE).
+
+## Provenance / acknowledgement
+
+This project is an independent reimplementation. Behavior, calculation rules and data formats were
+determined from a running SMALL-Time installation (SmallTime v0.9.205, © IT-Master, AGPL-3.0) so that
+existing data can be reused. **No source code** was taken from that project. Details and the verification
+record: [`docs/provenance.md`](docs/provenance.md).
+
+## Kurzfassung (Deutsch)
+
+Zeiterfassung für ioBroker: Stempeln über die installierbare Web-App (PWA) oder ein Kiosk-Terminal mit
+Badge/PIN, Rollen und Rechte, Soll-/Pausen-/Überstunden- und Ferienregeln, Monatsberichte (PDF/XLS),
+Abwesenheiten sowie Veröffentlichung von Aggregaten als ioBroker-States – alle Daten lokal in SQLite.
+Eigenständige Neuimplementierung unter MIT-Lizenz; der Import bestehender SMALL-Time-Daten ist vorgesehen.
+**Status:** frühe Entwicklungsphase (Phase 0), noch keine installierbare Version.
+

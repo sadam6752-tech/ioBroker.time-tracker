@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Clean-Room-Prüfung für dieses Projekt (Umsetzung von PROJECT_PROMPT.md, Abschnitt 12.5).
+    Clean-Room-Prüfung des Projekts (Umsetzung der Clean-Room-Regel, siehe CONTRIBUTING.md, Abschnitt 1).
 
 .DESCRIPTION
     Sammelt Kommentar- und Stringfragmente aus dem Legacy-Projekt (SMALL-Time, AGPL-3.0) und sucht
@@ -129,7 +129,7 @@ $sourceFiles = Get-SourceFiles -Paths $SourcePaths -Extensions $script:SourceExt
                               -ExcludedDirectories $script:ExcludedDirectories `
                               -MaxSize $script:MaxSourceFileSize
 
-Write-Host "Clean-Room-Prüfung (PROJECT_PROMPT.md, Abschnitt 12.5)"
+Write-Host 'Clean-Room-Prüfung (Regel siehe CONTRIBUTING.md, Abschnitt 1)'
 Write-Host "  Legacy-Baum:       $legacyRoot"
 Write-Host "  Eigene Quellen:    $($sourceFiles.Count) Datei(en) aus: $($SourcePaths -join ', ')"
 Write-Host "  Minimal-Länge:     $MinLength Zeichen"
@@ -170,7 +170,7 @@ foreach ($fragment in $fragments) {
 
 # --- Bericht schreiben --------------------------------------------------------
 $reportLines = [System.Collections.Generic.List[string]]::new()
-[void]$reportLines.Add('Clean-Room-Bericht (PROJECT_PROMPT.md, Abschnitt 12.5)')
+[void]$reportLines.Add('Clean-Room-Bericht (Regel siehe CONTRIBUTING.md, Abschnitt 1)')
 [void]$reportLines.Add('')
 [void]$reportLines.Add("Datum:               $(Get-Date -Format 'yyyy-MM-dd HH:mm')")
 [void]$reportLines.Add("Legacy-Baum:         $legacyRoot")

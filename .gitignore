@@ -6,6 +6,13 @@ SmallTime-master/
 *.zip
 
 # ============================================================
+# Interne Spezifikation – wird NICHT veröffentlicht (Sicherheitsnetz)
+# ============================================================
+PROJECT_PROMPT.md
+docs/PROJECT_PROMPT.md
+LEGACY_MAPPING.md
+
+# ============================================================
 # Node / TypeScript
 # ============================================================
 node_modules/

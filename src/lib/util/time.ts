@@ -84,6 +84,19 @@ export function dateRange(from: string, to: string): string[] {
 }
 
 /**
+ * Checks whether a string is a local calendar date in `YYYY-MM-DD` form.
+ *
+ * @param value - value to check
+ * @returns true when the value is a valid date without time
+ */
+export function isDateString(value: string): boolean {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return false;
+	}
+	return DateTime.fromISO(value, { zone: UTC }).isValid;
+}
+
+/**
  * UTC epoch seconds of local midnight of a given date.
  *
  * @param date - local date, `YYYY-MM-DD`

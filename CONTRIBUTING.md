@@ -73,6 +73,10 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 - **Sprachen (i18n):** Anzeigetexte ausschließlich aus den Sprachdateien; neue Texte **nur** in der englischen
   Basisdatei ergänzen und danach `npm run translate` ausführen. Details: [`docs/i18n.md`](docs/i18n.md).
 - **Commits:** kurze, sachliche Beschreibung im Imperativ; ein Commit pro logischer Änderung.
+- **Zeilenenden und Formatierung:** Zeilenenden sind **LF** (`.gitattributes`, `.editorconfig`, Prettier);
+  CRLF lässt `npm run lint` mit hunderten `prettier/prettier`-Fehlern scheitern. Formatierung deshalb mit
+  `npx prettier --write "src/**/*.ts"` korrigieren und **nicht** mit `eslint --fix`: `--fix` ergänzt für
+  undokumentierte Member leere JSDoc-Blöcke und erzeugt damit Fehler (`jsdoc/no-blank-blocks`).
 
 ## 5. Sicherheitsrelevante Änderungen
 

@@ -8,7 +8,7 @@
 import type { Db } from "../database";
 import type { OvertimeModel } from "../../domain/calculation";
 import type { WorkProfile } from "../../domain/target";
-import { writeAuditLog, type FieldChange } from "./audit";
+import { writeAuditLog, diffFields } from "./audit";
 
 /** A user as stored in the database. */
 export interface UserRecord {
@@ -274,28 +274,6 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 		holidayFlags: row.holiday_flags,
 		legacySource: row.legacy_source,
 	};
-}
-
-/**
- * Compares the old and the new value of every field and collects the differences.
- *
- * @param before - record before the change
- * @param after - record after the change
- * @param fields - field names to compare
- * @returns changed fields, empty when nothing changed
- */
-export function diffFields<T extends Record<string, unknown>>(
-	before: T,
-	after: T,
-	fields: (keyof T)[],
-): Record<string, FieldChange> {
-	const changes: Record<string, FieldChange> = {};
-	for (const field of fields) {
-		if (before[field] !== after[field]) {
-			changes[String(field)] = { old: before[field], new: after[field] };
-		}
-	}
-	return changes;
 }
 
 const USER_COLUMNS = `id, login, password_hash, legacy_sha1, display_name, email, rfid_card, is_active,

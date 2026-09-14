@@ -1,0 +1,10 @@
+# Editor-Konventionen für dieses Repository.
+# Zeilenenden müssen LF bleiben: .gitattributes, Prettier und die ioBroker-ESLint-Konfiguration
+# erwarten LF; CRLF führt zu hunderten prettier/prettier-Fehlern in `npm run lint`.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true

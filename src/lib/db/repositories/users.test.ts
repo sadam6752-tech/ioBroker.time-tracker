@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import { openAndMigrate, type Db } from "../database";
 import { seed } from "../seed";
-import { createUsersRepository, diffFields, LoginExistsError, UnknownRoleError, type UsersRepository } from "./users";
+import { createUsersRepository, LoginExistsError, UnknownRoleError, type UsersRepository } from "./users";
 import type { OvertimeModel } from "../../domain/calculation";
 
 describe("users repository", () => {
@@ -339,21 +339,6 @@ describe("users repository", () => {
 			// the profile is unchanged
 			expect(repo.getWorkProfile(user.id)?.overtimeModel).to.equal("monthly");
 			expect(countAudit("user.profile")).to.equal(0);
-		});
-	});
-
-	describe("diffFields", () => {
-		it("compares typed records field by field", () => {
-			expect(diffFields({ a: 1, b: "x" }, { a: 1, b: "y" }, ["a", "b"])).to.deep.equal({
-				b: { old: "x", new: "y" },
-			});
-			expect(diffFields({ a: 1 }, { a: 1 }, ["a"])).to.deep.equal({});
-			// null and undefined are different values
-			expect(
-				diffFields({ a: null as string | null | undefined }, { a: undefined as string | null | undefined }, [
-					"a",
-				]),
-			).to.deep.equal({ a: { old: null, new: undefined } });
 		});
 	});
 });

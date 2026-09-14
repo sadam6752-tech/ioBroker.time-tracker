@@ -22,6 +22,15 @@ export default [
 		],
 	},
 	{
+		// test helpers and test data do not need full JSDoc; production code stays documented
+		files: ['**/*.test.ts'],
+		rules: {
+			'jsdoc/require-jsdoc': 'off',
+			'jsdoc/require-param-description': 'off',
+			'jsdoc/require-returns-description': 'off',
+		},
+	},
+	{
 		// you may disable some 'jsdoc' warnings - but using jsdoc is highly recommended
 		// as this improves maintainability. jsdoc warnings will not block build process.
 		rules: {

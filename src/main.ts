@@ -15,10 +15,17 @@ import { createEntriesRepository } from "./lib/db/repositories/entries";
 import { createHolidaysRepository } from "./lib/db/repositories/holidays";
 import { createRulesRepository } from "./lib/db/repositories/rules";
 import { createSettingsRepository } from "./lib/db/repositories/settings";
-import { createUsersRepository } from "./lib/db/repositories/users";
-import { createAggregationService } from "./lib/services/aggregation";
+import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
+import { createPayoutsRepository } from "./lib/db/repositories/payouts";
+import type { EntriesRepository } from "./lib/db/repositories/entries";
+import type { AbsencesRepository } from "./lib/db/repositories/absences";
+import type { SettingsRepository } from "./lib/db/repositories/settings";
+import { createAggregationService, type AggregationService } from "./lib/services/aggregation";
 import { createAuthService } from "./lib/services/auth";
-import { createSyncService } from "./lib/services/sync";
+import { createClosingService, type ClosingService } from "./lib/services/closing";
+import { createSyncService, type SyncService } from "./lib/services/sync";
+import { COMMAND_IDS, createCommandStates, publishAllUserStates } from "./lib/adapter/states";
+import { handleCommand } from "./lib/adapter/commands";
 import { createApi } from "./lib/web/api";
 import { startWebServer, type WebServer } from "./lib/web/server";
 
@@ -27,9 +34,24 @@ const SUPPORTED_COUNTRIES: HolidayCountry[] = ["CH", "DE", "AT"];
 /** How often expired sessions are removed (minutes). */
 const SESSION_PURGE_MINUTES = 30;
 
+/** How often the published figures are refreshed (minutes). */
+const STATE_REFRESH_MINUTES = 5;
+
+/** Services created at startup. */
+interface AdapterServices {
+	users: UsersRepository;
+	entries: EntriesRepository;
+	absences: AbsencesRepository;
+	settings: SettingsRepository;
+	aggregation: AggregationService;
+	sync: SyncService;
+	closing: ClosingService;
+}
+
 class Zeiterfassung extends utils.Adapter {
 	private db: Db | null = null;
 	private webServer: WebServer | null = null;
+	private services: AdapterServices | null = null;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -86,6 +108,11 @@ class Zeiterfassung extends utils.Adapter {
 			//   Phase 8   – publish aggregates as states and react to command.*
 
 			await this.startApi();
+			await this.subscribeCommands();
+			await this.refreshStates();
+
+			// figures are refreshed regularly (the timer is cleared automatically on unload)
+			this.setInterval(() => void this.refreshStates(), STATE_REFRESH_MINUTES * 60 * 1000);
 
 			// Service is ready
 			await this.setState("info.connection", true, true);
@@ -142,8 +169,10 @@ class Zeiterfassung extends utils.Adapter {
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
+		const closing = createClosingService({ db, aggregation, payouts: createPayoutsRepository(db) });
 		const api = createApi({ db, auth, users, entries, absences, aggregation, sync, settings });
 
+		this.services = { users, entries, absences, settings, aggregation, sync, closing };
 		this.log.debug(`API routes: ${api.routes().length}`);
 
 		try {
@@ -179,6 +208,78 @@ class Zeiterfassung extends utils.Adapter {
 			},
 			SESSION_PURGE_MINUTES * 60 * 1000,
 		);
+	}
+
+	/**
+	 * Creates the command states and subscribes to them.
+	 */
+	private async subscribeCommands(): Promise<void> {
+		try {
+			await createCommandStates(this);
+			await this.subscribeStatesAsync("commands.*");
+			this.log.debug("command states ready");
+		} catch (error) {
+			this.log.warn(`command states could not be created: ${(error as Error).message}`);
+		}
+	}
+
+	/**
+	 * Publishes the figures of all employees.
+	 */
+	private async refreshStates(): Promise<void> {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+		try {
+			const snapshots = await publishAllUserStates({
+				port: this,
+				aggregation: services.aggregation,
+				users: services.users,
+				sync: services.sync,
+			});
+			this.log.debug(`published ${snapshots.length} employee state(s)`);
+		} catch (error) {
+			this.log.warn(`states could not be published: ${(error as Error).message}`);
+		}
+	}
+
+	/**
+	 * Runs a command state and reports the outcome.
+	 *
+	 * @param id - state id without the instance prefix
+	 * @param value - value written by the user or a script
+	 */
+	private async runCommand(id: string, value: ioBroker.StateValue): Promise<void> {
+		const services = this.services;
+		const db = this.db;
+		if (!services || !db) {
+			return;
+		}
+
+		try {
+			const result = handleCommand(
+				{
+					db,
+					entries: services.entries,
+					users: services.users,
+					settings: services.settings,
+					aggregation: services.aggregation,
+					closing: services.closing,
+				},
+				id,
+				value,
+			);
+			this.log.info(`command ${id}: ${result.message}`);
+		} catch (error) {
+			this.log.warn(`command ${id} failed: ${(error as Error).message}`);
+		}
+
+		// buttons are stateless: always release them again
+		if (id === COMMAND_IDS.punch || id === COMMAND_IDS.quickPunch) {
+			await this.setState(id, false, true);
+		}
+		await this.refreshStates();
 	}
 
 	/**
@@ -227,8 +328,14 @@ class Zeiterfassung extends utils.Adapter {
 				return;
 			}
 
-			// TODO(Phase 8): handle command.* (punch, quickPunch, closeMonth, recalc)
-			this.log.debug(`Command received: ${id} = ${state.val}`);
+			const prefix = `${this.namespace}.`;
+			const localId = id.startsWith(prefix) ? id.slice(prefix.length) : id;
+			if (localId.startsWith("commands.")) {
+				void this.runCommand(localId, state.val);
+				return;
+			}
+
+			this.log.debug(`Ignored state change: ${localId} = ${state.val}`);
 		} catch (error) {
 			this.log.error(`Error in onStateChange for ${id}: ${(error as Error).message}`);
 		}

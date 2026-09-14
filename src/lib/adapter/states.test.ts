@@ -1,0 +1,236 @@
+/**
+ * Command states and the published figures of the adapter.
+ *
+ * A small recorder stands in for the adapter instance, so the state tree and the command handling can be
+ * tested without a running ioBroker.
+ */
+
+/// <reference types="mocha" />
+import { expect } from "chai";
+import { openAndMigrate, type Db } from "../db/database";
+import { seed } from "../db/seed";
+import { createAbsencesRepository } from "../db/repositories/absences";
+import { createEntriesRepository, type EntriesRepository } from "../db/repositories/entries";
+import { createHolidaysRepository } from "../db/repositories/holidays";
+import { createPayoutsRepository } from "../db/repositories/payouts";
+import { createRulesRepository } from "../db/repositories/rules";
+import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
+import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
+import { createAggregationService, type AggregationService } from "../services/aggregation";
+import { createClosingService, type ClosingService } from "../services/closing";
+import { createSyncService, type SyncService } from "../services/sync";
+import { handleCommand, type CommandDeps } from "./commands";
+import {
+	COMMAND_IDS,
+	createCommandStates,
+	publishAllUserStates,
+	publishUserSnapshot,
+	readUserSnapshot,
+	type StatePort,
+} from "./states";
+
+/** Records the object definitions and state values written by the adapter. */
+class Recorder implements StatePort {
+	/** Object definitions by id */
+	public readonly objects = new Map<string, ioBroker.SettableObject>();
+	/** State values by id */
+	public readonly values = new Map<string, ioBroker.StateValue>();
+
+	/**
+	 * Remembers an object definition.
+	 *
+	 * @param id - object id
+	 * @param object - object definition
+	 */
+	public setObjectNotExists(id: string, object: ioBroker.SettableObject): void {
+		this.objects.set(id, object);
+	}
+
+	/**
+	 * Remembers a state value.
+	 *
+	 * @param id - state id
+	 * @param value - value
+	 * @param ack - acknowledgement flag
+	 */
+	public setState(id: string, value: ioBroker.StateValue, ack = false): void {
+		this.values.set(id, ack ? value : `unacked:${String(value)}`);
+	}
+}
+
+describe("adapter states and commands", () => {
+	let db: Db;
+	let recorder: Recorder;
+	let users: UsersRepository;
+	let entries: EntriesRepository;
+	let settings: SettingsRepository;
+	let aggregation: AggregationService;
+	let sync: SyncService;
+	let closing: ClosingService;
+	let annaId: number;
+	let now = 1_000_000;
+
+	beforeEach(() => {
+		db = openAndMigrate(":memory:");
+		seed(db, { holidayYears: [2026] });
+		recorder = new Recorder();
+		users = createUsersRepository(db);
+		entries = createEntriesRepository(db);
+		const absences = createAbsencesRepository(db);
+		settings = createSettingsRepository(db);
+		aggregation = createAggregationService({
+			db,
+			users,
+			entries,
+			absences,
+			holidays: createHolidaysRepository(db),
+			rules: createRulesRepository(db),
+			settings,
+		});
+		sync = createSyncService({ db, entries, users, aggregation });
+		closing = createClosingService({ db, aggregation, payouts: createPayoutsRepository(db) });
+
+		annaId = users.create({ login: "anna", displayName: "Anna", roleKeys: ["employee"] }).id;
+		users.saveWorkProfile({ userId: annaId, profile: { weeklyHours: 40, percent: 100 }, actorId: annaId });
+	});
+
+	afterEach(() => {
+		db.close();
+	});
+
+	/**
+	 * Builds the dependencies of the command handler.
+	 *
+	 * @returns command dependencies with a fixed clock
+	 */
+	function deps(): CommandDeps {
+		return { db, entries, users, settings, aggregation, closing, now: () => now };
+	}
+
+	describe("state tree", () => {
+		it("creates the command states with the ioBroker conventions", async () => {
+			await createCommandStates(recorder);
+
+			expect(recorder.objects.get("commands")?.type).to.equal("channel");
+			const punch = recorder.objects.get(COMMAND_IDS.punch);
+			expect(punch?.type).to.equal("state");
+			expect(punch?.common).to.deep.include({ type: "boolean", role: "button", read: false, write: true });
+
+			const closeMonth = recorder.objects.get(COMMAND_IDS.closeMonth);
+			expect(closeMonth?.common).to.deep.include({ type: "string", write: true });
+
+			const punchUserId = recorder.objects.get(COMMAND_IDS.punchUserId);
+			expect(punchUserId?.common).to.deep.include({ type: "number", write: true });
+		});
+
+		it("creates one channel per employee and publishes the figures", async () => {
+			const snapshots = await publishAllUserStates({ port: recorder, aggregation, users, sync, now });
+
+			expect(snapshots).to.have.lengthOf(1);
+			const channel = recorder.objects.get(`users.${annaId}`);
+			expect(channel?.type).to.equal("channel");
+
+			const openState = recorder.objects.get(`users.${annaId}.hasOpenEntry`);
+			expect(openState?.common).to.deep.include({ type: "boolean", role: "indicator.working" });
+			expect(recorder.objects.get(`users.${annaId}.lastPunch`)?.common).to.deep.include({ role: "value.time" });
+			expect(recorder.objects.get(`users.${annaId}.todayWorkedMinutes`)?.common).to.deep.include({ unit: "min" });
+
+			expect(recorder.values.get(`users.${annaId}.displayName`)).to.equal("Anna");
+			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
+		});
+
+		it("reports an open punch and the worked minutes", async () => {
+			entries.insert({ userId: annaId, tsUtc: now - 3600, timeZone: "Europe/Zurich" });
+
+			const snapshot = readUserSnapshot({ aggregation, users, sync, userId: annaId, now });
+
+			expect(snapshot).to.not.equal(null);
+			expect(snapshot?.hasOpenEntry).to.equal(true);
+			expect(snapshot?.lastPunchUtc).to.equal(now - 3600);
+			expect(snapshot?.workedMinutes).to.equal(0);
+
+			await publishUserSnapshot(recorder, snapshot as NonNullable<typeof snapshot>);
+			expect(recorder.values.get(`users.${annaId}.hasOpenEntry`)).to.equal(true);
+		});
+
+		it("returns null for an unknown employee", () => {
+			expect(readUserSnapshot({ aggregation, users, sync, userId: 999, now })).to.equal(null);
+		});
+	});
+
+	describe("commands", () => {
+		it("punches in and out and alternates the direction", () => {
+			const first = handleCommand(deps(), COMMAND_IDS.punch, true);
+			expect(first.ok).to.equal(true);
+			expect(first.message).to.contain("punched in");
+			expect(first.recalculated).to.have.lengthOf(1);
+
+			// 60 seconds later the second punch is accepted (closer punches are duplicates)
+			now += 60;
+			const second = handleCommand(deps(), COMMAND_IDS.punch, true);
+			expect(second.message).to.contain("punched out");
+
+			const day = aggregation.day(annaId, first.recalculated[0]);
+			expect(day?.workedMin).to.equal(1);
+			expect(day?.hasOpenEntry).to.equal(false);
+			expect(entries.listByDate(annaId, first.recalculated[0])).to.have.lengthOf(2);
+		});
+
+		it("ignores anything but true for button states", () => {
+			const ignored = handleCommand(deps(), COMMAND_IDS.punch, false);
+
+			expect(ignored.ok).to.equal(false);
+			expect(ignored.message).to.contain("ignored");
+			expect(entries.listByDate(annaId, "1970-01-12")).to.deep.equal([]);
+		});
+
+		it("rounds with quickPunch when the setting is active", () => {
+			settings.set("quick_round_minutes", 15);
+
+			const result = handleCommand(deps(), COMMAND_IDS.quickPunch, true);
+
+			const stored = entries.listByRange(annaId, "1970-01-01", "1970-12-31");
+			expect(stored).to.have.lengthOf(1);
+			// 1_000_000 seconds = 13.05.1970 14:40 UTC → 15 minutes rounding keeps 14:45
+			expect(stored[0].tsUtc % (15 * 60)).to.equal(0);
+			expect(result.message).to.contain("punched in");
+		});
+
+		it("recalculates a month or a year", () => {
+			const month = handleCommand(deps(), COMMAND_IDS.recalc, "1970-01");
+			expect(month.message).to.equal("month 1970-01 recalculated");
+			expect(aggregation.month(annaId, 1970, 1)).to.not.equal(null);
+
+			const year = handleCommand(deps(), COMMAND_IDS.recalc, "1970");
+			expect(year.message).to.equal("year 1970 recalculated");
+			expect(aggregation.year(annaId, 1970)).to.not.equal(null);
+		});
+
+		it("closes a month", () => {
+			const result = handleCommand(deps(), COMMAND_IDS.closeMonth, "1970-01");
+
+			expect(result.ok).to.equal(true);
+			expect(result.message).to.contain("month 1970-01 closed for Anna");
+			const month = aggregation.month(annaId, 1970, 1);
+			expect(month?.targetMin).to.be.greaterThan(0);
+		});
+
+		it("validates the period and unknown states", () => {
+			expect(() => handleCommand(deps(), COMMAND_IDS.recalc, "01.1970")).to.throw("expected YYYY-MM or YYYY");
+			expect(() => handleCommand(deps(), COMMAND_IDS.recalc, "1970-13")).to.throw(
+				"month must be between 1 and 12",
+			);
+			expect(() => handleCommand(deps(), COMMAND_IDS.closeMonth, "1970")).to.throw("needs YYYY-MM");
+			expect(() => handleCommand(deps(), "commands.unknown", true)).to.throw("unknown command state");
+		});
+
+		it("asks for the target employee when several exist", () => {
+			users.create({ login: "bob", displayName: "Bob", roleKeys: ["employee"] });
+
+			expect(() => handleCommand(deps(), COMMAND_IDS.punch, true)).to.throw("several employees exist");
+
+			settings.set("command_punch_user_id", annaId);
+			expect(handleCommand(deps(), COMMAND_IDS.punch, true).message).to.contain("Anna");
+		});
+	});
+});

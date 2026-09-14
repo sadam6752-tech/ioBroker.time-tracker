@@ -138,7 +138,7 @@ describe("web api", () => {
 			const routes = await send("GET", "/routes");
 			expect(
 				bodyOf<{ routes: { method: string; path: string; permission?: string }[] }>(routes).routes,
-			).to.deep.include({ method: "POST", path: "/time/punch", permission: "time.punch" });
+			).to.deep.include({ method: "POST", path: "/punch", permission: "time.punch" });
 		});
 
 		it("logs in and rejects wrong credentials", async () => {
@@ -182,6 +182,23 @@ describe("web api", () => {
 			expect((await send("GET", "/auth/me", { headers: headers(annaToken) })).status).to.equal(401);
 		});
 
+		it("renews a session and hands out a fresh CSRF token", async () => {
+			const refreshed = await send("POST", "/auth/refresh", { headers: headers(annaToken, annaCsrf) });
+			expect(refreshed.status).to.equal(200);
+			const payload = bodyOf<{ expiresAt: number; csrfToken: string; permissions: string[] }>(refreshed);
+			expect(payload.expiresAt).to.equal(1000 + 720 * 60);
+			expect(payload.csrfToken).to.be.a("string").and.not.equal("");
+			expect(payload.permissions).to.include("time.punch");
+
+			// the refreshed token stays valid for the next request
+			expect(
+				(await send("POST", "/auth/refresh", { headers: headers(annaToken, payload.csrfToken) })).status,
+			).to.equal(200);
+
+			// without a session there is nothing to renew
+			expect((await send("POST", "/auth/refresh")).status).to.equal(401);
+		});
+
 		it("changes the own password and ends all sessions", async () => {
 			const response = await send("POST", "/auth/password", {
 				body: { password: "Ganz-Neues-2026" },
@@ -207,7 +224,7 @@ describe("web api", () => {
 
 	describe("punching", () => {
 		it("stores a punch and refreshes the day", async () => {
-			const first = await send("POST", "/time/punch", {
+			const first = await send("POST", "/punch", {
 				body: { tsUtc: 1000 },
 				headers: headers(annaToken, annaCsrf),
 			});
@@ -215,18 +232,18 @@ describe("web api", () => {
 			const stored = bodyOf<{ entry: { id: number; tsUtc: number; source: string; localDate: string } }>(first);
 			expect(stored.entry.tsUtc).to.equal(1000);
 			expect(stored.entry.source).to.equal("web");
-			expect(first.headers.location).to.equal(`/time/entries/${stored.entry.id}`);
+			expect(first.headers.location).to.equal(`/entries/${stored.entry.id}`);
 
 			// without a CSRF token nothing is written
-			const denied = await send("POST", "/time/punch", { body: { tsUtc: 2000 }, headers: headers(annaToken) });
+			const denied = await send("POST", "/punch", { body: { tsUtc: 2000 }, headers: headers(annaToken) });
 			expect(denied.status).to.equal(403);
 			expect(bodyOf(denied).code).to.equal("csrf_rejected");
 		});
 
 		it("is idempotent for a repeated punch and requires the permission", async () => {
 			const payload = { tsUtc: 1000, idempotencyKey: "offline-1" };
-			const first = await send("POST", "/time/punch", { body: payload, headers: headers(annaToken, annaCsrf) });
-			const second = await send("POST", "/time/punch", { body: payload, headers: headers(annaToken, annaCsrf) });
+			const first = await send("POST", "/punch", { body: payload, headers: headers(annaToken, annaCsrf) });
+			const second = await send("POST", "/punch", { body: payload, headers: headers(annaToken, annaCsrf) });
 
 			expect(first.status).to.equal(201);
 			expect(bodyOf<{ created: boolean }>(first).created).to.equal(true);
@@ -236,15 +253,66 @@ describe("web api", () => {
 			);
 
 			// the employee may punch, but may not correct the punches of others
-			const other = await send("POST", "/time/entries/1", {
+			const other = await send("PATCH", "/entries/1", {
 				body: { revision: 1, note: "x" },
 				headers: headers(annaToken, annaCsrf),
 			});
 			expect(other.status).to.equal(200);
 		});
 
+		it("rounds the quick punch and reports the daily status", async () => {
+			// the instance rounds to fifteen minutes, which the route reads from the settings
+			settings.set("quick_round_minutes", "15");
+
+			const quick = await send("POST", "/punch/quick", {
+				body: { tsUtc: 1420 },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(quick.status).to.equal(201);
+			const rounded = bodyOf<{
+				entry: { tsUtc: number };
+				rounded: { from: number; to: number; roundMinutes: number };
+			}>(quick);
+			// 01:23:40 local time is rounded to the nearest quarter hour
+			expect(rounded.rounded).to.deep.equal({ from: 1420, to: 1800, roundMinutes: 15 });
+			expect(rounded.entry.tsUtc).to.equal(1800);
+
+			// without the setting the instant is stored unchanged
+			settings.set("quick_round_minutes", "0");
+			const plain = await send("POST", "/punch/quick", {
+				body: { tsUtc: 2000 },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(bodyOf<{ entry: { tsUtc: number } }>(plain).entry.tsUtc).to.equal(2000);
+			expect(bodyOf(plain)).to.not.have.property("rounded");
+
+			// two punches form a pair, so the day is closed and the next punch would be a clock-in
+			const closed = await send("GET", "/punch/status", { headers: headers(annaToken) });
+			expect(closed.status).to.equal(200);
+			expect(bodyOf(closed)).to.deep.include({ date: "1970-01-01", nextDirection: "in" });
+			expect(bodyOf<{ hasOpenEntry: boolean }>(closed).hasOpenEntry).to.equal(false);
+
+			await send("POST", "/punch", { body: { tsUtc: 7200 }, headers: headers(annaToken, annaCsrf) });
+			const open = bodyOf<{ hasOpenEntry: boolean; nextDirection: string; lastEntry: { tsUtc: number } }>(
+				await send("GET", "/punch/status", { headers: headers(annaToken) }),
+			);
+			expect(open.hasOpenEntry).to.equal(true);
+			expect(open.nextDirection).to.equal("out");
+			expect(open.lastEntry.tsUtc).to.equal(7200);
+
+			// another employee is only visible with the matching permission
+			expect(
+				(
+					await send("GET", "/punch/status", {
+						headers: headers(annaToken),
+						query: { userId: String(adminId) },
+					})
+				).status,
+			).to.equal(403);
+		});
+
 		it("accepts an offline batch and reports conflicts", async () => {
-			const batch = await send("POST", "/sync", {
+			const batch = await send("POST", "/entries/sync", {
 				body: {
 					punches: [
 						{ idempotencyKey: "a", tsUtc: 1000 },
@@ -264,7 +332,7 @@ describe("web api", () => {
 			expect(result.conflicts.map(entry => entry.reason)).to.deep.equal(["clock_skew"]);
 			expect(result.recalculated).to.deep.equal(["1970-01-01"]);
 
-			const broken = await send("POST", "/sync", {
+			const broken = await send("POST", "/entries/sync", {
 				body: { punches: "no" },
 				headers: headers(annaToken, annaCsrf),
 			});
@@ -273,21 +341,21 @@ describe("web api", () => {
 		});
 
 		it("resolves conflicts with the matching permission", async () => {
-			const batch = await send("POST", "/sync", {
+			const batch = await send("POST", "/entries/sync", {
 				body: { punches: [{ idempotencyKey: "a", tsUtc: 1000, clientTsUtc: 1000 - 3600 }] },
 				headers: headers(adminToken, adminCsrf),
 			});
 			const entryId = bodyOf<{ conflicts: { entryId: number }[] }>(batch).conflicts[0].entryId;
 
 			// the employee has no permission for the conflict queue
-			expect((await send("GET", "/sync/conflicts", { headers: headers(annaToken) })).status).to.equal(403);
+			expect((await send("GET", "/entries/conflicts", { headers: headers(annaToken) })).status).to.equal(403);
 
-			const listed = await send("GET", "/sync/conflicts", { headers: headers(adminToken) });
+			const listed = await send("GET", "/entries/conflicts", { headers: headers(adminToken) });
 			expect(bodyOf<{ conflicts: { id: number }[] }>(listed).conflicts.map(entry => entry.id)).to.deep.equal([
 				entryId,
 			]);
 
-			const resolved = await send("POST", `/sync/conflicts/${entryId}`, {
+			const resolved = await send("POST", `/entries/${entryId}/resolve`, {
 				body: { action: "accept", tsUtc: 500 },
 				headers: headers(adminToken, adminCsrf),
 			});
@@ -297,7 +365,7 @@ describe("web api", () => {
 				syncState: "synced",
 			});
 
-			const invalid = await send("POST", `/sync/conflicts/${entryId}`, {
+			const invalid = await send("POST", `/entries/${entryId}/resolve`, {
 				body: { action: "later" },
 				headers: headers(adminToken, adminCsrf),
 			});
@@ -307,59 +375,106 @@ describe("web api", () => {
 
 	describe("reports", () => {
 		it("serves the aggregates of own data and protects the data of others", async () => {
-			await send("POST", "/time/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
-			await send("POST", "/time/punch", {
+			await send("POST", "/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
+			await send("POST", "/punch", {
 				body: { tsUtc: 1000 + 8 * 3600 },
 				headers: headers(annaToken, annaCsrf),
 			});
 
-			const own = await send("GET", "/reports/day/1970-01-01", { headers: headers(annaToken) });
+			const own = await send("GET", "/aggregates/day", {
+				headers: headers(annaToken),
+				query: { date: "1970-01-01" },
+			});
 			expect(own.status).to.equal(200);
 			expect(bodyOf<{ day: { workedMin: number } }>(own).day.workedMin).to.equal(480);
 
 			// the employee may not look at another employee
-			const other = await send("GET", "/reports/day/1970-01-01", {
+			const other = await send("GET", "/aggregates/day", {
 				headers: headers(annaToken),
-				query: { userId: String(adminId) },
+				query: { date: "1970-01-01", userId: String(adminId) },
 			});
 			expect(other.status).to.equal(403);
 			expect(bodyOf(other).code).to.equal("permission_denied");
 
-			const asAdmin = await send("GET", "/reports/day/1970-01-01", {
+			const asAdmin = await send("GET", "/aggregates/day", {
 				headers: headers(adminToken),
-				query: { userId: String(annaId) },
+				query: { date: "1970-01-01", userId: String(annaId) },
 			});
 			expect(asAdmin.status).to.equal(200);
 		});
 
 		it("serves month and year aggregates", async () => {
-			await send("POST", "/time/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
+			await send("POST", "/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
 
-			const month = await send("GET", "/reports/month/1970/1", { headers: headers(annaToken) });
+			const month = await send("GET", "/aggregates/month", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
 			expect(month.status).to.equal(200);
 			expect(
 				bodyOf<{ month: { year: number; month: number }; year: { year: number } }>(month).month,
 			).to.deep.include({ year: 1970, month: 1, workedMin: 0, updatedAt: 1000 });
 
-			const year = await send("GET", "/reports/year/1970", { headers: headers(annaToken) });
+			const year = await send("GET", "/aggregates/year", {
+				headers: headers(annaToken),
+				query: { year: "1970" },
+			});
 			expect(year.status).to.equal(200);
 			expect(bodyOf<{ year: { year: number } }>(year).year.year).to.equal(1970);
 
-			const broken = await send("GET", "/reports/month/1970/13", { headers: headers(annaToken) });
+			const broken = await send("GET", "/aggregates/month", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "13" },
+			});
 			expect(broken.status).to.equal(400);
 			expect(bodyOf(broken).detail).to.contain("month must be between 1 and 12");
 		});
 
-		it("lists the punches of a range", async () => {
-			await send("POST", "/time/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
+		it("lists the months of a year and a range of days", async () => {
+			await send("POST", "/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
 
-			const listed = await send("GET", "/time/entries", {
+			// without `month` the route answers the twelve months of the year
+			const months = await send("GET", "/aggregates/month", {
+				headers: headers(annaToken),
+				query: { year: "1970" },
+			});
+			expect(months.status).to.equal(200);
+			const payload = bodyOf<{ months: ({ year: number; month: number } | null)[]; year: { year: number } }>(
+				months,
+			);
+			expect(payload.months).to.have.lengthOf(12);
+			expect(payload.months[0]).to.deep.include({ year: 1970, month: 1 });
+			expect(payload.months[11]).to.deep.include({ year: 1970, month: 12 });
+			expect(payload.year.year).to.equal(1970);
+
+			// `from`/`to` answers the single days of the range (calendar view)
+			const range = await send("GET", "/aggregates/day", {
+				headers: headers(annaToken),
+				query: { from: "1970-01-01", to: "1970-01-03" },
+			});
+			expect(range.status).to.equal(200);
+			const days = bodyOf<{ days: unknown[]; from: string }>(range);
+			expect(days.from).to.equal("1970-01-01");
+			expect(days.days).to.have.lengthOf(3);
+
+			// client errors: a broken date and a missing year
+			expect(
+				(await send("GET", "/aggregates/day", { headers: headers(annaToken), query: { date: "01.01.1970" } }))
+					.status,
+			).to.equal(400);
+			expect((await send("GET", "/aggregates/year", { headers: headers(annaToken) })).status).to.equal(400);
+		});
+
+		it("lists the punches of a range", async () => {
+			await send("POST", "/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
+
+			const listed = await send("GET", "/entries", {
 				headers: headers(annaToken),
 				query: { from: "1970-01-01", to: "1970-01-02" },
 			});
 			expect(bodyOf<{ entries: unknown[] }>(listed).entries).to.have.lengthOf(1);
 
-			const missingRange = await send("GET", "/time/entries", { headers: headers(annaToken) });
+			const missingRange = await send("GET", "/entries", { headers: headers(annaToken) });
 			expect(missingRange.status).to.equal(400);
 			expect(bodyOf(missingRange).detail).to.equal("from and to are required");
 		});
@@ -418,13 +533,13 @@ describe("web api", () => {
 
 	describe("corrections", () => {
 		it("corrects a punch with optimistic locking", async () => {
-			const created = await send("POST", "/time/punch", {
+			const created = await send("POST", "/punch", {
 				body: { tsUtc: 1000 },
 				headers: headers(annaToken, annaCsrf),
 			});
 			const entry = bodyOf<{ entry: { id: number; revision: number } }>(created).entry;
 
-			const updated = await send("POST", `/time/entries/${entry.id}`, {
+			const updated = await send("PATCH", `/entries/${entry.id}`, {
 				body: { revision: entry.revision, tsUtc: 700, note: "korrigiert", reason: "vertippt" },
 				headers: headers(annaToken, annaCsrf),
 			});
@@ -438,35 +553,79 @@ describe("web api", () => {
 			);
 
 			// a stale revision is a conflict
-			const stale = await send("POST", `/time/entries/${entry.id}`, {
+			const stale = await send("PATCH", `/entries/${entry.id}`, {
 				body: { revision: entry.revision, note: "nochmal" },
 				headers: headers(annaToken, annaCsrf),
 			});
 			expect(stale.status).to.equal(409);
 			expect(bodyOf(stale).code).to.equal("revision_conflict");
 
-			const unknown = await send("POST", "/time/entries/999", {
+			const unknown = await send("PATCH", "/entries/999", {
 				body: { revision: 1 },
 				headers: headers(annaToken, annaCsrf),
 			});
 			expect(unknown.status).to.equal(404);
 		});
 
+		it("adds a punch manually with the edit permission", async () => {
+			const own = await send("POST", "/entries", {
+				body: { tsUtc: 3600, direction: "in", note: "Nachtrag" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(own.status).to.equal(201);
+			expect(bodyOf<{ entry: { source: string; userId: number; direction: string } }>(own).entry).to.deep.include(
+				{ source: "web", userId: annaId, direction: "in" },
+			);
+
+			// a punch for someone else needs `time.edit_other`
+			expect(
+				(
+					await send("POST", "/entries", {
+						body: { tsUtc: 3600 },
+						headers: headers(annaToken, annaCsrf),
+						query: { userId: String(adminId) },
+					})
+				).status,
+			).to.equal(403);
+
+			const asAdmin = await send("POST", "/entries", {
+				body: { tsUtc: 3600 },
+				headers: headers(adminToken, adminCsrf),
+				query: { userId: String(annaId) },
+			});
+			expect(asAdmin.status).to.equal(201);
+			expect(bodyOf<{ entry: { source: string } }>(asAdmin).entry.source).to.equal("admin");
+
+			// an instant is mandatory, an unknown employee is a 404
+			expect(
+				(await send("POST", "/entries", { body: {}, headers: headers(annaToken, annaCsrf) })).status,
+			).to.equal(400);
+			expect(
+				(
+					await send("POST", "/entries", {
+						body: { tsUtc: 3600 },
+						headers: headers(adminToken, adminCsrf),
+						query: { userId: "999" },
+					})
+				).status,
+			).to.equal(404);
+		});
+
 		it("deletes a punch with the delete permission", async () => {
-			const created = await send("POST", "/time/punch", {
+			const created = await send("POST", "/punch", {
 				body: { tsUtc: 1000 },
 				headers: headers(annaToken, annaCsrf),
 			});
 			const entryId = bodyOf<{ entry: { id: number } }>(created).entry.id;
 
 			// the employee role has no `time.delete`
-			const denied = await send("DELETE", `/time/entries/${entryId}`, {
+			const denied = await send("DELETE", `/entries/${entryId}`, {
 				body: { reason: "doppelt" },
 				headers: headers(annaToken, annaCsrf),
 			});
 			expect(denied.status).to.equal(403);
 
-			const removed = await send("DELETE", `/time/entries/${entryId}`, {
+			const removed = await send("DELETE", `/entries/${entryId}`, {
 				body: { reason: "doppelt" },
 				headers: headers(adminToken, adminCsrf),
 			});

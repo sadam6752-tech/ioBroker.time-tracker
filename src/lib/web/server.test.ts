@@ -92,7 +92,7 @@ describe("web server", () => {
 		expect(login.status).to.equal(200);
 		const session = (await login.json()) as { token: string; csrfToken: string };
 
-		const punch = await fetch(`${server.url}/api/time/punch`, {
+		const punch = await fetch(`${server.url}/api/punch`, {
 			method: "POST",
 			headers: {
 				"content-type": "application/json",
@@ -103,11 +103,11 @@ describe("web server", () => {
 		});
 		expect(punch.status).to.equal(201);
 		const stored = (await punch.json()) as { entry: { id: number; localDate: string } };
-		expect(punch.headers.get("location")).to.equal(`/time/entries/${stored.entry.id}`);
+		expect(punch.headers.get("location")).to.equal(`/entries/${stored.entry.id}`);
 
 		// without a session the report is refused, with CSRF missing the write as well
-		expect((await fetch(`${server.url}/api/reports/day/1970-01-01`)).status).to.equal(401);
-		const withoutCsrf = await fetch(`${server.url}/api/time/punch`, {
+		expect((await fetch(`${server.url}/api/aggregates/day?date=1970-01-01`)).status).to.equal(401);
+		const withoutCsrf = await fetch(`${server.url}/api/punch`, {
 			method: "POST",
 			headers: { "content-type": "application/json", "x-session-token": session.token },
 			body: JSON.stringify({ tsUtc: 2000 }),

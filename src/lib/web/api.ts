@@ -5,6 +5,8 @@
  * HTTP server (`native.port`) or handed to the web extension of a `web` instance.
  *
  * Conventions:
+ *  - the paths follow the API specification (section 4): `/auth/...`, `/punch...`, `/entries...`, `/absences...`,
+ *    `/aggregates/{day,month,year}`; the server mounts all of them below the prefix `/api`;
  *  - the session token travels in the `x-session-token` header, the CSRF token in `x-csrf-token`;
  *  - `?userId=` selects another employee and requires the matching `…_other` permission (otherwise the caller
  *    only sees their own data);
@@ -21,8 +23,18 @@ import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
 import type { SyncService } from "../services/sync";
 import { NotFoundError, ValidationError } from "../errors";
+import { roundToStep } from "../domain/punch";
+import { localDate } from "../util/time";
 import { problem } from "./problem";
-import { createRouter, json, noContent, type HttpMethod, type RouteContext, type Router } from "./router";
+import {
+	createRouter,
+	json,
+	noContent,
+	type HttpMethod,
+	type RouteContext,
+	type RouteResponse,
+	type Router,
+} from "./router";
 
 /** Data sources of the API. */
 export interface ApiDeps {
@@ -282,9 +294,66 @@ export function createApi(deps: ApiDeps): Api {
 		return noContent();
 	});
 
+	// A session is renewed on every authenticated request (sliding renewal), so this route reports the current
+	// expiry together with a fresh CSRF token; integration clients use it instead of repeating their login.
+	route("POST", "/auth/refresh", { csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const token = context.header("x-session-token") ?? "";
+		return json(200, {
+			expiresAt: context.auth.expiresAt,
+			csrfToken: auth.csrfToken(token),
+			user: context.auth.user,
+			permissions: context.auth.permissions,
+		});
+	});
+
 	// punching
 
-	route("POST", "/time/punch", { permission: "time.punch", csrf: true }, context => {
+	/**
+	 * Resolves the employee a read request refers to from `?userId=`.
+	 *
+	 * @param context - route context with the authenticated caller
+	 * @param ownPermission - permission needed for the own account
+	 * @param otherPermission - permission needed for another employee
+	 * @returns the target user id
+	 */
+	const scopeUser = (
+		context: RouteContext,
+		ownPermission = "report.view_own",
+		otherPermission = "report.view_other",
+	): number => {
+		const raw = context.query("userId");
+		return resolveScope(context, raw ? Number(raw) : null, ownPermission, otherPermission);
+	};
+
+	/**
+	 * Reads a required whole-number query parameter.
+	 *
+	 * @param context - route context
+	 * @param name - parameter name
+	 * @returns the parsed number
+	 */
+	const numberQuery = (context: RouteContext, name: string): number => {
+		const raw = context.query(name);
+		const value = Number(raw);
+		// a missing parameter is `null`, which would silently become `0`
+		if (raw === null || raw.trim() === "" || !Number.isInteger(value)) {
+			throw new ValidationError(`${name} is required and must be a whole number`);
+		}
+		return value;
+	};
+
+	/**
+	 * Stores a punch of the caller and refreshes the day aggregate.
+	 *
+	 * @param context - route context with the authenticated caller
+	 * @param options - options of the punch
+	 * @param options.quick - true rounds the instant to the configured quicktime step
+	 * @returns response with the stored entry and the refreshed day
+	 */
+	const punch = (context: RouteContext, options: { quick: boolean }): RouteResponse => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -295,9 +364,13 @@ export function createApi(deps: ApiDeps): Api {
 			throw new NotFoundError(`user ${context.auth.user.id} not found`);
 		}
 
+		const requestedTs = optionalNumber(body, "tsUtc") ?? timestamp;
+		const quickRoundMinutes = options.quick ? settings.getNumber("quick_round_minutes", 0) : 0;
+		const tsUtc = quickRoundMinutes > 0 ? roundToStep(requestedTs, quickRoundMinutes, user.timezone) : requestedTs;
+
 		const stored = entries.insert({
 			userId: user.id,
-			tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+			tsUtc,
 			clientTsUtc: optionalNumber(body, "clientTsUtc"),
 			timeZone: user.timezone,
 			source: "web",
@@ -312,12 +385,45 @@ export function createApi(deps: ApiDeps): Api {
 		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
 		return json(
 			201,
-			{ entry: stored.entry, created: stored.created, day },
-			{ location: `/time/entries/${stored.entry.id}` },
+			{
+				entry: stored.entry,
+				created: stored.created,
+				day,
+				...(quickRoundMinutes > 0
+					? { rounded: { from: requestedTs, to: tsUtc, roundMinutes: quickRoundMinutes } }
+					: {}),
+			},
+			{ location: `/entries/${stored.entry.id}` },
 		);
+	};
+
+	route("POST", "/punch", { permission: "time.punch", csrf: true }, context => punch(context, { quick: false }));
+
+	route("POST", "/punch/quick", { permission: "time.punch", csrf: true }, context => punch(context, { quick: true }));
+
+	route("GET", "/punch/status", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
+		const user = users.findById(userId);
+		if (!user) {
+			throw new NotFoundError(`user ${userId} not found`);
+		}
+
+		const date = localDate(now(), user.timezone);
+		const day = aggregation.recalculateDay(userId, date, { now: now() });
+		const todayEntries = entries.listByRange(userId, date, date);
+		return json(200, {
+			date,
+			day,
+			hasOpenEntry: day.hasOpenEntry,
+			lastEntry: todayEntries.length > 0 ? todayEntries[todayEntries.length - 1] : null,
+			// what a punch would do right now, so a client does not have to derive it
+			nextDirection: day.hasOpenEntry ? "out" : "in",
+		});
 	});
 
-	route("POST", "/sync", { permission: "time.punch", csrf: true }, context => {
+	// offline synchronisation
+
+	route("POST", "/entries/sync", { permission: "time.punch", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -354,11 +460,11 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, result);
 	});
 
-	route("GET", "/sync/conflicts", { permission: "time.resolve_conflict" }, context =>
+	route("GET", "/entries/conflicts", { permission: "time.resolve_conflict" }, context =>
 		json(200, { conflicts: sync.conflicts(context.auth?.user.id ?? 0) }),
 	);
 
-	route("POST", "/sync/conflicts/:id", { permission: "time.resolve_conflict", csrf: true }, context => {
+	route("POST", "/entries/:id/resolve", { permission: "time.resolve_conflict", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -380,41 +486,112 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, result);
 	});
 
-	// reports
+	// aggregates and reports
 
-	route("GET", "/reports/day/:date", { permission: "report.view_own" }, context => {
-		const requested = context.query("userId") ? Number(context.query("userId")) : null;
-		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
-		const day = aggregation.recalculateDay(userId, context.params.date, { now: now() });
-		return json(200, { day });
+	route("GET", "/aggregates/day", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
+		const from = context.query("from");
+		const to = context.query("to") ?? from;
+
+		// a range lists the single days (used by the calendar of the web app)
+		if (from && to) {
+			const range = aggregation.recalculateRange(userId, from, to, { now: now() });
+			return json(200, { from, to, ...range, days: aggregation.days(userId, from, to) });
+		}
+
+		const user = users.findById(userId);
+		if (!user) {
+			throw new NotFoundError(`user ${userId} not found`);
+		}
+		const date = context.query("date") ?? localDate(now(), user.timezone);
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+			throw new ValidationError(`date must be YYYY-MM-DD (got ${date})`);
+		}
+		return json(200, { day: aggregation.recalculateDay(userId, date, { now: now() }) });
 	});
 
-	route("GET", "/reports/month/:year/:month", { permission: "report.view_own" }, context => {
-		const requested = context.query("userId") ? Number(context.query("userId")) : null;
-		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
-		const year = numberParam(context, "year");
+	route("GET", "/aggregates/month", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
+		const year = numberQuery(context, "year");
 
-		const month = aggregation.recalculateMonth(userId, year, numberParam(context, "month"), { now: now() });
+		const requestedMonth = context.query("month");
+		if (!requestedMonth) {
+			// the whole year: one recalculation pass, then the twelve monthly rows
+			const totals = aggregation.recalculateYear(userId, year, { now: now() });
+			const months = Array.from({ length: 12 }, (_, index) => aggregation.month(userId, year, index + 1));
+			return json(200, { year: totals, months });
+		}
+
+		const month = Number(requestedMonth);
+		if (!Number.isInteger(month) || month < 1 || month > 12) {
+			throw new ValidationError(`month must be between 1 and 12 (got ${requestedMonth})`);
+		}
+		const monthly = aggregation.recalculateMonth(userId, year, month, { now: now() });
 		const yearly = aggregation.recalculateYear(userId, year, { now: now() });
-		return json(200, { month, year: yearly });
+		return json(200, { month: monthly, year: yearly });
 	});
 
-	route("GET", "/reports/year/:year", { permission: "report.view_own" }, context => {
-		const requested = context.query("userId") ? Number(context.query("userId")) : null;
-		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
-		const yearly = aggregation.recalculateYear(userId, numberParam(context, "year"), { now: now() });
-		return json(200, { year: yearly });
+	route("GET", "/aggregates/year", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
+		const year = numberQuery(context, "year");
+		return json(200, { year: aggregation.recalculateYear(userId, year, { now: now() }) });
 	});
 
-	route("GET", "/time/entries", { permission: "report.view_own" }, context => {
-		const requested = context.query("userId") ? Number(context.query("userId")) : null;
-		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
+	route("GET", "/entries", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
 		const from = context.query("from");
 		const to = context.query("to") ?? from;
 		if (!from || !to) {
 			throw new ValidationError("from and to are required");
 		}
 		return json(200, { entries: entries.listByRange(userId, from, to) });
+	});
+
+	route("POST", "/entries", { permission: "time.edit_own", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const target = Number(context.query("userId") ?? context.auth.user.id);
+		if (!Number.isInteger(target)) {
+			throw new ValidationError("userId must be a whole number");
+		}
+		// adding a punch for someone else is an administrative correction
+		const own = target === context.auth.user.id;
+		if (!own && !context.auth.permissions.includes("time.edit_other")) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
+		}
+
+		const user = users.findById(target);
+		if (!user) {
+			throw new NotFoundError(`user ${target} not found`);
+		}
+		const tsUtc = optionalNumber(body, "tsUtc");
+		if (tsUtc === null) {
+			throw new ValidationError("tsUtc is required");
+		}
+
+		const timestamp = now();
+		const stored = entries.insert({
+			userId: target,
+			tsUtc,
+			clientTsUtc: optionalNumber(body, "clientTsUtc"),
+			timeZone: user.timezone,
+			source: own ? "web" : "admin",
+			direction: optionalDirection(body),
+			idempotencyKey: optionalString(body, "idempotencyKey"),
+			note: optionalString(body, "note"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: timestamp,
+		});
+
+		const day = aggregation.recalculateDay(target, stored.entry.localDate, { now: timestamp });
+		return json(
+			201,
+			{ entry: stored.entry, created: stored.created, day },
+			{ location: `/entries/${stored.entry.id}` },
+		);
 	});
 
 	// absences
@@ -476,7 +653,7 @@ export function createApi(deps: ApiDeps): Api {
 
 	// corrections
 
-	route("POST", "/time/entries/:id", { permission: "time.edit_own", csrf: true }, context => {
+	route("PATCH", "/entries/:id", { permission: "time.edit_own", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -517,7 +694,7 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, { entry: updated, day });
 	});
 
-	route("DELETE", "/time/entries/:id", { permission: "time.delete", csrf: true }, context => {
+	route("DELETE", "/entries/:id", { permission: "time.delete", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}

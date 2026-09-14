@@ -1,0 +1,18 @@
+{
+  "name": "zeiterfassung-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PWA-Zeiterfassung auf ioBroker-Basis – Monorepo (adapter, pwa, shared)",
+  "license": "MIT",
+  "author": {
+    "name": "<Name>",
+    "email": "<E-Mail>"
+  },
+  "engines": {
+    "node": ">= 20"
+  },
+  "scripts": {
+    "cleanroom": "pwsh -NoProfile -File tools/cleanroom-check.ps1 -FailOnHit",
+    "cleanroom:report": "pwsh -NoProfile -File tools/cleanroom-check.ps1"
+  }
+}

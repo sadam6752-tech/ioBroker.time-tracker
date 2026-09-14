@@ -1,0 +1,72 @@
+# ============================================================
+# Legacy-Referenz (SMALL-Time, AGPL-3.0) – NIEMALS ins Repository
+# ============================================================
+SmallTime-master/
+../SmallTime-master/
+*.zip
+
+# ============================================================
+# Node / TypeScript
+# ============================================================
+node_modules/
+dist/
+build/
+out/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================================================
+# PWA / Vite
+# ============================================================
+pwa/dist/
+.vite/
+dev-dist/
+dev-dist/sw.js
+
+# generierter PWA-Build im Adapter (Quelle ist pwa/)
+adapter/www/**
+!adapter/www/.gitkeep
+
+# ============================================================
+# ioBroker
+# ============================================================
+iobroker-data/
+.admin/
+*.adapter-backup
+
+# ============================================================
+# Laufzeitdaten / Datenbank
+# ============================================================
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+data/
+logs/
+*.log
+
+# ============================================================
+# Test-/Abdeckungsdaten
+# ============================================================
+coverage/
+test-results/
+playwright-report/
+.playwright/
+fixtures/generated/
+
+# generierter Clean-Room-Bericht (Ergebnis wird in docs/provenance.md dokumentiert)
+docs/cleanroom-report.txt
+
+# ============================================================
+# Umgebung / IDE / OS
+# ============================================================
+.env
+.env.*
+!.env.example
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini

@@ -34,6 +34,6 @@
 	"expert": "",
 	"connectionType": "local",
 	"dataSource": "push",
-	"nodeVersion": "20",
+	"nodeVersion": "22",
 	"devServer": "local"
 }

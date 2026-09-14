@@ -151,6 +151,7 @@ docs/         provenance record and translator guide
 | `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`) |
 | `npm run translate`        | Keep the 11 translation files in sync                                    |
 | `npm run check:i18n`       | Verify that all 11 languages are complete                                |
+| `npm run check:adapter`    | Local pre-check of the ioBroker adapter rules (see `docs/adapter-check.md`) |
 | `npm run cleanroom`        | Verify that no source was copied from the legacy project                 |
 | `npm run release`          | Create a release (version, changelog, tag)                               |
 | `dev-server watch`         | Run and debug the adapter locally                                        |
@@ -181,6 +182,21 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 - initial release (not published yet)
 
+## Provenance / acknowledgement
+
+This project is an independent reimplementation. Behavior, calculation rules and data formats were
+determined from a running SMALL-Time installation (SmallTime v0.9.205, © IT-Master, AGPL-3.0) so that
+existing data can be reused. **No source code** was taken from that project. Details and the verification
+record: [`docs/provenance.md`](docs/provenance.md).
+
+## Kurzfassung (Deutsch)
+
+Zeiterfassung für ioBroker: Stempeln über die installierbare Web-App (PWA) oder ein Kiosk-Terminal mit
+Badge/PIN, Rollen und Rechte, Soll-/Pausen-/Überstunden- und Ferienregeln, Monatsberichte (PDF/XLS),
+Abwesenheiten sowie Veröffentlichung von Aggregaten als ioBroker-States – alle Daten lokal in SQLite.
+Eigenständige Neuimplementierung unter MIT-Lizenz; der Import bestehender SMALL-Time-Daten ist vorgesehen.
+**Status:** frühe Entwicklungsphase, noch keine installierbare Version.
+
 ## License
 
 MIT License
@@ -205,17 +221,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Provenance / acknowledgement
-
-This project is an independent reimplementation. Behavior, calculation rules and data formats were
-determined from a running SMALL-Time installation (SmallTime v0.9.205, © IT-Master, AGPL-3.0) so that
-existing data can be reused. **No source code** was taken from that project. Details and the verification
-record: [`docs/provenance.md`](docs/provenance.md).
-
-## Kurzfassung (Deutsch)
-
-Zeiterfassung für ioBroker: Stempeln über die installierbare Web-App (PWA) oder ein Kiosk-Terminal mit
-Badge/PIN, Rollen und Rechte, Soll-/Pausen-/Überstunden- und Ferienregeln, Monatsberichte (PDF/XLS),
-Abwesenheiten sowie Veröffentlichung von Aggregaten als ioBroker-States – alle Daten lokal in SQLite.
-Eigenständige Neuimplementierung unter MIT-Lizenz; der Import bestehender SMALL-Time-Daten ist vorgesehen.
-**Status:** frühe Entwicklungsphase, noch keine installierbare Version.

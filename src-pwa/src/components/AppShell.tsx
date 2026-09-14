@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "../state/session";
 import { useSync } from "../offline/useSync";
+import { useLiveEvents } from "../live/useLiveEvents";
 
 /** Entries of the navigation. */
 const TABS = [
@@ -48,6 +49,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 	const { t } = useTranslation();
 	const { session, signOut } = useSession();
 	const { pending, online } = useSync();
+	// the figures on the screen follow the server: a punch at the terminal refreshes an open dashboard
+	useLiveEvents(session !== null);
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);

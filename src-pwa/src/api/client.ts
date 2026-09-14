@@ -73,6 +73,8 @@ export interface StoredSession {
 export interface ApiClient {
 	/** Current session or `null` */
 	session(): StoredSession | null;
+	/** URL of the live event stream (`null` without a session) */
+	streamUrl(): string | null;
 	/** Logs in and stores the session */
 	login(login: string, password: string): Promise<StoredSession>;
 	/** Ends the session on the server and locally */
@@ -250,6 +252,15 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 	return {
 		session: () => cached,
+
+		streamUrl(): string | null {
+			if (!cached) {
+				return null;
+			}
+			// the web app is served from the same origin as the API, so the page's host is the one to call
+			const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+			return `${scheme}//${window.location.host}${API_PREFIX}/stream?token=${encodeURIComponent(cached.token)}`;
+		},
 
 		forget: () => writeSession(null),
 

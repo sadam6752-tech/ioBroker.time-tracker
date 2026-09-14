@@ -29,6 +29,7 @@ import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, publishAllUserStates } from "./lib/adapter/states";
 import { handleCommand } from "./lib/adapter/commands";
 import { createApi } from "./lib/web/api";
+import type { EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
 import { createStaticHandler } from "./lib/web/static";
 
@@ -55,6 +56,8 @@ class Zeiterfassung extends utils.Adapter {
 	private db: Db | null = null;
 	private webServer: WebServer | null = null;
 	private services: AdapterServices | null = null;
+	/** Bus of the API; `null` until the API is created */
+	private events: EventBus | null = null;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -198,6 +201,7 @@ class Zeiterfassung extends utils.Adapter {
 		});
 
 		this.services = { users, entries, absences, settings, aggregation, sync, closing };
+		this.events = api.events;
 		this.log.debug(`API routes: ${api.routes().length}`);
 
 		// the web interface is delivered from `www/` next to the compiled code (built by the PWA project);
@@ -218,6 +222,8 @@ class Zeiterfassung extends utils.Adapter {
 				port: this.config.port || 8082,
 				bind: this.config.bind || "127.0.0.1",
 				staticFiles,
+				// live events for the PWA and the terminal: `/api/stream?token=...`
+				stream: { auth, events: api.events, version: this.version },
 				log: {
 					info: message => this.log.info(message),
 					warn: message => this.log.warn(message),
@@ -309,6 +315,16 @@ class Zeiterfassung extends utils.Adapter {
 				value,
 			);
 			this.log.info(`command ${id}: ${result.message}`);
+			// a closing is triggered from a state, not from a request: tell the connected clients about it
+			// (only the period is published, never the figures of the employee it belongs to)
+			if (id === COMMAND_IDS.closeMonth) {
+				this.events?.publish({
+					type: "month.close",
+					atUtc: Math.floor(Date.now() / 1000),
+					userId: null,
+					data: { period: String(value ?? "") },
+				});
+			}
 		} catch (error) {
 			this.log.warn(`command ${id} failed: ${(error as Error).message}`);
 		}

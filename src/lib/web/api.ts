@@ -39,6 +39,7 @@ import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
+import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { problem, toProblem } from "./problem";
 import {
 	createRouter,
@@ -82,6 +83,8 @@ export interface ApiDeps {
 	sync: SyncService;
 	/** Instance settings */
 	settings: SettingsRepository;
+	/** Live event bus; a private one is created when it is not given */
+	events?: EventBus;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
 	/** Version reported by `GET /version` */
@@ -104,6 +107,8 @@ export interface Api {
 	router: Router;
 	/** Route table */
 	routes(): ApiRoute[];
+	/** Bus every change is published on (also used by the WebSocket stream) */
+	events: EventBus;
 }
 
 /**
@@ -581,8 +586,18 @@ export function createApi(deps: ApiDeps): Api {
 	const { auth, users, entries, absences, holidays, rules, payouts, terminals, rfid, aggregation, sync, settings } =
 		deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
+	const events = deps.events ?? createEventBus();
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
+
+	/**
+	 * Publishes a live event about a change.
+	 *
+	 * @param event - kind of the change, affected employee and a short summary
+	 */
+	const emit = (event: Omit<ApiEvent, "atUtc">): void => {
+		events.publish({ ...event, atUtc: now() });
+	};
 
 	/**
 	 * Registers a route and remembers it for the documentation.
@@ -782,6 +797,11 @@ export function createApi(deps: ApiDeps): Api {
 		});
 
 		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+		emit({
+			type: "punch",
+			userId: user.id,
+			data: { entryId: stored.entry.id, created: stored.created, localDate: stored.entry.localDate },
+		});
 		return json(
 			201,
 			{
@@ -870,6 +890,18 @@ export function createApi(deps: ApiDeps): Api {
 				actorIp: context.request.remoteAddress ?? null,
 				now: now(),
 			});
+			// the batch belongs to one employee: their day changed, so their clients refresh it
+			emit({
+				type: "punch",
+				userId: user.id,
+				data: {
+					synced: result.accepted.filter(entry => entry.created).length,
+					duplicates: result.accepted.filter(entry => !entry.created).length,
+					conflicts: result.conflicts.length,
+					rejected: result.rejected.length,
+					days: result.recalculated.length,
+				},
+			});
 			return json(200, result);
 		},
 	);
@@ -897,6 +929,13 @@ export function createApi(deps: ApiDeps): Api {
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		});
+		if (result.entry) {
+			emit({
+				type: "entry.update",
+				userId: result.entry.userId,
+				data: { entryId: result.entry.id, localDate: result.entry.localDate, resolved: action },
+			});
+		}
 		return json(200, result);
 	});
 
@@ -1001,6 +1040,16 @@ export function createApi(deps: ApiDeps): Api {
 		});
 
 		const day = aggregation.recalculateDay(target, stored.entry.localDate, { now: timestamp });
+		emit({
+			type: "punch",
+			userId: target,
+			data: {
+				entryId: stored.entry.id,
+				created: stored.created,
+				localDate: stored.entry.localDate,
+				source: own ? "web" : "admin",
+			},
+		});
 		return json(
 			201,
 			{ entry: stored.entry, created: stored.created, day },
@@ -1043,6 +1092,7 @@ export function createApi(deps: ApiDeps): Api {
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		});
+		emit({ type: "absence.change", userId, data: { absenceId: created.id, action: "created" } });
 		return json(201, { absence: created }, { location: `/absences/${created.id}` });
 	});
 
@@ -1062,6 +1112,7 @@ export function createApi(deps: ApiDeps): Api {
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		});
+		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "status" } });
 		return json(200, { absence: updated });
 	});
 
@@ -1130,6 +1181,7 @@ export function createApi(deps: ApiDeps): Api {
 				})
 			: (absences.findById(absence.id) ?? absence);
 
+		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "updated" } });
 		return json(200, { absence: updated });
 	});
 
@@ -1144,6 +1196,7 @@ export function createApi(deps: ApiDeps): Api {
 		if (!removed) {
 			throw new NotFoundError(`absence ${absence.id} not found`);
 		}
+		emit({ type: "absence.change", userId: absence.userId, data: { absenceId: absence.id, action: "deleted" } });
 		return noContent();
 	});
 
@@ -1281,6 +1334,11 @@ export function createApi(deps: ApiDeps): Api {
 		});
 
 		const day = aggregation.recalculateDay(updated.userId, updated.localDate, { now: now() });
+		emit({
+			type: "entry.update",
+			userId: updated.userId,
+			data: { entryId: updated.id, localDate: updated.localDate, revision: updated.revision },
+		});
 		return json(200, { entry: updated, day });
 	});
 
@@ -1302,6 +1360,11 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		aggregation.recalculateDay(existing.userId, existing.localDate, { now: now() });
+		emit({
+			type: "entry.delete",
+			userId: existing.userId,
+			data: { entryId: existing.id, localDate: existing.localDate },
+		});
 		return noContent();
 	});
 
@@ -1751,6 +1814,14 @@ export function createApi(deps: ApiDeps): Api {
 			}
 
 			const imported = results.filter(result => result.entryId !== undefined).length;
+			// one event per touched employee: the import may mix several of them
+			for (const [key, userId] of touched) {
+				emit({
+					type: "punch",
+					userId,
+					data: { imported: true, localDate: key.split("|")[1], source: "import" },
+				});
+			}
 			return json(200, {
 				imported,
 				failed: results.length - imported,
@@ -1959,6 +2030,16 @@ export function createApi(deps: ApiDeps): Api {
 			});
 			const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
 			terminals.touch({ id: terminal.id, ttlMinutes: TERMINAL_SESSION_MINUTES, now: timestamp });
+			emit({
+				type: "terminal.punch",
+				userId: user.id,
+				data: {
+					entryId: stored.entry.id,
+					localDate: stored.entry.localDate,
+					terminalId: terminal.id,
+					terminalName: terminal.name,
+				},
+			});
 
 			// the answer stays minimal: the terminal shows a name, a time and the state of the day
 			return json(201, {
@@ -2173,6 +2254,16 @@ export function createApi(deps: ApiDeps): Api {
 			});
 			rfid.touch({ id: tag.id, now: timestamp });
 			const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+			emit({
+				type: "rfid.scan",
+				userId: user.id,
+				data: {
+					entryId: stored.entry.id,
+					localDate: stored.entry.localDate,
+					tagId: tag.id,
+					uid: tag.uid,
+				},
+			});
 
 			return json(201, {
 				user: { id: user.id, displayName: user.displayName },
@@ -2203,5 +2294,5 @@ export function createApi(deps: ApiDeps): Api {
 
 	route("GET", "/routes", { public: true }, () => json(200, { routes: registered }));
 
-	return { router, routes: () => registered.slice() };
+	return { router, routes: () => registered.slice(), events };
 }

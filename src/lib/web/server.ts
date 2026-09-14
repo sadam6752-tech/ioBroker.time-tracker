@@ -15,6 +15,7 @@ import type { AddressInfo } from "node:net";
 import { HttpProblem, PROBLEM_CONTENT_TYPE } from "./problem";
 import type { HttpRequest, Router } from "./router";
 import type { StaticHandler } from "./static";
+import { attachEventStream, type EventStream, type EventStreamOptions } from "./stream";
 
 /** Minimal logger used by the server. */
 export interface ServerLogger {
@@ -38,6 +39,8 @@ export interface WebServerOptions {
 	apiPrefix?: string;
 	/** Handler for the files of the web interface (PWA) */
 	staticFiles?: StaticHandler;
+	/** Live event stream (`/api/stream`); without it the endpoint does not exist */
+	stream?: Omit<EventStreamOptions, "server">;
 	/** Maximum body size in bytes (default 256 KiB) */
 	maxBodyBytes?: number;
 	/** Logger */
@@ -50,6 +53,8 @@ export interface WebServer {
 	readonly port: number;
 	/** Base URL of the server, e.g. `http://127.0.0.1:8082` */
 	readonly url: string;
+	/** Live event stream, when one is configured */
+	readonly stream?: EventStream;
 	/** Stops the server and closes all connections */
 	close(): Promise<void>;
 }
@@ -194,14 +199,25 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 
 	const address = server.address() as AddressInfo | null;
 	const port = address?.port ?? options.port;
+	const stream = options.stream
+		? attachEventStream({
+				...options.stream,
+				server,
+				path: options.stream.path ?? `${apiPrefix}/stream`,
+			})
+		: undefined;
 	options.log?.info(
-		`API listening on http://${bind}:${port}${apiPrefix}${options.staticFiles ? " - web interface is served from disk" : ""}`,
+		`API listening on http://${bind}:${port}${apiPrefix}${
+			options.staticFiles ? " - web interface is served from disk" : ""
+		}${stream ? " - live events on /stream" : ""}`,
 	);
 
 	return {
 		port,
 		url: `http://${bind === "0.0.0.0" ? "127.0.0.1" : bind}:${port}`,
+		stream,
 		close: async (): Promise<void> => {
+			await stream?.close();
 			await new Promise<void>(resolve => {
 				server.close(() => resolve());
 				// keep-alive connections would delay the shutdown

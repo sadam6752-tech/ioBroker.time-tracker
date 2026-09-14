@@ -15,6 +15,20 @@ tests.integration(path.join(__dirname, ".."), {
 				await harness.startAdapterAndWait(true);
 			});
 
+			/**
+			 * Reads the port the API listens on from the adapter log.
+			 *
+			 * @returns {number} port of the API
+			 */
+			function apiPort() {
+				const line = harness
+					.getLogs()
+					.map(log => log.message)
+					.find(message => /API listening on http:\/\/127\.0\.0\.1:\d+/.test(message));
+				expect(line, "port of the API in the adapter log").to.be.a("string");
+				return Number(/API listening on http:\/\/127\.0\.0\.1:(\d+)/.exec(String(line))?.[1]);
+			}
+
 			it("publishes the command states and the connection indicator", async () => {
 				const punch = await harness.objects.getObject("zeiterfassung.0.commands.punch");
 				expect(punch?.common).to.include({ type: "boolean", role: "button", read: false, write: true });
@@ -31,12 +45,7 @@ tests.integration(path.join(__dirname, ".."), {
 			});
 
 			it("answers the API below /api and delivers the web app", async () => {
-				const line = harness
-					.getLogs()
-					.map(log => log.message)
-					.find(message => /API listening on http:\/\/127\.0\.0\.1:\d+/.test(message));
-				expect(line, "port of the API in the adapter log").to.be.a("string");
-				const port = Number(/API listening on http:\/\/127\.0\.0\.1:(\d+)/.exec(String(line))?.[1]);
+				const port = apiPort();
 
 				// the API is mounted below /api, so the web interface can own the rest of the paths
 				const health = await fetch(`http://127.0.0.1:${port}/api/health`);
@@ -68,6 +77,19 @@ tests.integration(path.join(__dirname, ".."), {
 				});
 				expect(missing.status).to.equal(404);
 				expect(await missing.json()).to.include({ code: "not_found" });
+			});
+
+			it("serves the live event stream and refuses a connection without a session", async () => {
+				expect(harness.hasLog(/live events on \/stream/)).to.equal(true);
+
+				const { WebSocket } = require("ws");
+				const socket = new WebSocket(`ws://127.0.0.1:${apiPort()}/api/stream?token=quatsch`);
+				const status = await new Promise((resolve, reject) => {
+					socket.on("unexpected-response", (_request, response) => resolve(response.statusCode));
+					socket.on("open", () => reject(new Error("the stream accepted a connection without a session")));
+					socket.on("error", error => reject(error));
+				});
+				expect(status).to.equal(401);
 			});
 
 			it("reacts to a command state", async () => {

@@ -16,6 +16,7 @@
 import type { Db } from "../db/database";
 import type { EntriesRepository, EntryDirection, EntryRecord, EntrySyncState } from "../db/repositories/entries";
 import type { UsersRepository } from "../db/repositories/users";
+import { NotFoundError, ValidationError } from "../errors";
 import { writeAuditLog } from "../db/repositories/audit";
 import { checkEmploymentWindow } from "../domain/punch";
 import { addDays, localDate as resolveLocalDate } from "../util/time";
@@ -354,10 +355,10 @@ export function createSyncService(deps: SyncDeps): SyncService {
 		resolve(input: ResolveConflictInput): ResolveConflictResult {
 			const current = entries.findById(input.entryId);
 			if (!current) {
-				throw new Error(`entry ${input.entryId} not found`);
+				throw new NotFoundError(`entry ${input.entryId} not found`);
 			}
 			if (current.syncState !== "conflict") {
-				throw new Error(`entry ${input.entryId} is not in conflict (state ${current.syncState})`);
+				throw new ValidationError(`entry ${input.entryId} is not in conflict (state ${current.syncState})`);
 			}
 
 			const now = input.now ?? Math.floor(Date.now() / 1000);
@@ -459,10 +460,10 @@ export function createSyncService(deps: SyncDeps): SyncService {
 			const first = entries.findById(input.entryIds[0]);
 			const second = entries.findById(input.entryIds[1]);
 			if (!first || !second) {
-				throw new Error("both punches of the cancellation pair must exist");
+				throw new NotFoundError("both punches of the cancellation pair must exist");
 			}
 			if (first.userId !== second.userId) {
-				throw new Error("both punches of the cancellation pair must belong to the same employee");
+				throw new ValidationError("both punches of the cancellation pair must belong to the same employee");
 			}
 
 			const now = input.now ?? Math.floor(Date.now() / 1000);

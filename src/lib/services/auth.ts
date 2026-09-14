@@ -15,6 +15,7 @@ import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from
 import type { Db } from "../db/database";
 import type { SettingsRepository } from "../db/repositories/settings";
 import type { UserRecord, UsersRepository } from "../db/repositories/users";
+import { ValidationError } from "../errors";
 import { writeAuditLog } from "../db/repositories/audit";
 
 /** Cost parameters of a stored password hash. */
@@ -558,7 +559,7 @@ export function createAuthService(deps: AuthDeps): AuthService {
 		}): void {
 			const violated = checkPasswordPolicy(input.password, policy);
 			if (violated) {
-				throw new Error(`password does not fulfil the policy (${violated})`);
+				throw new ValidationError(`password does not fulfil the policy (${violated})`);
 			}
 
 			const now = input.now ?? Math.floor(Date.now() / 1000);

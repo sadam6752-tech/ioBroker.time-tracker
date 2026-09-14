@@ -8,6 +8,7 @@
  */
 
 import type { Db } from "../database";
+import { NotFoundError, ValidationError } from "../../errors";
 import { diffFields, writeAuditLog } from "./audit";
 
 /** A graduated break rule. */
@@ -187,11 +188,11 @@ export function mapShiftRuleRow(row: ShiftRuleRow): ShiftRuleRecord {
  */
 function requirePauseWindow(fromMin: number, toMin: number | null): { fromMin: number; toMin: number | null } {
 	if (!Number.isInteger(fromMin) || fromMin < 0) {
-		throw new Error(`fromMin must be a whole number of minutes, 0 or more (got ${fromMin})`);
+		throw new ValidationError(`fromMin must be a whole number of minutes, 0 or more (got ${fromMin})`);
 	}
 	if (toMin !== null) {
 		if (!Number.isInteger(toMin) || toMin <= fromMin) {
-			throw new Error(`toMin must be greater than fromMin (got ${toMin} and ${fromMin})`);
+			throw new ValidationError(`toMin must be greater than fromMin (got ${toMin} and ${fromMin})`);
 		}
 	}
 	return { fromMin, toMin };
@@ -210,13 +211,13 @@ function requireShiftWindow(
 ): { fromMin: number | null; toMin: number | null } {
 	const check = (value: number | null, label: string): void => {
 		if (value !== null && (!Number.isInteger(value) || value < 0 || value > 1440)) {
-			throw new Error(`${label} must be between 0 and 1440 minutes (got ${value})`);
+			throw new ValidationError(`${label} must be between 0 and 1440 minutes (got ${value})`);
 		}
 	};
 	check(fromMin, "fromMin");
 	check(toMin, "toMin");
 	if (fromMin !== null && toMin !== null && toMin <= fromMin) {
-		throw new Error(`toMin must be greater than fromMin (got ${toMin} and ${fromMin})`);
+		throw new ValidationError(`toMin must be greater than fromMin (got ${toMin} and ${fromMin})`);
 	}
 	return { fromMin, toMin };
 }
@@ -229,7 +230,7 @@ function requireShiftWindow(
  */
 function requireSurcharge(surcharge: number): number {
 	if (!Number.isFinite(surcharge) || surcharge < 0) {
-		throw new Error(`surcharge must be 0 or more (got ${surcharge})`);
+		throw new ValidationError(`surcharge must be 0 or more (got ${surcharge})`);
 	}
 	return surcharge;
 }
@@ -320,14 +321,14 @@ export function createRulesRepository(db: Db): RulesRepository {
 			const window = requirePauseWindow(input.fromMin, input.toMin ?? null);
 			const pauseMin = Math.round(input.pauseMin);
 			if (!Number.isFinite(input.pauseMin) || pauseMin <= 0) {
-				throw new Error(`pauseMin must be greater than 0 (got ${input.pauseMin})`);
+				throw new ValidationError(`pauseMin must be greater than 0 (got ${input.pauseMin})`);
 			}
 			const userId = input.userId ?? null;
 			const isActive = input.isActive !== false;
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			const current = input.id === undefined ? null : readPause(input.id);
 			if (input.id !== undefined && !current) {
-				throw new Error(`pause rule ${input.id} not found`);
+				throw new NotFoundError(`pause rule ${input.id} not found`);
 			}
 
 			const next: PauseRuleRecord = {
@@ -431,7 +432,7 @@ export function createRulesRepository(db: Db): RulesRepository {
 		saveShiftRule(input: SaveShiftRuleInput): ShiftRuleRecord {
 			const dayOfWeek = input.dayOfWeek ?? null;
 			if (dayOfWeek !== null && (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6)) {
-				throw new Error(`dayOfWeek must be between 0 and 6 (got ${dayOfWeek})`);
+				throw new ValidationError(`dayOfWeek must be between 0 and 6 (got ${dayOfWeek})`);
 			}
 			const window = requireShiftWindow(input.fromMin ?? null, input.toMin ?? null);
 			const surcharge = requireSurcharge(input.surcharge);
@@ -440,7 +441,7 @@ export function createRulesRepository(db: Db): RulesRepository {
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			const current = input.id === undefined ? null : readShift(input.id);
 			if (input.id !== undefined && !current) {
-				throw new Error(`shift rule ${input.id} not found`);
+				throw new NotFoundError(`shift rule ${input.id} not found`);
 			}
 
 			const next: ShiftRuleRecord = {

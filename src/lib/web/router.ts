@@ -1,0 +1,345 @@
+/**
+ * Server agnostic HTTP router.
+ *
+ * The router only sees plain request/response objects, so the same routes can later be mounted on an own HTTP
+ * server (`native.port`) or be handed to the web extension of a `web` instance. Everything security relevant
+ * happens here and not in the single handlers: session check, permission check (RBAC), CSRF token for state
+ * changing requests and a body size limit.
+ *
+ * Handlers return `json(status, body)` or `noContent()`; any thrown error is converted by `toProblem`.
+ */
+
+import type { AuthContext, AuthService } from "../services/auth";
+import { HttpProblem, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
+
+/** Supported HTTP methods. */
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+/** A request as the router sees it (the body is already read and size limited). */
+export interface HttpRequest {
+	/** HTTP method, upper case */
+	method: string;
+	/** Path without query string, e.g. `/reports/day` */
+	path: string;
+	/** Query parameters, repeated names become arrays */
+	query?: Record<string, string | string[] | undefined>;
+	/** Request headers, names lower case */
+	headers?: Record<string, string | string[] | undefined>;
+	/** Raw body (JSON for our endpoints) */
+	body?: string;
+	/** Client address */
+	remoteAddress?: string | null;
+}
+
+/** A response as the router produces it. */
+export interface HttpResponse {
+	/** HTTP status code */
+	status: number;
+	/** Response headers (lower case names) */
+	headers: Record<string, string>;
+	/** Response body, already serialised */
+	body: string;
+}
+
+/** Result of a handler. */
+export interface RouteResponse {
+	/** HTTP status code */
+	status: number;
+	/** Body, serialised as JSON when it is not `undefined` */
+	body?: unknown;
+	/** Additional headers */
+	headers?: Record<string, string>;
+}
+
+/** What a handler receives. */
+export interface RouteContext {
+	/** The incoming request */
+	request: HttpRequest;
+	/** Path parameters of the route */
+	params: Record<string, string>;
+	/** Authenticated context, `null` for public routes */
+	auth: AuthContext | null;
+	/** Reads a query parameter */
+	query(name: string): string | null;
+	/** Reads a request header */
+	header(name: string): string | null;
+	/** Parses the JSON body, throws `400 bad_request` when it is not usable */
+	jsonBody<T = Record<string, unknown>>(): T;
+}
+
+/** A single route. */
+export interface RouteDefinition {
+	/** Method (or methods) the route answers */
+	method: HttpMethod | HttpMethod[];
+	/** Path pattern, `:name` marks a parameter, e.g. `/reports/day/:date` */
+	path: string;
+	/** Session required (default true) */
+	requiresAuth?: boolean;
+	/** Permission the caller has to hold */
+	permission?: string;
+	/** CSRF token required (default true for state changing methods) */
+	requiresCsrf?: boolean;
+	/** Handler of the route */
+	handler: (context: RouteContext) => RouteResponse | Promise<RouteResponse>;
+}
+
+/** Options of the router. */
+export interface RouterOptions {
+	/** Authentication service used for the session check */
+	auth: AuthService;
+	/** Maximum body size in bytes (default 256 KiB) */
+	maxBodyBytes?: number;
+	/** Instant source, defaults to the system clock */
+	now?: () => number;
+}
+
+/** The router. */
+export interface Router {
+	/** Registers a route */
+	add(route: RouteDefinition): void;
+	/** Handles a request; never throws */
+	handle(request: HttpRequest): Promise<HttpResponse>;
+	/** Registered routes (method and path), e.g. for the API documentation */
+	routes(): { method: string; path: string }[];
+}
+
+/** Marker to tell a handler result from a plain JSON payload. */
+const ROUTE_RESPONSE = Symbol("routeResponse");
+
+/**
+ * Creates a response object for a handler.
+ *
+ * @param status - HTTP status code
+ * @param body - body to serialise as JSON
+ * @param headers - additional response headers
+ * @returns route response
+ */
+export function json(status: number, body: unknown, headers: Record<string, string> = {}): RouteResponse {
+	return Object.assign({ status, body, headers }, { [ROUTE_RESPONSE]: true });
+}
+
+/**
+ * Creates an empty response.
+ *
+ * @param status - HTTP status code (default 204)
+ * @returns route response without a body
+ */
+export function noContent(status = 204): RouteResponse {
+	return Object.assign({ status, body: undefined }, { [ROUTE_RESPONSE]: true });
+}
+
+/**
+ * Checks whether a handler result is a route response.
+ *
+ * @param value - handler result
+ * @returns true when the value was created by `json` or `noContent`
+ */
+function isRouteResponse(value: unknown): value is RouteResponse {
+	return typeof value === "object" && value !== null && ROUTE_RESPONSE in value;
+}
+
+/** Headers every API response carries. */
+const BASE_HEADERS: Record<string, string> = {
+	"content-type": "application/json; charset=utf-8",
+	"cache-control": "no-store",
+	"x-content-type-options": "nosniff",
+	"referrer-policy": "no-referrer",
+};
+
+/** State changing methods need a CSRF token by default. */
+const SAFE_METHODS: string[] = ["GET", "HEAD", "OPTIONS"];
+
+interface CompiledRoute {
+	definition: RouteDefinition;
+	methods: HttpMethod[];
+	/** Path segments, `literal: null` marks a parameter */
+	segments: { literal: string | null; name: string }[];
+}
+
+/**
+ * Splits a path into segments without leading/trailing slashes.
+ *
+ * @param path - path to split
+ * @returns segments
+ */
+function splitPath(path: string): string[] {
+	return path.split("/").filter(segment => segment.length > 0);
+}
+
+/**
+ * Compiles the path pattern of a route.
+ *
+ * @param path - pattern like `/reports/day/:date`
+ * @returns segments with their parameter names
+ */
+function compileSegments(path: string): { literal: string | null; name: string }[] {
+	return splitPath(path).map(segment =>
+		segment.startsWith(":") ? { literal: null, name: segment.slice(1) } : { literal: segment, name: "" },
+	);
+}
+
+/**
+ * Creates a problem response.
+ *
+ * @param status - HTTP status code
+ * @param code - stable error code
+ * @param detail - optional explanation
+ * @param instance - request path
+ * @param headers - additional headers
+ * @returns HTTP response
+ */
+function problemResponse(
+	status: number,
+	code: ProblemCode,
+	detail: string | undefined,
+	instance: string,
+	headers: Record<string, string> = {},
+): HttpResponse {
+	const details: ProblemDetails = new HttpProblem(status, code, detail).toProblem(instance);
+	return {
+		status,
+		headers: { ...BASE_HEADERS, ...headers },
+		body: JSON.stringify(details),
+	};
+}
+
+/**
+ * Creates the router.
+ *
+ * @param options - authentication service and limits
+ * @returns router instance
+ */
+export function createRouter(options: RouterOptions): Router {
+	const routes: CompiledRoute[] = [];
+	const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
+	const now = options.now ?? (() => Math.floor(Date.now() / 1000));
+
+	return {
+		add(route: RouteDefinition): void {
+			routes.push({
+				definition: route,
+				methods: Array.isArray(route.method) ? route.method : [route.method],
+				segments: compileSegments(route.path),
+			});
+		},
+
+		routes(): { method: string; path: string }[] {
+			return routes.flatMap(route => route.methods.map(method => ({ method, path: route.definition.path })));
+		},
+
+		async handle(request: HttpRequest): Promise<HttpResponse> {
+			const method = (request.method ?? "GET").toUpperCase();
+			const path = request.path ?? "/";
+			const pathSegments = splitPath(path);
+			const headers = request.headers ?? {};
+			const headerValue = (name: string): string | null => {
+				const value = headers[name] ?? headers[name.toLowerCase()];
+				return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+			};
+
+			const matched: { route: CompiledRoute; params: Record<string, string> }[] = [];
+			for (const route of routes) {
+				if (route.segments.length !== pathSegments.length) {
+					continue;
+				}
+				const params: Record<string, string> = {};
+				let matches = true;
+				for (let index = 0; index < route.segments.length; index++) {
+					const segment = route.segments[index];
+					if (segment.literal === null) {
+						params[segment.name] = decodeURIComponent(pathSegments[index]);
+						continue;
+					}
+					if (segment.literal !== pathSegments[index]) {
+						matches = false;
+						break;
+					}
+				}
+				if (matches) {
+					matched.push({ route, params });
+				}
+			}
+
+			if (matched.length === 0) {
+				return problemResponse(404, "not_found", `no route for ${method} ${path}`, path);
+			}
+
+			const candidate = matched.find(entry => entry.route.methods.includes(method as HttpMethod));
+			if (!candidate) {
+				const allowed = [...new Set(matched.flatMap(entry => entry.route.methods))].sort();
+				return problemResponse(405, "method_not_allowed", `allowed: ${allowed.join(", ")}`, path, {
+					allow: allowed.join(", "),
+				});
+			}
+
+			const { route, params } = candidate;
+			const body = request.body ?? "";
+			if (body.length > maxBodyBytes) {
+				return problemResponse(413, "payload_too_large", `body exceeds ${maxBodyBytes} bytes`, path);
+			}
+
+			const requiresCsrf = route.definition.requiresCsrf ?? !SAFE_METHODS.includes(method);
+			const token = headerValue("x-session-token") ?? "";
+			let auth: AuthContext | null = null;
+
+			if (route.definition.requiresAuth !== false) {
+				const result = options.auth.authenticate({
+					token,
+					permission: route.definition.permission,
+					now: now(),
+				});
+				if (!result.ok) {
+					const status = result.error === "permission_denied" ? 403 : 401;
+					return problemResponse(status, result.error, `request rejected (${result.error})`, path);
+				}
+				auth = result.context;
+
+				if (requiresCsrf && !options.auth.verifyCsrf({ token, csrfToken: headerValue("x-csrf-token") ?? "" })) {
+					return problemResponse(403, "csrf_rejected", "missing or wrong CSRF token", path);
+				}
+			}
+
+			const context: RouteContext = {
+				request,
+				params,
+				auth,
+				query: name => {
+					const value = request.query?.[name];
+					return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+				},
+				header: headerValue,
+				jsonBody: <T = Record<string, unknown>>(): T => {
+					const contentType = headerValue("content-type") ?? "";
+					if (contentType && !contentType.toLowerCase().includes("application/json")) {
+						throw new HttpProblem(415, "unsupported_media_type", `unsupported content type ${contentType}`);
+					}
+					if (!body.trim()) {
+						throw new HttpProblem(400, "bad_request", "body is required");
+					}
+					try {
+						return JSON.parse(body) as T;
+					} catch {
+						throw new HttpProblem(400, "bad_request", "body is not valid JSON");
+					}
+				},
+			};
+
+			try {
+				const result = await route.definition.handler(context);
+				if (!isRouteResponse(result)) {
+					throw new Error("handler did not return a response object");
+				}
+
+				const responseHeaders = { ...BASE_HEADERS, ...(result.headers ?? {}) };
+				if (result.body === undefined) {
+					delete responseHeaders["content-type"];
+					return { status: result.status, headers: responseHeaders, body: "" };
+				}
+				return { status: result.status, headers: responseHeaders, body: JSON.stringify(result.body) };
+			} catch (error) {
+				const { problem: details } = toProblem(error, path);
+				return { status: details.status, headers: { ...BASE_HEADERS }, body: JSON.stringify(details) };
+			}
+		},
+	};
+}

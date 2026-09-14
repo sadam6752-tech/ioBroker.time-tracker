@@ -8,6 +8,7 @@
 
 import type { Db } from "../database";
 import { isDateString } from "../../util/time";
+import { NotFoundError, ValidationError } from "../../errors";
 import { diffFields, writeAuditLog } from "./audit";
 
 /** Status of an absence: requested/planned or already taken. */
@@ -259,7 +260,7 @@ export function mapAbsenceRow(row: AbsenceRow): AbsenceRecord {
 function requireDate(value: string, label: string): string {
 	const trimmed = value.trim();
 	if (!isDateString(trimmed)) {
-		throw new Error(`${label} "${value}" is not a date (YYYY-MM-DD)`);
+		throw new ValidationError(`${label} "${value}" is not a date (YYYY-MM-DD)`);
 	}
 	return trimmed;
 }
@@ -272,7 +273,7 @@ function requireDate(value: string, label: string): string {
  */
 function requireDayPortion(value: number): number {
 	if (!Number.isFinite(value) || value <= 0 || value > 1) {
-		throw new Error(`dayPortion must be greater than 0 and at most 1 (got ${value})`);
+		throw new ValidationError(`dayPortion must be greater than 0 and at most 1 (got ${value})`);
 	}
 	return value;
 }
@@ -389,7 +390,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 			const dateFrom = requireDate(input.dateFrom, "dateFrom");
 			const dateTo = requireDate(input.dateTo ?? dateFrom, "dateTo");
 			if (dateFrom > dateTo) {
-				throw new Error(`dateFrom (${dateFrom}) must not be after dateTo (${dateTo})`);
+				throw new ValidationError(`dateFrom (${dateFrom}) must not be after dateTo (${dateTo})`);
 			}
 			const dayPortion = requireDayPortion(input.dayPortion ?? 1);
 			const status: AbsenceStatus = input.status ?? "planned";
@@ -439,7 +440,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 		update(input: UpdateAbsenceInput): AbsenceRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`absence ${input.id} not found`);
+				throw new NotFoundError(`absence ${input.id} not found`);
 			}
 
 			const type =
@@ -459,7 +460,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 				note: input.patch.note === undefined ? current.note : input.patch.note,
 			};
 			if (next.dateFrom > next.dateTo) {
-				throw new Error(`dateFrom (${next.dateFrom}) must not be after dateTo (${next.dateTo})`);
+				throw new ValidationError(`dateFrom (${next.dateFrom}) must not be after dateTo (${next.dateTo})`);
 			}
 
 			const changes = diffFields(
@@ -510,7 +511,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 		}): AbsenceRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`absence ${input.id} not found`);
+				throw new NotFoundError(`absence ${input.id} not found`);
 			}
 			if (current.status === input.status) {
 				return current;

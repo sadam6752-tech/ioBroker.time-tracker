@@ -12,6 +12,7 @@
 import type { Db } from "../db/database";
 import type { PayoutRecord, PayoutsRepository } from "../db/repositories/payouts";
 import type { AggregationService, MonthAggregateRecord, YearAggregateRecord } from "./aggregation";
+import { ValidationError } from "../errors";
 import { writeAuditLog } from "../db/repositories/audit";
 
 /** Data sources of the closing service. */
@@ -104,7 +105,7 @@ export function createClosingService(deps: ClosingDeps): ClosingService {
 	return {
 		closeMonth(input: CloseMonthInput): CloseMonthResult {
 			if (!Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
-				throw new Error(`month must be between 1 and 12 (got ${input.month})`);
+				throw new ValidationError(`month must be between 1 and 12 (got ${input.month})`);
 			}
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			const payoutMinutes = input.payoutMinutes ?? 0;

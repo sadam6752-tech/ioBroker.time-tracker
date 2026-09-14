@@ -8,6 +8,7 @@
 import type { Db } from "../database";
 import type { OvertimeModel } from "../../domain/calculation";
 import type { WorkProfile } from "../../domain/target";
+import { NotFoundError, ValidationError } from "../../errors";
 import { writeAuditLog, diffFields } from "./audit";
 
 /** A user as stored in the database. */
@@ -418,7 +419,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 		create(input: CreateUserInput): UserRecord {
 			const login = input.login.trim();
 			if (!login) {
-				throw new Error("login must not be empty");
+				throw new ValidationError("login must not be empty");
 			}
 			const existing = selectByLogin.get(login) as UserRow | undefined;
 			if (existing) {
@@ -483,7 +484,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 		update(input: UpdateUserInput): UserRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`user ${input.id} not found`);
+				throw new NotFoundError(`user ${input.id} not found`);
 			}
 
 			const now = input.now ?? Math.floor(Date.now() / 1000);
@@ -563,7 +564,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 			now?: number;
 		}): string[] {
 			if (!read(input.userId)) {
-				throw new Error(`user ${input.userId} not found`);
+				throw new NotFoundError(`user ${input.userId} not found`);
 			}
 			// resolve (and validate) all keys before the first write
 			const roleIds = resolveRoleIds(input.roleKeys);

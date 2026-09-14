@@ -7,6 +7,7 @@
  */
 
 import type { Db } from "../database";
+import { NotFoundError, ValidationError } from "../../errors";
 import { diffFields, writeAuditLog } from "./audit";
 
 /** A payout as stored in the database. */
@@ -132,7 +133,7 @@ export function mapPayoutRow(row: PayoutRow): PayoutRecord {
  */
 function requireYear(year: number): number {
 	if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-		throw new Error(`year must be a four digit year between 2000 and 2100 (got ${year})`);
+		throw new ValidationError(`year must be a four digit year between 2000 and 2100 (got ${year})`);
 	}
 	return year;
 }
@@ -148,7 +149,7 @@ function requireMonth(month: number | null): number | null {
 		return null;
 	}
 	if (!Number.isInteger(month) || month < 1 || month > 12) {
-		throw new Error(`month must be between 1 and 12 or null (got ${month})`);
+		throw new ValidationError(`month must be between 1 and 12 or null (got ${month})`);
 	}
 	return month;
 }
@@ -161,7 +162,7 @@ function requireMonth(month: number | null): number | null {
  */
 function requireMinutes(minutes: number): number {
 	if (!Number.isInteger(minutes) || minutes === 0) {
-		throw new Error(`minutes must be a whole number and not 0 (got ${minutes})`);
+		throw new ValidationError(`minutes must be a whole number and not 0 (got ${minutes})`);
 	}
 	return minutes;
 }
@@ -177,7 +178,7 @@ function requireAmount(amount: number | null): number | null {
 		return null;
 	}
 	if (!Number.isFinite(amount)) {
-		throw new Error(`amount must be a number or null (got ${amount})`);
+		throw new ValidationError(`amount must be a number or null (got ${amount})`);
 	}
 	return amount;
 }
@@ -263,7 +264,7 @@ export function createPayoutsRepository(db: Db): PayoutsRepository {
 		update(input: UpdatePayoutInput): PayoutRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`payout ${input.id} not found`);
+				throw new NotFoundError(`payout ${input.id} not found`);
 			}
 
 			const next: PayoutRecord = {

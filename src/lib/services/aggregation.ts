@@ -18,6 +18,7 @@ import type { RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository } from "../db/repositories/settings";
 import type { UsersRepository, WorkProfileRecord } from "../db/repositories/users";
 import type { WorkProfile } from "../domain/target";
+import { ValidationError } from "../errors";
 import { absenceDaysInRange, calculateDay, overtimeAfterPeriod } from "../domain/calculation";
 import { toPunchEntries } from "../db/repositories/entries";
 import { dateRange, daysInMonth, localDate as resolveLocalDate, utcToWallTime } from "../util/time";
@@ -636,7 +637,7 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 			options?: RecalculateOptions,
 		): MonthAggregateRecord {
 			if (!Number.isInteger(month) || month < 1 || month > 12) {
-				throw new Error(`month must be between 1 and 12 (got ${month})`);
+				throw new ValidationError(`month must be between 1 and 12 (got ${month})`);
 			}
 
 			const now = options?.now ?? Math.floor(Date.now() / 1000);

@@ -9,6 +9,7 @@
 import type { Db } from "../database";
 import { holidaysForYear, type HolidayCountry } from "../../domain/holidays";
 import { isDateString } from "../../util/time";
+import { ValidationError } from "../../errors";
 import { writeAuditLog } from "./audit";
 
 /** A public holiday as stored in the database. */
@@ -75,7 +76,7 @@ const COLUMNS = "id, region, year, date, name";
 function requireDate(date: string): string {
 	const trimmed = date.trim();
 	if (!isDateString(trimmed)) {
-		throw new Error(`invalid date "${date}", expected YYYY-MM-DD`);
+		throw new ValidationError(`invalid date "${date}", expected YYYY-MM-DD`);
 	}
 	return trimmed;
 }
@@ -161,7 +162,7 @@ export function createHolidaysRepository(db: Db): HolidaysRepository {
 			const date = requireDate(input.date);
 			const name = input.name.trim();
 			if (!name) {
-				throw new Error("name must not be empty");
+				throw new ValidationError("name must not be empty");
 			}
 			const region = input.region ?? DEFAULT_REGION;
 			const year = Number(date.slice(0, 4));

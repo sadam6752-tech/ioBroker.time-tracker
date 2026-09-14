@@ -8,6 +8,7 @@
 import type { Db } from "../database";
 import type { PunchEntry } from "../../domain/punch";
 import { utcToWallTime, localDate as resolveLocalDate } from "../../util/time";
+import { NotFoundError } from "../../errors";
 import { writeAuditLog, writeTimeEntryAudit, type FieldChange } from "./audit";
 
 /** Origin of a punch. */
@@ -345,7 +346,7 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 		}): EntryRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`entry ${input.id} not found`);
+				throw new NotFoundError(`entry ${input.id} not found`);
 			}
 			if (current.syncState === input.syncState) {
 				return current;
@@ -379,7 +380,7 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 		update(input: UpdateEntryInput): EntryRecord {
 			const current = read(input.id);
 			if (!current) {
-				throw new Error(`entry ${input.id} not found`);
+				throw new NotFoundError(`entry ${input.id} not found`);
 			}
 
 			const now = input.now ?? Math.floor(Date.now() / 1000);

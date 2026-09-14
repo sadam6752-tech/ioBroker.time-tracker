@@ -94,11 +94,11 @@ Write-Host "  Sprachen:        $($Languages -join ', ')"
 $components = @(
     [pscustomobject]@{
         Name = 'Adapter-Admin'
-        Dir  = [System.IO.Path]::Combine($root, 'adapter', 'admin', 'i18n')
+        Dir  = [System.IO.Path]::Combine($root, 'admin', 'i18n')
     },
     [pscustomobject]@{
         Name = 'PWA'
-        Dir  = [System.IO.Path]::Combine($root, 'pwa', 'src', 'i18n')
+        Dir  = [System.IO.Path]::Combine($root, 'src-pwa', 'src', 'i18n')
     }
 )
 
@@ -141,7 +141,7 @@ foreach ($component in $components) {
 }
 
 # --- io-package.json (Metadaten) ---------------------------------------------
-$ioPackagePath = [System.IO.Path]::Combine($root, 'adapter', 'io-package.json')
+$ioPackagePath = [System.IO.Path]::Combine($root, 'io-package.json')
 
 if (-not (Test-Path -LiteralPath $ioPackagePath)) {
     [void]$notes.Add('Metadaten: adapter/io-package.json fehlt – noch nicht implementiert, übersprungen')

@@ -1,0 +1,40 @@
+{
+	"cli": true,
+	"target": "directory",
+	"adapterName": "zeiterfassung",
+	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
+	"authorName": "Alex",
+	"authorGithub": "Alex1808",
+	"authorEmail": "sadam6752@gmail.com",
+	"gitRemoteProtocol": "HTTPS",
+	"dependabot": "yes",
+	"license": "MIT License",
+	"releaseScript": "yes",
+	"gitCommit": "no",
+	"defaultBranch": "main",
+	"startMode": "daemon",
+	"features": [
+		"adapter"
+	],
+	"connectionIndicator": "yes",
+	"type": "storage",
+	"adminFeatures": [],
+	"adminUi": "json",
+	"tabReact": "no",
+	"eslintConfig": "official",
+	"language": "TypeScript",
+	"title": "Time tracking",
+	"tools": [
+		"ESLint",
+		"code coverage"
+	],
+	"indentation": "Tab",
+	"quotes": "double",
+	"creatorVersion": "3.1.5",
+	"replay": "C:\\Users\\alex\\AppData\\Local\\Temp\\ca-replay\\.create-adapter.json",
+	"expert": "",
+	"connectionType": "",
+	"dataSource": "",
+	"nodeVersion": "20",
+	"devServer": "local"
+}

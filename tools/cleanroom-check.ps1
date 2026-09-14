@@ -17,7 +17,7 @@
 
 .PARAMETER SourcePaths
     Eigene Ordner oder Dateien (relativ zum Arbeitsverzeichnis).
-    Standard: adapter, pwa, shared, lib, src, docs, tools, README.md, CONTRIBUTING.md
+    Standard: src, src-pwa, src-shared, lib, admin, test, docs, tools, README.md, CONTRIBUTING.md
     Hinweis: Referenz-/Testdaten (Legacy-Baum, `fixtures/`) werden bewusst nicht geprüft.
 
 .PARAMETER MinLength
@@ -41,7 +41,7 @@
 [CmdletBinding()]
 param(
     [string]   $LegacyPath   = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'SmallTime-master')),
-    [string[]] $SourcePaths  = @('adapter', 'pwa', 'shared', 'lib', 'src', 'docs', 'tools', 'README.md', 'CONTRIBUTING.md'),
+    [string[]] $SourcePaths  = @('src', 'src-pwa', 'src-shared', 'lib', 'admin', 'test', 'docs', 'tools', 'README.md', 'CONTRIBUTING.md'),
     [int]      $MinLength    = 25,
     [string]   $ReportPath   = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, '..', 'docs', 'cleanroom-report.txt')),
     [int]      $MaxHitsShown = 20,
@@ -54,7 +54,7 @@ $ErrorActionPreference = 'Stop'
 $script:LegacyExtensions    = @('*.php', '*.js', '*.css')
 $script:SourceExtensions    = @('.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json',
                                 '.md', '.css', '.scss', '.html', '.sql', '.yml', '.yaml')
-$script:ExcludedDirectories = @('node_modules', '.git', 'dist', 'build', 'out', 'coverage',
+$script:ExcludedDirectories = @('node_modules', '.git', 'dist', 'build', 'www', 'out', 'coverage',
                                 '.cache', 'tmp', '.vite')
 $script:MaxSourceFileSize   = 2097152   # 2 MiB
 

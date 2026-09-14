@@ -1,3 +1,8 @@
+# No dot-directories except github/vscode
+.*/
+!.vscode/
+!.github/
+
 # ============================================================
 # Legacy-Referenz (SMALL-Time, AGPL-3.0) – NIEMALS ins Repository
 # ============================================================
@@ -13,35 +18,25 @@ docs/PROJECT_PROMPT.md
 LEGACY_MAPPING.md
 
 # ============================================================
-# Node / TypeScript
+# Build-Ausgaben (generiert – nie committen)
 # ============================================================
-node_modules/
-dist/
 build/
-out/
+www/
+src-pwa/dist/
+src-pwa/dev-dist/
+.vite/
 *.tsbuildinfo
+
+# ============================================================
+# Node / npm
+# ============================================================
+node_modules
+nbproject
+*.code-workspace
+iobroker.*.tgz
 npm-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# ============================================================
-# PWA / Vite
-# ============================================================
-pwa/dist/
-.vite/
-dev-dist/
-dev-dist/sw.js
-
-# generierter PWA-Build im Adapter (Quelle ist pwa/)
-adapter/www/**
-!adapter/www/.gitkeep
-
-# ============================================================
-# ioBroker
-# ============================================================
-iobroker-data/
-.admin/
-*.adapter-backup
 
 # ============================================================
 # Laufzeitdaten / Datenbank
@@ -49,22 +44,23 @@ iobroker-data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+iobroker-data/
+.admin/
 data/
 logs/
 *.log
 
 # ============================================================
-# Test-/Abdeckungsdaten
+# Tests / Coverage
 # ============================================================
-coverage/
+coverage
 test-results/
 playwright-report/
 .playwright/
 fixtures/generated/
 
-# generierter Clean-Room-Bericht (Ergebnis wird in docs/provenance.md dokumentiert)
+# generierte Berichte der Prüfwerkzeuge
 docs/cleanroom-report.txt
-# generierter i18n-Bericht
 docs/i18n-report.txt
 
 # ============================================================
@@ -73,9 +69,13 @@ docs/i18n-report.txt
 .env
 .env.*
 !.env.example
-.vscode/*
-!.vscode/extensions.json
-.idea/
-*.swp
 Thumbs.db
 Desktop.ini
+.commitinfo
+
+# NYC coverage files
+coverage
+
+# i18n intermediate files
+admin/i18n/flat.txt
+admin/i18n/*/flat.txt

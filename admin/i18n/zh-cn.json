@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "徽章链接秘密 (HMAC)",
+	"Bind address": "绑定地址",
+	"Calculate absences only until today": "仅计算今天之前的缺勤情况",
+	"Database file (empty = adapter data directory)": "数据库文件（空=适配器数据目录）",
+	"Days users may edit on their own": "用户可以自行编辑的天数",
+	"Default language for new users": "新用户的默认语言",
+	"Enable kiosk terminal": "启用自助服务终端",
+	"General": "一般的",
+	"Holiday country": "度假国家",
+	"Instance time zone": "实例时区",
+	"Keep database backups for days": "保留数据库备份数天",
+	"Legacy data directory for import (read-only)": "用于导入的旧数据目录（只读）",
+	"Migration and backup": "迁移与备份",
+	"Port": "港口",
+	"Round quick punches to minutes (0 = off)": "将快速出拳舍入为分钟（0 = 关闭）",
+	"Security": "安全",
+	"Session lifetime in minutes": "会话生命周期（分钟）",
+	"Session secret": "会话秘密",
+	"Subtract working time from absences": "从缺勤中减去工作时间",
+	"Time rules": "时间规则",
+	"zeiterfassung adapter settings": "zeiterfassung 的适配器设置"
+}

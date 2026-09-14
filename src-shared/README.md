@@ -1,4 +1,4 @@
-# shared/ – gemeinsame Typen und Validierung
+# src-shared/ – gemeinsame Typen und Validierung
 
 Hier liegen die Artefakte, die Adapter und PWA gemeinsam nutzen:
 

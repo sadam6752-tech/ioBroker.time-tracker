@@ -1,0 +1,135 @@
+{
+	"common": {
+		"name": "zeiterfassung",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"uk": "Початкова версія",
+				"zh-cn": "首次出版"
+			}
+		},
+		"titleLang": {
+			"en": "Time tracking",
+			"de": "Zeiterfassung",
+			"ru": "Учет времени",
+			"pt": "Controle de tempo",
+			"nl": "Tijdregistratie",
+			"fr": "Suivi du temps",
+			"it": "Monitoraggio del tempo",
+			"es": "Seguimiento del tiempo",
+			"pl": "Śledzenie czasu",
+			"uk": "Відстеження часу",
+			"zh-cn": "时间追踪"
+		},
+		"desc": {
+			"en": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
+			"de": "Zeiterfassung (Ein-/Ausstempeln) für ioBroker mit Web-App, Ausweisterminal und Berichten",
+			"ru": "Учет времени (время прихода/ухода) для ioBroker с помощью веб-приложения, терминала бейджей и отчетов",
+			"pt": "Rastreamento de tempo (entrada/saída) para ioBroker com aplicativo web, terminal de crachá e relatórios",
+			"nl": "Urenregistratie (in-/uitklokken) voor ioBroker met webapp, badgeterminal en rapporten",
+			"fr": "Suivi du temps (pointage d'entrée/sortie) pour ioBroker avec application web, terminal de badge et rapports",
+			"it": "Monitoraggio del tempo (timbratura/uscita) per ioBroker con web app, terminale badge e report",
+			"es": "Seguimiento del tiempo (entrada/salida) para ioBroker con aplicación web, terminal de credencial e informes",
+			"pl": "Śledzenie czasu (wejście/wyłączenie) dla ioBroker z aplikacją internetową, terminalem identyfikacyjnym i raportami",
+			"uk": "Відстеження часу (прихід/вихід) для ioBroker із веб-додатком, терміналом бейджів і звітами",
+			"zh-cn": "通过网络应用程序、徽章终端和报告对 ioBroker 进行时间跟踪（上下班打卡）"
+		},
+		"authors": [
+			"Alex <sadam6752@gmail.com>"
+		],
+		"keywords": [
+			"template",
+			"automation",
+			"IoT",
+			"integration"
+		],
+		"licenseInformation": {
+			"type": "free",
+			"license": "MIT"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "zeiterfassung.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/Alex1808/ioBroker.zeiterfassung/main/admin/zeiterfassung.png",
+		"readme": "https://github.com/Alex1808/ioBroker.zeiterfassung/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "storage",
+		"connectionType": "local",
+		"dataSource": "push",
+		"compact": false,
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=7.0.23"
+			}
+		]
+	},
+	"protectedNative": [
+		"sessionSecret",
+		"hmacSecret"
+	],
+	"encryptedNative": [
+		"sessionSecret",
+		"hmacSecret"
+	],
+	"native": {
+		"port": 8082,
+		"bind": "0.0.0.0",
+		"dbPath": "",
+		"timezone": "Europe/Zurich",
+		"defaultLanguage": "de",
+		"holidayCountry": "CH",
+		"sessionSecret": "",
+		"hmacSecret": "",
+		"sessionTtlMinutes": 720,
+		"editWindowDays": 7,
+		"quickRoundMinutes": 0,
+		"absenceCalcUntilToday": true,
+		"absenceDeductWorktime": false,
+		"backupRetentionDays": 30,
+		"legacyDataDir": "",
+		"kioskEnabled": false
+	},
+	"objects": [],
+	"instanceObjects": [
+		{
+			"_id": "info",
+			"type": "channel",
+			"common": {
+				"name": "Information"
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.connection",
+			"type": "state",
+			"common": {
+				"role": "indicator.connected",
+				"name": "Device or service connected",
+				"type": "boolean",
+				"read": true,
+				"write": false,
+				"def": false
+			},
+			"native": {}
+		}
+	]
+}

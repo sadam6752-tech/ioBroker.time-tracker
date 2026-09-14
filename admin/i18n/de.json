@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "Geheimnis für Badge-Links (HMAC)",
+	"Bind address": "Bind-Adresse",
+	"Calculate absences only until today": "Abwesenheiten nur bis heute berechnen",
+	"Database file (empty = adapter data directory)": "Datenbankdatei (leer = Datenverzeichnis des Adapters)",
+	"Days users may edit on their own": "Tage, die Benutzer selbst bearbeiten dürfen",
+	"Default language for new users": "Standardsprache für neue Benutzer",
+	"Enable kiosk terminal": "Kiosk-Terminal aktivieren",
+	"General": "Allgemein",
+	"Holiday country": "Land für Feiertage",
+	"Instance time zone": "Zeitzone der Instanz",
+	"Keep database backups for days": "Datenbank-Backups aufbewahren für Tage",
+	"Legacy data directory for import (read-only)": "Altdaten-Verzeichnis für den Import (nur lesen)",
+	"Migration and backup": "Migration und Backup",
+	"Port": "Port",
+	"Round quick punches to minutes (0 = off)": "Schnellstempel auf Minuten runden (0 = aus)",
+	"Security": "Sicherheit",
+	"Session lifetime in minutes": "Sitzungsdauer in Minuten",
+	"Session secret": "Sitzungsgeheimnis",
+	"Subtract working time from absences": "Arbeitszeit von Abwesenheiten abziehen",
+	"Time rules": "Zeitregeln",
+	"zeiterfassung adapter settings": "Adaptereinstellungen für Zeiterfassung"
+}

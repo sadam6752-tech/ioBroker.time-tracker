@@ -1,0 +1,208 @@
+{
+	"i18n": true,
+	"type": "tabs",
+	"items": {
+		"general": {
+			"type": "panel",
+			"label": "General",
+			"items": {
+				"port": {
+					"type": "number",
+					"label": "Port",
+					"min": 1,
+					"max": 65535,
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"bind": {
+					"type": "text",
+					"label": "Bind address",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"timezone": {
+					"type": "text",
+					"label": "Instance time zone",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"defaultLanguage": {
+					"type": "select",
+					"label": "Default language for new users",
+					"options": [
+						{ "label": "English", "value": "en" },
+						{ "label": "Deutsch", "value": "de" },
+						{ "label": "Русский", "value": "ru" },
+						{ "label": "Português", "value": "pt" },
+						{ "label": "Nederlands", "value": "nl" },
+						{ "label": "Français", "value": "fr" },
+						{ "label": "Italiano", "value": "it" },
+						{ "label": "Español", "value": "es" },
+						{ "label": "Polski", "value": "pl" },
+						{ "label": "Українська", "value": "uk" },
+						{ "label": "中文", "value": "zh-cn" }
+					],
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"holidayCountry": {
+					"type": "select",
+					"label": "Holiday country",
+					"options": [
+						{ "label": "Switzerland", "value": "CH" },
+						{ "label": "Germany", "value": "DE" },
+						{ "label": "Austria", "value": "AT" }
+					],
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"dbPath": {
+					"type": "text",
+					"label": "Database file (empty = adapter data directory)",
+					"xs": 12,
+					"sm": 12,
+					"md": 8,
+					"lg": 6,
+					"xl": 6
+				},
+				"kioskEnabled": {
+					"type": "checkbox",
+					"label": "Enable kiosk terminal",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				}
+			}
+		},
+		"security": {
+			"type": "panel",
+			"label": "Security",
+			"items": {
+				"sessionSecret": {
+					"type": "password",
+					"label": "Session secret",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 6,
+					"lg": 4,
+					"xl": 4
+				},
+				"hmacSecret": {
+					"type": "password",
+					"label": "Badge link secret (HMAC)",
+					"xs": 12,
+					"sm": 12,
+					"md": 6,
+					"lg": 4,
+					"xl": 4
+				},
+				"sessionTtlMinutes": {
+					"type": "number",
+					"label": "Session lifetime in minutes",
+					"min": 5,
+					"max": 43200,
+					"xs": 12,
+					"sm": 12,
+					"md": 6,
+					"lg": 2,
+					"xl": 2
+				},
+				"editWindowDays": {
+					"type": "number",
+					"label": "Days users may edit on their own",
+					"min": 0,
+					"max": 365,
+					"xs": 12,
+					"sm": 12,
+					"md": 6,
+					"lg": 2,
+					"xl": 2
+				}
+			}
+		},
+		"rules": {
+			"type": "panel",
+			"label": "Time rules",
+			"items": {
+				"quickRoundMinutes": {
+					"type": "number",
+					"label": "Round quick punches to minutes (0 = off)",
+					"min": 0,
+					"max": 60,
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"absenceCalcUntilToday": {
+					"type": "checkbox",
+					"label": "Calculate absences only until today",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"absenceDeductWorktime": {
+					"type": "checkbox",
+					"label": "Subtract working time from absences",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				}
+			}
+		},
+		"backup": {
+			"type": "panel",
+			"label": "Migration and backup",
+			"items": {
+				"legacyDataDir": {
+					"type": "text",
+					"label": "Legacy data directory for import (read-only)",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 8,
+					"lg": 6,
+					"xl": 6
+				},
+				"backupRetentionDays": {
+					"type": "number",
+					"label": "Keep database backups for days",
+					"min": 0,
+					"max": 3650,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 2,
+					"xl": 2
+				}
+			}
+		}
+	}
+}

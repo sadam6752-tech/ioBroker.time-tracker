@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "Секретная ссылка на значок (HMAC)",
+	"Bind address": "Привязать адрес",
+	"Calculate absences only until today": "Рассчитывать отсутствия только до сегодняшнего дня",
+	"Database file (empty = adapter data directory)": "Файл базы данных (пустой = каталог данных адаптера)",
+	"Days users may edit on their own": "Дни, когда пользователи могут редактировать самостоятельно",
+	"Default language for new users": "Язык по умолчанию для новых пользователей",
+	"Enable kiosk terminal": "Включить киоск-терминал",
+	"General": "Общий",
+	"Holiday country": "Страна отдыха",
+	"Instance time zone": "Часовой пояс экземпляра",
+	"Keep database backups for days": "Храните резервные копии базы данных в течение нескольких дней",
+	"Legacy data directory for import (read-only)": "Каталог устаревших данных для импорта (только для чтения)",
+	"Migration and backup": "Миграция и резервное копирование",
+	"Port": "Порт",
+	"Round quick punches to minutes (0 = off)": "Округлить быстрые удары до минут (0 = выкл.)",
+	"Security": "Безопасность",
+	"Session lifetime in minutes": "Время жизни сессии в минутах",
+	"Session secret": "Секрет сеанса",
+	"Subtract working time from absences": "Вычтите рабочее время из отсутствий",
+	"Time rules": "Правила времени",
+	"zeiterfassung adapter settings": "Настройки адаптера для zeiterfassung"
+}

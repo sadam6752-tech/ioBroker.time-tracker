@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "Segredo do link do crachá (HMAC)",
+	"Bind address": "Endereço de vinculação",
+	"Calculate absences only until today": "Calcular faltas apenas até hoje",
+	"Database file (empty = adapter data directory)": "Arquivo de banco de dados (vazio = diretório de dados do adaptador)",
+	"Days users may edit on their own": "Dias em que os usuários podem editar por conta própria",
+	"Default language for new users": "Idioma padrão para novos usuários",
+	"Enable kiosk terminal": "Habilitar terminal de quiosque",
+	"General": "Em geral",
+	"Holiday country": "País de férias",
+	"Instance time zone": "Fuso horário da instância",
+	"Keep database backups for days": "Mantenha backups de banco de dados por dias",
+	"Legacy data directory for import (read-only)": "Diretório de dados legado para importação (somente leitura)",
+	"Migration and backup": "Migração e backup",
+	"Port": "Porta",
+	"Round quick punches to minutes (0 = off)": "Arredondar socos rápidos para minutos (0 = desativado)",
+	"Security": "Segurança",
+	"Session lifetime in minutes": "Duração da sessão em minutos",
+	"Session secret": "Segredo da sessão",
+	"Subtract working time from absences": "Subtraia o tempo de trabalho das ausências",
+	"Time rules": "Regras de tempo",
+	"zeiterfassung adapter settings": "Configurações do adaptador para zeiterfassung"
+}

@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "Badgelinkgeheim (HMAC)",
+	"Bind address": "Bind adres",
+	"Calculate absences only until today": "Bereken de afwezigheden tot en met vandaag",
+	"Database file (empty = adapter data directory)": "Databasebestand (leeg = adaptergegevensmap)",
+	"Days users may edit on their own": "Dagen waarop gebruikers zelf kunnen bewerken",
+	"Default language for new users": "Standaardtaal voor nieuwe gebruikers",
+	"Enable kiosk terminal": "Schakel kioskterminal in",
+	"General": "Algemeen",
+	"Holiday country": "Vakantie land",
+	"Instance time zone": "Tijdzone van instantie",
+	"Keep database backups for days": "Bewaar databaseback-ups dagenlang",
+	"Legacy data directory for import (read-only)": "Verouderde gegevensmap voor import (alleen-lezen)",
+	"Migration and backup": "Migratie en back-up",
+	"Port": "Haven",
+	"Round quick punches to minutes (0 = off)": "Snelle stoten afronden op minuten (0 = uit)",
+	"Security": "Beveiliging",
+	"Session lifetime in minutes": "Sessielevensduur in minuten",
+	"Session secret": "Sessiegeheim",
+	"Subtract working time from absences": "Trek de werktijd af van de afwezigheden",
+	"Time rules": "Tijd regels",
+	"zeiterfassung adapter settings": "Adapterinstellingen voor zeiterfassung"
+}

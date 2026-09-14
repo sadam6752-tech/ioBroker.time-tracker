@@ -89,8 +89,8 @@ Spezifikation.
 | Lizenz | `LICENSE` | ja |
 | Mitwirkungsregeln (Clean Room) | `CONTRIBUTING.md` | ja |
 | Herkunftsnachweis | `docs/provenance.md` | ja (belegt die unabhängige Umsetzung) |
-| Quellcode | `adapter/`, `pwa/`, `shared/`, `tools/` | ja |
-| Sprachdateien (11 Sprachen) | `adapter/admin/i18n/`, `pwa/src/i18n/` | ja (Übersetzungen willkommen) |
+| Quellcode | `src/`, `src-pwa/`, `src-shared/`, `tools/` | ja |
+| Sprachdateien (11 Sprachen) | `admin/i18n/`, `src-pwa/src/i18n/` | ja (Übersetzungen willkommen) |
 | Übersetzer-Doku | `docs/i18n.md` | ja |
 | Interne Spezifikation | außerhalb dieses Repositories | **nein** |
 | Prüfbericht | `docs/cleanroom-report.txt` | nein (generiert, `.gitignore`) |

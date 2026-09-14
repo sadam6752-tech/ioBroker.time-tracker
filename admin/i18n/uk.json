@@ -1,0 +1,23 @@
+{
+	"Badge link secret (HMAC)": "Секрет посилання на значок (HMAC)",
+	"Bind address": "Прив'язати адресу",
+	"Calculate absences only until today": "Розрахувати пропуски тільки до сьогодні",
+	"Database file (empty = adapter data directory)": "Файл бази даних (порожній = каталог даних адаптера)",
+	"Days users may edit on their own": "Дні користувачі можуть редагувати самостійно",
+	"Default language for new users": "Мова за умовчанням для нових користувачів",
+	"Enable kiosk terminal": "Увімкнути термінал кіоску",
+	"General": "Загальний",
+	"Holiday country": "Святкова країна",
+	"Instance time zone": "Часовий пояс екземпляра",
+	"Keep database backups for days": "Зберігайте резервні копії бази даних протягом кількох днів",
+	"Legacy data directory for import (read-only)": "Застарілий каталог даних для імпорту (лише читання)",
+	"Migration and backup": "Міграція та резервне копіювання",
+	"Port": "Порт",
+	"Round quick punches to minutes (0 = off)": "Округліть швидкі удари до хвилин (0 = вимкнено)",
+	"Security": "Безпека",
+	"Session lifetime in minutes": "Тривалість сеансу в хвилинах",
+	"Session secret": "Секрет сеансу",
+	"Subtract working time from absences": "Відніміть робочий час із прогулів",
+	"Time rules": "Правила часу",
+	"zeiterfassung adapter settings": "Налаштування адаптера для zeiterfassung"
+}

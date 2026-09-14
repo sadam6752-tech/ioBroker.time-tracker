@@ -1,0 +1,23 @@
+{
+	"zeiterfassung adapter settings": "Adapter settings for zeiterfassung",
+	"General": "General",
+	"Security": "Security",
+	"Time rules": "Time rules",
+	"Migration and backup": "Migration and backup",
+	"Port": "Port",
+	"Bind address": "Bind address",
+	"Instance time zone": "Instance time zone",
+	"Default language for new users": "Default language for new users",
+	"Holiday country": "Holiday country",
+	"Database file (empty = adapter data directory)": "Database file (empty = adapter data directory)",
+	"Enable kiosk terminal": "Enable kiosk terminal",
+	"Session secret": "Session secret",
+	"Badge link secret (HMAC)": "Badge link secret (HMAC)",
+	"Session lifetime in minutes": "Session lifetime in minutes",
+	"Days users may edit on their own": "Days users may edit on their own",
+	"Round quick punches to minutes (0 = off)": "Round quick punches to minutes (0 = off)",
+	"Calculate absences only until today": "Calculate absences only until today",
+	"Subtract working time from absences": "Subtract working time from absences",
+	"Legacy data directory for import (read-only)": "Legacy data directory for import (read-only)",
+	"Keep database backups for days": "Keep database backups for days"
+}

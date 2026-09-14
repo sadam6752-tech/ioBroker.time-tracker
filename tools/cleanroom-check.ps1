@@ -76,6 +76,12 @@ function Get-LegacyFragments {
 
             foreach ($candidate in $candidates) {
                 $normalized = ($candidate -replace '\s+', ' ').Trim()
+
+                # Trennlinien und reine Satzzeichen (z. B. "------------------") tragen keinen Inhalt und
+                # koennen daher keine Uebernahme sein - sie werden ignoriert, damit sie keine Fehltreffer
+                # erzeugen.
+                if ($normalized -notmatch '[A-Za-z0-9]') { continue }
+
                 if ($normalized.Length -ge $MinLength) { [void]$fragments.Add($normalized) }
             }
         }

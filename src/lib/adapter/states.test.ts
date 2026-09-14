@@ -7,6 +7,9 @@
 
 /// <reference types="mocha" />
 import { expect } from "chai";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository } from "../db/repositories/absences";
@@ -17,12 +20,14 @@ import { createRulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
 import { createAggregationService, type AggregationService } from "../services/aggregation";
+import { createBackupService } from "../services/backup";
 import { createClosingService, type ClosingService } from "../services/closing";
 import { createSyncService, type SyncService } from "../services/sync";
 import { handleCommand, type CommandDeps } from "./commands";
 import {
 	COMMAND_IDS,
 	createCommandStates,
+	createInfoStates,
 	publishAllUserStates,
 	publishUserSnapshot,
 	readUserSnapshot,
@@ -121,6 +126,16 @@ describe("adapter states and commands", () => {
 
 			const punchUserId = recorder.objects.get(COMMAND_IDS.punchUserId);
 			expect(punchUserId?.common).to.deep.include({ type: "number", write: true });
+		});
+
+		it("creates the informational states", async () => {
+			await createInfoStates(recorder);
+
+			expect(recorder.objects.get("info")?.type).to.equal("channel");
+			expect(recorder.objects.get("info.lastBackup")?.common).to.deep.include({
+				type: "number",
+				role: "value.time",
+			});
 		});
 
 		it("creates one channel per employee and publishes the figures", async () => {
@@ -231,6 +246,24 @@ describe("adapter states and commands", () => {
 
 			settings.set("command_punch_user_id", annaId);
 			expect(handleCommand(deps(), COMMAND_IDS.punch, true).message).to.contain("Anna");
+		});
+
+		it("writes a backup on the button state", () => {
+			const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-command-backup-"));
+			try {
+				const backup = createBackupService({ db, dir, now: () => now });
+
+				expect(handleCommand(deps(), COMMAND_IDS.backup, false).ok).to.equal(false);
+				const result = handleCommand({ ...deps(), backup }, COMMAND_IDS.backup, true);
+				expect(result.ok).to.equal(true);
+				expect(result.message).to.contain("backup zeiterfassung-");
+				expect(backup.list()).to.have.lengthOf(1);
+
+				// an instance without the service refuses instead of doing nothing silently
+				expect(() => handleCommand(deps(), COMMAND_IDS.backup, true)).to.throw("no backup service");
+			} finally {
+				fs.rmSync(dir, { recursive: true, force: true });
+			}
 		});
 	});
 });

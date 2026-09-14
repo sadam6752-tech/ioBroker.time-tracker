@@ -34,9 +34,29 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(punch?.common).to.include({ type: "boolean", role: "button", read: false, write: true });
 				const closeMonth = await harness.objects.getObject("zeiterfassung.0.commands.closeMonth");
 				expect(closeMonth?.common).to.include({ type: "string", write: true });
+				const backup = await harness.objects.getObject("zeiterfassung.0.commands.backup");
+				expect(backup?.common).to.include({ type: "boolean", role: "button", read: false, write: true });
 
 				const connection = await harness.states.getState("zeiterfassung.0.info.connection");
 				expect(connection?.val).to.equal(true);
+			});
+
+			it("writes a backup when the command state is triggered", async () => {
+				await harness.states.setState("zeiterfassung.0.commands.backup", { val: true, ack: false });
+				await new Promise(resolve => setTimeout(resolve, 750));
+
+				// show what the adapter said, so a failure is diagnosable
+				if (!harness.hasLog(/backup zeiterfassung-.*\.sqlite written/)) {
+					console.log(`adapter logs:\n${harness.getLogs().map(log => log.message).join("\n")}`);
+				}
+				expect(harness.hasLog(/backup zeiterfassung-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.sqlite written/)).to.equal(
+					true,
+				);
+
+				// the instant of the newest backup is published for dashboards
+				const lastBackup = await harness.states.getState("zeiterfassung.0.info.lastBackup");
+				expect(lastBackup?.val).to.be.a("number");
+				expect(Number(lastBackup?.val)).to.be.greaterThan(0);
 			});
 
 			it("starts the HTTP API on the configured port", async () => {

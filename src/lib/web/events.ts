@@ -16,7 +16,8 @@ export type EventType =
 	| "absence.change"
 	| "month.close"
 	| "terminal.punch"
-	| "rfid.scan";
+	| "rfid.scan"
+	| "backup.create";
 
 /** One live event. */
 export interface ApiEvent {

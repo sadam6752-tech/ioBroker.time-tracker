@@ -12,6 +12,7 @@ import type { SettingsRepository } from "../db/repositories/settings";
 import type { UsersRepository } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { ClosingService } from "../services/closing";
+import type { BackupService } from "../services/backup";
 import { ValidationError } from "../errors";
 import { buildDayPunches, nextDirection, roundToStep, type PunchEntry } from "../domain/punch";
 import { localDate as resolveLocalDate } from "../util/time";
@@ -31,6 +32,8 @@ export interface CommandDeps {
 	aggregation: Pick<AggregationService, "recalculateDay" | "recalculateMonth" | "recalculateYear">;
 	/** Closing service (month close) */
 	closing: Pick<ClosingService, "closeMonth">;
+	/** Backup service (button `commands.backup`), optional */
+	backup?: Pick<BackupService, "create">;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
 }
@@ -176,6 +179,23 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
 			ok: true,
 			message: `${target.displayName} punched ${direction} (${day.workedMin} min today, open: ${day.hasOpenEntry})`,
 			recalculated: [stored.entry.localDate],
+		};
+	}
+
+	if (id === COMMAND_IDS.backup) {
+		if (value !== true) {
+			// buttons only act on `true`
+			return { ok: false, message: "ignored (buttons act on true)", recalculated: [] };
+		}
+		if (!deps.backup) {
+			throw new ValidationError("this instance has no backup service");
+		}
+
+		const created = deps.backup.create({ actorId: 0, reason: "command state" });
+		return {
+			ok: true,
+			message: `backup ${created.backup.name} written (${created.backup.sizeBytes} bytes, ${created.backup.entries} punches), ${created.removed.length} old file(s) removed`,
+			recalculated: [],
 		};
 	}
 

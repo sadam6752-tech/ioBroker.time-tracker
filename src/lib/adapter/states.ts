@@ -68,6 +68,8 @@ export const COMMAND_IDS = {
 	closeMonth: "commands.closeMonth",
 	/** Recalculate a period, value `YYYY-MM` or `YYYY` */
 	recalc: "commands.recalc",
+	/** Write a backup of the database */
+	backup: "commands.backup",
 } as const;
 
 /**
@@ -287,5 +289,25 @@ export async function createCommandStates(port: StatePort): Promise<void> {
 			"text",
 			{ write: true },
 		),
+	);
+	await port.setObjectNotExists(
+		COMMAND_IDS.backup,
+		stateObject({ en: "Write a database backup", de: "Datenbank-Sicherung schreiben" }, "boolean", "button", {
+			read: false,
+			write: true,
+		}),
+	);
+}
+
+/**
+ * Creates the informational states of the instance.
+ *
+ * @param port - state port
+ */
+export async function createInfoStates(port: StatePort): Promise<void> {
+	await port.setObjectNotExists("info", channelObject({ en: "Information", de: "Information" }));
+	await port.setObjectNotExists(
+		"info.lastBackup",
+		stateObject({ en: "Last backup", de: "Letzte Sicherung" }, "number", "value.time"),
 	);
 }

@@ -1,5 +1,8 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository, type AbsencesRepository } from "../db/repositories/absences";
@@ -14,6 +17,7 @@ import { createUsersRepository, type UsersRepository } from "../db/repositories/
 import { createAggregationService, type AggregationService } from "../services/aggregation";
 import { createAuthService, hashPassword, type AuthService } from "../services/auth";
 import { createSyncService, type SyncService } from "../services/sync";
+import { createBackupService, type BackupService } from "../services/backup";
 import { createApi, type Api } from "./api";
 import type { HttpResponse } from "./router";
 
@@ -37,6 +41,8 @@ describe("web api", () => {
 	let sync: SyncService;
 	let auth: AuthService;
 	let settings: SettingsRepository;
+	let backup: BackupService;
+	let backupDir: string;
 	let api: Api;
 	let annaId: number;
 	let adminId: number;
@@ -119,6 +125,8 @@ describe("web api", () => {
 			settings,
 		});
 		sync = createSyncService({ db, entries, users, aggregation });
+		backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-api-backup-"));
+		backup = createBackupService({ db, dir: backupDir, now: () => 1000 });
 		api = createApi({
 			db,
 			auth,
@@ -133,6 +141,7 @@ describe("web api", () => {
 			aggregation,
 			sync,
 			settings,
+			backup,
 			kioskEnabled: true,
 			hmacSecret: TAG_SECRET,
 			now: () => 1000,
@@ -160,6 +169,7 @@ describe("web api", () => {
 	});
 
 	afterEach(() => {
+		fs.rmSync(backupDir, { recursive: true, force: true });
 		db.close();
 	});
 
@@ -1567,6 +1577,48 @@ describe("web api", () => {
 				headers: headers(adminToken, adminCsrf),
 			});
 			expect(ok.status).to.equal(200);
+		});
+	});
+
+	describe("backups", () => {
+		it("needs backup.run and lists nothing before the first copy", async () => {
+			const forbidden = await send("GET", "/backup", { headers: headers(annaToken) });
+			expect(forbidden.status).to.equal(403);
+			expect(bodyOf(forbidden).code).to.equal("permission_denied");
+
+			const empty = await send("GET", "/backup", { headers: headers(adminToken) });
+			expect(empty.status).to.equal(200);
+			expect(bodyOf(empty)).to.deep.include({ retentionDays: 30 });
+			expect(bodyOf<{ backups: unknown[] }>(empty).backups).to.deep.equal([]);
+
+			const refused = await send("POST", "/backup", { headers: headers(annaToken, annaCsrf) });
+			expect(refused.status).to.equal(403);
+		});
+
+		it("takes a copy on request and reports it in the list", async () => {
+			const created = await send("POST", "/backup", { headers: headers(adminToken, adminCsrf) });
+			expect(created.status).to.equal(201);
+			const payload = bodyOf<{
+				backup: { name: string; sizeBytes: number; users: number; entries: number; schemaVersion: number };
+				removed: string[];
+			}>(created);
+			expect(payload.removed).to.deep.equal([]);
+			expect(payload.backup.name).to.equal("zeiterfassung-1970-01-01T00-16-40.sqlite");
+			expect(payload.backup.sizeBytes).to.be.greaterThan(0);
+			expect(payload.backup.users).to.be.greaterThan(0);
+			expect(payload.backup.schemaVersion).to.be.greaterThan(0);
+
+			const list = await send("GET", "/backup", { headers: headers(adminToken) });
+			expect(bodyOf<{ backups: { name: string }[] }>(list).backups.map(file => file.name)).to.deep.equal([
+				payload.backup.name,
+			]);
+
+			// the file really exists on disk and the audit trail knows who wrote it
+			expect(fs.existsSync(path.join(backupDir, payload.backup.name))).to.equal(true);
+			const audit = db
+				.prepare("SELECT actor_id AS actorId FROM audit_log WHERE action = 'backup.create'")
+				.get() as { actorId: number };
+			expect(audit.actorId).to.equal(adminId);
 		});
 	});
 

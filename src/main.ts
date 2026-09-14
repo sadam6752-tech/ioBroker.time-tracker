@@ -25,8 +25,9 @@ import type { SettingsRepository } from "./lib/db/repositories/settings";
 import { createAggregationService, type AggregationService } from "./lib/services/aggregation";
 import { createAuthService } from "./lib/services/auth";
 import { createClosingService, type ClosingService } from "./lib/services/closing";
+import { createBackupService, type BackupService } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
-import { COMMAND_IDS, createCommandStates, publishAllUserStates } from "./lib/adapter/states";
+import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { handleCommand } from "./lib/adapter/commands";
 import { createApi } from "./lib/web/api";
 import type { EventBus } from "./lib/web/events";
@@ -41,6 +42,9 @@ const SESSION_PURGE_MINUTES = 30;
 /** How often the published figures are refreshed (minutes). */
 const STATE_REFRESH_MINUTES = 5;
 
+/** How old the newest backup may be before the daily check writes a new one. */
+const BACKUP_MAX_AGE_HOURS = 20;
+
 /** Services created at startup. */
 interface AdapterServices {
 	users: UsersRepository;
@@ -50,6 +54,7 @@ interface AdapterServices {
 	aggregation: AggregationService;
 	sync: SyncService;
 	closing: ClosingService;
+	backup: BackupService;
 }
 
 class Zeiterfassung extends utils.Adapter {
@@ -120,6 +125,10 @@ class Zeiterfassung extends utils.Adapter {
 			// figures are refreshed regularly (the timer is cleared automatically on unload)
 			this.setInterval(() => void this.refreshStates(), STATE_REFRESH_MINUTES * 60 * 1000);
 
+			// one backup per day: the check runs every hour, so a missed run is caught up after a restart
+			await this.runScheduledBackup();
+			this.setInterval(() => void this.runScheduledBackup(), 60 * 60 * 1000);
+
 			// Service is ready
 			await this.setState("info.connection", true, true);
 		} catch (error) {
@@ -181,6 +190,12 @@ class Zeiterfassung extends utils.Adapter {
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
 		const closing = createClosingService({ db, aggregation, payouts });
+		// backups live next to the database file: `<data dir>/backups/zeiterfassung-<timestamp>.sqlite`
+		const backup = createBackupService({
+			db,
+			dir: path.join(path.dirname(this.databaseFile()), "backups"),
+			retentionDays: Math.max(0, Number(this.config.backupRetentionDays ?? 30) || 0),
+		});
 		const api = createApi({
 			db,
 			auth,
@@ -195,12 +210,13 @@ class Zeiterfassung extends utils.Adapter {
 			aggregation,
 			sync,
 			settings,
+			backup,
 			kioskEnabled: this.config.kioskEnabled === true,
 			hmacSecret: this.config.hmacSecret,
 			version: this.version,
 		});
 
-		this.services = { users, entries, absences, settings, aggregation, sync, closing };
+		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup };
 		this.events = api.events;
 		this.log.debug(`API routes: ${api.routes().length}`);
 
@@ -260,11 +276,57 @@ class Zeiterfassung extends utils.Adapter {
 	private async subscribeCommands(): Promise<void> {
 		try {
 			await createCommandStates(this);
+			await createInfoStates(this);
 			await this.subscribeStatesAsync("commands.*");
 			this.log.debug("command states ready");
 		} catch (error) {
 			this.log.warn(`command states could not be created: ${(error as Error).message}`);
 		}
+	}
+
+	/**
+	 * Writes a backup unless a recent one exists.
+	 *
+	 * The check runs hourly and once at start: a nightly backup therefore happens within an hour at the latest,
+	 * and an instance that was down for days does not write a burst of copies.
+	 */
+	private async runScheduledBackup(): Promise<void> {
+		const backup = this.services?.backup;
+		if (!backup) {
+			return;
+		}
+		try {
+			const newest = backup.list()[0];
+			const ageHours = newest ? (Date.now() / 1000 - newest.createdAt) / 3600 : Number.POSITIVE_INFINITY;
+			if (ageHours < BACKUP_MAX_AGE_HOURS) {
+				this.log.debug(`backup ${newest?.name ?? ""} is ${ageHours.toFixed(1)} h old, nothing to do`);
+				return;
+			}
+
+			const created = backup.create({ actorId: null, reason: "scheduled" });
+			this.log.info(
+				`backup ${created.backup.name} written (${created.backup.sizeBytes} bytes, ${created.backup.users} employees, ${created.backup.entries} punches), ${created.removed.length} old file(s) removed`,
+			);
+			await this.announceBackup(created.backup.name, created.backup.createdAt);
+		} catch (error) {
+			this.log.warn(`backup failed: ${(error as Error).message}`);
+		}
+	}
+
+	/**
+	 * Publishes the instant of a written backup.
+	 *
+	 * @param name - file name of the backup
+	 * @param createdAt - instant the backup belongs to
+	 */
+	private async announceBackup(name: string, createdAt: number): Promise<void> {
+		await this.setState("info.lastBackup", createdAt, true);
+		this.events?.publish({
+			type: "backup.create",
+			atUtc: createdAt,
+			userId: null,
+			data: { backup: name },
+		});
 	}
 
 	/**
@@ -310,6 +372,7 @@ class Zeiterfassung extends utils.Adapter {
 					settings: services.settings,
 					aggregation: services.aggregation,
 					closing: services.closing,
+					backup: services.backup,
 				},
 				id,
 				value,
@@ -325,12 +388,19 @@ class Zeiterfassung extends utils.Adapter {
 					data: { period: String(value ?? "") },
 				});
 			}
+			// a manual backup reports its file the same way the scheduled one does
+			if (id === COMMAND_IDS.backup && result.ok) {
+				const newest = services.backup.list()[0];
+				if (newest) {
+					await this.announceBackup(newest.name, newest.createdAt);
+				}
+			}
 		} catch (error) {
 			this.log.warn(`command ${id} failed: ${(error as Error).message}`);
 		}
 
 		// buttons are stateless: always release them again
-		if (id === COMMAND_IDS.punch || id === COMMAND_IDS.quickPunch) {
+		if (id === COMMAND_IDS.punch || id === COMMAND_IDS.quickPunch || id === COMMAND_IDS.backup) {
 			await this.setState(id, false, true);
 		}
 		await this.refreshStates();

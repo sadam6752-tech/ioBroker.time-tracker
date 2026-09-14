@@ -35,6 +35,7 @@ import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
 import { checkPasswordPolicy, hashPassword, verifyPassword } from "../services/auth";
 import type { SyncService } from "../services/sync";
+import type { BackupService } from "../services/backup";
 import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
@@ -83,6 +84,8 @@ export interface ApiDeps {
 	sync: SyncService;
 	/** Instance settings */
 	settings: SettingsRepository;
+	/** Backup service; without it the backup endpoints are not registered */
+	backup?: BackupService;
 	/** Live event bus; a private one is created when it is not given */
 	events?: EventBus;
 	/** Instant source, defaults to the system clock */
@@ -2281,6 +2284,33 @@ export function createApi(deps: ApiDeps): Api {
 			});
 		},
 	);
+
+	// backups (administration); the read side lists what exists, the write side takes a new copy
+
+	if (deps.backup) {
+		const backup = deps.backup;
+
+		route("GET", "/backup", { permission: "backup.run" }, () =>
+			json(200, {
+				retentionDays: settings.getNumber("backup_retention_days", 30),
+				backups: backup.list(),
+			}),
+		);
+
+		route(
+			"POST",
+			"/backup",
+			{ permission: "backup.run", csrf: true, rateLimit: { name: "backup", limit: 10, windowSeconds: 60 } },
+			context => {
+				const created = backup.create({
+					actorId: context.auth?.user.id ?? null,
+					reason: "api",
+				});
+				emit({ type: "backup.create", userId: null, data: { backup: created.backup.name } });
+				return json(201, { backup: created.backup, removed: created.removed });
+			},
+		);
+	}
 
 	// system
 

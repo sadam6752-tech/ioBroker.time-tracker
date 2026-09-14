@@ -73,6 +73,9 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 - **Sprachen (i18n):** Anzeigetexte ausschließlich aus den Sprachdateien; neue Texte **nur** in der englischen
   Basisdatei ergänzen und danach `npm run translate` ausführen. Details: [`docs/i18n.md`](docs/i18n.md).
 - **Commits:** kurze, sachliche Beschreibung im Imperativ; ein Commit pro logischer Änderung.
+- **Integrationstest:** Er läuft gegen das **gebaute** Paket (`npm pack` aus `build/`). Vor
+  `npm run test:integration` deshalb immer `npm run build` ausführen — sonst prüft der Test stillschweigend den
+  vorherigen Stand (sichtbar daran, dass neue Log-Ausgaben im Testlauf fehlen).
 - **Zeilenenden und Formatierung:** Zeilenenden sind **LF** (`.gitattributes`, `.editorconfig`, Prettier);
   CRLF lässt `npm run lint` mit hunderten `prettier/prettier`-Fehlern scheitern. Formatierung deshalb mit
   `npx prettier --write "src/**/*.ts"` korrigieren und **nicht** mit `eslint --fix`: `--fix` ergänzt für

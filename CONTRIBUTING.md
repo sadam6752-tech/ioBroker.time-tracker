@@ -50,8 +50,11 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 
 - **TypeScript** (strict), ESLint mit `@iobroker/eslint-config`, Prettier; keine deutschen Bezeichner
   im Code (Ausnahme: fachliche Begriffe, die bewusst so dokumentiert sind, z. B. `vorholzeit_per_year`).
-- **Tests:** Vitest (Unit/Integration), Playwright (E2E, PWA); Testnamen beschreiben Szenario und
-  Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
+- **Adapter-Tests:** `@iobroker/testing` — `tests.packageFiles` (prüft `package.json`/`io-package.json`) und
+  `tests.integration` gegen einen js-controller; die mitgelieferten Unit-Mocks sind deprecated.
+- **Eigene Logik:** Vitest für Berechnung, Import-Parser und Zeitzonen-Fälle, Playwright für E2E der PWA;
+  Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
+- **Generiertes:** `build/` und `www/` werden erzeugt und nie direkt bearbeitet.
 - **Zeiten:** intern immer UTC-Epoch **und** Minuten-Ganzzahlen; Anzeige über Benutzer-Zeitzone.
 - **Datenbank:** Änderungen ausschließlich über versionierte Migrationen (`schema_migrations`).
 - **Fehler:** API-Fehler als `application/problem+json` mit stabilen Fehlercodes (gemäß interner Spezifikation).

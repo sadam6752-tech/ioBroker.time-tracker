@@ -4,7 +4,7 @@
 	"adapterName": "zeiterfassung",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"authorName": "Alex",
-	"authorGithub": "Alex1808",
+	"authorGithub": "sadam6752-tech",
 	"authorEmail": "sadam6752@gmail.com",
 	"gitRemoteProtocol": "HTTPS",
 	"dependabot": "yes",
@@ -31,10 +31,9 @@
 	"indentation": "Tab",
 	"quotes": "double",
 	"creatorVersion": "3.1.5",
-	"replay": "C:\\Users\\alex\\AppData\\Local\\Temp\\ca-replay\\.create-adapter.json",
 	"expert": "",
-	"connectionType": "",
-	"dataSource": "",
+	"connectionType": "local",
+	"dataSource": "push",
 	"nodeVersion": "20",
 	"devServer": "local"
 }

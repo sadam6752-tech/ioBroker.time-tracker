@@ -9,7 +9,7 @@ updates:
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
     assignees:
-      - Alex1808
+      - sadam6752-tech
     versioning-strategy: increase
 
   - package-ecosystem: github-actions
@@ -21,4 +21,4 @@ updates:
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
     assignees:
-      - Alex1808
+      - sadam6752-tech

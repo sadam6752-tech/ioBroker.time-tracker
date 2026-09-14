@@ -7,7 +7,7 @@
     "email": "sadam6752@gmail.com"
   },
   "contributors": [],
-  "homepage": "https://github.com/Alex1808/ioBroker.zeiterfassung",
+  "homepage": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung",
   "license": "MIT",
   "keywords": [
     "time tracking",
@@ -20,7 +20,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Alex1808/ioBroker.zeiterfassung.git"
+    "url": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung.git"
   },
   "engines": {
     "node": ">= 20"
@@ -98,7 +98,7 @@
     "instrument": true
   },
   "bugs": {
-    "url": "https://github.com/Alex1808/ioBroker.zeiterfassung/issues"
+    "url": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung/issues"
   },
   "readmeFilename": "README.md"
 }

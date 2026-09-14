@@ -8,7 +8,7 @@
 
 [![NPM](https://nodei.co/npm/iobroker.zeiterfassung.png?downloads=true)](https://nodei.co/npm/iobroker.zeiterfassung/)
 
-**Tests:** ![Test and Release](https://github.com/Alex1808/ioBroker.zeiterfassung/workflows/Test%20and%20Release/badge.svg)
+**Tests:** ![Test and Release](https://github.com/sadam6752-tech/ioBroker.zeiterfassung/workflows/Test%20and%20Release/badge.svg)
 
 ## zeiterfassung adapter for ioBroker
 
@@ -104,8 +104,8 @@ the local SQLite file; access is role-based and corrections are audited.
 
 ## Links
 
-- Repository: https://github.com/Alex1808/ioBroker.zeiterfassung
-- Issues: https://github.com/Alex1808/ioBroker.zeiterfassung/issues
+- Repository: https://github.com/sadam6752-tech/ioBroker.zeiterfassung
+- Issues: https://github.com/sadam6752-tech/ioBroker.zeiterfassung/issues
 - ioBroker forum: https://forum.iobroker.net/
 
 ## Development

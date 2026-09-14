@@ -184,6 +184,49 @@ describe("entries repository", () => {
 		expect(repo.remove({ id: entry.id, actorId: adminId })).to.equal(false);
 	});
 
+	it("finds a punch by its idempotency key and lists punches by sync state", () => {
+		const stored = repo.insert({
+			userId,
+			tsUtc: t0,
+			timeZone: zurich,
+			idempotencyKey: "offline-1",
+			syncState: "conflict",
+			now: 1000,
+		}).entry;
+		repo.insert({ userId, tsUtc: t0 + 3600, timeZone: zurich, now: 1000 });
+
+		expect(repo.findByIdempotencyKey(userId, "offline-1")?.id).to.equal(stored.id);
+		expect(repo.findByIdempotencyKey(userId, "unknown")).to.equal(null);
+		expect(repo.findByIdempotencyKey(adminId, "offline-1")).to.equal(null);
+		expect(repo.listBySyncState(userId, "conflict").map(entry => entry.id)).to.deep.equal([stored.id]);
+		expect(repo.listBySyncState(userId, "pending")).to.deep.equal([]);
+	});
+
+	it("moves a punch between synchronisation states", () => {
+		const stored = repo.insert({ userId, tsUtc: t0, timeZone: zurich, syncState: "conflict", now: 1000 }).entry;
+
+		const synced = repo.setSyncState({
+			id: stored.id,
+			syncState: "synced",
+			actorId: adminId,
+			reason: "clock corrected",
+			now: 2000,
+		});
+
+		expect(synced.syncState).to.equal("synced");
+		expect(repo.listBySyncState(userId, "conflict")).to.deep.equal([]);
+		// the revision is untouched, the change is audited
+		expect(synced.revision).to.equal(stored.revision);
+		expect(countAuditLog(db, "entry.sync_state")).to.equal(1);
+
+		// setting the same state again does nothing
+		repo.setSyncState({ id: stored.id, syncState: "synced", actorId: adminId });
+		expect(countAuditLog(db, "entry.sync_state")).to.equal(1);
+		expect(() => repo.setSyncState({ id: 999, syncState: "synced", actorId: adminId })).to.throw(
+			"entry 999 not found",
+		);
+	});
+
 	it("lists punches by date and range in chronological order", () => {
 		repo.insert({ userId, tsUtc: t0 + 10 * 3600, timeZone: zurich, now: 1000 });
 		repo.insert({ userId, tsUtc: t0 + 8 * 3600, timeZone: zurich, now: 1000 });

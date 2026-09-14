@@ -127,6 +127,19 @@ export interface EntriesRepository {
 	listByDate(userId: number, localDate: string): EntryRecord[];
 	/** Changes a punch; throws `RevisionConflictError` when the revision does not match */
 	update(input: UpdateEntryInput): EntryRecord;
+	/** Punches of one user with a given synchronisation state (newest first) */
+	listBySyncState(userId: number, syncState: EntrySyncState): EntryRecord[];
+	/** Punch that was stored with the given idempotency key, `null` when unknown */
+	findByIdempotencyKey(userId: number, idempotencyKey: string): EntryRecord | null;
+	/** Moves a punch into another synchronisation state (resolving offline conflicts) */
+	setSyncState(input: {
+		id: number;
+		syncState: EntrySyncState;
+		actorId: number;
+		reason?: string | null;
+		actorIp?: string | null;
+		now?: number;
+	}): EntryRecord;
 	/** Deletes a punch and records the deletion in the audit trail */
 	remove(input: {
 		id: number;
@@ -207,6 +220,9 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 	const selectByDate = db.prepare(
 		`SELECT ${COLUMNS} FROM time_entries WHERE user_id = ? AND local_date = ? ORDER BY ts_utc, id`,
 	);
+	const selectBySyncState = db.prepare(
+		`SELECT ${COLUMNS} FROM time_entries WHERE user_id = ? AND sync_state = ? ORDER BY ts_utc DESC, id DESC`,
+	);
 	const insertRow = db.prepare(
 		`INSERT INTO time_entries
 		 (user_id, ts_utc, client_ts_utc, ts_local, local_date, direction, source, idempotency_key,
@@ -220,6 +236,9 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 		 WHERE id = ? AND revision = ?`,
 	);
 	const deleteRow = db.prepare("DELETE FROM time_entries WHERE id = ?");
+	const updateSyncState = db.prepare(
+		"UPDATE time_entries SET sync_state = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+	);
 
 	const read = (id: number): EntryRecord | null => {
 		const row = selectById.get(id) as EntryRow | undefined;
@@ -304,6 +323,57 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 		listByDate(userId: number, localDate: string): EntryRecord[] {
 			const rows = selectByDate.all(userId, localDate) as EntryRow[];
 			return rows.map(mapEntryRow);
+		},
+
+		listBySyncState(userId: number, syncState: EntrySyncState): EntryRecord[] {
+			const rows = selectBySyncState.all(userId, syncState) as EntryRow[];
+			return rows.map(mapEntryRow);
+		},
+
+		findByIdempotencyKey(userId: number, idempotencyKey: string): EntryRecord | null {
+			const row = selectByIdempotency.get(userId, idempotencyKey) as EntryRow | undefined;
+			return row ? mapEntryRow(row) : null;
+		},
+
+		setSyncState(input: {
+			id: number;
+			syncState: EntrySyncState;
+			actorId: number;
+			reason?: string | null;
+			actorIp?: string | null;
+			now?: number;
+		}): EntryRecord {
+			const current = read(input.id);
+			if (!current) {
+				throw new Error(`entry ${input.id} not found`);
+			}
+			if (current.syncState === input.syncState) {
+				return current;
+			}
+
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				updateSyncState.run(input.syncState, now, input.actorId, input.id);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "entry.sync_state",
+					entity: "time_entry",
+					entityId: input.id,
+					detail: {
+						changes: { syncState: { old: current.syncState, new: input.syncState } },
+						reason: input.reason ?? null,
+					},
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			const updated = read(input.id);
+			if (!updated) {
+				throw new Error(`entry ${input.id} disappeared right after the sync state change`);
+			}
+			return updated;
 		},
 
 		update(input: UpdateEntryInput): EntryRecord {

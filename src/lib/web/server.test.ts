@@ -32,6 +32,7 @@ describe("web server", () => {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const holidays = createHolidaysRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({ db, users, settings, secret: "server-test-secret" });
 		const aggregation = createAggregationService({
@@ -39,12 +40,23 @@ describe("web server", () => {
 			users,
 			entries,
 			absences,
-			holidays: createHolidaysRepository(db),
+			holidays,
 			rules: createRulesRepository(db),
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
-		const api = createApi({ db, auth, users, entries, absences, aggregation, sync, settings, now: () => 1000 });
+		const api = createApi({
+			db,
+			auth,
+			users,
+			entries,
+			absences,
+			holidays,
+			aggregation,
+			sync,
+			settings,
+			now: () => 1000,
+		});
 
 		const hash = hashPassword(password, { cost: 1024 });
 		users.create({ login: "anna", displayName: "Anna", passwordHash: hash, roleKeys: ["employee"] });

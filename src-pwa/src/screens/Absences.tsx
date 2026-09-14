@@ -11,6 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -41,6 +42,13 @@ export function Absences(): React.JSX.Element {
 
 	const mayRequest = hasPermission(permissions, "absence.request");
 	const list = useQuery({ queryKey: ["absences", year], queryFn: () => api.absences(year) });
+	const types = useQuery({
+		queryKey: ["absence-types"],
+		queryFn: () => api.absenceTypes(),
+		enabled: mayRequest,
+		staleTime: 5 * 60_000,
+	});
+	const availableTypes = types.data ?? [];
 
 	const create = useMutation({
 		mutationFn: () =>
@@ -152,13 +160,34 @@ export function Absences(): React.JSX.Element {
 							onSubmit={submit}
 						>
 							<Stack spacing={2}>
-								<TextField
-									label={t("absences.type")}
-									value={typeCode}
-									required
-									size="small"
-									onChange={event => setTypeCode(event.target.value)}
-								/>
+								{availableTypes.length > 0 ? (
+									<TextField
+										select
+										label={t("absences.type")}
+										value={typeCode}
+										required
+										size="small"
+										onChange={event => setTypeCode(event.target.value)}
+									>
+										{availableTypes.map(type => (
+											<MenuItem
+												key={type.id}
+												value={type.code}
+											>
+												{type.code} – {type.name}
+											</MenuItem>
+										))}
+									</TextField>
+								) : (
+									<TextField
+										label={t("absences.type")}
+										value={typeCode}
+										required
+										size="small"
+										helperText={t("absences.typeHint")}
+										onChange={event => setTypeCode(event.target.value)}
+									/>
+								)}
 								<TextField
 									label={t("absences.from")}
 									type="date"

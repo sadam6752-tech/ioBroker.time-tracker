@@ -65,6 +65,7 @@
 	"absences.to": "To",
 	"absences.status": "Status",
 	"absences.portion": "Day share",
+	"absences.typeHint": "Code of the absence type, e.g. F for vacation",
 	"absences.create": "Request absence",
 	"absences.created": "Absence requested.",
 	"absences.empty": "No absences in this year.",

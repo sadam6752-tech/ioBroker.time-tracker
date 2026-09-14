@@ -34,6 +34,30 @@ export interface AbsenceTypeRecord {
 	isActive: boolean;
 }
 
+/** Input for creating or updating an absence type. */
+export interface UpsertAbsenceTypeInput {
+	/** Owner, `null` (default) for the global types */
+	userId?: number | null;
+	/** Short code, e.g. `F` for vacation */
+	code: string;
+	/** Display name */
+	name: string;
+	/** True when the absence is paid, defaults to `true` */
+	paid?: boolean;
+	/** Percentage of the working time credited (defaults to `100`) */
+	factor?: number;
+	/** True for vacation, which reduces the vacation balance, defaults to `false` */
+	reduceVacation?: boolean;
+	/** False hides the type but keeps its history, defaults to `true` */
+	isActive?: boolean;
+	/** Who creates or changes the type */
+	actorId: number;
+	/** Client IP address of the actor */
+	actorIp?: string | null;
+	/** Instant of the change, defaults to now */
+	now?: number;
+}
+
 /** An absence as stored in the database. */
 export interface AbsenceRecord {
 	/** Primary key */
@@ -145,6 +169,8 @@ export interface AbsencesRepository {
 	types(options?: { userId?: number | null; includeInactive?: boolean }): AbsenceTypeRecord[];
 	/** Resolves a type by id or code, user specific types win over the global ones */
 	findType(reference: number | string, userId?: number | null): AbsenceTypeRecord | null;
+	/** Creates an absence type or updates the existing one with the same code */
+	upsertType(input: UpsertAbsenceTypeInput): { type: AbsenceTypeRecord; created: boolean };
 	/** Reads an absence by id */
 	findById(id: number): AbsenceRecord | null;
 	/** Creates an absence and audits it */
@@ -316,6 +342,13 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	);
 	const updateStatusStatement = db.prepare("UPDATE absences SET status = ? WHERE id = ?");
 	const deleteAbsence = db.prepare("DELETE FROM absences WHERE id = ?");
+	const insertType = db.prepare(
+		`INSERT INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	);
+	const updateType = db.prepare(
+		`UPDATE absence_types SET name = ?, paid = ?, factor = ?, reduce_vacation = ?, is_active = ? WHERE id = ?`,
+	);
 
 	const read = (id: number): AbsenceRecord | null => {
 		const row = selectAbsenceById.get(id) as AbsenceRow | undefined;
@@ -381,6 +414,71 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 
 		findType(reference: number | string, userId?: number | null): AbsenceTypeRecord | null {
 			return resolveType(reference, userId);
+		},
+
+		upsertType(input: UpsertAbsenceTypeInput): { type: AbsenceTypeRecord; created: boolean } {
+			const userId = input.userId ?? null;
+			const code = input.code.trim().toUpperCase();
+			if (!/^[A-Za-z0-9_-]{1,8}$/.test(code)) {
+				throw new ValidationError(`code must be 1 to 8 letters, digits, "-" or "_" (got "${input.code}")`);
+			}
+			const name = input.name.trim();
+			if (!name) {
+				throw new ValidationError("name is required");
+			}
+			const factor = input.factor ?? 100;
+			if (!Number.isInteger(factor) || factor < 0 || factor > 100) {
+				throw new ValidationError(`factor must be a whole number between 0 and 100 (got ${input.factor})`);
+			}
+			const paid = input.paid ?? true;
+			const reduceVacation = input.reduceVacation ?? false;
+			const isActive = input.isActive ?? true;
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+
+			const existing = resolveType(code, userId);
+			let typeId = existing?.id ?? 0;
+
+			const run = db.transaction((): void => {
+				if (existing) {
+					updateType.run(name, paid ? 1 : 0, factor, reduceVacation ? 1 : 0, isActive ? 1 : 0, existing.id);
+				} else {
+					const result = insertType.run(
+						userId,
+						code,
+						name,
+						paid ? 1 : 0,
+						factor,
+						reduceVacation ? 1 : 0,
+						isActive ? 1 : 0,
+					);
+					typeId = Number(result.lastInsertRowid);
+				}
+
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					ip: input.actorIp ?? null,
+					action: existing ? "absence_type.update" : "absence_type.create",
+					entity: "absence_types",
+					entityId: typeId,
+					detail: { code, userId, name, paid, factor, reduceVacation, isActive },
+				});
+			});
+			run();
+
+			const type = existing
+				? { ...existing, name, paid, factor, reduceVacation, isActive }
+				: {
+						id: typeId,
+						userId,
+						code,
+						name,
+						paid,
+						factor,
+						reduceVacation,
+						isActive,
+					};
+			return { type, created: existing === null };
 		},
 
 		findById: read,

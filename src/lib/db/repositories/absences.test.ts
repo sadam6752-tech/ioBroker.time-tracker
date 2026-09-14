@@ -89,6 +89,64 @@ describe("absences repository", () => {
 			expect(repo.types().map(type => type.code)).to.not.include("M");
 			expect(repo.types({ includeInactive: true }).map(type => type.code)).to.include("M");
 		});
+
+		it("creates a type and updates the same code instead of duplicating it", () => {
+			const created = repo.upsertType({
+				code: "S",
+				name: "Sonderurlaub",
+				factor: 100,
+				actorId: adminId,
+				now: 1000,
+			});
+
+			expect(created.created).to.equal(true);
+			expect(created.type).to.deep.include({ code: "S", name: "Sonderurlaub", userId: null, isActive: true });
+			expect(created.type.id).to.be.greaterThan(0);
+			expect(countAudit("absence_type.create")).to.equal(1);
+
+			// codes are normalised to upper case, so a lower case entry means the same type
+			const updated = repo.upsertType({
+				code: "s",
+				name: "Sonderurlaub bezahlt",
+				paid: false,
+				factor: 80,
+				reduceVacation: true,
+				actorId: adminId,
+				now: 2000,
+			});
+
+			expect(updated.created).to.equal(false);
+			expect(updated.type.id).to.equal(created.type.id);
+			expect(updated.type).to.deep.include({ name: "Sonderurlaub bezahlt", paid: false, factor: 80 });
+			expect(countAudit("absence_type.update")).to.equal(1);
+			expect(lastDetail("absence_type.update")).to.deep.include({ code: "S", factor: 80 });
+			expect(repo.types().filter(type => type.code.toUpperCase() === "S")).to.have.lengthOf(1);
+
+			// deactivating keeps the type and its history but hides it from the default list
+			const deactivated = repo.upsertType({
+				code: "S",
+				name: "Sonderurlaub (inaktiv)",
+				isActive: false,
+				actorId: adminId,
+				now: 3000,
+			});
+			expect(deactivated.created).to.equal(false);
+			expect(repo.types().map(type => type.code)).to.not.include("S");
+			expect(repo.types({ includeInactive: true }).map(type => type.code)).to.include("S");
+			expect(repo.findType("S", null)?.id).to.equal(created.type.id);
+		});
+
+		it("refuses impossible codes and factors", () => {
+			expect(() => repo.upsertType({ code: "  ", name: "X", actorId: adminId })).to.throw(/code must be/);
+			expect(() => repo.upsertType({ code: "zu lang!", name: "X", actorId: adminId })).to.throw(/code must be/);
+			expect(() => repo.upsertType({ code: "S", name: "   ", actorId: adminId })).to.throw(/name is required/);
+			expect(() => repo.upsertType({ code: "S", name: "X", factor: 120, actorId: adminId })).to.throw(
+				/factor must be/,
+			);
+			expect(() => repo.upsertType({ code: "S", name: "X", factor: 1.5, actorId: adminId })).to.throw(
+				/factor must be/,
+			);
+		});
 	});
 
 	describe("create", () => {

@@ -4,7 +4,7 @@ import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository, type AbsencesRepository } from "../db/repositories/absences";
 import { createEntriesRepository, type EntriesRepository } from "../db/repositories/entries";
-import { createHolidaysRepository } from "../db/repositories/holidays";
+import { createHolidaysRepository, type HolidaysRepository } from "../db/repositories/holidays";
 import { createRulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
@@ -22,6 +22,7 @@ describe("web api", () => {
 	let users: UsersRepository;
 	let entries: EntriesRepository;
 	let absences: AbsencesRepository;
+	let holidays: HolidaysRepository;
 	let aggregation: AggregationService;
 	let sync: SyncService;
 	let auth: AuthService;
@@ -91,6 +92,7 @@ describe("web api", () => {
 		users = createUsersRepository(db);
 		entries = createEntriesRepository(db);
 		absences = createAbsencesRepository(db);
+		holidays = createHolidaysRepository(db);
 		settings = createSettingsRepository(db);
 		auth = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3 });
 		aggregation = createAggregationService({
@@ -98,12 +100,24 @@ describe("web api", () => {
 			users,
 			entries,
 			absences,
-			holidays: createHolidaysRepository(db),
+			holidays,
 			rules: createRulesRepository(db),
 			settings,
 		});
 		sync = createSyncService({ db, entries, users, aggregation });
-		api = createApi({ db, auth, users, entries, absences, aggregation, sync, settings, now: () => 1000 });
+		api = createApi({
+			db,
+			auth,
+			users,
+			entries,
+			absences,
+			holidays,
+			aggregation,
+			sync,
+			settings,
+			now: () => 1000,
+			version: "9.9.9",
+		});
 
 		// a cheap hash keeps the tests fast; the default cost is covered by the auth tests
 		const hash = hashPassword(password, { cost: 1024 });
@@ -528,6 +542,195 @@ describe("web api", () => {
 			});
 			expect(approved.status).to.equal(200);
 			expect(bodyOf<{ absence: { status: string } }>(approved).absence.status).to.equal("taken");
+		});
+	});
+
+	describe("master data", () => {
+		it("lists absence types and keeps them with the matching permission", async () => {
+			const list = await send("GET", "/absence-types", { headers: headers(annaToken) });
+			expect(list.status).to.equal(200);
+			const types = bodyOf<{ types: { code: string; name: string; factor: number }[] }>(list).types;
+			expect(types.map(type => type.code)).to.include("F");
+			expect(types.find(type => type.code === "W")?.factor).to.equal(50);
+
+			// managing types needs `absence.manage_types`
+			expect(
+				(
+					await send("POST", "/absence-types", {
+						body: { code: "S", name: "Sonderurlaub" },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+
+			const created = await send("POST", "/absence-types", {
+				body: { code: "S", name: "Sonderurlaub", factor: 100 },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			expect(bodyOf(created)).to.deep.include({ created: true });
+			expect(bodyOf<{ type: { code: string; name: string } }>(created).type).to.deep.include({
+				code: "S",
+				name: "Sonderurlaub",
+			});
+
+			// the same code updates the existing type instead of creating a second one
+			const updated = await send("POST", "/absence-types", {
+				body: { code: "s", name: "Sonderurlaub bezahlt" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(updated.status).to.equal(200);
+			expect(bodyOf(updated)).to.deep.include({ created: false });
+			expect(bodyOf<{ type: { name: string } }>(updated).type.name).to.equal("Sonderurlaub bezahlt");
+			expect(absences.types().filter(type => type.code === "S")).to.have.lengthOf(1);
+
+			// a code that is not a short key is refused
+			expect(
+				(
+					await send("POST", "/absence-types", {
+						body: { code: "zu lang!", name: "X" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+		});
+
+		it("lists, adds and removes holidays", async () => {
+			const seeded = await send("GET", "/holidays", { headers: headers(annaToken), query: { year: "2026" } });
+			expect(seeded.status).to.equal(200);
+			expect(bodyOf<{ holidays: unknown[] }>(seeded).holidays.length).to.be.greaterThan(0);
+
+			// the year is required and the calendar is an administrative topic
+			expect((await send("GET", "/holidays", { headers: headers(annaToken) })).status).to.equal(400);
+			expect(
+				(
+					await send("POST", "/holidays", {
+						body: { date: "2026-06-01", name: "Brückentag" },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+
+			const created = await send("POST", "/holidays", {
+				body: { date: "2026-06-01", name: "Brückentag" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const holidayId = bodyOf<{ holiday: { id: number; year: number } }>(created).holiday.id;
+			expect(created.headers.location).to.equal(`/holidays/${holidayId}`);
+
+			const listed = await send("GET", "/holidays", { headers: headers(adminToken), query: { year: "2026" } });
+			expect(
+				bodyOf<{ holidays: { date: string }[] }>(listed).holidays.some(
+					holiday => holiday.date === "2026-06-01",
+				),
+			).to.equal(true);
+
+			const removed = await send("DELETE", `/holidays/${holidayId}`, {
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(removed.status).to.equal(204);
+			expect(
+				(await send("DELETE", `/holidays/${holidayId}`, { headers: headers(adminToken, adminCsrf) })).status,
+			).to.equal(404);
+		});
+
+		it("reads and changes instance settings through a whitelist", async () => {
+			// `settings.view` and `settings.edit` are administrative rights
+			expect((await send("GET", "/settings", { headers: headers(annaToken) })).status).to.equal(403);
+
+			const read = await send("GET", "/settings", { headers: headers(adminToken) });
+			expect(read.status).to.equal(200);
+			expect(bodyOf<{ settings: Record<string, string> }>(read).settings).to.have.property("quick_round_minutes");
+
+			const changed = await send("PUT", "/settings", {
+				body: { quick_round_minutes: 15, absence_calc_until_today: false },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(changed.status).to.equal(200);
+			expect(settings.get("quick_round_minutes")).to.equal("15");
+			expect(settings.get("absence_calc_until_today")).to.equal("false");
+
+			// unknown keys, unsupported values and an empty body are client errors
+			expect(
+				(await send("PUT", "/settings", { body: { unbekannt: "1" }, headers: headers(adminToken, adminCsrf) }))
+					.status,
+			).to.equal(400);
+			expect(
+				(
+					await send("PUT", "/settings", {
+						body: { edit_window_days: { a: 1 } },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			expect(
+				(await send("PUT", "/settings", { body: {}, headers: headers(adminToken, adminCsrf) })).status,
+			).to.equal(400);
+
+			// values that look like secrets are never handed out
+			settings.set("session_secret", "geheim", adminId);
+			const filtered = await send("GET", "/settings", { headers: headers(adminToken) });
+			expect(bodyOf<{ settings: Record<string, string> }>(filtered).settings).to.not.have.property(
+				"session_secret",
+			);
+		});
+
+		it("changes and deletes an absence", async () => {
+			const created = await send("POST", "/absences", {
+				body: { typeCode: "F", dateFrom: "2026-07-06" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			const absenceId = bodyOf<{ absence: { id: number } }>(created).absence.id;
+
+			// the own absence may be corrected, the state is an approval
+			const moved = await send("PATCH", `/absences/${absenceId}`, {
+				body: { dateTo: "2026-07-08", note: "verlängert" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(moved.status).to.equal(200);
+			expect(bodyOf<{ absence: { dateTo: string; note: string } }>(moved).absence).to.deep.include({
+				dateTo: "2026-07-08",
+				note: "verlängert",
+			});
+
+			expect(
+				(
+					await send("PATCH", `/absences/${absenceId}`, {
+						body: { status: "taken" },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+			expect(
+				(
+					await send("PATCH", `/absences/${absenceId}`, {
+						body: { status: "taken" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(200);
+			expect(
+				(
+					await send("PATCH", `/absences/${absenceId}`, {
+						body: { status: "irgendwas" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+
+			expect(
+				(await send("DELETE", `/absences/${absenceId}`, { headers: headers(annaToken, annaCsrf) })).status,
+			).to.equal(204);
+			expect(
+				(await send("DELETE", `/absences/${absenceId}`, { headers: headers(annaToken, annaCsrf) })).status,
+			).to.equal(404);
+		});
+
+		it("reports the adapter version without a session", async () => {
+			const version = await send("GET", "/version");
+			expect(version.status).to.equal(200);
+			expect(bodyOf(version)).to.deep.equal({ name: "iobroker.zeiterfassung", version: "9.9.9" });
 		});
 	});
 

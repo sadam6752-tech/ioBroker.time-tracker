@@ -15,14 +15,16 @@
  */
 
 import type { Db } from "../db/database";
-import type { AbsencesRepository } from "../db/repositories/absences";
+import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
-import type { SettingsRepository } from "../db/repositories/settings";
+import type { HolidaysRepository } from "../db/repositories/holidays";
+import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
 import type { UsersRepository } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
 import type { SyncService } from "../services/sync";
 import { NotFoundError, ValidationError } from "../errors";
+import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
 import { localDate } from "../util/time";
 import { problem } from "./problem";
@@ -48,6 +50,8 @@ export interface ApiDeps {
 	entries: EntriesRepository;
 	/** Absence storage */
 	absences: AbsencesRepository;
+	/** Holiday storage */
+	holidays: HolidaysRepository;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -56,6 +60,8 @@ export interface ApiDeps {
 	settings: SettingsRepository;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
+	/** Version reported by `GET /version` */
+	version?: string;
 }
 
 /** A registered route (used for the documentation). */
@@ -128,6 +134,86 @@ function optionalNumber(body: Record<string, unknown>, field: string): number | 
 }
 
 /**
+ * Settings an administrator must not see through the API, even when they are compatible with the stored form.
+ * They are matched case-insensitively and may occur anywhere in the key.
+ */
+const SECRET_SETTING_KEYS = ["secret", "password", "token", "hash", "apikey"];
+
+/** Settings whose value may be a nested structure (arrays and objects). */
+const JSON_SETTINGS = ["pause_staffel"];
+
+/**
+ * Settings that may be changed through the API: the instance defaults from the seed plus the structured ones.
+ *
+ * The list is derived from the defaults on purpose — a setting the adapter does not know would silently be
+ * ignored by the services, so it is refused instead.
+ *
+ * @returns editable setting keys
+ */
+function editableSettings(): string[] {
+	return [...Object.keys(SETTING_DEFAULTS), ...JSON_SETTINGS];
+}
+
+/**
+ * Removes settings that look like secrets from a read.
+ *
+ * @param all - all stored settings
+ * @returns the settings that may be shown
+ */
+function readableSettings(all: Record<string, string>): Record<string, string> {
+	const result: Record<string, string> = {};
+	for (const [key, value] of Object.entries(all)) {
+		const lower = key.toLowerCase();
+		if (SECRET_SETTING_KEYS.some(marker => lower.includes(marker))) {
+			continue;
+		}
+		result[key] = value;
+	}
+	return result;
+}
+
+/**
+ * Checks whether a value may be stored as a setting.
+ *
+ * @param value - value from the request body
+ * @param allowStructured - true for settings that may hold arrays or objects
+ * @returns true when the value is supported
+ */
+function isSettingValue(value: unknown, allowStructured: boolean): boolean {
+	if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+		return typeof value !== "number" || Number.isFinite(value);
+	}
+	if (!allowStructured) {
+		return false;
+	}
+	if (Array.isArray(value)) {
+		return value.every(entry => isSettingValue(entry, true));
+	}
+	return (
+		typeof value === "object" &&
+		Object.values(value as Record<string, unknown>).every(entry => isSettingValue(entry, true))
+	);
+}
+
+/**
+ * Reads an optional boolean field.
+ *
+ * @param body - parsed request body
+ * @param field - field name
+ * @returns the value or `null`
+ */
+function optionalBoolean(body: Record<string, unknown>, field: string): boolean | null {
+	const value = body[field];
+	if (value === undefined || value === null) {
+		return null;
+	}
+	if (typeof value !== "boolean") {
+		throw new ValidationError(`${field} must be a boolean`);
+	}
+	return value;
+}
+
+/**
  * Reads a numeric path parameter.
  *
  * @param context - route context
@@ -195,7 +281,7 @@ function resolveScope(
  * @returns API with its router
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, aggregation, sync, settings } = deps;
+	const { auth, users, entries, absences, holidays, aggregation, sync, settings } = deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
@@ -650,6 +736,182 @@ export function createApi(deps: ApiDeps): Api {
 		});
 		return json(200, { absence: updated });
 	});
+
+	/**
+	 * Loads an absence and checks whether the caller may change it.
+	 *
+	 * @param context - route context
+	 * @returns the absence
+	 */
+	const changeableAbsence = (context: RouteContext): AbsenceRecord => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const absence = absences.findById(numberParam(context, "id"));
+		if (!absence) {
+			throw new NotFoundError(`absence ${context.params.id} not found`);
+		}
+		if (absence.userId !== context.auth.user.id && !context.auth.permissions.includes("absence.edit_other")) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: absence.edit_other)");
+		}
+		return absence;
+	};
+
+	route("PATCH", "/absences/:id", { permission: "absence.request", csrf: true }, context => {
+		const absence = changeableAbsence(context);
+		const body = context.jsonBody();
+		const status = optionalString(body, "status");
+
+		if (status !== null && status !== "taken" && status !== "planned") {
+			throw new ValidationError(`status must be taken or planned (got ${status})`);
+		}
+		// changing the state of an absence is an approval, even for the own one
+		if (status !== null && !context.auth?.permissions.includes("absence.approve")) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: absence.approve)");
+		}
+
+		const patch = {
+			typeId: optionalNumber(body, "typeId") ?? undefined,
+			typeCode: optionalString(body, "typeCode") ?? undefined,
+			dateFrom: optionalString(body, "dateFrom") ?? undefined,
+			dateTo: optionalString(body, "dateTo") ?? undefined,
+			dayPortion: optionalNumber(body, "dayPortion") ?? undefined,
+			...(Object.prototype.hasOwnProperty.call(body, "hours") ? { hours: optionalNumber(body, "hours") } : {}),
+			...(Object.prototype.hasOwnProperty.call(body, "note") ? { note: optionalString(body, "note") } : {}),
+		};
+		const hasFields = Object.values(patch).some(value => value !== undefined);
+
+		if (status !== null) {
+			absences.setStatus({
+				id: absence.id,
+				status,
+				actorId: context.auth?.user.id ?? 0,
+				actorIp: context.request.remoteAddress ?? null,
+				now: now(),
+			});
+		}
+
+		const updated = hasFields
+			? absences.update({
+					id: absence.id,
+					patch,
+					reason: optionalString(body, "reason"),
+					actorId: context.auth?.user.id ?? 0,
+					actorIp: context.request.remoteAddress ?? null,
+					now: now(),
+				})
+			: (absences.findById(absence.id) ?? absence);
+
+		return json(200, { absence: updated });
+	});
+
+	route("DELETE", "/absences/:id", { permission: "absence.request", csrf: true }, context => {
+		const absence = changeableAbsence(context);
+		const removed = absences.remove({
+			id: absence.id,
+			actorId: context.auth?.user.id ?? 0,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!removed) {
+			throw new NotFoundError(`absence ${absence.id} not found`);
+		}
+		return noContent();
+	});
+
+	// master data: absence types, holidays and instance settings
+
+	route("GET", "/absence-types", {}, context =>
+		json(200, { types: absences.types({ userId: context.auth?.user.id ?? null }) }),
+	);
+
+	route("POST", "/absence-types", { permission: "absence.manage_types", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const result = absences.upsertType({
+			userId: optionalNumber(body, "userId"),
+			code: requireString(body, "code"),
+			name: requireString(body, "name"),
+			paid: optionalBoolean(body, "paid") ?? undefined,
+			factor: optionalNumber(body, "factor") ?? undefined,
+			reduceVacation: optionalBoolean(body, "reduceVacation") ?? undefined,
+			isActive: optionalBoolean(body, "isActive") ?? undefined,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(result.created ? 201 : 200, { type: result.type, created: result.created });
+	});
+
+	route("GET", "/holidays", { permission: "report.view_own" }, context => {
+		const year = numberQuery(context, "year");
+		const region = context.query("region") ?? undefined;
+		return json(200, { year, region: region ?? null, holidays: holidays.listByYear(year, region) });
+	});
+
+	route("POST", "/holidays", { permission: "holiday.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const created = holidays.add({
+			date: requireString(body, "date"),
+			name: requireString(body, "name"),
+			region: optionalString(body, "region") ?? undefined,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(201, { holiday: created }, { location: `/holidays/${created.id}` });
+	});
+
+	route("DELETE", "/holidays/:id", { permission: "holiday.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const removed = holidays.remove({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!removed) {
+			throw new NotFoundError(`holiday ${context.params.id} not found`);
+		}
+		return noContent();
+	});
+
+	route("GET", "/settings", { permission: "settings.view" }, () =>
+		json(200, { settings: readableSettings(settings.all()) }),
+	);
+
+	route("PUT", "/settings", { permission: "settings.edit", csrf: true }, context => {
+		const body = context.jsonBody();
+		const changes: Record<string, SettingValue> = {};
+		for (const [key, value] of Object.entries(body)) {
+			if (!editableSettings().includes(key)) {
+				throw new ValidationError(`setting "${key}" cannot be changed through the API`);
+			}
+			if (!isSettingValue(value, JSON_SETTINGS.includes(key))) {
+				throw new ValidationError(`setting "${key}" has an unsupported value`);
+			}
+			changes[key] = value as SettingValue;
+		}
+		if (Object.keys(changes).length === 0) {
+			throw new ValidationError("no settings given");
+		}
+
+		for (const [key, value] of Object.entries(changes)) {
+			settings.set(key, value, context.auth?.user.id ?? null, now());
+		}
+		return json(200, { settings: changes });
+	});
+
+	route("GET", "/version", { public: true }, () =>
+		json(200, { name: "iobroker.zeiterfassung", version: deps.version ?? "0.0.0" }),
+	);
 
 	// corrections
 

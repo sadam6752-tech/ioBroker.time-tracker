@@ -11,6 +11,7 @@
 
 import type {
 	Absence,
+	AbsenceType,
 	Conflict,
 	DayRange,
 	Entry,
@@ -97,6 +98,8 @@ export interface ApiClient {
 	entries(from: string, to: string): Promise<Entry[]>;
 	/** Absences of a year */
 	absences(year: number): Promise<Absence[]>;
+	/** Absence types the caller may use */
+	absenceTypes(): Promise<AbsenceType[]>;
 	/** Requests an absence */
 	createAbsence(input: {
 		typeCode: string;
@@ -314,6 +317,11 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async absences(year): Promise<Absence[]> {
 			const result = await request<{ absences: Absence[] }>("GET", "/absences", { query: { year } });
 			return result.absences ?? [];
+		},
+
+		async absenceTypes(): Promise<AbsenceType[]> {
+			const result = await request<{ types: AbsenceType[] }>("GET", "/absence-types");
+			return result.types ?? [];
 		},
 
 		async createAbsence(input): Promise<Absence> {

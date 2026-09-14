@@ -65,6 +65,7 @@
 	"absences.to": "Bis",
 	"absences.status": "Status",
 	"absences.portion": "Tagesanteil",
+	"absences.typeHint": "Kürzel der Abwesenheitsart, z. B. F für Ferien",
 	"absences.create": "Abwesenheit beantragen",
 	"absences.created": "Abwesenheit beantragt.",
 	"absences.empty": "Keine Abwesenheiten in diesem Jahr.",

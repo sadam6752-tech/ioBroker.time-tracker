@@ -152,6 +152,7 @@ class Zeiterfassung extends utils.Adapter {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const holidays = createHolidaysRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({
 			db,
@@ -165,13 +166,24 @@ class Zeiterfassung extends utils.Adapter {
 			users,
 			entries,
 			absences,
-			holidays: createHolidaysRepository(db),
+			holidays,
 			rules: createRulesRepository(db),
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
 		const closing = createClosingService({ db, aggregation, payouts: createPayoutsRepository(db) });
-		const api = createApi({ db, auth, users, entries, absences, aggregation, sync, settings });
+		const api = createApi({
+			db,
+			auth,
+			users,
+			entries,
+			absences,
+			holidays,
+			aggregation,
+			sync,
+			settings,
+			version: this.version,
+		});
 
 		this.services = { users, entries, absences, settings, aggregation, sync, closing };
 		this.log.debug(`API routes: ${api.routes().length}`);

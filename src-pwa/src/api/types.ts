@@ -104,6 +104,18 @@ export interface Absence {
 	note: string | null;
 }
 
+/** An absence type as `GET /absence-types` returns it. */
+export interface AbsenceType {
+	id: number;
+	userId: number | null;
+	code: string;
+	name: string;
+	paid: boolean;
+	factor: number;
+	reduceVacation: boolean;
+	isActive: boolean;
+}
+
 /** An open synchronisation conflict. */
 export interface Conflict {
 	id: number;

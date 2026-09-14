@@ -125,6 +125,21 @@ describe("users repository", () => {
 			expect(repo.hasPermissions(employee.id, [])).to.equal(true);
 		});
 
+		it("lists every role with its permissions", () => {
+			const catalog = repo.roleCatalog();
+
+			expect(catalog.map(role => role.key)).to.deep.equal(["admin", "employee", "manager"]);
+			const admin = catalog.find(role => role.key === "admin");
+			expect(admin?.permissions).to.include("settings.edit");
+			expect(admin?.permissions).to.include("user.manage_roles");
+			// a role without any permission would still show up
+			expect(catalog.every(role => Array.isArray(role.permissions))).to.equal(true);
+
+			const employee = catalog.find(role => role.key === "employee");
+			expect(employee?.permissions).to.include("time.punch");
+			expect(employee?.permissions).to.not.include("settings.edit");
+		});
+
 		it("replaces the roles and audits the difference", () => {
 			const user = repo.create({
 				login: "anna",

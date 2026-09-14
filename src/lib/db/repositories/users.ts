@@ -169,6 +169,8 @@ export interface UsersRepository {
 	update(input: UpdateUserInput): UserRecord;
 	/** Role keys of a user (sorted) */
 	roles(userId: number): string[];
+	/** All roles with their permission keys, sorted by key */
+	roleCatalog(): { key: string; name: string; permissions: string[] }[];
 	/** Replaces the roles of a user */
 	setRoles(input: {
 		userId: number;
@@ -367,6 +369,13 @@ export function createUsersRepository(db: Db): UsersRepository {
 		 JOIN permissions p ON p.id = rp.permission_id
 		 WHERE ur.user_id = ? ORDER BY p.key`,
 	);
+	const selectRoleCatalog = db.prepare(
+		`SELECT r.key AS key, r.name AS name, p.key AS permission
+		 FROM roles r
+		 LEFT JOIN role_permissions rp ON rp.role_id = r.id
+		 LEFT JOIN permissions p ON p.id = rp.permission_id
+		 ORDER BY r.key, p.key`,
+	);
 
 	const read = (id: number): UserRecord | null => {
 		const row = selectById.get(id) as UserRow | undefined;
@@ -554,6 +563,19 @@ export function createUsersRepository(db: Db): UsersRepository {
 
 		roles(userId: number): string[] {
 			return (selectRoles.all(userId) as { key: string }[]).map(row => row.key);
+		},
+
+		roleCatalog(): { key: string; name: string; permissions: string[] }[] {
+			const rows = selectRoleCatalog.all() as { key: string; name: string; permission: string | null }[];
+			const catalog = new Map<string, { key: string; name: string; permissions: string[] }>();
+			for (const row of rows) {
+				const entry = catalog.get(row.key) ?? { key: row.key, name: row.name, permissions: [] };
+				if (row.permission) {
+					entry.permissions.push(row.permission);
+				}
+				catalog.set(row.key, entry);
+			}
+			return [...catalog.values()];
 		},
 
 		setRoles(input: {

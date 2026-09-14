@@ -65,6 +65,8 @@ export interface RouteContext {
 	header(name: string): string | null;
 	/** Parses the JSON body, throws `400 bad_request` when it is not usable */
 	jsonBody<T = Record<string, unknown>>(): T;
+	/** Parses the JSON body; an empty body becomes an empty object (optional fields) */
+	optionalJsonBody<T = Record<string, unknown>>(): T;
 }
 
 /** A single route. */
@@ -305,6 +307,31 @@ export function createRouter(options: RouterOptions): Router {
 				}
 			}
 
+			/**
+			 * Parses the request body.
+			 *
+			 * @param required - true when an empty body is a client error
+			 * @returns the parsed body
+			 */
+			function parseRequestBody<T>(required: boolean): T {
+				const contentType = headerValue("content-type") ?? "";
+				if (contentType && !contentType.toLowerCase().includes("application/json")) {
+					throw new HttpProblem(415, "unsupported_media_type", `unsupported content type ${contentType}`);
+				}
+				if (!body.trim()) {
+					if (required) {
+						throw new HttpProblem(400, "bad_request", "body is required");
+					}
+					// DELETE requests often carry no body at all; the optional fields stay empty then
+					return {} as T;
+				}
+				try {
+					return JSON.parse(body) as T;
+				} catch {
+					throw new HttpProblem(400, "bad_request", "body is not valid JSON");
+				}
+			}
+
 			const context: RouteContext = {
 				request,
 				params,
@@ -314,20 +341,8 @@ export function createRouter(options: RouterOptions): Router {
 					return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 				},
 				header: headerValue,
-				jsonBody: <T = Record<string, unknown>>(): T => {
-					const contentType = headerValue("content-type") ?? "";
-					if (contentType && !contentType.toLowerCase().includes("application/json")) {
-						throw new HttpProblem(415, "unsupported_media_type", `unsupported content type ${contentType}`);
-					}
-					if (!body.trim()) {
-						throw new HttpProblem(400, "bad_request", "body is required");
-					}
-					try {
-						return JSON.parse(body) as T;
-					} catch {
-						throw new HttpProblem(400, "bad_request", "body is not valid JSON");
-					}
-				},
+				jsonBody: <T = Record<string, unknown>>(): T => parseRequestBody<T>(true),
+				optionalJsonBody: <T = Record<string, unknown>>(): T => parseRequestBody<T>(false),
 			};
 
 			try {

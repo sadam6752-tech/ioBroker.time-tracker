@@ -114,6 +114,16 @@ describe("web router", () => {
 			handler: () => json(200, { users: [] }),
 		});
 		router.add({
+			method: "POST",
+			path: "/body-required",
+			handler: context => json(200, { received: context.jsonBody() }),
+		});
+		router.add({
+			method: "DELETE",
+			path: "/body-optional",
+			handler: context => json(200, { received: context.optionalJsonBody() }),
+		});
+		router.add({
 			method: "GET",
 			path: "/boom",
 			handler: () => {
@@ -268,6 +278,21 @@ describe("web router", () => {
 			expect(response.status).to.equal(204);
 			expect(response.body).to.equal("");
 			expect(response.headers).to.not.have.property("content-type");
+		});
+
+		it("distinguishes a required from an optional JSON body", async () => {
+			// `jsonBody()` needs a body, `optionalJsonBody()` answers `{}` for a DELETE without one
+			const missing = await send("POST", "/body-required", {
+				headers: { "x-session-token": employeeToken, "x-csrf-token": employeeCsrf },
+			});
+			expect(missing.status).to.equal(400);
+			expect(bodyOf(missing).detail).to.equal("body is required");
+
+			const optional = await send("DELETE", "/body-optional", {
+				headers: { "x-session-token": employeeToken, "x-csrf-token": employeeCsrf },
+			});
+			expect(optional.status).to.equal(200);
+			expect(bodyOf(optional)).to.deep.equal({ received: {} });
 		});
 
 		it("converts handler errors into problems", async () => {

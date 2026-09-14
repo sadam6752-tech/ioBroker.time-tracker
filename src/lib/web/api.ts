@@ -18,15 +18,17 @@ import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
+import type { RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
-import type { UsersRepository } from "../db/repositories/users";
+import type { UserRecord, UsersRepository, WorkProfileRecord } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
+import { checkPasswordPolicy, hashPassword } from "../services/auth";
 import type { SyncService } from "../services/sync";
 import { NotFoundError, ValidationError } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
-import { localDate } from "../util/time";
+import { isValidTimeZone, localDate } from "../util/time";
 import { problem } from "./problem";
 import {
 	createRouter,
@@ -52,6 +54,8 @@ export interface ApiDeps {
 	absences: AbsencesRepository;
 	/** Holiday storage */
 	holidays: HolidaysRepository;
+	/** Surcharge and break rules */
+	rules: RulesRepository;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -196,6 +200,192 @@ function isSettingValue(value: unknown, allowStructured: boolean): boolean {
 }
 
 /**
+ * Reads a required boolean field.
+ *
+ * @param body - parsed request body
+ * @param field - field name
+ * @returns the value
+ */
+function requireBoolean(body: Record<string, unknown>, field: string): boolean {
+	const value = optionalBoolean(body, field);
+	if (value === null) {
+		throw new ValidationError(`${field} is required`);
+	}
+	return value;
+}
+
+/**
+ * Reads an optional whole-number query parameter.
+ *
+ * @param context - route context
+ * @param name - parameter name
+ * @param fallback - value used when the parameter is missing
+ * @returns the parsed number
+ */
+function optionalNumberQuery(context: RouteContext, name: string, fallback: number): number {
+	const raw = context.query(name);
+	if (raw === null) {
+		return fallback;
+	}
+	const value = Number(raw);
+	if (!Number.isInteger(value) || value < 0) {
+		throw new ValidationError(`${name} must be a non-negative whole number (got ${raw})`);
+	}
+	return value;
+}
+
+/**
+ * Reads a list of role keys.
+ *
+ * @param body - parsed request body
+ * @returns the role keys or `null` when the field is absent
+ */
+function readRoleKeys(body: Record<string, unknown>): string[] | null {
+	const value = body.roleKeys;
+	if (value === undefined || value === null) {
+		return null;
+	}
+	if (!Array.isArray(value) || value.some(entry => typeof entry !== "string")) {
+		throw new ValidationError("roleKeys must be an array of strings");
+	}
+	return (value as string[]).map(entry => entry.trim()).filter(entry => entry.length > 0);
+}
+
+/** Fields of a work profile a client may change. */
+const PROFILE_FIELDS: (keyof Omit<WorkProfileRecord, "userId">)[] = [
+	"percent",
+	"weeklyHours",
+	"workdays",
+	"startDate",
+	"endDate",
+	"overtimeCarryover",
+	"vorholzeitPerYear",
+	"vacationCarryover",
+	"vacationPerYear",
+	"overtimeModel",
+	"holidayFlags",
+];
+
+/**
+ * Reads a work profile patch and checks its values.
+ *
+ * The repository merges the given fields into the stored profile, so every value has to be validated here —
+ * a broken profile would silently spoil the target time of every later calculation.
+ *
+ * @param body - parsed request body
+ * @returns the patch
+ */
+function readProfilePatch(body: Record<string, unknown>): Partial<Omit<WorkProfileRecord, "userId">> {
+	const patch: Partial<Omit<WorkProfileRecord, "userId">> = {};
+	for (const [key, value] of Object.entries(body)) {
+		if (key === "reason") {
+			continue;
+		}
+		if (!(PROFILE_FIELDS as string[]).includes(key)) {
+			throw new ValidationError(`"${key}" is not part of a work profile`);
+		}
+
+		if (key === "percent") {
+			const percent = Number(value);
+			if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+				throw new ValidationError("percent must be a whole number between 0 and 100");
+			}
+			patch.percent = percent;
+		} else if (key === "weeklyHours") {
+			const hours = Number(value);
+			if (!Number.isFinite(hours) || hours < 0 || hours > 168) {
+				throw new ValidationError("weeklyHours must be between 0 and 168");
+			}
+			patch.weeklyHours = hours;
+		} else if (key === "workdays") {
+			if (typeof value !== "string") {
+				throw new ValidationError("workdays must be a string");
+			}
+			const workdays = value.trim();
+			if (!/^\d(;\d)*$/.test(workdays) || workdays.split(";").some(day => Number(day) > 6)) {
+				throw new ValidationError('workdays must be weekdays separated by ";" (0 = Sunday … 6 = Saturday)');
+			}
+			patch.workdays = workdays;
+		} else if (key === "overtimeModel") {
+			if (value !== "cumulative" && value !== "yearly" && value !== "monthly") {
+				throw new ValidationError(`overtimeModel must be cumulative, yearly or monthly (got ${String(value)})`);
+			}
+			patch.overtimeModel = value;
+		} else if (key === "startDate" || key === "endDate") {
+			if (value !== null && (!Number.isInteger(Number(value)) || Number(value) < 0)) {
+				throw new ValidationError(`${key} must be an instant in seconds or null`);
+			}
+			patch[key] = value === null ? null : Number(value);
+		} else if (key === "holidayFlags") {
+			if (value !== null && typeof value !== "string") {
+				throw new ValidationError("holidayFlags must be a JSON string or null");
+			}
+			patch.holidayFlags = value;
+		} else {
+			const number = Number(value);
+			if (!Number.isInteger(number)) {
+				throw new ValidationError(`${key} must be a whole number of minutes`);
+			}
+			patch[key as "overtimeCarryover" | "vorholzeitPerYear" | "vacationCarryover" | "vacationPerYear"] = number;
+		}
+	}
+	return patch;
+}
+
+/** A user as it is handed out over the API (without the password hashes). */
+export interface PublicUserPayload {
+	/** Primary key */
+	id: number;
+	/** Login name */
+	login: string;
+	/** Shown name */
+	displayName: string;
+	/** E-mail address */
+	email: string | null;
+	/** RFID card id */
+	rfidCard: string | null;
+	/** False for deactivated accounts */
+	isActive: boolean;
+	/** True while the user has to set a new password */
+	mustChangePw: boolean;
+	/** Preferred language */
+	locale: string;
+	/** IANA time zone */
+	timezone: string;
+	/** Instant of creation, UTC epoch seconds */
+	createdAt: number;
+	/** Instant of the last change, UTC epoch seconds */
+	updatedAt: number;
+	/** Instant of the last login, `null` if never */
+	lastLoginAt: number | null;
+}
+
+/**
+ * Removes everything a client must not see from a user record.
+ *
+ * The list is explicit on purpose: a column added later stays invisible until it is added here.
+ *
+ * @param user - stored user
+ * @returns the public part
+ */
+function publicUser(user: UserRecord): PublicUserPayload {
+	return {
+		id: user.id,
+		login: user.login,
+		displayName: user.displayName,
+		email: user.email,
+		rfidCard: user.rfidCard,
+		isActive: user.isActive,
+		mustChangePw: user.mustChangePw,
+		locale: user.locale,
+		timezone: user.timezone,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+		lastLoginAt: user.lastLoginAt,
+	};
+}
+
+/**
  * Reads an optional boolean field.
  *
  * @param body - parsed request body
@@ -281,7 +471,7 @@ function resolveScope(
  * @returns API with its router
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, holidays, aggregation, sync, settings } = deps;
+	const { auth, users, entries, absences, holidays, rules, aggregation, sync, settings } = deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
@@ -969,12 +1159,289 @@ export function createApi(deps: ApiDeps): Api {
 		entries.remove({
 			id: entryId,
 			actorId: context.auth.user.id,
-			reason: optionalString(context.jsonBody(), "reason"),
+			reason: optionalString(context.optionalJsonBody(), "reason"),
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		});
 		aggregation.recalculateDay(existing.userId, existing.localDate, { now: now() });
 		return noContent();
+	});
+
+	// users, roles and work profiles
+
+	route("GET", "/users", { permission: "user.view" }, context => {
+		const includeInactive = context.query("includeInactive") === "true";
+		const search = (context.query("q") ?? "").trim().toLowerCase();
+		const limit = optionalNumberQuery(context, "limit", Number.MAX_SAFE_INTEGER);
+		const offset = optionalNumberQuery(context, "offset", 0);
+
+		const all = users.list({ includeInactive });
+		const filtered = search
+			? all.filter(
+					user =>
+						user.login.toLowerCase().includes(search) || user.displayName.toLowerCase().includes(search),
+				)
+			: all;
+
+		return json(200, {
+			total: filtered.length,
+			offset,
+			users: filtered.slice(offset, offset + limit).map(user => ({
+				...publicUser(user),
+				roles: users.roles(user.id),
+			})),
+		});
+	});
+
+	route("GET", "/users/:id", { permission: "user.view" }, context => {
+		const id = numberParam(context, "id");
+		const user = users.findById(id);
+		if (!user) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		return json(200, {
+			user: { ...publicUser(user), roles: users.roles(id), permissions: users.permissions(id) },
+			profile: users.getWorkProfile(id),
+		});
+	});
+
+	route("POST", "/users", { permission: "user.create", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const password = requireString(body, "password");
+		const policyIssue = checkPasswordPolicy(password);
+		if (policyIssue) {
+			throw new ValidationError(policyIssue);
+		}
+
+		const created = users.create({
+			login: requireString(body, "login"),
+			displayName: requireString(body, "displayName"),
+			passwordHash: hashPassword(password),
+			email: optionalString(body, "email"),
+			locale: optionalString(body, "locale") ?? undefined,
+			timezone: optionalString(body, "timezone") ?? undefined,
+			mustChangePw: optionalBoolean(body, "mustChangePw") ?? undefined,
+			roleKeys: readRoleKeys(body) ?? undefined,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+
+		return json(
+			201,
+			{ user: { ...publicUser(created), roles: users.roles(created.id) } },
+			{ location: `/users/${created.id}` },
+		);
+	});
+
+	route("GET", "/roles", { permission: "user.view" }, () => json(200, { roles: users.roleCatalog() }));
+
+	route("PATCH", "/users/:id", { permission: "user.edit", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+
+		const body = context.jsonBody();
+		const roleKeys = readRoleKeys(body);
+		// assigning roles is a right of its own
+		if (roleKeys !== null && !context.auth.permissions.includes("user.manage_roles")) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: user.manage_roles)");
+		}
+
+		const password = optionalString(body, "password");
+		if (password !== null) {
+			const policyIssue = checkPasswordPolicy(password);
+			if (policyIssue) {
+				throw new ValidationError(policyIssue);
+			}
+		}
+
+		const patch: {
+			displayName?: string;
+			email?: string | null;
+			locale?: string;
+			timezone?: string;
+			rfidCard?: string | null;
+			isActive?: boolean;
+			mustChangePw?: boolean;
+			passwordHash?: string;
+		} = {};
+		if (Object.prototype.hasOwnProperty.call(body, "displayName")) {
+			patch.displayName = requireString(body, "displayName");
+		}
+		if (Object.prototype.hasOwnProperty.call(body, "email")) {
+			patch.email = optionalString(body, "email");
+		}
+		if (Object.prototype.hasOwnProperty.call(body, "locale")) {
+			patch.locale = requireString(body, "locale");
+		}
+		if (Object.prototype.hasOwnProperty.call(body, "timezone")) {
+			const timezone = requireString(body, "timezone");
+			if (!isValidTimeZone(timezone)) {
+				throw new ValidationError(`timezone is not a valid IANA name (got ${timezone})`);
+			}
+			patch.timezone = timezone;
+		}
+		if (Object.prototype.hasOwnProperty.call(body, "rfidCard")) {
+			patch.rfidCard = optionalString(body, "rfidCard");
+		}
+		if (Object.prototype.hasOwnProperty.call(body, "mustChangePw")) {
+			patch.mustChangePw = requireBoolean(body, "mustChangePw");
+		}
+		const isActive = optionalBoolean(body, "isActive");
+		if (isActive !== null) {
+			if (isActive === false && id === context.auth.user.id) {
+				throw new ValidationError("an account cannot deactivate itself");
+			}
+			patch.isActive = isActive;
+		}
+		if (password !== null) {
+			patch.passwordHash = hashPassword(password);
+		}
+
+		const updated = users.update({
+			id,
+			patch,
+			reason: optionalString(body, "reason"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		const roles = roleKeys
+			? users.setRoles({
+					userId: id,
+					roleKeys,
+					actorId: context.auth.user.id,
+					actorIp: context.request.remoteAddress ?? null,
+					now: now(),
+				})
+			: users.roles(id);
+
+		return json(200, { user: { ...publicUser(updated), roles } });
+	});
+
+	route("DELETE", "/users/:id", { permission: "user.deactivate", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		const target = users.findById(id);
+		if (!target) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		if (!target.isActive) {
+			// a second call has nothing left to do and says so
+			throw new NotFoundError(`user ${id} is already deactivated`);
+		}
+		if (id === context.auth.user.id) {
+			throw new ValidationError("an account cannot deactivate itself");
+		}
+
+		// accounts are never deleted, they are deactivated and keep their history
+		users.update({
+			id,
+			patch: { isActive: false },
+			reason: optionalString(context.optionalJsonBody(), "reason"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return noContent();
+	});
+
+	route("GET", "/users/:id/profile", { permission: "user.view" }, context => {
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		return json(200, { profile: users.getWorkProfile(id) });
+	});
+
+	route("PUT", "/users/:id/profile", { permission: "user.edit", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		const body = context.jsonBody();
+
+		const profile = users.saveWorkProfile({
+			userId: id,
+			profile: readProfilePatch(body),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(200, { profile });
+	});
+
+	route("GET", "/users/:id/shift-rules", { permission: "user.view" }, context => {
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		return json(200, { shiftRules: rules.shiftRules(id, { includeInactive: true }) });
+	});
+
+	route("PUT", "/users/:id/shift-rules", { permission: "user.edit", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+
+		const body = context.jsonBody();
+		if (!Array.isArray(body.shiftRules)) {
+			throw new ValidationError("shiftRules must be an array");
+		}
+		const actor = {
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		};
+		const wanted = (body.shiftRules as unknown[]).map(raw => {
+			const rule = (raw ?? {}) as Record<string, unknown>;
+			return {
+				id: optionalNumber(rule, "id") ?? undefined,
+				surcharge: Number(rule.surcharge),
+				dayOfWeek: optionalNumber(rule, "dayOfWeek"),
+				fromMin: optionalNumber(rule, "fromMin"),
+				toMin: optionalNumber(rule, "toMin"),
+				isActive: optionalBoolean(rule, "isActive") ?? undefined,
+			};
+		});
+
+		// the payload replaces the rules of the employee: missing rules are removed, the rest is saved
+		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
+		for (const existing of rules.shiftRules(id, { includeInactive: true })) {
+			if (!keep.has(existing.id)) {
+				rules.removeShiftRule({ id: existing.id, ...actor });
+			}
+		}
+		const saved = wanted.map(rule =>
+			rules.saveShiftRule({
+				...(rule.id !== undefined ? { id: rule.id } : {}),
+				userId: id,
+				surcharge: rule.surcharge,
+				...(rule.dayOfWeek !== null ? { dayOfWeek: rule.dayOfWeek } : {}),
+				...(rule.fromMin !== null ? { fromMin: rule.fromMin } : {}),
+				...(rule.toMin !== null ? { toMin: rule.toMin } : {}),
+				...(rule.isActive !== undefined ? { isActive: rule.isActive } : {}),
+				...actor,
+			}),
+		);
+		return json(200, { shiftRules: saved });
 	});
 
 	// system

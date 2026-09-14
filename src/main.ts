@@ -153,6 +153,7 @@ class Zeiterfassung extends utils.Adapter {
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
 		const holidays = createHolidaysRepository(db);
+		const rules = createRulesRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({
 			db,
@@ -167,7 +168,7 @@ class Zeiterfassung extends utils.Adapter {
 			entries,
 			absences,
 			holidays,
-			rules: createRulesRepository(db),
+			rules,
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
@@ -179,6 +180,7 @@ class Zeiterfassung extends utils.Adapter {
 			entries,
 			absences,
 			holidays,
+			rules,
 			aggregation,
 			sync,
 			settings,

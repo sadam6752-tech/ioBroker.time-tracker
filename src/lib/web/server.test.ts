@@ -33,6 +33,7 @@ describe("web server", () => {
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
 		const holidays = createHolidaysRepository(db);
+		const rules = createRulesRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({ db, users, settings, secret: "server-test-secret" });
 		const aggregation = createAggregationService({
@@ -41,7 +42,7 @@ describe("web server", () => {
 			entries,
 			absences,
 			holidays,
-			rules: createRulesRepository(db),
+			rules,
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
@@ -52,6 +53,7 @@ describe("web server", () => {
 			entries,
 			absences,
 			holidays,
+			rules,
 			aggregation,
 			sync,
 			settings,

@@ -12,8 +12,9 @@
 
 import * as http from "node:http";
 import type { AddressInfo } from "node:net";
-import { HttpProblem } from "./problem";
+import { HttpProblem, PROBLEM_CONTENT_TYPE } from "./problem";
 import type { HttpRequest, Router } from "./router";
+import type { StaticHandler } from "./static";
 
 /** Minimal logger used by the server. */
 export interface ServerLogger {
@@ -33,6 +34,10 @@ export interface WebServerOptions {
 	port: number;
 	/** Bind address, default `127.0.0.1` */
 	bind?: string;
+	/** Path prefix the API is mounted on (default `/api`) */
+	apiPrefix?: string;
+	/** Handler for the files of the web interface (PWA) */
+	staticFiles?: StaticHandler;
 	/** Maximum body size in bytes (default 256 KiB) */
 	maxBodyBytes?: number;
 	/** Logger */
@@ -47,6 +52,20 @@ export interface WebServer {
 	readonly url: string;
 	/** Stops the server and closes all connections */
 	close(): Promise<void>;
+}
+
+/**
+ * Normalises a path prefix.
+ *
+ * @param prefix - configured prefix
+ * @returns prefix without trailing slash (`""` disables the prefix)
+ */
+function normalizePrefix(prefix: string): string {
+	const trimmed = prefix.trim();
+	if (trimmed === "" || trimmed === "/") {
+		return "";
+	}
+	return trimmed.startsWith("/") ? trimmed.replace(/\/+$/, "") : `/${trimmed.replace(/\/+$/, "")}`;
 }
 
 /**
@@ -96,35 +115,64 @@ function parseQuery(requestUrl: string): Record<string, string | string[]> {
 export async function startWebServer(options: WebServerOptions): Promise<WebServer> {
 	const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
 	const bind = options.bind?.trim() || "127.0.0.1";
+	const apiPrefix = normalizePrefix(options.apiPrefix ?? "/api");
 
 	const handle = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {
 		try {
 			const body = await readBody(request, maxBodyBytes);
 			if (body === null) {
 				const details = new HttpProblem(413, "payload_too_large", `body exceeds ${maxBodyBytes} bytes`);
-				response.writeHead(413, { "content-type": "application/json; charset=utf-8" });
+				response.writeHead(413, { "content-type": PROBLEM_CONTENT_TYPE });
 				response.end(JSON.stringify(details.toProblem(request.url ?? "/")));
 				return;
 			}
 
 			const url = new URL(request.url ?? "/", "http://localhost");
-			const routerRequest: HttpRequest = {
+			const headers = request.headers;
+			const remoteAddress = request.socket.remoteAddress ?? null;
+
+			// the API lives below the prefix; everything else is a file of the web interface
+			if (apiPrefix !== "" && url.pathname.startsWith(`${apiPrefix}/`)) {
+				const routerRequest: HttpRequest = {
+					method: request.method ?? "GET",
+					path: url.pathname.slice(apiPrefix.length),
+					query: parseQuery(request.url ?? "/"),
+					headers,
+					body,
+					remoteAddress,
+				};
+				const result = await options.router.handle(routerRequest);
+				response.writeHead(result.status, result.headers);
+				response.end(result.body);
+				return;
+			}
+
+			const staticRequest: HttpRequest = {
 				method: request.method ?? "GET",
 				path: url.pathname,
 				query: parseQuery(request.url ?? "/"),
-				headers: request.headers,
+				headers,
 				body,
-				remoteAddress: request.socket.remoteAddress ?? null,
+				remoteAddress,
 			};
+			const file = options.staticFiles?.(staticRequest) ?? null;
+			if (file) {
+				response.writeHead(file.status, file.headers);
+				response.end(file.body);
+				return;
+			}
 
-			const result = await options.router.handle(routerRequest);
-			response.writeHead(result.status, result.headers);
-			response.end(result.body);
+			response.writeHead(404, { "content-type": PROBLEM_CONTENT_TYPE });
+			response.end(
+				JSON.stringify(
+					new HttpProblem(404, "not_found", `no route for ${url.pathname}`).toProblem(url.pathname),
+				),
+			);
 		} catch (error) {
 			// the router never throws, so this is an unexpected failure of the transport itself
 			options.log?.error(`request failed: ${error instanceof Error ? error.message : String(error)}`);
 			if (!response.headersSent) {
-				response.writeHead(500, { "content-type": "application/json; charset=utf-8" });
+				response.writeHead(500, { "content-type": PROBLEM_CONTENT_TYPE });
 			}
 			response.end();
 		}
@@ -146,7 +194,9 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 
 	const address = server.address() as AddressInfo | null;
 	const port = address?.port ?? options.port;
-	options.log?.info(`API listening on http://${bind}:${port}`);
+	options.log?.info(
+		`API listening on http://${bind}:${port}${apiPrefix}${options.staticFiles ? " - web interface is served from disk" : ""}`,
+	);
 
 	return {
 		port,

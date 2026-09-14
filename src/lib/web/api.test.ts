@@ -71,7 +71,7 @@ describe("web api", () => {
 	 * @returns parsed body
 	 */
 	function bodyOf<T = Record<string, unknown>>(response: HttpResponse): T {
-		return JSON.parse(response.body) as T;
+		return JSON.parse(response.body.toString()) as T;
 	}
 
 	/**

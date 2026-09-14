@@ -30,6 +30,34 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(harness.hasLog(/API routes: \d+/)).to.equal(true);
 			});
 
+			it("answers the API below /api and refuses everything else", async () => {
+				const line = harness
+					.getLogs()
+					.map(log => log.message)
+					.find(message => /API listening on http:\/\/127\.0\.0\.1:\d+/.test(message));
+				expect(line, "port of the API in the adapter log").to.be.a("string");
+				const port = Number(/API listening on http:\/\/127\.0\.0\.1:(\d+)/.exec(String(line))?.[1]);
+
+				// the API is mounted below /api, so the web interface can own the rest of the paths
+				const health = await fetch(`http://127.0.0.1:${port}/api/health`);
+				expect(health.status).to.equal(200);
+				expect(await health.json()).to.include({ status: "ok" });
+
+				const login = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ login: "gibt-es-nicht", password: "Falsch-2026-gemischt" }),
+				});
+				expect(login.status).to.equal(401);
+				expect(login.headers.get("content-type")).to.equal("application/problem+json; charset=utf-8");
+
+				// the packed package has no www/ folder, so the adapter reports that and answers 404
+				expect(harness.hasLog(/no web interface at .*www/)).to.equal(true);
+				const page = await fetch(`http://127.0.0.1:${port}/`, { headers: { accept: "application/json" } });
+				expect(page.status).to.equal(404);
+				expect(await page.json()).to.include({ code: "not_found" });
+			});
+
 			it("reacts to a command state", async () => {
 				await harness.states.setState("zeiterfassung.0.commands.punch", { val: true, ack: false });
 				await new Promise(resolve => setTimeout(resolve, 750));

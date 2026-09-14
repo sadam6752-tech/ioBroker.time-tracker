@@ -55,7 +55,7 @@ describe("web router", () => {
 	 * @returns parsed body
 	 */
 	function bodyOf<T = Record<string, unknown>>(response: HttpResponse): T {
-		return JSON.parse(response.body) as T;
+		return JSON.parse(response.body.toString()) as T;
 	}
 
 	beforeEach(() => {
@@ -173,7 +173,7 @@ describe("web router", () => {
 			});
 
 			const problem = await send("GET", "/nothing", { headers: { "x-session-token": employeeToken } });
-			expect(problem.headers["content-type"]).to.equal("application/json; charset=utf-8");
+			expect(problem.headers["content-type"]).to.equal("application/problem+json; charset=utf-8");
 			expect(problem.headers["cache-control"]).to.equal("no-store");
 		});
 	});

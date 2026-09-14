@@ -28,6 +28,7 @@ import { COMMAND_IDS, createCommandStates, publishAllUserStates } from "./lib/ad
 import { handleCommand } from "./lib/adapter/commands";
 import { createApi } from "./lib/web/api";
 import { startWebServer, type WebServer } from "./lib/web/server";
+import { createStaticHandler } from "./lib/web/static";
 
 const SUPPORTED_COUNTRIES: HolidayCountry[] = ["CH", "DE", "AT"];
 
@@ -175,11 +176,24 @@ class Zeiterfassung extends utils.Adapter {
 		this.services = { users, entries, absences, settings, aggregation, sync, closing };
 		this.log.debug(`API routes: ${api.routes().length}`);
 
+		// the web interface is delivered from `www/` next to the compiled code (built by the PWA project);
+		// without it the adapter still provides the API, e.g. for the terminal
+		const webDir = path.join(__dirname, "..", "www");
+		const staticFiles = fs.existsSync(path.join(webDir, "index.html"))
+			? createStaticHandler({ root: webDir })
+			: undefined;
+		this.log.info(
+			staticFiles
+				? `web interface found at ${webDir}`
+				: `no web interface at ${webDir} - only the API (and the terminal) is available`,
+		);
+
 		try {
 			this.webServer = await startWebServer({
 				router: api.router,
 				port: this.config.port || 8082,
 				bind: this.config.bind || "127.0.0.1",
+				staticFiles,
 				log: {
 					info: message => this.log.info(message),
 					warn: message => this.log.warn(message),

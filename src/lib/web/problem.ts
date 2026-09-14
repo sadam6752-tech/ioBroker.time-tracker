@@ -16,6 +16,9 @@ import { LoginExistsError, UnknownRoleError } from "../db/repositories/users";
 import { UnknownAbsenceTypeError } from "../db/repositories/absences";
 import { NotFoundError, ValidationError } from "../errors";
 
+/** The content type every problem document is sent with (RFC 9457). */
+export const PROBLEM_CONTENT_TYPE = "application/problem+json; charset=utf-8";
+
 /** Stable error codes of the API. */
 export type ProblemCode =
 	| "bad_request"

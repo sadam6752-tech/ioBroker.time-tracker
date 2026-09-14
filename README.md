@@ -68,6 +68,19 @@ The adapter is configured in the instance settings:
 | Legacy data directory for import | Read-only source directory of the old system |
 | Keep database backups for days | Retention of `VACUUM INTO` backups |
 
+## Web interface and API
+
+The adapter runs its own HTTP server on the configured port and serves two things from it:
+
+| Path | Content |
+|---|---|
+| `/` and all other paths | the built web app from `www/` (`index.html`, assets; unknown paths fall back to the page for client side routing) |
+| `/api/...` | the REST API (JSON, errors as `application/problem+json`) |
+
+The API is deliberately mounted below `/api`, so the web app owns every other path. If no `www/` folder is
+part of the installation (for example while the web app is still being developed), the adapter keeps running
+and only the API is reachable — a log line states which of both applies.
+
 ## States (overview)
 
 | State | Type | Role | Purpose |

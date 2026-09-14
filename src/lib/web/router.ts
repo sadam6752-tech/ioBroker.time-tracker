@@ -10,7 +10,7 @@
  */
 
 import type { AuthContext, AuthService } from "../services/auth";
-import { HttpProblem, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
+import { HttpProblem, PROBLEM_CONTENT_TYPE, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
 
 /** Supported HTTP methods. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -37,8 +37,8 @@ export interface HttpResponse {
 	status: number;
 	/** Response headers (lower case names) */
 	headers: Record<string, string>;
-	/** Response body, already serialised */
-	body: string;
+	/** Response body, already serialised (a Buffer for binary content) */
+	body: string | Buffer;
 }
 
 /** Result of a handler. */
@@ -146,6 +146,12 @@ const BASE_HEADERS: Record<string, string> = {
 	"referrer-policy": "no-referrer",
 };
 
+/** Headers of a problem document: the same security headers with the RFC 9457 content type. */
+const PROBLEM_HEADERS: Record<string, string> = {
+	...BASE_HEADERS,
+	"content-type": PROBLEM_CONTENT_TYPE,
+};
+
 /** State changing methods need a CSRF token by default. */
 const SAFE_METHODS: string[] = ["GET", "HEAD", "OPTIONS"];
 
@@ -198,7 +204,7 @@ function problemResponse(
 	const details: ProblemDetails = new HttpProblem(status, code, detail).toProblem(instance);
 	return {
 		status,
-		headers: { ...BASE_HEADERS, ...headers },
+		headers: { ...PROBLEM_HEADERS, ...headers },
 		body: JSON.stringify(details),
 	};
 }
@@ -338,7 +344,7 @@ export function createRouter(options: RouterOptions): Router {
 				return { status: result.status, headers: responseHeaders, body: JSON.stringify(result.body) };
 			} catch (error) {
 				const { problem: details } = toProblem(error, path);
-				return { status: details.status, headers: { ...BASE_HEADERS }, body: JSON.stringify(details) };
+				return { status: details.status, headers: { ...PROBLEM_HEADERS }, body: JSON.stringify(details) };
 			}
 		},
 	};

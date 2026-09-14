@@ -20,7 +20,7 @@
 				},
 				"bind": {
 					"type": "text",
-					"label": "Bind address",
+					"label": "Bind address (127.0.0.1 = only this machine)",
 					"xs": 12,
 					"sm": 12,
 					"md": 4,

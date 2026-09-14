@@ -43,15 +43,8 @@
 			"uk": "Відстеження часу (прихід/вихід) для ioBroker із веб-додатком, терміналом бейджів і звітами",
 			"zh-cn": "通过网络应用程序、徽章终端和报告对 ioBroker 进行时间跟踪（上下班打卡）"
 		},
-		"authors": [
-			"Alex <sadam6752@gmail.com>"
-		],
-		"keywords": [
-			"template",
-			"automation",
-			"IoT",
-			"integration"
-		],
+		"authors": ["Alex <sadam6752@gmail.com>"],
+		"keywords": ["template", "automation", "IoT", "integration"],
 		"licenseInformation": {
 			"type": "free",
 			"license": "MIT"
@@ -82,17 +75,11 @@
 			}
 		]
 	},
-	"protectedNative": [
-		"sessionSecret",
-		"hmacSecret"
-	],
-	"encryptedNative": [
-		"sessionSecret",
-		"hmacSecret"
-	],
+	"protectedNative": ["sessionSecret", "hmacSecret"],
+	"encryptedNative": ["sessionSecret", "hmacSecret"],
 	"native": {
 		"port": 8082,
-		"bind": "0.0.0.0",
+		"bind": "127.0.0.1",
 		"dbPath": "",
 		"timezone": "Europe/Zurich",
 		"defaultLanguage": "de",

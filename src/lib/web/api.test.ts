@@ -6,6 +6,7 @@ import { createAbsencesRepository, type AbsencesRepository } from "../db/reposit
 import { createEntriesRepository, type EntriesRepository } from "../db/repositories/entries";
 import { createHolidaysRepository, type HolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository, type PayoutsRepository } from "../db/repositories/payouts";
+import { createTerminalsRepository, type TerminalsRepository } from "../db/repositories/terminals";
 import { createRulesRepository, type RulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
@@ -26,6 +27,7 @@ describe("web api", () => {
 	let holidays: HolidaysRepository;
 	let rules: RulesRepository;
 	let payouts: PayoutsRepository;
+	let terminals: TerminalsRepository;
 	let aggregation: AggregationService;
 	let sync: SyncService;
 	let auth: AuthService;
@@ -98,6 +100,7 @@ describe("web api", () => {
 		holidays = createHolidaysRepository(db);
 		rules = createRulesRepository(db);
 		payouts = createPayoutsRepository(db);
+		terminals = createTerminalsRepository(db);
 		settings = createSettingsRepository(db);
 		auth = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3 });
 		aggregation = createAggregationService({
@@ -119,9 +122,11 @@ describe("web api", () => {
 			holidays,
 			rules,
 			payouts,
+			terminals,
 			aggregation,
 			sync,
 			settings,
+			kioskEnabled: true,
 			now: () => 1000,
 			version: "9.9.9",
 		});
@@ -1208,6 +1213,201 @@ describe("web api", () => {
 					})
 				).status,
 			).to.equal(400);
+		});
+	});
+
+	describe("kiosk terminal", () => {
+		/**
+		 * Prepares a terminal with a badge user.
+		 *
+		 * @param options - whether the employee gets a PIN and whether the device demands one
+		 * @param options.pin - true to set the PIN of the employee
+		 * @param options.pinRequired - value for the device flag
+		 * @returns device token and the requested session
+		 */
+		async function prepareTerminal(options: { pin: boolean; pinRequired: boolean }): Promise<{
+			deviceToken: string;
+			terminalSession: string;
+		}> {
+			await send("PATCH", `/users/${annaId}`, {
+				body: { rfidCard: "CARD-42" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			if (options.pin) {
+				await send("POST", `/users/${annaId}/pin`, {
+					body: { pin: "1234" },
+					headers: headers(adminToken, adminCsrf),
+				});
+			}
+			const created = await send("POST", "/terminals", {
+				body: { name: "Werkstatt", location: "Halle 1", pinRequired: options.pinRequired },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const deviceToken = bodyOf<{ deviceToken: string }>(created).deviceToken;
+
+			const session = await send("POST", "/terminal/session", { body: { deviceToken } });
+			expect(session.status).to.equal(200);
+			return { deviceToken, terminalSession: bodyOf<{ terminalSession: string }>(session).terminalSession };
+		}
+
+		it("hands out a device token once and punches with badge and PIN", async () => {
+			// the status is public so a device can show a setup hint
+			const status = await send("GET", "/terminal/status");
+			expect(status.status).to.equal(200);
+			expect(bodyOf(status)).to.deep.include({ enabled: true, version: "9.9.9" });
+
+			// only administrators manage devices and PINs
+			expect((await send("GET", "/terminals", { headers: headers(annaToken) })).status).to.equal(403);
+			expect(
+				(
+					await send("POST", `/users/${annaId}/pin`, {
+						body: { pin: "1234" },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+			expect(
+				(
+					await send("POST", `/users/${annaId}/pin`, {
+						body: { pin: "12" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+
+			const { deviceToken, terminalSession } = await prepareTerminal({ pin: true, pinRequired: true });
+
+			// the token is visible exactly once
+			const listed = await send("GET", "/terminals", { headers: headers(adminToken) });
+			expect(listed.status).to.equal(200);
+			expect(JSON.stringify(bodyOf(listed))).to.not.contain(deviceToken);
+			expect(bodyOf<{ terminals: { name: string; pinRequired: boolean }[] }>(listed).terminals).to.have.lengthOf(
+				1,
+			);
+
+			// the selection list stays minimal
+			const people = await send("GET", "/terminal/users", { query: { terminalSession } });
+			expect(people.status).to.equal(200);
+			const people2 = bodyOf<{ users: Record<string, unknown>[] }>(people).users;
+			expect(people2).to.have.lengthOf(2);
+			expect(Object.keys(people2[0]).sort()).to.deep.equal(["displayName", "id"]);
+
+			// a badge alone is not enough when the device demands a PIN
+			expect(
+				(await send("POST", "/terminal/punch", { body: { terminalSession, badge: "CARD-42" } })).status,
+			).to.equal(401);
+
+			const punched = await send("POST", "/terminal/punch", {
+				body: { terminalSession, badge: "CARD-42", pin: "1234", tsUtc: 1000 },
+			});
+			expect(punched.status).to.equal(201);
+			expect(bodyOf<{ user: { id: number; displayName: string } }>(punched).user).to.deep.equal({
+				id: annaId,
+				displayName: "Anna",
+			});
+			expect(bodyOf<{ entry: { direction: string } }>(punched).entry.direction).to.equal("auto");
+			// the state of the day tells the terminal whether the employee is clocked in
+			expect(bodyOf<{ day: { hasOpenEntry: boolean } }>(punched).day.hasOpenEntry).to.equal(true);
+
+			// wrong PIN, unknown badge and a stale session are all refused
+			expect(
+				(
+					await send("POST", "/terminal/punch", {
+						body: { terminalSession, badge: "CARD-42", pin: "9999" },
+					})
+				).status,
+			).to.equal(401);
+			expect(
+				(
+					await send("POST", "/terminal/punch", {
+						body: { terminalSession, badge: "UNBEKANNT", pin: "1234" },
+					})
+				).status,
+			).to.equal(401);
+			expect(
+				(await send("POST", "/terminal/punch", { body: { terminalSession: "falsch", badge: "CARD-42" } }))
+					.status,
+			).to.equal(401);
+			expect((await send("POST", "/terminal/punch", { body: { terminalSession, pin: "1234" } })).status).to.equal(
+				400,
+			);
+
+			// the PIN also works without a badge, and the heartbeat keeps the session alive
+			const byPin = await send("POST", "/terminal/punch", {
+				body: { terminalSession, userId: annaId, pin: "1234", tsUtc: 1000 + 8 * 3600 },
+			});
+			expect(byPin.status).to.equal(201);
+			expect(bodyOf<{ day: { hasOpenEntry: boolean; workedMin: number } }>(byPin).day).to.deep.include({
+				hasOpenEntry: false,
+				workedMin: 480,
+			});
+
+			const heartbeat = await send("POST", "/terminal/heartbeat", { body: { terminalSession } });
+			expect(heartbeat.status).to.equal(200);
+			expect(bodyOf(heartbeat)).to.deep.include({ status: "ok" });
+
+			// revoking the device ends everything
+			const terminalId = bodyOf<{ terminals: { id: number }[] }>(listed).terminals[0].id;
+			expect(
+				(await send("DELETE", `/terminals/${terminalId}`, { headers: headers(adminToken, adminCsrf) })).status,
+			).to.equal(204);
+			expect((await send("GET", "/terminal/users", { query: { terminalSession } })).status).to.equal(401);
+			expect((await send("POST", "/terminal/session", { body: { deviceToken } })).status).to.equal(401);
+		});
+
+		it("accepts a badge alone when the device does not ask for a PIN", async () => {
+			const { terminalSession } = await prepareTerminal({ pin: false, pinRequired: false });
+
+			const punched = await send("POST", "/terminal/punch", {
+				body: { terminalSession, badge: "CARD-42", tsUtc: 1000 },
+			});
+			expect(punched.status).to.equal(201);
+
+			// without a stored PIN a PIN attempt fails instead of being ignored
+			expect(
+				(await send("POST", "/terminal/punch", { body: { terminalSession, userId: annaId, pin: "1234" } }))
+					.status,
+			).to.equal(401);
+		});
+
+		it("refuses every terminal call when the kiosk is switched off", async () => {
+			const disabled = createApi({
+				db,
+				auth,
+				users,
+				entries,
+				absences,
+				holidays,
+				rules,
+				payouts,
+				terminals,
+				aggregation,
+				sync,
+				settings,
+				kioskEnabled: false,
+				now: () => 1000,
+			});
+			const status = await disabled.router.handle({
+				method: "GET",
+				path: "/terminal/status",
+				query: {},
+				headers: {},
+				remoteAddress: "127.0.0.1",
+			});
+			expect(status.status).to.equal(200);
+			expect(JSON.parse(status.body.toString())).to.deep.include({ enabled: false });
+
+			const session = await disabled.router.handle({
+				method: "POST",
+				path: "/terminal/session",
+				query: {},
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ deviceToken: "egal" }),
+				remoteAddress: "127.0.0.1",
+			});
+			expect(session.status).to.equal(403);
+			expect(JSON.parse(session.body.toString())).to.deep.include({ code: "kiosk_disabled" });
 		});
 	});
 

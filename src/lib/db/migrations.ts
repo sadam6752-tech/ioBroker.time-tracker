@@ -337,4 +337,17 @@ export const migrations: Migration[] = [
 			);
 		`,
 	},
+	{
+		version: 6,
+		name: "users: personal PIN for the kiosk terminal",
+		sql: `ALTER TABLE users ADD COLUMN pin_hash TEXT;`,
+	},
+	{
+		version: 7,
+		name: "kiosk terminals: short lived sessions",
+		sql: `
+			ALTER TABLE kiosk_terminals ADD COLUMN session_hash       TEXT;
+			ALTER TABLE kiosk_terminals ADD COLUMN session_expires_at INTEGER;
+		`,
+	},
 ];

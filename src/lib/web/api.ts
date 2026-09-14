@@ -21,10 +21,11 @@ import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
 import type { RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
+import type { TerminalRecord, TerminalsRepository } from "../db/repositories/terminals";
 import type { UserRecord, UsersRepository, WorkProfileRecord } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
-import { checkPasswordPolicy, hashPassword } from "../services/auth";
+import { checkPasswordPolicy, hashPassword, verifyPassword } from "../services/auth";
 import type { SyncService } from "../services/sync";
 import { NotFoundError, ValidationError } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
@@ -59,6 +60,10 @@ export interface ApiDeps {
 	rules: RulesRepository;
 	/** Paid out overtime */
 	payouts: PayoutsRepository;
+	/** Kiosk terminals */
+	terminals: TerminalsRepository;
+	/** True when the kiosk terminal is switched on (instance setting) */
+	kioskEnabled?: boolean;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -151,6 +156,48 @@ const JSON_SETTINGS = ["pause_staffel"];
 
 /** Upper bound of a statistics range: every day of every employee is recalculated. */
 const MAX_STATISTICS_DAYS = 366;
+
+/** Lifetime of a terminal session; the heartbeat of the device extends it. */
+const TERMINAL_SESSION_MINUTES = 15;
+
+/** A terminal as it is handed out over the API (without any secret). */
+export interface PublicTerminalPayload {
+	/** Primary key */
+	id: number;
+	/** Display name */
+	name: string;
+	/** Optional location */
+	location: string | null;
+	/** True when a badge has to be combined with the personal PIN */
+	pinRequired: boolean;
+	/** False for revoked devices */
+	isActive: boolean;
+	/** Instant the device token expires, `null` = never */
+	expiresAt: number | null;
+	/** Instant of the last heartbeat */
+	lastSeenAt: number | null;
+	/** Instant of creation */
+	createdAt: number;
+}
+
+/**
+ * Removes the internals of a terminal record.
+ *
+ * @param terminal - stored terminal
+ * @returns the public part
+ */
+function publicTerminal(terminal: TerminalRecord): PublicTerminalPayload {
+	return {
+		id: terminal.id,
+		name: terminal.name,
+		location: terminal.location,
+		pinRequired: terminal.pinRequired,
+		isActive: terminal.isActive,
+		expiresAt: terminal.expiresAt,
+		lastSeenAt: terminal.lastSeenAt,
+		createdAt: terminal.createdAt,
+	};
+}
 
 /**
  * Settings that may be changed through the API: the instance defaults from the seed plus the structured ones.
@@ -502,7 +549,7 @@ function resolveScope(
  * @returns API with its router
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, holidays, rules, payouts, aggregation, sync, settings } = deps;
+	const { auth, users, entries, absences, holidays, rules, payouts, terminals, aggregation, sync, settings } = deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
@@ -1698,6 +1745,222 @@ export function createApi(deps: ApiDeps): Api {
 				{ workedMin: 0, targetMin: 0, balanceMin: 0, openDays: 0 },
 			),
 		});
+	});
+
+	// kiosk terminal (device token -> short lived session, badge/PIN punching)
+
+	/**
+	 * Refuses terminal requests when the instance switch is off.
+	 */
+	const requireKiosk = (): void => {
+		if (deps.kioskEnabled !== true) {
+			throw problem(403, "kiosk_disabled", "the kiosk terminal is switched off in the adapter settings");
+		}
+	};
+
+	/**
+	 * Resolves the terminal of a request.
+	 *
+	 * @param context - route context (body or query carries the session)
+	 * @returns the terminal
+	 */
+	const requireTerminal = (context: RouteContext): TerminalRecord => {
+		requireKiosk();
+		// the session travels in the body of a POST and in the query of a GET
+		const body = context.optionalJsonBody<Record<string, unknown>>();
+		const fromBody = typeof body.terminalSession === "string" ? body.terminalSession : null;
+		const session = fromBody ?? context.query("terminalSession");
+		if (!session) {
+			throw problem(401, "no_session", "terminal session is missing");
+		}
+		const terminal = terminals.findBySession(session, now());
+		if (!terminal) {
+			throw problem(401, "no_session", "terminal session is not valid any more");
+		}
+		return terminal;
+	};
+
+	route("GET", "/terminal/status", { public: true }, () =>
+		json(200, {
+			enabled: deps.kioskEnabled === true,
+			serverTime: now(),
+			timezone: settings.get("timezone") ?? "Europe/Zurich",
+			version: deps.version ?? "0.0.0",
+		}),
+	);
+
+	route("POST", "/terminal/session", { public: true, csrf: false }, context => {
+		requireKiosk();
+		const body = context.jsonBody();
+		const deviceToken = requireString(body, "deviceToken");
+		const terminal = terminals.findByToken(deviceToken, now());
+		if (!terminal) {
+			throw problem(401, "invalid_credentials", "the device token is not valid any more");
+		}
+
+		const started = terminals.startSession({
+			id: terminal.id,
+			ttlMinutes: TERMINAL_SESSION_MINUTES,
+			now: now(),
+		});
+		return json(200, {
+			terminalSession: started.terminalSession,
+			expiresAt: started.expiresAt,
+			terminal: {
+				name: terminal.name,
+				location: terminal.location,
+				pinRequired: terminal.pinRequired,
+			},
+		});
+	});
+
+	route("POST", "/terminal/heartbeat", { public: true, csrf: false }, context => {
+		const terminal = requireTerminal(context);
+		const extended = terminals.touch({
+			id: terminal.id,
+			ttlMinutes: TERMINAL_SESSION_MINUTES,
+			now: now(),
+		});
+		return json(200, {
+			status: "ok",
+			serverTime: now(),
+			timezone: settings.get("timezone") ?? "Europe/Zurich",
+			version: deps.version ?? "0.0.0",
+			expiresAt: extended.expiresAt,
+		});
+	});
+
+	route("GET", "/terminal/users", { public: true }, context => {
+		requireTerminal(context);
+		// only what a badge/PIN selection needs — no mail address, no profile, no working times
+		return json(200, {
+			users: users.list({ includeInactive: false }).map(user => ({ id: user.id, displayName: user.displayName })),
+		});
+	});
+
+	route("POST", "/terminal/punch", { public: true, csrf: false }, context => {
+		const terminal = requireTerminal(context);
+		const body = context.jsonBody();
+		const badge = optionalString(body, "badge");
+		const pin = optionalString(body, "pin");
+		const targetId = optionalNumber(body, "userId");
+
+		if (badge === null && (pin === null || targetId === null)) {
+			throw new ValidationError("a badge or a userId together with the PIN is required");
+		}
+
+		const user = badge !== null ? users.findByRfidCard(badge) : users.findById(targetId ?? 0);
+		if (!user || !user.isActive) {
+			// the same answer for an unknown badge and an unknown user: no enumeration of accounts
+			throw problem(401, "invalid_credentials", "badge or PIN is not known");
+		}
+
+		const pinMatches = pin !== null && user.pinHash !== null && verifyPassword(pin, user.pinHash);
+		if (terminal.pinRequired ? !pinMatches : !pinMatches && badge === null) {
+			throw problem(401, "invalid_credentials", "badge or PIN is not known");
+		}
+
+		const timestamp = now();
+		const stored = entries.insert({
+			userId: user.id,
+			tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+			timeZone: user.timezone,
+			source: "terminal",
+			direction: optionalDirection(body),
+			note: optionalString(body, "note"),
+			actorId: user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: timestamp,
+		});
+		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+		terminals.touch({ id: terminal.id, ttlMinutes: TERMINAL_SESSION_MINUTES, now: timestamp });
+
+		// the answer stays minimal: the terminal shows a name, a time and the state of the day
+		return json(201, {
+			user: { id: user.id, displayName: user.displayName },
+			entry: {
+				id: stored.entry.id,
+				tsUtc: stored.entry.tsUtc,
+				direction: stored.entry.direction,
+				localDate: stored.entry.localDate,
+			},
+			day: {
+				workedMin: day.workedMin,
+				targetMin: day.targetMin,
+				balanceMin: day.balanceMin,
+				hasOpenEntry: day.hasOpenEntry,
+			},
+		});
+	});
+
+	// terminals and PINs (administration)
+
+	route("GET", "/terminals", { permission: "terminal.manage" }, () =>
+		json(200, { terminals: terminals.list({ includeInactive: true }).map(publicTerminal) }),
+	);
+
+	route("POST", "/terminals", { permission: "terminal.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const created = terminals.create({
+			name: requireString(body, "name"),
+			location: optionalString(body, "location"),
+			pinRequired: optionalBoolean(body, "pinRequired") ?? undefined,
+			ttlDays: optionalNumber(body, "ttlDays"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+
+		// the device token is returned exactly once — the server only keeps its hash
+		return json(
+			201,
+			{ terminal: publicTerminal(created.terminal), deviceToken: created.deviceToken },
+			{ location: `/terminals/${created.terminal.id}` },
+		);
+	});
+
+	route("DELETE", "/terminals/:id", { permission: "terminal.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const revoked = terminals.revoke({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!revoked) {
+			throw new NotFoundError(`terminal ${context.params.id} not found or already revoked`);
+		}
+		return noContent();
+	});
+
+	route("POST", "/users/:id/pin", { permission: "user.edit", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		const body = context.jsonBody();
+		const pin = optionalString(body, "pin");
+
+		if (pin !== null && !/^\d{4,8}$/.test(pin)) {
+			throw new ValidationError("pin must be 4 to 8 digits");
+		}
+		users.setPin({
+			userId: id,
+			// a PIN is a secret of the same weight as a password, so it is hashed the same way
+			pinHash: pin === null ? null : hashPassword(pin),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return noContent();
 	});
 
 	// system

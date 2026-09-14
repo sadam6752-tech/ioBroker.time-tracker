@@ -17,6 +17,7 @@ import { createRulesRepository } from "./lib/db/repositories/rules";
 import { createSettingsRepository } from "./lib/db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
 import { createPayoutsRepository } from "./lib/db/repositories/payouts";
+import { createTerminalsRepository } from "./lib/db/repositories/terminals";
 import type { EntriesRepository } from "./lib/db/repositories/entries";
 import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
@@ -155,6 +156,7 @@ class Zeiterfassung extends utils.Adapter {
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
+		const terminals = createTerminalsRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({
 			db,
@@ -183,9 +185,11 @@ class Zeiterfassung extends utils.Adapter {
 			holidays,
 			rules,
 			payouts,
+			terminals,
 			aggregation,
 			sync,
 			settings,
+			kioskEnabled: this.config.kioskEnabled === true,
 			version: this.version,
 		});
 

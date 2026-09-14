@@ -35,6 +35,8 @@ export interface UserRecord {
 	locale: string;
 	/** IANA time zone of the user */
 	timezone: string;
+	/** Hash of the personal kiosk PIN, `null` when none is set */
+	pinHash: string | null;
 	/** Instant of creation, UTC epoch seconds */
 	createdAt: number;
 	/** Instant of the last change, UTC epoch seconds */
@@ -163,6 +165,16 @@ export interface UsersRepository {
 	findById(id: number): UserRecord | null;
 	/** Reads a user by login (case insensitive) */
 	findByLogin(login: string): UserRecord | null;
+	/** Reads a user by the RFID card of the badge terminal */
+	findByRfidCard(card: string): UserRecord | null;
+	/** Stores or clears the personal kiosk PIN (never written to the audit trail) */
+	setPin(input: {
+		userId: number;
+		pinHash: string | null;
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): void;
 	/** All users, optionally including the deactivated ones */
 	list(options?: { includeInactive?: boolean }): UserRecord[];
 	/** Changes a user and audits the changed fields */
@@ -209,6 +221,7 @@ interface UserRow {
 	must_change_pw: number;
 	locale: string;
 	timezone: string;
+	pin_hash: string | null;
 	created_at: number;
 	updated_at: number;
 	last_login_at: number | null;
@@ -249,6 +262,7 @@ export function mapUserRow(row: UserRow): UserRecord {
 		mustChangePw: row.must_change_pw !== 0,
 		locale: row.locale,
 		timezone: row.timezone,
+		pinHash: row.pin_hash,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 		lastLoginAt: row.last_login_at,
@@ -280,7 +294,7 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 }
 
 const USER_COLUMNS = `id, login, password_hash, legacy_sha1, display_name, email, rfid_card, is_active,
-\tmust_change_pw, locale, timezone, created_at, updated_at, last_login_at`;
+\tmust_change_pw, locale, timezone, pin_hash, created_at, updated_at, last_login_at`;
 
 const PROFILE_COLUMNS = `user_id, percent, weekly_hours, workdays, start_date, end_date, overtime_carryover,
 \tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags, legacy_source`;
@@ -322,6 +336,8 @@ const AUDITED_PROFILE_FIELDS: (keyof WorkProfileRecord)[] = [
 export function createUsersRepository(db: Db): UsersRepository {
 	const selectById = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`);
 	const selectByLogin = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE login = ? COLLATE NOCASE`);
+	const selectByRfid = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE rfid_card = ? COLLATE NOCASE LIMIT 1`);
+	const setPinHash = db.prepare("UPDATE users SET pin_hash = ?, updated_at = ? WHERE id = ?");
 	const selectAll = db.prepare(`SELECT ${USER_COLUMNS} FROM users ORDER BY display_name COLLATE NOCASE, id`);
 	const selectActive = db.prepare(
 		`SELECT ${USER_COLUMNS} FROM users WHERE is_active = 1 ORDER BY display_name COLLATE NOCASE, id`,
@@ -483,6 +499,38 @@ export function createUsersRepository(db: Db): UsersRepository {
 		findByLogin(login: string): UserRecord | null {
 			const row = selectByLogin.get(login.trim()) as UserRow | undefined;
 			return row ? mapUserRow(row) : null;
+		},
+
+		findByRfidCard(card: string): UserRecord | null {
+			const row = selectByRfid.get(card.trim()) as UserRow | undefined;
+			return row ? mapUserRow(row) : null;
+		},
+
+		setPin(input: {
+			userId: number;
+			pinHash: string | null;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): void {
+			if (!read(input.userId)) {
+				throw new NotFoundError(`user ${input.userId} not found`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				setPinHash.run(input.pinHash, now, input.userId);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "user.pin",
+					entity: "user",
+					entityId: input.userId,
+					// the hash itself never reaches the audit trail
+					detail: { cleared: input.pinHash === null },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
 		},
 
 		list(options?: { includeInactive?: boolean }): UserRecord[] {

@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { Absences } from "./screens/Absences";
+import { Admin } from "./screens/Admin";
 import { Dashboard } from "./screens/Dashboard";
 import { Login } from "./screens/Login";
 import { Month } from "./screens/Month";
@@ -84,6 +85,10 @@ function Routed(): React.JSX.Element {
 			<Route
 				path="/profile"
 				element={<Profile />}
+			/>
+			<Route
+				path="/admin"
+				element={<Admin />}
 			/>
 			<Route
 				path="*"

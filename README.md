@@ -97,6 +97,11 @@ built-in PDF fonts only cover Latin-1 — the export refuses such a language wit
 (`report_font_missing`) instead of drawing empty boxes. The web app offers both files as buttons in the month
 view and in the year report, so nobody has to build a URL by hand.
 
+The web app itself covers the punch screen, the month calendar, the year report (including the two downloads),
+absences, the offline queue with its conflict view and the profile. Callers holding `user.view` or `backup.run`
+additionally get an **administration** entry in the menu: employees (create, activate/deactivate, badge PIN) and
+database backups (list, retention, "create now").
+
 ## States (overview)
 
 | State                                                | Type    | Role                | Purpose                                        |

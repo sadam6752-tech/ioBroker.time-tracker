@@ -24,7 +24,7 @@ import SyncIcon from "@mui/icons-material/Sync";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSession } from "../state/session";
+import { hasPermission, useSession } from "../state/session";
 import { useSync } from "../offline/useSync";
 import { useLiveEvents } from "../live/useLiveEvents";
 
@@ -51,6 +51,9 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 	const { pending, online } = useSync();
 	// the figures on the screen follow the server: a punch at the terminal refreshes an open dashboard
 	useLiveEvents(session !== null);
+	// the administration is only offered to callers who may use at least one of its tabs
+	const { permissions } = useSession();
+	const mayAdminister = hasPermission(permissions, "user.view") || hasPermission(permissions, "backup.run");
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -111,6 +114,16 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 				<MenuItem disabled>
 					<Typography variant="body2">{session?.user.displayName ?? session?.user.login}</Typography>
 				</MenuItem>
+				{mayAdminister && (
+					<MenuItem
+						onClick={() => {
+							setMenuAnchor(null);
+							void navigate("/admin");
+						}}
+					>
+						{t("admin.title")}
+					</MenuItem>
+				)}
 				<MenuItem
 					onClick={() => {
 						setMenuAnchor(null);

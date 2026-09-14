@@ -140,6 +140,74 @@ export interface Conflict {
 	note: string | null;
 }
 
+/** An employee as the administration sees it. */
+export interface AdminUser {
+	/** Database id */
+	id: number;
+	/** Login name */
+	login: string;
+	/** Shown name */
+	displayName: string;
+	/** Optional e-mail */
+	email: string | null;
+	/** Badge code, when one is stored */
+	rfidCard: string | null;
+	/** False for deactivated accounts */
+	isActive: boolean;
+	/** True when the user has to change the password at the next sign in */
+	mustChangePw: boolean;
+	/** Language of the user */
+	locale: string;
+	/** Time zone of the user */
+	timezone: string;
+	/** Role keys of the user */
+	roles: string[];
+}
+
+/** A role of the catalogue. */
+export interface RoleInfo {
+	/** Stable key, e.g. `admin` */
+	key: string;
+	/** Shown name */
+	name: string;
+	/** Permissions the role grants */
+	permissions: string[];
+}
+
+/** One database backup. */
+export interface BackupFile {
+	/** File name */
+	name: string;
+	/** Size in bytes */
+	sizeBytes: number;
+	/** Instant it belongs to, UTC epoch seconds */
+	createdAt: number;
+}
+
+/** Input for creating an employee. */
+export interface CreateUserInput {
+	/** Login name */
+	login: string;
+	/** Shown name */
+	displayName: string;
+	/** Initial password */
+	password: string;
+	/** Roles of the new account */
+	roleKeys: string[];
+}
+
+/** Changeable fields of an employee. */
+export interface UpdateUserInput {
+	/** Shown name */
+	displayName?: string;
+	/** Activates or deactivates the account */
+	isActive?: boolean;
+	/** Roles of the account */
+	roleKeys?: string[];
+	/** New password */
+	password?: string;
+}
+
 /** The caller as `GET /auth/me` reports it. */
 export interface SessionUser {
 	id: number;

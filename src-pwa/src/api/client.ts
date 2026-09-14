@@ -12,7 +12,10 @@
 import type {
 	Absence,
 	AbsenceType,
+	AdminUser,
+	BackupFile,
 	Conflict,
+	CreateUserInput,
 	DayRange,
 	Entry,
 	LoginResult,
@@ -20,7 +23,9 @@ import type {
 	Payout,
 	PunchResult,
 	PunchStatus,
+	RoleInfo,
 	SessionUser,
+	UpdateUserInput,
 	YearAggregate,
 } from "./types";
 
@@ -126,6 +131,20 @@ export interface ApiClient {
 	resolve(entryId: number, action: "accept" | "dismiss", reason?: string): Promise<unknown>;
 	/** Downloads the monthly work time statement of the own account */
 	downloadReport(kind: "xls" | "pdf", year: number, month: number): Promise<DownloadFile>;
+	/** Employees, optionally including the deactivated ones */
+	users(includeInactive?: boolean): Promise<AdminUser[]>;
+	/** Role catalogue */
+	roles(): Promise<RoleInfo[]>;
+	/** Creates an employee */
+	createUser(input: CreateUserInput): Promise<AdminUser>;
+	/** Changes an employee */
+	updateUser(id: number, patch: UpdateUserInput): Promise<AdminUser>;
+	/** Sets the badge PIN of an employee (empty value removes it) */
+	setPin(id: number, pin: string): Promise<void>;
+	/** Known database backups and the retention */
+	backups(): Promise<{ retentionDays: number; backups: BackupFile[] }>;
+	/** Takes a database backup */
+	createBackup(): Promise<{ backup: BackupFile; removed: string[] }>;
 }
 
 /** A downloaded file. */
@@ -418,6 +437,36 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			request("POST", `/entries/${entryId}/resolve`, { body: { action, ...(reason ? { reason } : {}) } }),
 
 		downloadReport: (kind, year, month) => requestDownload(`/reports/${kind}`, { year, month }),
+
+		async users(includeInactive = false): Promise<AdminUser[]> {
+			const result = await request<{ users: AdminUser[] }>("GET", "/users", {
+				query: { includeInactive: includeInactive ? "true" : "false" },
+			});
+			return result.users ?? [];
+		},
+
+		async roles(): Promise<RoleInfo[]> {
+			const result = await request<{ roles: RoleInfo[] }>("GET", "/roles");
+			return result.roles ?? [];
+		},
+
+		async createUser(input): Promise<AdminUser> {
+			const result = await request<{ user: AdminUser }>("POST", "/users", { body: input });
+			return result.user;
+		},
+
+		async updateUser(id, patch): Promise<AdminUser> {
+			const result = await request<{ user: AdminUser }>("PATCH", `/users/${id}`, { body: patch });
+			return result.user;
+		},
+
+		async setPin(id, pin): Promise<void> {
+			await request("POST", `/users/${id}/pin`, { body: { pin } });
+		},
+
+		backups: () => request("GET", "/backup"),
+
+		createBackup: () => request("POST", "/backup"),
 	};
 }
 

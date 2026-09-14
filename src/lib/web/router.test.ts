@@ -6,7 +6,7 @@ import { createSettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
 import { createAuthService, type AuthService } from "../services/auth";
 import { NotFoundError } from "../errors";
-import { createRouter, json, noContent, type HttpRequest, type HttpResponse, type Router } from "./router";
+import { binary, createRouter, json, noContent, type HttpRequest, type HttpResponse, type Router } from "./router";
 
 const SECRET = "router-test-secret";
 const password = "Zeit-2026-klar";
@@ -149,6 +149,19 @@ describe("web router", () => {
 			handler: () => {
 				throw new TypeError("internal detail that must not leak");
 			},
+		});
+		router.add({
+			method: "GET",
+			path: "/download",
+			handler: () =>
+				binary(200, Buffer.from([1, 2, 3]), "application/octet-stream", {
+					"content-disposition": 'attachment; filename="export.bin"',
+				}),
+		});
+		router.add({
+			method: "GET",
+			path: "/export.csv",
+			handler: () => binary(200, "a,b\n1,2\n", "text/csv; charset=utf-8"),
 		});
 	});
 
@@ -338,6 +351,24 @@ describe("web router", () => {
 			expect(crash.status).to.equal(500);
 			expect(bodyOf(crash).code).to.equal("internal_error");
 			expect(crash.body).to.not.contain("internal detail");
+		});
+
+		it("passes a binary download through unchanged", async () => {
+			const response = await send("GET", "/download", { headers: { "x-session-token": employeeToken } });
+
+			expect(response.status).to.equal(200);
+			expect(response.headers["content-type"]).to.equal("application/octet-stream");
+			expect(response.headers["content-disposition"]).to.equal('attachment; filename="export.bin"');
+			expect(Buffer.isBuffer(response.body)).to.equal(true);
+			expect([...(response.body as Buffer)]).to.deep.equal([1, 2, 3]);
+		});
+
+		it("writes a text download without JSON encoding", async () => {
+			const response = await send("GET", "/export.csv", { headers: { "x-session-token": employeeToken } });
+
+			expect(response.headers["content-type"]).to.equal("text/csv; charset=utf-8");
+			expect(response.body.toString()).to.equal("a,b\n1,2\n");
+			expect(response.body.toString()).to.not.contain('"a,b');
 		});
 	});
 });

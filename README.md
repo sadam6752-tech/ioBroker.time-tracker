@@ -77,22 +77,34 @@ The adapter runs its own HTTP server on the configured port and serves two thing
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `/` and all other paths | the built web app from `www/` (`index.html`, assets; unknown paths fall back to the page for client side routing) |
 | `/api/...`              | the REST API (JSON, errors as `application/problem+json`)                                                         |
+| `/api/stream`           | live events over a WebSocket (session token as query parameter)                                                   |
 
 The API is deliberately mounted below `/api`, so the web app owns every other path. If no `www/` folder is
 part of the installation (for example while the web app is still being developed), the adapter keeps running
 and only the API is reachable — a log line states which of both applies.
 
+Downloads are real files, not JSON: `GET /api/reports/xls?year=&month=` returns the monthly work time
+statement of the caller as an Excel workbook (`.xlsx`, `content-disposition: attachment`), generated in the
+language and time zone of the employee.
+
 ## States (overview)
 
-| State                                         | Type    | Role                | Purpose                                         |
-| --------------------------------------------- | ------- | ------------------- | ----------------------------------------------- |
-| `zeiterfassung.0.info.connection`             | boolean | indicator.connected | adapter/service ready                           |
-| `zeiterfassung.0.users.<id>.working`          | boolean | indicator           | user currently clocked in                       |
-| `zeiterfassung.0.users.<id>.today.workedMin`  | number  | value               | minutes worked today                            |
-| `zeiterfassung.0.users.<id>.year.overtimeMin` | number  | value               | accumulated overtime (minutes)                  |
-| `zeiterfassung.0.global.presentCount`         | number  | value               | users currently present                         |
-| `zeiterfassung.0.event.lastPunch`             | string  | json                | last punch (JSON text, trigger for automations) |
-| `zeiterfassung.0.command.punch`               | boolean | button              | button: set a punch                             |
+| State                                                | Type    | Role                | Purpose                                        |
+| ---------------------------------------------------- | ------- | ------------------- | ---------------------------------------------- |
+| `zeiterfassung.0.info.connection`                    | boolean | indicator.connected | adapter/service ready                          |
+| `zeiterfassung.0.info.lastBackup`                    | number  | value.time          | instant of the newest database backup          |
+| `zeiterfassung.0.users.<id>.displayName`             | string  | info.name           | name of the employee                           |
+| `zeiterfassung.0.users.<id>.hasOpenEntry`            | boolean | indicator.working   | employee is clocked in                         |
+| `zeiterfassung.0.users.<id>.lastPunch`               | number  | value.time          | instant of the last punch of today             |
+| `zeiterfassung.0.users.<id>.todayWorkedMinutes`      | number  | value               | minutes worked today                           |
+| `zeiterfassung.0.users.<id>.todayBalanceMinutes`     | number  | value               | balance of today in minutes                    |
+| `zeiterfassung.0.users.<id>.openConflicts`           | number  | value               | punches waiting for a decision                 |
+| `zeiterfassung.0.commands.punchUserId`               | number  | value               | employee the punch commands apply to           |
+| `zeiterfassung.0.commands.punch`                     | boolean | button              | punch in or out                                |
+| `zeiterfassung.0.commands.quickPunch`                | boolean | button              | punch with the configured quick rounding       |
+| `zeiterfassung.0.commands.closeMonth`                | string  | text                | close a month, value `YYYY-MM`                 |
+| `zeiterfassung.0.commands.recalc`                    | string  | text                | recalculate a period, `YYYY-MM` or `YYYY`      |
+| `zeiterfassung.0.commands.backup`                    | boolean | button              | write a database backup                        |
 
 Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 

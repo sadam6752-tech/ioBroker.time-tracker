@@ -111,6 +111,15 @@ export interface Router {
 /** Marker to tell a handler result from a plain JSON payload. */
 const ROUTE_RESPONSE = Symbol("routeResponse");
 
+/** Marker for responses whose body is passed to the transport unchanged. */
+const RAW_RESPONSE = Symbol("rawResponse");
+
+/** A response whose body is written to the transport as it is (see `binary`). */
+export interface RawRouteResponse extends RouteResponse {
+	/** Bytes or text */
+	body: string | Buffer;
+}
+
 /**
  * Creates a response object for a handler.
  *
@@ -131,6 +140,40 @@ export function json(status: number, body: unknown, headers: Record<string, stri
  */
 export function noContent(status = 204): RouteResponse {
 	return Object.assign({ status, body: undefined }, { [ROUTE_RESPONSE]: true });
+}
+
+/**
+ * Creates a response with a body that is not JSON.
+ *
+ * Used for downloads and other binary payloads (reports, backups). The body is handed to the transport
+ * unchanged, so a `Buffer` keeps its bytes and a string is written as UTF-8 text.
+ *
+ * @param status - HTTP status code
+ * @param body - bytes or text
+ * @param contentType - media type of the body
+ * @param headers - additional response headers (e.g. `content-disposition`)
+ * @returns route response
+ */
+export function binary(
+	status: number,
+	body: string | Buffer,
+	contentType: string,
+	headers: Record<string, string> = {},
+): RouteResponse {
+	return Object.assign(
+		{ status, body, headers: { "content-type": contentType, ...headers } },
+		{ [ROUTE_RESPONSE]: true, [RAW_RESPONSE]: true },
+	);
+}
+
+/**
+ * Checks whether a response body is handed to the transport unchanged.
+ *
+ * @param value - handler result
+ * @returns true for responses created by `binary`
+ */
+export function isRawResponse(value: unknown): value is RawRouteResponse {
+	return typeof value === "object" && value !== null && RAW_RESPONSE in value;
 }
 
 /**
@@ -372,6 +415,10 @@ export function createRouter(options: RouterOptions): Router {
 				if (result.body === undefined) {
 					delete responseHeaders["content-type"];
 					return { status: result.status, headers: responseHeaders, body: "" };
+				}
+				if (isRawResponse(result)) {
+					// downloads keep their bytes: a buffer is written as is, a string as UTF-8 text
+					return { status: result.status, headers: responseHeaders, body: result.body };
 				}
 				return { status: result.status, headers: responseHeaders, body: JSON.stringify(result.body) };
 			} catch (error) {

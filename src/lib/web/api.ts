@@ -39,6 +39,8 @@ import type { BackupService } from "../services/backup";
 import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
+import { reportLabels } from "../reports/labels";
+import { buildMonthReport, reportFileName } from "../reports/xls";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { problem, toProblem } from "./problem";
@@ -46,6 +48,7 @@ import {
 	createRouter,
 	json,
 	noContent,
+	binary,
 	type HttpMethod,
 	type RouteContext,
 	type RouteResponse,
@@ -93,6 +96,9 @@ export interface ApiDeps {
 	/** Version reported by `GET /version` */
 	version?: string;
 }
+
+/** Media type of the Excel export. */
+const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /** A registered route (used for the documentation). */
 export interface ApiRoute {
@@ -2281,6 +2287,62 @@ export function createApi(deps: ApiDeps): Api {
 					balanceMin: day.balanceMin,
 					hasOpenEntry: day.hasOpenEntry,
 				},
+			});
+		},
+	);
+
+	// reports
+
+	route(
+		"GET",
+		"/reports/xls",
+		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
+		async context => {
+			const userId = scopeUser(context);
+			const user = users.findById(userId);
+			if (!user) {
+				throw new NotFoundError(`user ${userId} not found`);
+			}
+
+			const year = numberQuery(context, "year");
+			const month = numberQuery(context, "month");
+			if (month < 1 || month > 12) {
+				throw new ValidationError(`month must be between 1 and 12 (got ${month})`);
+			}
+
+			const prefix = `${year}-${String(month).padStart(2, "0")}`;
+			const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+			const to = `${prefix}-${String(lastDay).padStart(2, "0")}`;
+			const timestamp = now();
+
+			// a statement has to show the current state of the month, so the range is recalculated first
+			aggregation.recalculateRange(userId, `${prefix}-01`, to, { now: timestamp });
+			const { labels } = reportLabels(user.locale);
+
+			const workbook = await buildMonthReport({
+				user: { displayName: user.displayName, login: user.login, timezone: user.timezone },
+				labels,
+				locale: user.locale || "en",
+				year,
+				month,
+				days: aggregation.days(userId, `${prefix}-01`, to),
+				absences: absences.withTypesInRange(userId, `${prefix}-01`, to).map(absence => ({
+					typeCode: absence.typeCode,
+					typeName: absence.typeName,
+					dateFrom: absence.dateFrom,
+					dateTo: absence.dateTo,
+					dayPortion: absence.dayPortion,
+					hours: absence.hours,
+				})),
+				generatedAt: timestamp,
+				generator: `zeiterfassung ${deps.version ?? ""}`.trim(),
+			});
+
+			const fileName = reportFileName(user.login, year, month);
+			// the file name is generated from the login, so it never contains a header delimiter
+			return binary(200, workbook, XLSX_CONTENT_TYPE, {
+				"content-disposition": `attachment; filename="${fileName}"`,
+				"cache-control": "no-store",
 			});
 		},
 	);

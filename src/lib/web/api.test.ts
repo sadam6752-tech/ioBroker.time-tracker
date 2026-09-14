@@ -3,6 +3,7 @@ import { expect } from "chai";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import ExcelJS from "exceljs";
 import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository, type AbsencesRepository } from "../db/repositories/absences";
@@ -1577,6 +1578,68 @@ describe("web api", () => {
 				headers: headers(adminToken, adminCsrf),
 			});
 			expect(ok.status).to.equal(200);
+		});
+	});
+
+	describe("exports", () => {
+		it("needs a session and the own report permission", async () => {
+			const anonymous = await send("GET", "/reports/xls", { query: { year: "1970", month: "1" } });
+			expect(anonymous.status).to.equal(401);
+
+			// an employee may read the own month, but not the one of somebody else
+			const own = await send("GET", "/reports/xls", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
+			expect(own.status).to.equal(200);
+
+			const foreign = await send("GET", "/reports/xls", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1", userId: String(adminId) },
+			});
+			expect(foreign.status).to.equal(403);
+		});
+
+		it("answers with a workbook of the requested month", async () => {
+			// one punch in January 1970, so the statement has a day row
+			await send("POST", "/entries", {
+				body: { tsUtc: 1_000_000 },
+				headers: headers(annaToken, annaCsrf),
+			});
+
+			const response = await send("GET", "/reports/xls", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
+			expect(response.status).to.equal(200);
+			expect(response.headers["content-type"]).to.equal(
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			);
+			expect(response.headers["content-disposition"]).to.equal(
+				'attachment; filename="zeiterfassung-anna-1970-01.xlsx"',
+			);
+			expect(response.headers["cache-control"]).to.equal("no-store");
+
+			// the body is a real workbook, not JSON
+			const workbook = new ExcelJS.Workbook();
+			await workbook.xlsx.load(response.body as unknown as ExcelJS.Buffer);
+			const sheet = workbook.getWorksheet("1970-01");
+			expect(sheet, "worksheet 1970-01").to.be.an("object");
+			// the seeded instance language is German, so the statement is German
+			const cellText = (address: string): string => {
+				const value = sheet?.getCell(address).value;
+				return typeof value === "string" ? value : typeof value === "number" ? String(value) : "";
+			};
+			expect(cellText("A2")).to.equal("Mitarbeiter: Anna (anna)");
+			expect(cellText("A6")).to.equal("Datum");
+			expect(cellText("A7")).to.contain("01.01.1970");
+			expect(cellText("A18")).to.contain("12.01.1970");
+			// a single punch of the day leaves it open, which the note column says
+			expect(cellText("I18")).to.equal("offen");
+			expect(sheet?.getCell("D7").numFmt).to.equal("[h]:mm");
+			// 31 day rows and the totals row below them
+			expect(cellText("A38")).to.equal("Summe");
+			expect(cellText("H38")).to.equal("Tage: 31");
 		});
 	});
 

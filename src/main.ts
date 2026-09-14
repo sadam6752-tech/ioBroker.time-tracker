@@ -18,6 +18,7 @@ import { createSettingsRepository } from "./lib/db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
 import { createPayoutsRepository } from "./lib/db/repositories/payouts";
 import { createTerminalsRepository } from "./lib/db/repositories/terminals";
+import { createRfidRepository } from "./lib/db/repositories/rfid";
 import type { EntriesRepository } from "./lib/db/repositories/entries";
 import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
@@ -157,6 +158,7 @@ class Zeiterfassung extends utils.Adapter {
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
 		const terminals = createTerminalsRepository(db);
+		const rfid = createRfidRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({
 			db,
@@ -186,10 +188,12 @@ class Zeiterfassung extends utils.Adapter {
 			rules,
 			payouts,
 			terminals,
+			rfid,
 			aggregation,
 			sync,
 			settings,
 			kioskEnabled: this.config.kioskEnabled === true,
+			hmacSecret: this.config.hmacSecret,
 			version: this.version,
 		});
 

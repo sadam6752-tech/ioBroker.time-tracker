@@ -36,6 +36,7 @@ export type ProblemCode =
 	| "payload_too_large"
 	| "unsupported_media_type"
 	| "kiosk_disabled"
+	| "not_configured"
 	| "internal_error";
 
 /** A problem document. */

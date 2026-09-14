@@ -19,6 +19,14 @@ import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absen
 import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
+import {
+	buildTagToken,
+	newTagUid,
+	parseTagToken,
+	sameSignature,
+	signTag,
+	type RfidRepository,
+} from "../db/repositories/rfid";
 import type { RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
 import type { TerminalRecord, TerminalsRepository } from "../db/repositories/terminals";
@@ -62,6 +70,10 @@ export interface ApiDeps {
 	payouts: PayoutsRepository;
 	/** Kiosk terminals */
 	terminals: TerminalsRepository;
+	/** RFID/NFC tags */
+	rfid: RfidRepository;
+	/** Secret used to sign tag links (`hmacSecret`) */
+	hmacSecret?: string;
 	/** True when the kiosk terminal is switched on (instance setting) */
 	kioskEnabled?: boolean;
 	/** Aggregation service (reports and refreshes) */
@@ -549,7 +561,8 @@ function resolveScope(
  * @returns API with its router
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, holidays, rules, payouts, terminals, aggregation, sync, settings } = deps;
+	const { auth, users, entries, absences, holidays, rules, payouts, terminals, rfid, aggregation, sync, settings } =
+		deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
@@ -1961,6 +1974,138 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		return noContent();
+	});
+
+	// RFID/NFC tags (signed deep links)
+
+	/**
+	 * Refuses tag management when the instance has no HMAC secret.
+	 *
+	 * @returns the secret
+	 */
+	const requireHmacSecret = (): string => {
+		const secret = deps.hmacSecret ?? "";
+		if (!secret) {
+			throw problem(403, "not_configured", "no HMAC secret is configured for signed tag links");
+		}
+		return secret;
+	};
+
+	route("GET", "/rfid/tags", { permission: "rfid.manage" }, () =>
+		json(200, { tags: rfid.list({ includeInactive: true }) }),
+	);
+
+	route("POST", "/rfid/tags", { permission: "rfid.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const secret = requireHmacSecret();
+		const body = context.jsonBody();
+		const target = Number(body.userId ?? context.auth.user.id);
+		if (!Number.isInteger(target) || !users.findById(target)) {
+			throw new ValidationError("userId must reference an existing employee");
+		}
+		const ttlDays = optionalNumber(body, "ttlDays") ?? 365;
+		if (!Number.isInteger(ttlDays) || ttlDays <= 0) {
+			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
+		}
+
+		const timestamp = now();
+		const expiresAt = timestamp + ttlDays * 86400;
+		const uid = optionalString(body, "uid") ?? newTagUid();
+		const signature = signTag(secret, uid, target, expiresAt);
+		const tag = rfid.create({
+			uid,
+			userId: target,
+			signature,
+			label: optionalString(body, "label"),
+			expiresAt,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: timestamp,
+		});
+
+		const token = buildTagToken(uid, target, expiresAt, signature);
+		const host = context.header("host") ?? "localhost";
+		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan
+		return json(
+			201,
+			{ tag, token, url: `${host.includes("://") ? host : `https://${host}`}/?tag=${token}` },
+			{ location: `/rfid/tags/${tag.id}` },
+		);
+	});
+
+	route("DELETE", "/rfid/tags/:id", { permission: "rfid.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const revoked = rfid.revoke({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!revoked) {
+			throw new NotFoundError(`tag ${context.params.id} not found or already revoked`);
+		}
+		return noContent();
+	});
+
+	route("POST", "/rfid/scan", { public: true, csrf: false }, context => {
+		const secret = requireHmacSecret();
+		const body = context.jsonBody();
+		const parsed = parseTagToken(requireString(body, "token"));
+		if (!parsed) {
+			throw new ValidationError("token is not valid");
+		}
+
+		// the signature is recomputed from the payload of the token and compared with the signature it carries,
+		// so a forged uid/user/exp or a patched signature fails here
+		const expected = signTag(secret, parsed.uid, parsed.userId, parsed.expiresAt);
+		if (!sameSignature(expected, parsed.signature)) {
+			throw problem(401, "invalid_credentials", "the tag is not valid any more");
+		}
+
+		const tag = rfid.verify({ uid: parsed.uid, userId: parsed.userId, signature: parsed.signature, now: now() });
+		if (!tag) {
+			// one answer for an unknown tag and a revoked one: no probing
+			throw problem(401, "invalid_credentials", "the tag is not valid any more");
+		}
+
+		const user = users.findById(tag.userId ?? 0);
+		if (!user || !user.isActive) {
+			throw problem(401, "user_inactive", "the owner of the tag is not active");
+		}
+
+		const timestamp = now();
+		const stored = entries.insert({
+			userId: user.id,
+			tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+			timeZone: user.timezone,
+			source: "nfc",
+			direction: optionalDirection(body),
+			note: optionalString(body, "note"),
+			actorId: user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: timestamp,
+		});
+		rfid.touch({ id: tag.id, now: timestamp });
+		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+
+		return json(201, {
+			user: { id: user.id, displayName: user.displayName },
+			entry: {
+				id: stored.entry.id,
+				tsUtc: stored.entry.tsUtc,
+				localDate: stored.entry.localDate,
+			},
+			day: {
+				workedMin: day.workedMin,
+				targetMin: day.targetMin,
+				balanceMin: day.balanceMin,
+				hasOpenEntry: day.hasOpenEntry,
+			},
+		});
 	});
 
 	// system

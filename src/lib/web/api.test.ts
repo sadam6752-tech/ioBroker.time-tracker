@@ -7,6 +7,7 @@ import { createEntriesRepository, type EntriesRepository } from "../db/repositor
 import { createHolidaysRepository, type HolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository, type PayoutsRepository } from "../db/repositories/payouts";
 import { createTerminalsRepository, type TerminalsRepository } from "../db/repositories/terminals";
+import { createRfidRepository, type RfidRepository } from "../db/repositories/rfid";
 import { createRulesRepository, type RulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
@@ -19,6 +20,9 @@ import type { HttpResponse } from "./router";
 const SECRET = "api-test-secret";
 const password = "Zeit-2026-klar";
 
+/** Secret used to sign RFID tag links in the tests. */
+const TAG_SECRET = "tag-test-secret";
+
 describe("web api", () => {
 	let db: Db;
 	let users: UsersRepository;
@@ -28,6 +32,7 @@ describe("web api", () => {
 	let rules: RulesRepository;
 	let payouts: PayoutsRepository;
 	let terminals: TerminalsRepository;
+	let rfid: RfidRepository;
 	let aggregation: AggregationService;
 	let sync: SyncService;
 	let auth: AuthService;
@@ -101,6 +106,7 @@ describe("web api", () => {
 		rules = createRulesRepository(db);
 		payouts = createPayoutsRepository(db);
 		terminals = createTerminalsRepository(db);
+		rfid = createRfidRepository(db);
 		settings = createSettingsRepository(db);
 		auth = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3 });
 		aggregation = createAggregationService({
@@ -123,10 +129,12 @@ describe("web api", () => {
 			rules,
 			payouts,
 			terminals,
+			rfid,
 			aggregation,
 			sync,
 			settings,
 			kioskEnabled: true,
+			hmacSecret: TAG_SECRET,
 			now: () => 1000,
 			version: "9.9.9",
 		});
@@ -1382,6 +1390,7 @@ describe("web api", () => {
 				rules,
 				payouts,
 				terminals,
+				rfid,
 				aggregation,
 				sync,
 				settings,
@@ -1408,6 +1417,104 @@ describe("web api", () => {
 			});
 			expect(session.status).to.equal(403);
 			expect(JSON.parse(session.body.toString())).to.deep.include({ code: "kiosk_disabled" });
+		});
+	});
+
+	describe("rfid tags", () => {
+		it("creates a signed tag link and punches by scanning it", async () => {
+			// managing tags is an administrative right
+			expect((await send("GET", "/rfid/tags", { headers: headers(annaToken) })).status).to.equal(403);
+			expect(
+				(
+					await send("POST", "/rfid/tags", {
+						body: { userId: annaId },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+
+			const created = await send("POST", "/rfid/tags", {
+				body: { userId: annaId, label: "Schlüsselbund" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const payload = bodyOf<{ tag: { id: number; uid: string }; token: string; url: string }>(created);
+			expect(payload.url).to.contain(`/?tag=${payload.token}`);
+			expect(created.headers.location).to.equal(`/rfid/tags/${payload.tag.id}`);
+
+			// the list never contains the signature
+			const listed = await send("GET", "/rfid/tags", { headers: headers(adminToken) });
+			expect(listed.status).to.equal(200);
+			expect(JSON.stringify(bodyOf(listed))).to.not.contain(payload.token);
+
+			// scanning needs no session: the signature is the credential
+			const scanned = await send("POST", "/rfid/scan", { body: { token: payload.token, tsUtc: 1000 } });
+			expect(scanned.status).to.equal(201);
+			expect(bodyOf<{ user: { id: number; displayName: string } }>(scanned).user).to.deep.equal({
+				id: annaId,
+				displayName: "Anna",
+			});
+			expect(bodyOf<{ day: { hasOpenEntry: boolean } }>(scanned).day.hasOpenEntry).to.equal(true);
+
+			// the scan is recorded on the tag
+			const after = bodyOf<{ tags: { lastUsedAt: number | null }[] }>(
+				await send("GET", "/rfid/tags", { headers: headers(adminToken) }),
+			);
+			expect(after.tags[0].lastUsedAt).to.equal(1000);
+
+			// a tampered token (another user, another expiry) fails the signature
+			const parts = payload.token.split(".");
+			const forOtherUser = [parts[0], String(adminId), parts[2], parts[3]].join(".");
+			const otherExpiry = [parts[0], parts[1], String(Number(parts[2]) + 9999), parts[3]].join(".");
+			for (const token of [forOtherUser, otherExpiry, `${payload.token}x`, "quatsch"]) {
+				const response = await send("POST", "/rfid/scan", { body: { token } });
+				expect(response.status, token).to.be.oneOf([400, 401]);
+			}
+
+			// revoking ends the tag
+			expect(
+				(await send("DELETE", `/rfid/tags/${payload.tag.id}`, { headers: headers(adminToken, adminCsrf) }))
+					.status,
+			).to.equal(204);
+			expect((await send("POST", "/rfid/scan", { body: { token: payload.token } })).status).to.equal(401);
+			expect(
+				(await send("DELETE", `/rfid/tags/${payload.tag.id}`, { headers: headers(adminToken, adminCsrf) }))
+					.status,
+			).to.equal(404);
+		});
+
+		it("refuses tag links without a configured secret", async () => {
+			const withoutSecret = createApi({
+				db,
+				auth,
+				users,
+				entries,
+				absences,
+				holidays,
+				rules,
+				payouts,
+				terminals,
+				rfid,
+				aggregation,
+				sync,
+				settings,
+				kioskEnabled: true,
+				now: () => 1000,
+			});
+			const response = await withoutSecret.router.handle({
+				method: "POST",
+				path: "/rfid/scan",
+				query: {},
+				headers: {
+					"content-type": "application/json",
+					"x-session-token": adminToken,
+					"x-csrf-token": adminCsrf,
+				},
+				body: JSON.stringify({ token: "a.1.2.b" }),
+				remoteAddress: "127.0.0.1",
+			});
+			expect(response.status).to.equal(403);
+			expect(JSON.parse(response.body.toString())).to.deep.include({ code: "not_configured" });
 		});
 	});
 

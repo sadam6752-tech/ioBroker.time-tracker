@@ -11,6 +11,7 @@ import { createEntriesRepository } from "../db/repositories/entries";
 import { createHolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository } from "../db/repositories/payouts";
 import { createTerminalsRepository } from "../db/repositories/terminals";
+import { createRfidRepository } from "../db/repositories/rfid";
 import { createRulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository } from "../db/repositories/users";
@@ -38,6 +39,7 @@ describe("web server", () => {
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
 		const terminals = createTerminalsRepository(db);
+		const rfid = createRfidRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({ db, users, settings, secret: "server-test-secret" });
 		const aggregation = createAggregationService({
@@ -60,6 +62,7 @@ describe("web server", () => {
 			rules,
 			payouts,
 			terminals,
+			rfid,
 			aggregation,
 			sync,
 			settings,

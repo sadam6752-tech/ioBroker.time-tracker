@@ -1518,6 +1518,58 @@ describe("web api", () => {
 		});
 	});
 
+	describe("rate limits and field errors", () => {
+		it("answers too many requests with 429 and a retry-after header", async () => {
+			// `/rfid/scan` allows 30 scans per minute and client; a bad token still counts
+			let last = 0;
+			for (let attempt = 1; attempt <= 30; attempt++) {
+				const response = await send("POST", "/rfid/scan", { body: { token: "quatsch" } });
+				expect(response.status, `attempt ${attempt}`).to.equal(400);
+				last = response.status;
+			}
+			expect(last).to.equal(400);
+
+			const blocked = await send("POST", "/rfid/scan", { body: { token: "quatsch" } });
+			expect(blocked.status).to.equal(429);
+			expect(bodyOf(blocked)).to.deep.include({ status: 429, code: "rate_limited" });
+			expect(Number(blocked.headers["retry-after"])).to.be.greaterThan(0);
+
+			// another route class of the same client is not affected by the counting
+			const otherClass = await send("POST", "/terminal/session", { body: { deviceToken: "egal" } });
+			expect(otherClass.status).to.equal(401);
+		});
+
+		it("reports invalid fields of a request in errors[]", async () => {
+			const response = await send("PUT", `/users/${annaId}/profile`, {
+				body: { percent: 130, workdays: "1;9", overtimeModel: "taeglich", unbekannt: 1 },
+				headers: headers(adminToken, adminCsrf),
+			});
+
+			expect(response.status).to.equal(400);
+			const problem = bodyOf<{
+				code: string;
+				detail: string;
+				errors?: { path: string; message: string }[];
+			}>(response);
+			expect(problem.code).to.equal("bad_request");
+			expect(problem.detail).to.equal("4 field(s) of the work profile are not valid");
+			expect(problem.errors?.map(issue => issue.path).sort()).to.deep.equal([
+				"overtimeModel",
+				"percent",
+				"unbekannt",
+				"workdays",
+			]);
+			expect(problem.errors?.find(issue => issue.path === "percent")?.message).to.contain("between 0 and 100");
+
+			// a valid request carries no `errors[]` at all
+			const ok = await send("PUT", `/users/${annaId}/profile`, {
+				body: { percent: 80 },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(ok.status).to.equal(200);
+		});
+	});
+
 	describe("corrections", () => {
 		it("corrects a punch with optimistic locking", async () => {
 			const created = await send("POST", "/punch", {

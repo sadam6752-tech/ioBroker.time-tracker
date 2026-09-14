@@ -35,7 +35,7 @@ import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
 import { checkPasswordPolicy, hashPassword, verifyPassword } from "../services/auth";
 import type { SyncService } from "../services/sync";
-import { NotFoundError, ValidationError } from "../errors";
+import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
@@ -367,57 +367,74 @@ const PROFILE_FIELDS: (keyof Omit<WorkProfileRecord, "userId">)[] = [
  */
 function readProfilePatch(body: Record<string, unknown>): Partial<Omit<WorkProfileRecord, "userId">> {
 	const patch: Partial<Omit<WorkProfileRecord, "userId">> = {};
+	// every invalid field is collected instead of failing on the first one, so the client sees all problems at
+	// once (RFC 9457 `errors[]`)
+	const issues: FieldIssue[] = [];
+
 	for (const [key, value] of Object.entries(body)) {
 		if (key === "reason") {
 			continue;
 		}
 		if (!(PROFILE_FIELDS as string[]).includes(key)) {
-			throw new ValidationError(`"${key}" is not part of a work profile`);
+			issues.push({ path: key, message: "unknown field of a work profile" });
+			continue;
 		}
 
 		if (key === "percent") {
 			const percent = Number(value);
 			if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
-				throw new ValidationError("percent must be a whole number between 0 and 100");
+				issues.push({ path: key, message: "must be a whole number between 0 and 100" });
+				continue;
 			}
 			patch.percent = percent;
 		} else if (key === "weeklyHours") {
 			const hours = Number(value);
 			if (!Number.isFinite(hours) || hours < 0 || hours > 168) {
-				throw new ValidationError("weeklyHours must be between 0 and 168");
+				issues.push({ path: key, message: "must be between 0 and 168" });
+				continue;
 			}
 			patch.weeklyHours = hours;
 		} else if (key === "workdays") {
 			if (typeof value !== "string") {
-				throw new ValidationError("workdays must be a string");
+				issues.push({ path: key, message: "must be a string of weekdays" });
+				continue;
 			}
 			const workdays = value.trim();
 			if (!/^\d(;\d)*$/.test(workdays) || workdays.split(";").some(day => Number(day) > 6)) {
-				throw new ValidationError('workdays must be weekdays separated by ";" (0 = Sunday … 6 = Saturday)');
+				issues.push({ path: key, message: 'must be weekdays separated by ";" (0 = Sunday … 6 = Saturday)' });
+				continue;
 			}
 			patch.workdays = workdays;
 		} else if (key === "overtimeModel") {
 			if (value !== "cumulative" && value !== "yearly" && value !== "monthly") {
-				throw new ValidationError(`overtimeModel must be cumulative, yearly or monthly (got ${String(value)})`);
+				issues.push({ path: key, message: "must be cumulative, yearly or monthly" });
+				continue;
 			}
 			patch.overtimeModel = value;
 		} else if (key === "startDate" || key === "endDate") {
 			if (value !== null && (!Number.isInteger(Number(value)) || Number(value) < 0)) {
-				throw new ValidationError(`${key} must be an instant in seconds or null`);
+				issues.push({ path: key, message: "must be an instant in seconds or null" });
+				continue;
 			}
 			patch[key] = value === null ? null : Number(value);
 		} else if (key === "holidayFlags") {
 			if (value !== null && typeof value !== "string") {
-				throw new ValidationError("holidayFlags must be a JSON string or null");
+				issues.push({ path: key, message: "must be a JSON string or null" });
+				continue;
 			}
 			patch.holidayFlags = value;
 		} else {
 			const number = Number(value);
 			if (!Number.isInteger(number)) {
-				throw new ValidationError(`${key} must be a whole number of minutes`);
+				issues.push({ path: key, message: "must be a whole number of minutes" });
+				continue;
 			}
 			patch[key as "overtimeCarryover" | "vorholzeitPerYear" | "vacationCarryover" | "vacationPerYear"] = number;
 		}
+	}
+
+	if (issues.length > 0) {
+		throw new ValidationError(`${issues.length} field(s) of the work profile are not valid`, issues);
 	}
 	return patch;
 }
@@ -576,12 +593,21 @@ export function createApi(deps: ApiDeps): Api {
 	 * @param routeSettings.permission - permission required
 	 * @param routeSettings.public - true when no session is needed
 	 * @param routeSettings.csrf - true when a CSRF token is required, false to skip it
+	 * @param routeSettings.rateLimit - rate limit of the route class
+	 * @param routeSettings.rateLimit.name - name of the counted class
+	 * @param routeSettings.rateLimit.limit - allowed requests inside the window
+	 * @param routeSettings.rateLimit.windowSeconds - length of the window
 	 * @param handler - handler of the route
 	 */
 	const route = (
 		method: HttpMethod | HttpMethod[],
 		path: string,
-		routeSettings: { permission?: string; public?: boolean; csrf?: boolean },
+		routeSettings: {
+			permission?: string;
+			public?: boolean;
+			csrf?: boolean;
+			rateLimit?: { name: string; limit: number; windowSeconds: number };
+		},
 		handler: (context: RouteContext) => ReturnType<Parameters<Router["add"]>[0]["handler"]>,
 	): void => {
 		const methods = Array.isArray(method) ? method : [method];
@@ -598,38 +624,44 @@ export function createApi(deps: ApiDeps): Api {
 			permission: routeSettings.permission,
 			requiresAuth: routeSettings.public !== true,
 			requiresCsrf: routeSettings.csrf,
+			rateLimit: routeSettings.rateLimit,
 			handler,
 		});
 	};
 
 	// authentication
 
-	route("POST", "/auth/login", { public: true, csrf: false }, context => {
-		const body = context.jsonBody();
-		const result = auth.login({
-			login: requireString(body, "login"),
-			password: requireString(body, "password"),
-			userAgent: context.header("user-agent"),
-			ip: context.request.remoteAddress ?? null,
-			now: now(),
-		});
+	route(
+		"POST",
+		"/auth/login",
+		{ public: true, csrf: false, rateLimit: { name: "login", limit: 20, windowSeconds: 60 } },
+		context => {
+			const body = context.jsonBody();
+			const result = auth.login({
+				login: requireString(body, "login"),
+				password: requireString(body, "password"),
+				userAgent: context.header("user-agent"),
+				ip: context.request.remoteAddress ?? null,
+				now: now(),
+			});
 
-		if (!result.ok) {
-			throw problem(
-				result.error === "locked_out" ? 423 : 401,
-				result.error,
-				result.error === "locked_out"
-					? "too many failed attempts, try again later"
-					: "login or password is not correct",
-			);
-		}
-		return json(200, {
-			token: result.token,
-			csrfToken: result.csrfToken,
-			expiresAt: result.expiresAt,
-			user: result.user,
-		});
-	});
+			if (!result.ok) {
+				throw problem(
+					result.error === "locked_out" ? 423 : 401,
+					result.error,
+					result.error === "locked_out"
+						? "too many failed attempts, try again later"
+						: "login or password is not correct",
+				);
+			}
+			return json(200, {
+				token: result.token,
+				csrfToken: result.csrfToken,
+				expiresAt: result.expiresAt,
+				user: result.user,
+			});
+		},
+	);
 
 	route("POST", "/auth/logout", { csrf: true }, context => {
 		auth.logout({
@@ -764,9 +796,19 @@ export function createApi(deps: ApiDeps): Api {
 		);
 	};
 
-	route("POST", "/punch", { permission: "time.punch", csrf: true }, context => punch(context, { quick: false }));
+	route(
+		"POST",
+		"/punch",
+		{ permission: "time.punch", csrf: true, rateLimit: { name: "punch", limit: 60, windowSeconds: 60 } },
+		context => punch(context, { quick: false }),
+	);
 
-	route("POST", "/punch/quick", { permission: "time.punch", csrf: true }, context => punch(context, { quick: true }));
+	route(
+		"POST",
+		"/punch/quick",
+		{ permission: "time.punch", csrf: true, rateLimit: { name: "punch", limit: 60, windowSeconds: 60 } },
+		context => punch(context, { quick: true }),
+	);
 
 	route("GET", "/punch/status", { permission: "report.view_own" }, context => {
 		const userId = scopeUser(context);
@@ -790,42 +832,47 @@ export function createApi(deps: ApiDeps): Api {
 
 	// offline synchronisation
 
-	route("POST", "/entries/sync", { permission: "time.punch", csrf: true }, context => {
-		if (!context.auth) {
-			throw problem(401, "no_session", "request rejected (no_session)");
-		}
-		const body = context.jsonBody();
-		const user = users.findById(context.auth.user.id);
-		if (!user) {
-			throw new NotFoundError(`user ${context.auth.user.id} not found`);
-		}
-		if (!Array.isArray(body.punches)) {
-			throw new ValidationError("punches must be an array");
-		}
+	route(
+		"POST",
+		"/entries/sync",
+		{ permission: "time.punch", csrf: true, rateLimit: { name: "sync", limit: 30, windowSeconds: 60 } },
+		context => {
+			if (!context.auth) {
+				throw problem(401, "no_session", "request rejected (no_session)");
+			}
+			const body = context.jsonBody();
+			const user = users.findById(context.auth.user.id);
+			if (!user) {
+				throw new NotFoundError(`user ${context.auth.user.id} not found`);
+			}
+			if (!Array.isArray(body.punches)) {
+				throw new ValidationError("punches must be an array");
+			}
 
-		const result = sync.sync({
-			userId: user.id,
-			timeZone: user.timezone,
-			punches: (body.punches as unknown[]).map(raw => {
-				const punch = (raw ?? {}) as Record<string, unknown>;
-				const tsUtc = optionalNumber(punch, "tsUtc");
-				if (tsUtc === null) {
-					throw new ValidationError("tsUtc is required for every queued punch");
-				}
-				return {
-					idempotencyKey: typeof punch.idempotencyKey === "string" ? punch.idempotencyKey : "",
-					tsUtc,
-					clientTsUtc: optionalNumber(punch, "clientTsUtc"),
-					direction: optionalDirection(punch),
-					note: optionalString(punch, "note"),
-				};
-			}),
-			actorId: user.id,
-			actorIp: context.request.remoteAddress ?? null,
-			now: now(),
-		});
-		return json(200, result);
-	});
+			const result = sync.sync({
+				userId: user.id,
+				timeZone: user.timezone,
+				punches: (body.punches as unknown[]).map(raw => {
+					const punch = (raw ?? {}) as Record<string, unknown>;
+					const tsUtc = optionalNumber(punch, "tsUtc");
+					if (tsUtc === null) {
+						throw new ValidationError("tsUtc is required for every queued punch");
+					}
+					return {
+						idempotencyKey: typeof punch.idempotencyKey === "string" ? punch.idempotencyKey : "",
+						tsUtc,
+						clientTsUtc: optionalNumber(punch, "clientTsUtc"),
+						direction: optionalDirection(punch),
+						note: optionalString(punch, "note"),
+					};
+				}),
+				actorId: user.id,
+				actorIp: context.request.remoteAddress ?? null,
+				now: now(),
+			});
+			return json(200, result);
+		},
+	);
 
 	route("GET", "/entries/conflicts", { permission: "time.resolve_conflict" }, context =>
 		json(200, { conflicts: sync.conflicts(context.auth?.user.id ?? 0) }),
@@ -1632,77 +1679,86 @@ export function createApi(deps: ApiDeps): Api {
 
 	// bulk import of punches (administration and migration)
 
-	route("POST", "/entries/bulk", { permission: "time.import", csrf: true }, context => {
-		if (!context.auth) {
-			throw problem(401, "no_session", "request rejected (no_session)");
-		}
-		const body = context.jsonBody();
-		if (!Array.isArray(body.entries)) {
-			throw new ValidationError("entries must be an array");
-		}
-
-		const actor = context.auth;
-		const timestamp = now();
-		const touched = new Map<string, number>();
-		const results: { index: number; entryId?: number; error?: string }[] = [];
-
-		(body.entries as unknown[]).forEach((raw, index) => {
-			try {
-				const item = (raw ?? {}) as Record<string, unknown>;
-				const target = Number(item.userId ?? actor.user.id);
-				if (!Number.isInteger(target)) {
-					throw new ValidationError("userId must be a whole number");
-				}
-				// writing punches for somebody else needs the matching permission
-				if (target !== actor.user.id && !actor.permissions.includes("time.edit_other")) {
-					throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
-				}
-				const user = users.findById(target);
-				if (!user) {
-					throw new NotFoundError(`user ${target} not found`);
-				}
-				const tsUtc = optionalNumber(item, "tsUtc");
-				if (tsUtc === null) {
-					throw new ValidationError("tsUtc is required");
-				}
-
-				const stored = entries.insert({
-					userId: target,
-					tsUtc,
-					clientTsUtc: optionalNumber(item, "clientTsUtc"),
-					timeZone: user.timezone,
-					source: "import",
-					direction: optionalDirection(item),
-					idempotencyKey: optionalString(item, "idempotencyKey"),
-					note: optionalString(item, "note"),
-					actorId: actor.user.id,
-					actorIp: context.request.remoteAddress ?? null,
-					now: timestamp,
-				});
-
-				touched.set(`${target}|${stored.entry.localDate}`, target);
-				results.push({ index, entryId: stored.entry.id });
-			} catch (error) {
-				// a faulty row does not discard the rest of the import
-				const details = toProblem(error).problem;
-				results.push({ index, error: details.code });
+	route(
+		"POST",
+		"/entries/bulk",
+		{ permission: "time.import", csrf: true, rateLimit: { name: "import", limit: 10, windowSeconds: 60 } },
+		context => {
+			if (!context.auth) {
+				throw problem(401, "no_session", "request rejected (no_session)");
 			}
-		});
+			const body = context.jsonBody();
+			if (!Array.isArray(body.entries)) {
+				throw new ValidationError("entries must be an array");
+			}
 
-		// the aggregates of the imported days are refreshed once, not per row
-		for (const key of touched.keys()) {
-			const [userId, localDate] = key.split("|");
-			aggregation.recalculateDay(Number(userId), localDate, { now: timestamp });
-		}
+			const actor = context.auth;
+			const timestamp = now();
+			const touched = new Map<string, number>();
+			const results: { index: number; entryId?: number; error?: string }[] = [];
 
-		const imported = results.filter(result => result.entryId !== undefined).length;
-		return json(200, {
-			imported,
-			failed: results.length - imported,
-			recalculatedDays: touched.size,
-			results,
-		});
-	});
+			(body.entries as unknown[]).forEach((raw, index) => {
+				try {
+					const item = (raw ?? {}) as Record<string, unknown>;
+					const target = Number(item.userId ?? actor.user.id);
+					if (!Number.isInteger(target)) {
+						throw new ValidationError("userId must be a whole number");
+					}
+					// writing punches for somebody else needs the matching permission
+					if (target !== actor.user.id && !actor.permissions.includes("time.edit_other")) {
+						throw problem(
+							403,
+							"permission_denied",
+							"request rejected (permission_denied: time.edit_other)",
+						);
+					}
+					const user = users.findById(target);
+					if (!user) {
+						throw new NotFoundError(`user ${target} not found`);
+					}
+					const tsUtc = optionalNumber(item, "tsUtc");
+					if (tsUtc === null) {
+						throw new ValidationError("tsUtc is required");
+					}
+
+					const stored = entries.insert({
+						userId: target,
+						tsUtc,
+						clientTsUtc: optionalNumber(item, "clientTsUtc"),
+						timeZone: user.timezone,
+						source: "import",
+						direction: optionalDirection(item),
+						idempotencyKey: optionalString(item, "idempotencyKey"),
+						note: optionalString(item, "note"),
+						actorId: actor.user.id,
+						actorIp: context.request.remoteAddress ?? null,
+						now: timestamp,
+					});
+
+					touched.set(`${target}|${stored.entry.localDate}`, target);
+					results.push({ index, entryId: stored.entry.id });
+				} catch (error) {
+					// a faulty row does not discard the rest of the import
+					const details = toProblem(error).problem;
+					results.push({ index, error: details.code });
+				}
+			});
+
+			// the aggregates of the imported days are refreshed once, not per row
+			for (const key of touched.keys()) {
+				const [userId, localDate] = key.split("|");
+				aggregation.recalculateDay(Number(userId), localDate, { now: timestamp });
+			}
+
+			const imported = results.filter(result => result.entryId !== undefined).length;
+			return json(200, {
+				imported,
+				failed: results.length - imported,
+				recalculatedDays: touched.size,
+				results,
+			});
+		},
+	);
 
 	// statistics
 
@@ -1802,30 +1858,35 @@ export function createApi(deps: ApiDeps): Api {
 		}),
 	);
 
-	route("POST", "/terminal/session", { public: true, csrf: false }, context => {
-		requireKiosk();
-		const body = context.jsonBody();
-		const deviceToken = requireString(body, "deviceToken");
-		const terminal = terminals.findByToken(deviceToken, now());
-		if (!terminal) {
-			throw problem(401, "invalid_credentials", "the device token is not valid any more");
-		}
+	route(
+		"POST",
+		"/terminal/session",
+		{ public: true, csrf: false, rateLimit: { name: "terminal-session", limit: 30, windowSeconds: 60 } },
+		context => {
+			requireKiosk();
+			const body = context.jsonBody();
+			const deviceToken = requireString(body, "deviceToken");
+			const terminal = terminals.findByToken(deviceToken, now());
+			if (!terminal) {
+				throw problem(401, "invalid_credentials", "the device token is not valid any more");
+			}
 
-		const started = terminals.startSession({
-			id: terminal.id,
-			ttlMinutes: TERMINAL_SESSION_MINUTES,
-			now: now(),
-		});
-		return json(200, {
-			terminalSession: started.terminalSession,
-			expiresAt: started.expiresAt,
-			terminal: {
-				name: terminal.name,
-				location: terminal.location,
-				pinRequired: terminal.pinRequired,
-			},
-		});
-	});
+			const started = terminals.startSession({
+				id: terminal.id,
+				ttlMinutes: TERMINAL_SESSION_MINUTES,
+				now: now(),
+			});
+			return json(200, {
+				terminalSession: started.terminalSession,
+				expiresAt: started.expiresAt,
+				terminal: {
+					name: terminal.name,
+					location: terminal.location,
+					pinRequired: terminal.pinRequired,
+				},
+			});
+		},
+	);
 
 	route("POST", "/terminal/heartbeat", { public: true, csrf: false }, context => {
 		const terminal = requireTerminal(context);
@@ -1843,68 +1904,80 @@ export function createApi(deps: ApiDeps): Api {
 		});
 	});
 
-	route("GET", "/terminal/users", { public: true }, context => {
-		requireTerminal(context);
-		// only what a badge/PIN selection needs — no mail address, no profile, no working times
-		return json(200, {
-			users: users.list({ includeInactive: false }).map(user => ({ id: user.id, displayName: user.displayName })),
-		});
-	});
+	route(
+		"GET",
+		"/terminal/users",
+		{ public: true, rateLimit: { name: "terminal-users", limit: 60, windowSeconds: 60 } },
+		context => {
+			requireTerminal(context);
+			// only what a badge/PIN selection needs — no mail address, no profile, no working times
+			return json(200, {
+				users: users
+					.list({ includeInactive: false })
+					.map(user => ({ id: user.id, displayName: user.displayName })),
+			});
+		},
+	);
 
-	route("POST", "/terminal/punch", { public: true, csrf: false }, context => {
-		const terminal = requireTerminal(context);
-		const body = context.jsonBody();
-		const badge = optionalString(body, "badge");
-		const pin = optionalString(body, "pin");
-		const targetId = optionalNumber(body, "userId");
+	route(
+		"POST",
+		"/terminal/punch",
+		{ public: true, csrf: false, rateLimit: { name: "terminal-punch", limit: 60, windowSeconds: 60 } },
+		context => {
+			const terminal = requireTerminal(context);
+			const body = context.jsonBody();
+			const badge = optionalString(body, "badge");
+			const pin = optionalString(body, "pin");
+			const targetId = optionalNumber(body, "userId");
 
-		if (badge === null && (pin === null || targetId === null)) {
-			throw new ValidationError("a badge or a userId together with the PIN is required");
-		}
+			if (badge === null && (pin === null || targetId === null)) {
+				throw new ValidationError("a badge or a userId together with the PIN is required");
+			}
 
-		const user = badge !== null ? users.findByRfidCard(badge) : users.findById(targetId ?? 0);
-		if (!user || !user.isActive) {
-			// the same answer for an unknown badge and an unknown user: no enumeration of accounts
-			throw problem(401, "invalid_credentials", "badge or PIN is not known");
-		}
+			const user = badge !== null ? users.findByRfidCard(badge) : users.findById(targetId ?? 0);
+			if (!user || !user.isActive) {
+				// the same answer for an unknown badge and an unknown user: no enumeration of accounts
+				throw problem(401, "invalid_credentials", "badge or PIN is not known");
+			}
 
-		const pinMatches = pin !== null && user.pinHash !== null && verifyPassword(pin, user.pinHash);
-		if (terminal.pinRequired ? !pinMatches : !pinMatches && badge === null) {
-			throw problem(401, "invalid_credentials", "badge or PIN is not known");
-		}
+			const pinMatches = pin !== null && user.pinHash !== null && verifyPassword(pin, user.pinHash);
+			if (terminal.pinRequired ? !pinMatches : !pinMatches && badge === null) {
+				throw problem(401, "invalid_credentials", "badge or PIN is not known");
+			}
 
-		const timestamp = now();
-		const stored = entries.insert({
-			userId: user.id,
-			tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
-			timeZone: user.timezone,
-			source: "terminal",
-			direction: optionalDirection(body),
-			note: optionalString(body, "note"),
-			actorId: user.id,
-			actorIp: context.request.remoteAddress ?? null,
-			now: timestamp,
-		});
-		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
-		terminals.touch({ id: terminal.id, ttlMinutes: TERMINAL_SESSION_MINUTES, now: timestamp });
+			const timestamp = now();
+			const stored = entries.insert({
+				userId: user.id,
+				tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+				timeZone: user.timezone,
+				source: "terminal",
+				direction: optionalDirection(body),
+				note: optionalString(body, "note"),
+				actorId: user.id,
+				actorIp: context.request.remoteAddress ?? null,
+				now: timestamp,
+			});
+			const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+			terminals.touch({ id: terminal.id, ttlMinutes: TERMINAL_SESSION_MINUTES, now: timestamp });
 
-		// the answer stays minimal: the terminal shows a name, a time and the state of the day
-		return json(201, {
-			user: { id: user.id, displayName: user.displayName },
-			entry: {
-				id: stored.entry.id,
-				tsUtc: stored.entry.tsUtc,
-				direction: stored.entry.direction,
-				localDate: stored.entry.localDate,
-			},
-			day: {
-				workedMin: day.workedMin,
-				targetMin: day.targetMin,
-				balanceMin: day.balanceMin,
-				hasOpenEntry: day.hasOpenEntry,
-			},
-		});
-	});
+			// the answer stays minimal: the terminal shows a name, a time and the state of the day
+			return json(201, {
+				user: { id: user.id, displayName: user.displayName },
+				entry: {
+					id: stored.entry.id,
+					tsUtc: stored.entry.tsUtc,
+					direction: stored.entry.direction,
+					localDate: stored.entry.localDate,
+				},
+				day: {
+					workedMin: day.workedMin,
+					targetMin: day.targetMin,
+					balanceMin: day.balanceMin,
+					hasOpenEntry: day.hasOpenEntry,
+				},
+			});
+		},
+	);
 
 	// terminals and PINs (administration)
 
@@ -2051,62 +2124,72 @@ export function createApi(deps: ApiDeps): Api {
 		return noContent();
 	});
 
-	route("POST", "/rfid/scan", { public: true, csrf: false }, context => {
-		const secret = requireHmacSecret();
-		const body = context.jsonBody();
-		const parsed = parseTagToken(requireString(body, "token"));
-		if (!parsed) {
-			throw new ValidationError("token is not valid");
-		}
+	route(
+		"POST",
+		"/rfid/scan",
+		{ public: true, csrf: false, rateLimit: { name: "rfid-scan", limit: 30, windowSeconds: 60 } },
+		context => {
+			const secret = requireHmacSecret();
+			const body = context.jsonBody();
+			const parsed = parseTagToken(requireString(body, "token"));
+			if (!parsed) {
+				throw new ValidationError("token is not valid");
+			}
 
-		// the signature is recomputed from the payload of the token and compared with the signature it carries,
-		// so a forged uid/user/exp or a patched signature fails here
-		const expected = signTag(secret, parsed.uid, parsed.userId, parsed.expiresAt);
-		if (!sameSignature(expected, parsed.signature)) {
-			throw problem(401, "invalid_credentials", "the tag is not valid any more");
-		}
+			// the signature is recomputed from the payload of the token and compared with the signature it carries,
+			// so a forged uid/user/exp or a patched signature fails here
+			const expected = signTag(secret, parsed.uid, parsed.userId, parsed.expiresAt);
+			if (!sameSignature(expected, parsed.signature)) {
+				throw problem(401, "invalid_credentials", "the tag is not valid any more");
+			}
 
-		const tag = rfid.verify({ uid: parsed.uid, userId: parsed.userId, signature: parsed.signature, now: now() });
-		if (!tag) {
-			// one answer for an unknown tag and a revoked one: no probing
-			throw problem(401, "invalid_credentials", "the tag is not valid any more");
-		}
+			const tag = rfid.verify({
+				uid: parsed.uid,
+				userId: parsed.userId,
+				signature: parsed.signature,
+				now: now(),
+			});
+			if (!tag) {
+				// one answer for an unknown tag and a revoked one: no probing
+				throw problem(401, "invalid_credentials", "the tag is not valid any more");
+			}
 
-		const user = users.findById(tag.userId ?? 0);
-		if (!user || !user.isActive) {
-			throw problem(401, "user_inactive", "the owner of the tag is not active");
-		}
+			const user = users.findById(tag.userId ?? 0);
+			if (!user || !user.isActive) {
+				throw problem(401, "user_inactive", "the owner of the tag is not active");
+			}
 
-		const timestamp = now();
-		const stored = entries.insert({
-			userId: user.id,
-			tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
-			timeZone: user.timezone,
-			source: "nfc",
-			direction: optionalDirection(body),
-			note: optionalString(body, "note"),
-			actorId: user.id,
-			actorIp: context.request.remoteAddress ?? null,
-			now: timestamp,
-		});
-		rfid.touch({ id: tag.id, now: timestamp });
-		const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
+			const timestamp = now();
+			const stored = entries.insert({
+				userId: user.id,
+				tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+				timeZone: user.timezone,
+				source: "nfc",
+				direction: optionalDirection(body),
+				note: optionalString(body, "note"),
+				actorId: user.id,
+				actorIp: context.request.remoteAddress ?? null,
+				now: timestamp,
+			});
+			rfid.touch({ id: tag.id, now: timestamp });
+			const day = aggregation.recalculateDay(user.id, stored.entry.localDate, { now: timestamp });
 
-		return json(201, {
-			user: { id: user.id, displayName: user.displayName },
-			entry: {
-				id: stored.entry.id,
-				tsUtc: stored.entry.tsUtc,
-				localDate: stored.entry.localDate,
-			},
-			day: {
-				workedMin: day.workedMin,
-				targetMin: day.targetMin,
-				balanceMin: day.balanceMin,
-				hasOpenEntry: day.hasOpenEntry,
-			},
-		});
-	});
+			return json(201, {
+				user: { id: user.id, displayName: user.displayName },
+				entry: {
+					id: stored.entry.id,
+					tsUtc: stored.entry.tsUtc,
+					localDate: stored.entry.localDate,
+				},
+				day: {
+					workedMin: day.workedMin,
+					targetMin: day.targetMin,
+					balanceMin: day.balanceMin,
+					hasOpenEntry: day.hasOpenEntry,
+				},
+			});
+		},
+	);
 
 	// system
 

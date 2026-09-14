@@ -31,12 +31,18 @@ describe("web router", () => {
 	 * @param options.body - raw body
 	 * @param options.headers - request headers
 	 * @param options.query - query parameters
+	 * @param options.remoteAddress - client address counted by the rate limit
 	 * @returns response
 	 */
 	async function send(
 		method: string,
 		path: string,
-		options: { body?: string; headers?: Record<string, string>; query?: Record<string, string> } = {},
+		options: {
+			body?: string;
+			headers?: Record<string, string>;
+			query?: Record<string, string>;
+			remoteAddress?: string;
+		} = {},
 	): Promise<HttpResponse> {
 		const request: HttpRequest = {
 			method,
@@ -44,6 +50,7 @@ describe("web router", () => {
 			body: options.body,
 			query: options.query,
 			headers: options.headers,
+			remoteAddress: options.remoteAddress ?? "127.0.0.1",
 		};
 		return router.handle(request);
 	}
@@ -122,6 +129,12 @@ describe("web router", () => {
 			method: "DELETE",
 			path: "/body-optional",
 			handler: context => json(200, { received: context.optionalJsonBody() }),
+		});
+		router.add({
+			method: "GET",
+			path: "/limited",
+			rateLimit: { name: "test-limited", limit: 2, windowSeconds: 60 },
+			handler: () => json(200, { ok: true }),
 		});
 		router.add({
 			method: "GET",
@@ -293,6 +306,27 @@ describe("web router", () => {
 			});
 			expect(optional.status).to.equal(200);
 			expect(bodyOf(optional)).to.deep.equal({ received: {} });
+		});
+
+		it("limits a route per client address", async () => {
+			// `/limited` answers twice per minute and client
+			const first = await send("GET", "/limited", { headers: { "x-session-token": employeeToken } });
+			const second = await send("GET", "/limited", { headers: { "x-session-token": employeeToken } });
+			expect(first.status).to.equal(200);
+			expect(second.status).to.equal(200);
+
+			const blocked = await send("GET", "/limited", { headers: { "x-session-token": employeeToken } });
+			expect(blocked.status).to.equal(429);
+			expect(bodyOf(blocked)).to.deep.include({ status: 429, code: "rate_limited" });
+			expect(blocked.headers["retry-after"]).to.equal("60");
+			expect(blocked.headers["content-type"]).to.equal("application/problem+json; charset=utf-8");
+
+			// the limit counts per client, so another address still gets through
+			const other = await send("GET", "/limited", {
+				headers: { "x-session-token": employeeToken },
+				remoteAddress: "10.0.0.9",
+			});
+			expect(other.status).to.equal(200);
 		});
 
 		it("converts handler errors into problems", async () => {

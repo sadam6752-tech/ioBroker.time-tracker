@@ -14,7 +14,7 @@
 import { RevisionConflictError } from "../db/repositories/entries";
 import { LoginExistsError, UnknownRoleError } from "../db/repositories/users";
 import { UnknownAbsenceTypeError } from "../db/repositories/absences";
-import { NotFoundError, ValidationError } from "../errors";
+import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 
 /** The content type every problem document is sent with (RFC 9457). */
 export const PROBLEM_CONTENT_TYPE = "application/problem+json; charset=utf-8";
@@ -37,6 +37,7 @@ export type ProblemCode =
 	| "unsupported_media_type"
 	| "kiosk_disabled"
 	| "not_configured"
+	| "rate_limited"
 	| "internal_error";
 
 /** A problem document. */
@@ -53,6 +54,8 @@ export interface ProblemDetails {
 	detail?: string;
 	/** Request path the problem occurred on */
 	instance?: string;
+	/** Invalid fields of a validation failure (RFC 9457) */
+	errors?: { path: string; message: string }[];
 }
 
 const TITLES: Record<number, string> = {
@@ -65,6 +68,7 @@ const TITLES: Record<number, string> = {
 	413: "Payload Too Large",
 	415: "Unsupported Media Type",
 	423: "Locked",
+	429: "Too Many Requests",
 	500: "Internal Server Error",
 };
 
@@ -80,12 +84,14 @@ export class HttpProblem extends Error {
 	 * @param code - stable error code
 	 * @param detail - optional explanation
 	 * @param title - optional title (defaults to the reason phrase of the status)
+	 * @param fields - optional list of invalid fields
 	 */
 	constructor(
 		public readonly status: number,
 		public readonly code: ProblemCode,
 		public readonly detail?: string,
 		title?: string,
+		public readonly fields: FieldIssue[] = [],
 	) {
 		super(`${status} ${code}${detail ? `: ${detail}` : ""}`);
 		this.name = "HttpProblem";
@@ -105,6 +111,9 @@ export class HttpProblem extends Error {
 			status: this.status,
 			code: this.code,
 			...(this.detail ? { detail: this.detail } : {}),
+			...(this.fields.length > 0
+				? { errors: this.fields.map(field => ({ path: field.path, message: field.message })) }
+				: {}),
 			...(instance ? { instance } : {}),
 		};
 	}
@@ -137,7 +146,10 @@ export function toProblem(error: unknown, instance?: string): { problem: Problem
 		return { problem: error.toProblem(instance), unexpected: false };
 	}
 	if (error instanceof ValidationError) {
-		return { problem: new HttpProblem(400, "bad_request", error.message).toProblem(instance), unexpected: false };
+		return {
+			problem: new HttpProblem(400, "bad_request", error.message, undefined, error.fields).toProblem(instance),
+			unexpected: false,
+		};
 	}
 	if (error instanceof NotFoundError) {
 		return { problem: new HttpProblem(404, "not_found", error.message).toProblem(instance), unexpected: false };

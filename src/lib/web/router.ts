@@ -11,6 +11,7 @@
 
 import type { AuthContext, AuthService } from "../services/auth";
 import { HttpProblem, PROBLEM_CONTENT_TYPE, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
+import { createRateLimiter } from "./rate-limit";
 
 /** Supported HTTP methods. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -81,6 +82,8 @@ export interface RouteDefinition {
 	permission?: string;
 	/** CSRF token required (default true for state changing methods) */
 	requiresCsrf?: boolean;
+	/** Rate limit of the route class (counted per client address) */
+	rateLimit?: { name: string; limit: number; windowSeconds: number };
 	/** Handler of the route */
 	handler: (context: RouteContext) => RouteResponse | Promise<RouteResponse>;
 }
@@ -221,6 +224,8 @@ export function createRouter(options: RouterOptions): Router {
 	const routes: CompiledRoute[] = [];
 	const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
 	const now = options.now ?? (() => Math.floor(Date.now() / 1000));
+	// the counters live in the router, so the limits belong to the API instance that registered them
+	const limiter = createRateLimiter();
 
 	return {
 		add(route: RouteDefinition): void {
@@ -288,6 +293,18 @@ export function createRouter(options: RouterOptions): Router {
 
 			const requiresCsrf = route.definition.requiresCsrf ?? !SAFE_METHODS.includes(method);
 			const token = headerValue("x-session-token") ?? "";
+
+			// the limit is counted per client address, before any work is done
+			if (route.definition.rateLimit) {
+				const limited = limiter.check(route.definition.rateLimit, request.remoteAddress ?? "unknown", now());
+				if (!limited.allowed) {
+					return problemResponse(429, "rate_limited", "too many requests, try again later", path, {
+						"retry-after": String(limited.retryAfterSeconds),
+						"x-ratelimit-remaining": "0",
+					});
+				}
+			}
+
 			let auth: AuthContext | null = null;
 
 			if (route.definition.requiresAuth !== false) {

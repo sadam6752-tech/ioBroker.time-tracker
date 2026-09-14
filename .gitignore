@@ -64,6 +64,8 @@ fixtures/generated/
 
 # generierter Clean-Room-Bericht (Ergebnis wird in docs/provenance.md dokumentiert)
 docs/cleanroom-report.txt
+# generierter i18n-Bericht
+docs/i18n-report.txt
 
 # ============================================================
 # Umgebung / IDE / OS

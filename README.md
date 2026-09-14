@@ -59,6 +59,22 @@ Punch records themselves are **not** mirrored into states – they live in the S
 Everything runs on your own ioBroker host: no cloud service, no telemetry. Punch and personal data stay in
 the local SQLite file; access is role-based and corrections are audited.
 
+## Languages
+
+The adapter's admin UI, the web app (PWA) and the generated reports are shipped in **11 languages**
+(the ioBroker standard set):
+
+`en` (base and fallback), `de`, `ru`, `pt`, `nl`, `fr`, `it`, `es`, `pl`, `uk`, `zh-cn`
+
+- Adapter admin UI: `adapter/admin/i18n/<lang>.json`, kept in sync with the `io-package.json` metadata
+  (`titleLang`, `desc`, `news`) by the `translate-adapter` tool
+- Web app (PWA): `pwa/src/i18n/<lang>.json` (`i18next`), using the same keys
+- Reports (PDF/XLS) use the language of the respective user; the instance language is the fallback
+- Dates, numbers, currencies and units are formatted with `Intl` and the user's time zone
+- Additional translations are welcome – see [`docs/i18n.md`](docs/i18n.md)
+- The API itself returns stable error **codes** instead of translated messages; the client translates them
+- This README is maintained in English (ioBroker requirement) with a German summary at the end
+
 ## Development
 
 This repository is a monorepo:

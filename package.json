@@ -13,6 +13,8 @@
   },
   "scripts": {
     "cleanroom": "pwsh -NoProfile -File tools/cleanroom-check.ps1 -FailOnHit",
-    "cleanroom:report": "pwsh -NoProfile -File tools/cleanroom-check.ps1"
+    "cleanroom:report": "pwsh -NoProfile -File tools/cleanroom-check.ps1",
+    "check:i18n": "pwsh -NoProfile -File tools/check-i18n.ps1 -FailOnIssue",
+    "check:i18n:report": "pwsh -NoProfile -File tools/check-i18n.ps1"
   }
 }

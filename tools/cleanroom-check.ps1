@@ -40,10 +40,10 @@
 #>
 [CmdletBinding()]
 param(
-    [string]   $LegacyPath   = (Join-Path $PSScriptRoot '..\..\SmallTime-master'),
+    [string]   $LegacyPath   = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'SmallTime-master')),
     [string[]] $SourcePaths  = @('adapter', 'pwa', 'shared', 'lib', 'src', 'docs', 'tools', 'README.md', 'CONTRIBUTING.md'),
     [int]      $MinLength    = 25,
-    [string]   $ReportPath   = (Join-Path $PSScriptRoot '..\docs\cleanroom-report.txt'),
+    [string]   $ReportPath   = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, '..', 'docs', 'cleanroom-report.txt')),
     [int]      $MaxHitsShown = 20,
     [switch]   $FailOnHit
 )

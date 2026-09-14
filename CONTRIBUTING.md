@@ -41,6 +41,8 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
       `npm run cleanroom`, Ergebnis im PR genannt).
 - [ ] Interne Spezifikation aktualisiert, falls Verhalten/Format betroffen ist (im PR-Text erwähnt).
 - [ ] Tests ergänzt bzw. angepasst (Unit/Integration; Golden-File bei Berechnungslogik).
+- [ ] i18n: neue Texte nur in `en.json` ergänzt, `npm run translate` ausgeführt, `npm run check:i18n` grün
+      (alle 11 Sprachen vollständig).
 - [ ] Lizenz- und Herkunftshinweise unverändert korrekt (`LICENSE`, `docs/provenance.md`).
 - [ ] Keine Legacy-Dateien, Archive oder Datenkopien im Commit (`SmallTime-master/`, `*.zip`).
 
@@ -53,6 +55,8 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 - **Zeiten:** intern immer UTC-Epoch **und** Minuten-Ganzzahlen; Anzeige über Benutzer-Zeitzone.
 - **Datenbank:** Änderungen ausschließlich über versionierte Migrationen (`schema_migrations`).
 - **Fehler:** API-Fehler als `application/problem+json` mit stabilen Fehlercodes (gemäß interner Spezifikation).
+- **Sprachen (i18n):** Anzeigetexte ausschließlich aus den Sprachdateien; neue Texte **nur** in der englischen
+  Basisdatei ergänzen und danach `npm run translate` ausführen. Details: [`docs/i18n.md`](docs/i18n.md).
 - **Commits:** kurze, sachliche Beschreibung im Imperativ; ein Commit pro logischer Änderung.
 
 ## 5. Sicherheitsrelevante Änderungen
@@ -71,6 +75,8 @@ Spezifikation.
 | Mitwirkungsregeln (Clean Room) | `CONTRIBUTING.md` | ja |
 | Herkunftsnachweis | `docs/provenance.md` | ja (belegt die unabhängige Umsetzung) |
 | Quellcode | `adapter/`, `pwa/`, `shared/`, `tools/` | ja |
+| Sprachdateien (11 Sprachen) | `adapter/admin/i18n/`, `pwa/src/i18n/` | ja (Übersetzungen willkommen) |
+| Übersetzer-Doku | `docs/i18n.md` | ja |
 | Interne Spezifikation | außerhalb dieses Repositories | **nein** |
 | Prüfbericht | `docs/cleanroom-report.txt` | nein (generiert, `.gitignore`) |
 | Legacy-Baum, Archive, Bestandsdaten | außerhalb dieses Repositories | **nein** |

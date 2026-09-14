@@ -63,6 +63,9 @@
   "scripts": {
     "prebuild": "rimraf build",
     "build": "build-adapter ts",
+    "build:pwa": "npm --prefix src-pwa run build",
+    "dev:pwa": "npm --prefix src-pwa run dev",
+    "install:pwa": "npm --prefix src-pwa install",
     "watch": "build-adapter ts --watch",
     "prebuild:ts": "rimraf build",
     "build:ts": "build-adapter ts",
@@ -74,6 +77,7 @@
     "check": "tsc --noEmit",
     "coverage": "nyc npm run test:ts",
     "lint": "eslint -c eslint.config.mjs .",
+    "lint:pwa": "eslint -c eslint.config.mjs src-pwa/src",
     "translate": "translate-adapter",
     "release": "release-script",
     "dev-server": "dev-server",

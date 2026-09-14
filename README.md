@@ -1,4 +1,5 @@
 ![Logo](admin/zeiterfassung.png)
+
 # ioBroker.zeiterfassung
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.zeiterfassung.svg)](https://www.npmjs.com/package/iobroker.zeiterfassung)
@@ -20,16 +21,16 @@ Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user,
 
 ## Features (planned)
 
-| Area | Content |
-|---|---|
-| Punching | Web app (PWA, installable, offline-capable with queued sync), kiosk terminal with badge/PIN, NFC deep links, QR code fallback |
-| Users & rights | Multi-user with roles (admin/manager/employee) and a full permission catalogue – all decisions server-side |
-| Working time | Target time from weekly hours / employment level / working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
-| Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts |
-| Reports | Monthly PDF timesheet, XLS export, statistics, payouts/compensation |
-| ioBroker | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations |
-| Data | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states |
-| Migration | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification) |
+| Area                | Content                                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Punching            | Web app (PWA, installable, offline-capable with queued sync), kiosk terminal with badge/PIN, NFC deep links, QR code fallback                                                                     |
+| Users & rights      | Multi-user with roles (admin/manager/employee) and a full permission catalogue – all decisions server-side                                                                                        |
+| Working time        | Target time from weekly hours / employment level / working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
+| Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts                                                                                                    |
+| Reports             | Monthly PDF timesheet, XLS export, statistics, payouts/compensation                                                                                                                               |
+| ioBroker            | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations                                                                                 |
+| Data                | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states                                                                                                        |
+| Migration           | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification)                                                                                                             |
 
 ## Requirements
 
@@ -49,33 +50,33 @@ iobroker add zeiterfassung
 
 The adapter is configured in the instance settings:
 
-| Setting | Meaning |
-|---|---|
-| Port | Port of the built-in HTTP server (web app, API, terminal) |
-| Bind address | Interface to listen on (`0.0.0.0` = all) |
-| Instance time zone | Fallback time zone (IANA name), e.g. `Europe/Zurich` |
-| Default language for new users | One of the 11 supported languages |
-| Holiday country | Country used to generate public holidays |
-| Database file | Optional path; empty = adapter data directory |
-| Enable kiosk terminal | Switches the shared badge/PIN terminal on |
-| Session secret | Secret for session cookies/tokens (**encrypted at rest**) |
-| Badge link secret (HMAC) | Secret for signed badge/NFC links (**encrypted at rest**) |
-| Session lifetime in minutes | Session TTL |
-| Days users may edit on their own | Retroactive editing window for employees |
-| Round quick punches to minutes | Quick-time rounding (0 = off) |
-| Calculate absences only until today | Future absences are not deducted from the target time |
-| Subtract working time from absences | Legacy behaviour – may convert vacation into overtime |
-| Legacy data directory for import | Read-only source directory of the old system |
-| Keep database backups for days | Retention of `VACUUM INTO` backups |
+| Setting                             | Meaning                                                   |
+| ----------------------------------- | --------------------------------------------------------- |
+| Port                                | Port of the built-in HTTP server (web app, API, terminal) |
+| Bind address                        | Interface to listen on (`0.0.0.0` = all)                  |
+| Instance time zone                  | Fallback time zone (IANA name), e.g. `Europe/Zurich`      |
+| Default language for new users      | One of the 11 supported languages                         |
+| Holiday country                     | Country used to generate public holidays                  |
+| Database file                       | Optional path; empty = adapter data directory             |
+| Enable kiosk terminal               | Switches the shared badge/PIN terminal on                 |
+| Session secret                      | Secret for session cookies/tokens (**encrypted at rest**) |
+| Badge link secret (HMAC)            | Secret for signed badge/NFC links (**encrypted at rest**) |
+| Session lifetime in minutes         | Session TTL                                               |
+| Days users may edit on their own    | Retroactive editing window for employees                  |
+| Round quick punches to minutes      | Quick-time rounding (0 = off)                             |
+| Calculate absences only until today | Future absences are not deducted from the target time     |
+| Subtract working time from absences | Legacy behaviour – may convert vacation into overtime     |
+| Legacy data directory for import    | Read-only source directory of the old system              |
+| Keep database backups for days      | Retention of `VACUUM INTO` backups                        |
 
 ## Web interface and API
 
 The adapter runs its own HTTP server on the configured port and serves two things from it:
 
-| Path | Content |
-|---|---|
+| Path                    | Content                                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `/` and all other paths | the built web app from `www/` (`index.html`, assets; unknown paths fall back to the page for client side routing) |
-| `/api/...` | the REST API (JSON, errors as `application/problem+json`) |
+| `/api/...`              | the REST API (JSON, errors as `application/problem+json`)                                                         |
 
 The API is deliberately mounted below `/api`, so the web app owns every other path. If no `www/` folder is
 part of the installation (for example while the web app is still being developed), the adapter keeps running
@@ -83,15 +84,15 @@ and only the API is reachable — a log line states which of both applies.
 
 ## States (overview)
 
-| State | Type | Role | Purpose |
-|---|---|---|---|
-| `zeiterfassung.0.info.connection` | boolean | indicator.connected | adapter/service ready |
-| `zeiterfassung.0.users.<id>.working` | boolean | indicator | user currently clocked in |
-| `zeiterfassung.0.users.<id>.today.workedMin` | number | value | minutes worked today |
-| `zeiterfassung.0.users.<id>.year.overtimeMin` | number | value | accumulated overtime (minutes) |
-| `zeiterfassung.0.global.presentCount` | number | value | users currently present |
-| `zeiterfassung.0.event.lastPunch` | string | json | last punch (JSON text, trigger for automations) |
-| `zeiterfassung.0.command.punch` | boolean | button | button: set a punch |
+| State                                         | Type    | Role                | Purpose                                         |
+| --------------------------------------------- | ------- | ------------------- | ----------------------------------------------- |
+| `zeiterfassung.0.info.connection`             | boolean | indicator.connected | adapter/service ready                           |
+| `zeiterfassung.0.users.<id>.working`          | boolean | indicator           | user currently clocked in                       |
+| `zeiterfassung.0.users.<id>.today.workedMin`  | number  | value               | minutes worked today                            |
+| `zeiterfassung.0.users.<id>.year.overtimeMin` | number  | value               | accumulated overtime (minutes)                  |
+| `zeiterfassung.0.global.presentCount`         | number  | value               | users currently present                         |
+| `zeiterfassung.0.event.lastPunch`             | string  | json                | last punch (JSON text, trigger for automations) |
+| `zeiterfassung.0.command.punch`               | boolean | button              | button: set a punch                             |
 
 Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 
@@ -135,20 +136,35 @@ tools/        clean-room and i18n verification scripts
 docs/         provenance record and translator guide
 ```
 
-| Script | Description |
-|---|---|
-| `npm run build` | Compile the TypeScript sources |
-| `npm run watch` | Compile and watch for changes |
-| `npm run lint` | ESLint with `@iobroker/eslint-config` |
-| `npm run check` | TypeScript type check |
-| `npm run test:ts` | Unit tests for the adapter sources |
-| `npm run test:package` | Validate `package.json` / `io-package.json` |
-| `npm run test:integration` | Adapter startup against a real js-controller |
-| `npm run translate` | Keep the 11 translation files in sync |
-| `npm run check:i18n` | Verify that all 11 languages are complete |
-| `npm run cleanroom` | Verify that no source was copied from the legacy project |
-| `npm run release` | Create a release (version, changelog, tag) |
-| `dev-server watch` | Run and debug the adapter locally |
+| Script                     | Description                                                              |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `npm run build`            | Compile the TypeScript sources                                           |
+| `npm run watch`            | Compile and watch for changes                                            |
+| `npm run install:pwa`      | Install the dependencies of the web app (`src-pwa`, own `node_modules`)  |
+| `npm run build:pwa`        | Type check and build the web app into `www/`                             |
+| `npm run dev:pwa`          | Vite dev server with `/api` proxied to the running instance              |
+| `npm run lint`             | ESLint with `@iobroker/eslint-config` (adapter and web app)              |
+| `npm run lint:pwa`         | ESLint for the web app only                                              |
+| `npm run check`            | TypeScript type check                                                    |
+| `npm run test:ts`          | Unit tests for the adapter sources                                       |
+| `npm run test:package`     | Validate `package.json` / `io-package.json`                              |
+| `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`) |
+| `npm run translate`        | Keep the 11 translation files in sync                                    |
+| `npm run check:i18n`       | Verify that all 11 languages are complete                                |
+| `npm run cleanroom`        | Verify that no source was copied from the legacy project                 |
+| `npm run release`          | Create a release (version, changelog, tag)                               |
+| `dev-server watch`         | Run and debug the adapter locally                                        |
+
+The web app is built into `www/`, which the adapter serves on its own port (`/` = app, `/api` = REST). Both
+steps are needed for a release:
+
+```bash
+npm run install:pwa
+npm run build:pwa
+npm run build
+```
+
+`node tools/make-pwa-icons.mjs` regenerates the app icons (checked in, no image library required).
 
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
 implementation; no code, comments or identifiers from the legacy project; state roles, types and access
@@ -157,11 +173,13 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ## Changelog
 
 ### **WORK IN PROGRESS**
-* (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin
+
+- (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin
   configuration fields, CI workflow (@iobroker/testing, Node 20/22/24), clean-room and i18n checks
 
 ### 0.0.1
-* initial release (not published yet)
+
+- initial release (not published yet)
 
 ## License
 

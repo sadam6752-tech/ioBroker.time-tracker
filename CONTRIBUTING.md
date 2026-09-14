@@ -9,12 +9,14 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 (siehe Abschnitt 6).
 
 **Unzulässig**
+
 - Code, Kommentare, Meldungstexte, Klassen- oder Variablennamen aus `SmallTime-master` übernehmen –
   auch nicht „kopieren und umbenennen".
 - Legacy-Dateien automatisch portieren oder übersetzen (Transpiler, LLM-Konvertierung).
 - Die Legacy-Datei- oder Klassenstruktur als eigene Modulstruktur nachbauen.
 
 **Zulässig**
+
 - Dateinamen, Dateiformate und Feldindizes der Altdaten, soweit sie zum Lesen nötig sind
   (`users.txt`, `userdaten.txt` Idx 0–17, `Timetable/<Jahr>.<Monat>`, `A<Jahr>`, `absenz.txt`).
 - Berechnungsregeln, Verhalten und Rundungsregeln (dokumentiert in der internen Spezifikation).
@@ -61,6 +63,12 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
   `tests.integration` gegen einen js-controller; die mitgelieferten Unit-Mocks sind deprecated.
 - **Eigene Logik:** Vitest für Berechnung, Import-Parser und Zeitzonen-Fälle, Playwright für E2E der PWA;
   Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
+- **Web-App (`src-pwa/`):** eigenes Projekt mit eigenem `package.json`/`tsconfig.json` (React 18, MUI 5, Vite).
+  Ablauf: `npm run install:pwa` → `npm run build:pwa` (Typprüfung + Build nach `www/`) → `npm run lint:pwa`;
+  während der Entwicklung `npm run dev:pwa` (leitet `/api` auf die laufende Instanz). Die App spricht
+  ausschließlich über das API-Präfix `/api` mit dem Adapter, hält die Sitzung in `localStorage` und legt
+  Stempel offline in eine Warteschlange (`idempotencyKey` je Stempel). Berechtigungen entscheidet **immer** der
+  Server; die UI blendet nur aus, was ohnehin verboten wäre. Neue Texte gehören in `src-pwa/src/i18n/en.json`.
 - **Generiertes:** `build/` und `www/` werden erzeugt und nie direkt bearbeitet.
 - **States:** Objekte über `setObjectNotExistsAsync`/`extendObject` anlegen; `common.name` (mindestens `en`+`de`),
   `common.type`, `common.role`, `common.read`, `common.write` sind Pflicht und müssen zu den Rollenregeln passen
@@ -90,18 +98,18 @@ Spezifikation.
 
 ## 6. Was veröffentlicht wird
 
-| Dokument | Ort | Veröffentlicht |
-|---|---|---|
-| Adapter-Beschreibung | `README.md` (später zusätzlich `adapter/README.md`) | ja |
-| Lizenz | `LICENSE` | ja |
-| Mitwirkungsregeln (Clean Room) | `CONTRIBUTING.md` | ja |
-| Herkunftsnachweis | `docs/provenance.md` | ja (belegt die unabhängige Umsetzung) |
-| Quellcode | `src/`, `src-pwa/`, `src-shared/`, `tools/` | ja |
-| Sprachdateien (11 Sprachen) | `admin/i18n/`, `src-pwa/src/i18n/` | ja (Übersetzungen willkommen) |
-| Übersetzer-Doku | `docs/i18n.md` | ja |
-| Interne Spezifikation | außerhalb dieses Repositories | **nein** |
-| Prüfbericht | `docs/cleanroom-report.txt` | nein (generiert, `.gitignore`) |
-| Legacy-Baum, Archive, Bestandsdaten | außerhalb dieses Repositories | **nein** |
+| Dokument                            | Ort                                                 | Veröffentlicht                        |
+| ----------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Adapter-Beschreibung                | `README.md` (später zusätzlich `adapter/README.md`) | ja                                    |
+| Lizenz                              | `LICENSE`                                           | ja                                    |
+| Mitwirkungsregeln (Clean Room)      | `CONTRIBUTING.md`                                   | ja                                    |
+| Herkunftsnachweis                   | `docs/provenance.md`                                | ja (belegt die unabhängige Umsetzung) |
+| Quellcode                           | `src/`, `src-pwa/`, `src-shared/`, `tools/`         | ja                                    |
+| Sprachdateien (11 Sprachen)         | `admin/i18n/`, `src-pwa/src/i18n/`                  | ja (Übersetzungen willkommen)         |
+| Übersetzer-Doku                     | `docs/i18n.md`                                      | ja                                    |
+| Interne Spezifikation               | außerhalb dieses Repositories                       | **nein**                              |
+| Prüfbericht                         | `docs/cleanroom-report.txt`                         | nein (generiert, `.gitignore`)        |
+| Legacy-Baum, Archive, Bestandsdaten | außerhalb dieses Repositories                       | **nein**                              |
 
 Regeln dazu:
 

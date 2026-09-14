@@ -30,7 +30,7 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(harness.hasLog(/API routes: \d+/)).to.equal(true);
 			});
 
-			it("answers the API below /api and refuses everything else", async () => {
+			it("answers the API below /api and delivers the web app", async () => {
 				const line = harness
 					.getLogs()
 					.map(log => log.message)
@@ -51,11 +51,23 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(login.status).to.equal(401);
 				expect(login.headers.get("content-type")).to.equal("application/problem+json; charset=utf-8");
 
-				// the packed package has no www/ folder, so the adapter reports that and answers 404
-				expect(harness.hasLog(/no web interface at .*www/)).to.equal(true);
-				const page = await fetch(`http://127.0.0.1:${port}/`, { headers: { accept: "application/json" } });
-				expect(page.status).to.equal(404);
-				expect(await page.json()).to.include({ code: "not_found" });
+				// the packed package contains www/, so the adapter serves the built web app
+				expect(harness.hasLog(/web interface found at .*www/)).to.equal(true);
+				const page = await fetch(`http://127.0.0.1:${port}/`, { headers: { accept: "text/html" } });
+				expect(page.status).to.equal(200);
+				expect(page.headers.get("content-type")).to.equal("text/html; charset=utf-8");
+				expect(await page.text()).to.contain('<div id="root">');
+
+				// a deep link of the client side router answers with the app shell as well
+				const deepLink = await fetch(`http://127.0.0.1:${port}/month`, { headers: { accept: "text/html" } });
+				expect(deepLink.status).to.equal(200);
+
+				// an API client never receives the HTML page
+				const missing = await fetch(`http://127.0.0.1:${port}/api/gibt/es/nicht`, {
+					headers: { accept: "application/json" },
+				});
+				expect(missing.status).to.equal(404);
+				expect(await missing.json()).to.include({ code: "not_found" });
 			});
 
 			it("reacts to a command state", async () => {

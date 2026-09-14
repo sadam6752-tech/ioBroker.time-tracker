@@ -1641,6 +1641,54 @@ describe("web api", () => {
 			expect(cellText("A38")).to.equal("Summe");
 			expect(cellText("H38")).to.equal("Tage: 31");
 		});
+		it("answers with a PDF statement of the requested month", async () => {
+			const response = await send("GET", "/reports/pdf", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
+			expect(response.status).to.equal(200);
+			expect(response.headers["content-type"]).to.equal("application/pdf");
+			expect(response.headers["content-disposition"]).to.equal(
+				'attachment; filename="zeiterfassung-anna-1970-01.pdf"',
+			);
+			expect(response.headers["cache-control"]).to.equal("no-store");
+			expect(response.body.toString("latin1").startsWith("%PDF-1.")).to.equal(true);
+
+			// an employee never receives the statement of somebody else
+			const foreign = await send("GET", "/reports/pdf", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1", userId: String(adminId) },
+			});
+			expect(foreign.status).to.equal(403);
+		});
+
+		it("refuses a report that needs a font nobody configured", async () => {
+			// the employee switches to Russian, which the built-in PDF fonts cannot render
+			const updated = await send("PATCH", `/users/${annaId}`, {
+				body: { locale: "ru" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(updated.status).to.equal(200);
+
+			const response = await send("GET", "/reports/pdf", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
+
+			// a clear answer beats a statement with empty boxes
+			expect(response.status).to.equal(400);
+			const problem = bodyOf<{ code: string; detail: string }>(response);
+			expect(problem.code).to.equal("bad_request");
+			expect(problem.detail).to.contain("needs a Unicode font");
+			expect(problem.detail).to.contain("report_font_path");
+
+			// the Excel export has no such limitation
+			const xls = await send("GET", "/reports/xls", {
+				headers: headers(annaToken),
+				query: { year: "1970", month: "1" },
+			});
+			expect(xls.status).to.equal(200);
+		});
 	});
 
 	describe("backups", () => {

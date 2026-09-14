@@ -69,6 +69,11 @@ The adapter is configured in the instance settings:
 | Legacy data directory for import    | Read-only source directory of the old system              |
 | Keep database backups for days      | Retention of `VACUUM INTO` backups                        |
 
+Instance settings (editable through `PUT /api/settings`, permission `settings.edit`) complement the
+configuration; `report_font_path` is one of them: the path of a `.ttf`/`.otf` file used for PDF statements.
+It is only needed for languages the built-in PDF fonts cannot display (`ru`, `uk`, `zh-cn`); everything else
+works without an additional file.
+
 ## Web interface and API
 
 The adapter runs its own HTTP server on the configured port and serves two things from it:
@@ -84,8 +89,12 @@ part of the installation (for example while the web app is still being developed
 and only the API is reachable — a log line states which of both applies.
 
 Downloads are real files, not JSON: `GET /api/reports/xls?year=&month=` returns the monthly work time
-statement of the caller as an Excel workbook (`.xlsx`, `content-disposition: attachment`), generated in the
-language and time zone of the employee.
+statement of the caller as an Excel workbook (`.xlsx`) and `GET /api/reports/pdf?year=&month=` the same
+statement as a PDF — both with `content-disposition: attachment`, generated in the language and time zone of
+the employee. The PDF is one page per month with the day table, the totals, the absences and two signature
+lines; for `ru`, `uk` and `zh-cn` a Unicode font has to be configured (`report_font_path`), because the
+built-in PDF fonts only cover Latin-1 — the export refuses such a language with a clear message instead of
+drawing empty boxes.
 
 ## States (overview)
 

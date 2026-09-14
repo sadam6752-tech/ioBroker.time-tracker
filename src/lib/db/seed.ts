@@ -82,6 +82,8 @@ export const SETTING_DEFAULTS: Record<string, string> = {
 	session_ttl_minutes: "720",
 	backup_retention_days: "30",
 	attendance_list_visible: "0",
+	// path of a Unicode font for the PDF statement; empty uses the built-in Latin fonts
+	report_font_path: "",
 };
 
 /**

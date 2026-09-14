@@ -40,7 +40,9 @@ import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
 import { reportLabels } from "../reports/labels";
-import { buildMonthReport, reportFileName } from "../reports/xls";
+import { buildMonthReport } from "../reports/xls";
+import { buildMonthStatement } from "../reports/pdf";
+import { reportFileName, type ReportInput } from "../reports/types";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { problem, toProblem } from "./problem";
@@ -99,6 +101,9 @@ export interface ApiDeps {
 
 /** Media type of the Excel export. */
 const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/** Media type of the PDF export. */
+const PDF_CONTENT_TYPE = "application/pdf";
 
 /** A registered route (used for the documentation). */
 export interface ApiRoute {
@@ -2293,40 +2298,54 @@ export function createApi(deps: ApiDeps): Api {
 
 	// reports
 
-	route(
-		"GET",
-		"/reports/xls",
-		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
-		async context => {
-			const userId = scopeUser(context);
-			const user = users.findById(userId);
-			if (!user) {
-				throw new NotFoundError(`user ${userId} not found`);
-			}
+	/**
+	 * Collects everything a monthly statement needs.
+	 *
+	 * The Excel and the PDF export show the same statement, so they share this step: the caller is resolved
+	 * from `?userId=` (permission checked), the month is recalculated and read, and the labels follow the
+	 * language of the employee.
+	 *
+	 * @param context - route context with the authenticated caller
+	 * @returns the report input plus the year and month
+	 */
+	const monthlyReport = (
+		context: RouteContext,
+	): { input: ReportInput & { generator: string }; year: number; month: number; login: string } => {
+		const userId = scopeUser(context);
+		const user = users.findById(userId);
+		if (!user) {
+			throw new NotFoundError(`user ${userId} not found`);
+		}
 
-			const year = numberQuery(context, "year");
-			const month = numberQuery(context, "month");
-			if (month < 1 || month > 12) {
-				throw new ValidationError(`month must be between 1 and 12 (got ${month})`);
-			}
+		const year = numberQuery(context, "year");
+		const month = numberQuery(context, "month");
+		if (month < 1 || month > 12) {
+			throw new ValidationError(`month must be between 1 and 12 (got ${month})`);
+		}
 
-			const prefix = `${year}-${String(month).padStart(2, "0")}`;
-			const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
-			const to = `${prefix}-${String(lastDay).padStart(2, "0")}`;
-			const timestamp = now();
+		const prefix = `${year}-${String(month).padStart(2, "0")}`;
+		const first = `${prefix}-01`;
+		const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+		const last = `${prefix}-${String(lastDay).padStart(2, "0")}`;
+		const timestamp = now();
 
-			// a statement has to show the current state of the month, so the range is recalculated first
-			aggregation.recalculateRange(userId, `${prefix}-01`, to, { now: timestamp });
-			const { labels } = reportLabels(user.locale);
+		// a statement has to show the current state of the month, so the range is recalculated first
+		aggregation.recalculateRange(userId, first, last, { now: timestamp });
+		const { labels, language } = reportLabels(user.locale);
 
-			const workbook = await buildMonthReport({
+		return {
+			year,
+			month,
+			login: user.login,
+			input: {
 				user: { displayName: user.displayName, login: user.login, timezone: user.timezone },
 				labels,
+				language,
 				locale: user.locale || "en",
 				year,
 				month,
-				days: aggregation.days(userId, `${prefix}-01`, to),
-				absences: absences.withTypesInRange(userId, `${prefix}-01`, to).map(absence => ({
+				days: aggregation.days(userId, first, last),
+				absences: absences.withTypesInRange(userId, first, last).map(absence => ({
 					typeCode: absence.typeCode,
 					typeName: absence.typeName,
 					dateFrom: absence.dateFrom,
@@ -2336,12 +2355,40 @@ export function createApi(deps: ApiDeps): Api {
 				})),
 				generatedAt: timestamp,
 				generator: `zeiterfassung ${deps.version ?? ""}`.trim(),
-			});
+			},
+		};
+	};
 
-			const fileName = reportFileName(user.login, year, month);
+	route(
+		"GET",
+		"/reports/xls",
+		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
+		async context => {
+			const { input, year, month, login } = monthlyReport(context);
+			const workbook = await buildMonthReport(input);
+
 			// the file name is generated from the login, so it never contains a header delimiter
 			return binary(200, workbook, XLSX_CONTENT_TYPE, {
-				"content-disposition": `attachment; filename="${fileName}"`,
+				"content-disposition": `attachment; filename="${reportFileName(login, year, month, "xlsx")}"`,
+				"cache-control": "no-store",
+			});
+		},
+	);
+
+	route(
+		"GET",
+		"/reports/pdf",
+		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
+		async context => {
+			const { input, year, month, login } = monthlyReport(context);
+			const statement = await buildMonthStatement({
+				...input,
+				// a Unicode font is only needed for scripts the built-in fonts cannot show (see the renderer)
+				fontPath: settings.get("report_font_path") ?? "",
+			});
+
+			return binary(200, statement, PDF_CONTENT_TYPE, {
+				"content-disposition": `attachment; filename="${reportFileName(login, year, month, "pdf")}"`,
 				"cache-control": "no-store",
 			});
 		},

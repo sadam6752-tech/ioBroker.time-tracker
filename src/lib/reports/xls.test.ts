@@ -3,7 +3,8 @@ import { expect } from "chai";
 import ExcelJS from "exceljs";
 import type { DayAggregateRecord } from "../services/aggregation";
 import { REPORT_LABELS, reportLabels } from "./labels";
-import { buildMonthReport, reportFileName, type ReportAbsence } from "./xls";
+import { reportFileName } from "./types";
+import { buildMonthReport, type ReportAbsence } from "./xls";
 
 /**
  * Builds a day row with sensible defaults.
@@ -110,6 +111,7 @@ describe("monthly report (xlsx)", () => {
 	const baseInput = {
 		user: { displayName: "Anna Muster", login: "anna", timezone: "Europe/Zurich" },
 		labels: REPORT_LABELS.de,
+		language: "de",
 		locale: "de-CH",
 		year: 2026,
 		month: 9,
@@ -249,9 +251,9 @@ describe("monthly report (xlsx)", () => {
 	});
 
 	it("builds a safe file name", () => {
-		expect(reportFileName("anna", 2026, 9)).to.equal("zeiterfassung-anna-2026-09.xlsx");
-		expect(reportFileName("anna/müller", 2026, 12)).to.equal("zeiterfassung-anna-m-ller-2026-12.xlsx");
-		expect(reportFileName("", 2026, 1)).to.equal("zeiterfassung-user-2026-01.xlsx");
+		expect(reportFileName("anna", 2026, 9, "xlsx")).to.equal("zeiterfassung-anna-2026-09.xlsx");
+		expect(reportFileName("anna/müller", 2026, 12, "xlsx")).to.equal("zeiterfassung-anna-m-ller-2026-12.xlsx");
+		expect(reportFileName("", 2026, 1, "pdf")).to.equal("zeiterfassung-user-2026-01.pdf");
 	});
 
 	it("names the labels of every supported language", () => {

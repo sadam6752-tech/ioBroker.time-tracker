@@ -30,6 +30,7 @@
     "better-sqlite3": "^13.0.3",
     "exceljs": "^4.4.0",
     "luxon": "^3.7.2",
+    "pdfkit": "^0.20.2",
     "ws": "^8.21.3"
   },
   "devDependencies": {
@@ -47,6 +48,7 @@
     "@types/luxon": "^3.7.5",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.2",
+    "@types/pdfkit": "^0.17.6",
     "@types/ws": "^8.18.1",
     "nyc": "^18.0.0",
     "rimraf": "^6.1.3",

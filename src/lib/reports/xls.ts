@@ -13,46 +13,15 @@
  */
 
 import ExcelJS from "exceljs";
-import type { DayAggregateRecord } from "../services/aggregation";
-import type { ReportLabels } from "./labels";
+import type { ReportAbsence, ReportInput } from "./types";
 
-/** One absence of the reported month. */
-export interface ReportAbsence {
-	/** Short type code, e.g. `U` */
-	typeCode: string;
-	/** Name of the type in the language of the instance */
-	typeName: string;
-	/** First day, local date */
-	dateFrom: string;
-	/** Last day, local date */
-	dateTo: string;
-	/** `1` for a whole day, `0.5` for a half day */
-	dayPortion: number;
-	/** Hours of a partial day absence, when known */
-	hours: number | null;
-}
+export type { ReportAbsence };
 
 /** Input of the monthly statement. */
-export interface MonthReportInput {
-	/** Employee the statement belongs to */
-	user: { displayName: string; login: string; timezone: string };
-	/** Labels in the language of the employee */
-	labels: ReportLabels;
-	/** Locale used for dates and times (`users.locale`) */
-	locale: string;
-	/** Four digit year */
-	year: number;
-	/** Month, 1 to 12 */
-	month: number;
-	/** Days of the month, from the aggregates */
-	days: DayAggregateRecord[];
-	/** Absences overlapping the month */
-	absences: ReportAbsence[];
-	/** Instant of the export */
-	generatedAt: number;
+export type MonthReportInput = ReportInput & {
 	/** Name of the generator, e.g. `zeiterfassung 0.0.1` */
 	generator: string;
-}
+};
 
 /** Number format that shows a duration in minutes as `[h]:mm`. */
 const DURATION_FORMAT = "[h]:mm";
@@ -121,20 +90,6 @@ function formatStamp(tsUtc: number, locale: string, timeZone: string): string {
 		dateStyle: "short",
 		timeStyle: "short",
 	}).format(new Date(tsUtc * 1000));
-}
-
-/**
- * Builds the file name of the statement.
- *
- * @param login - login of the employee
- * @param year - four digit year
- * @param month - month, 1 to 12
- * @returns file name with extension
- */
-export function reportFileName(login: string, year: number, month: number): string {
-	// a login may contain characters a file name cannot carry
-	const safe = (login || "user").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "user";
-	return `zeiterfassung-${safe}-${year}-${String(month).padStart(2, "0")}.xlsx`;
 }
 
 /**

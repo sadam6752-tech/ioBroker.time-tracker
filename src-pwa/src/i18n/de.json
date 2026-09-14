@@ -58,6 +58,7 @@
 	"reports.monthTotals": "Monatssumme",
 	"reports.overtime": "Überstunden",
 	"reports.vacation": "Ferien (bezogen / Anspruch)",
+	"reports.paidOut": "Ausbezahlt: {{minutes}}",
 	"reports.empty": "Keine Daten für diesen Zeitraum.",
 	"absences.title": "Abwesenheiten",
 	"absences.type": "Art",

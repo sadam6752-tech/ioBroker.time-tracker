@@ -17,6 +17,7 @@ import type {
 	Entry,
 	LoginResult,
 	MonthAggregate,
+	Payout,
 	PunchResult,
 	PunchStatus,
 	SessionUser,
@@ -94,6 +95,8 @@ export interface ApiClient {
 	months(year: number): Promise<{ year: YearAggregate; months: (MonthAggregate | null)[] }>;
 	/** Year totals */
 	year(year: number): Promise<YearAggregate>;
+	/** Paid out overtime of a year (own account) */
+	payouts(year: number): Promise<{ totalMinutes: number; payouts: Payout[] }>;
 	/** Punches of a range */
 	entries(from: string, to: string): Promise<Entry[]>;
 	/** Absences of a year */
@@ -308,6 +311,9 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		months: year => request("GET", "/aggregates/month", { query: { year } }),
 
 		year: year => request<YearAggregate>("GET", "/aggregates/year", { query: { year } }),
+
+		payouts: year =>
+			request<{ totalMinutes: number; payouts: Payout[] }>("GET", "/payouts", { query: { year, month: "" } }),
 
 		async entries(from, to): Promise<Entry[]> {
 			const result = await request<{ entries: Entry[] }>("GET", "/entries", { query: { from, to } });

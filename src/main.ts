@@ -154,6 +154,7 @@ class Zeiterfassung extends utils.Adapter {
 		const absences = createAbsencesRepository(db);
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
+		const payouts = createPayoutsRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({
 			db,
@@ -172,7 +173,7 @@ class Zeiterfassung extends utils.Adapter {
 			settings,
 		});
 		const sync = createSyncService({ db, entries, users, aggregation });
-		const closing = createClosingService({ db, aggregation, payouts: createPayoutsRepository(db) });
+		const closing = createClosingService({ db, aggregation, payouts });
 		const api = createApi({
 			db,
 			auth,
@@ -181,6 +182,7 @@ class Zeiterfassung extends utils.Adapter {
 			absences,
 			holidays,
 			rules,
+			payouts,
 			aggregation,
 			sync,
 			settings,

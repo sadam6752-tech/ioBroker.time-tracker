@@ -58,6 +58,7 @@
 	"reports.monthTotals": "Month totals",
 	"reports.overtime": "Overtime",
 	"reports.vacation": "Vacation (taken / entitlement)",
+	"reports.paidOut": "Paid out: {{minutes}}",
 	"reports.empty": "No data for this period.",
 	"absences.title": "Absences",
 	"absences.type": "Type",

@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert, Loading } from "../components/feedback";
+import { hasPermission, useSession } from "../state/session";
 
 /**
  * Shows the monthly and yearly figures.
@@ -29,9 +30,18 @@ import { ErrorAlert, Loading } from "../components/feedback";
 export function Reports(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
 	const [year, setYear] = useState(() => new Date().getFullYear());
+	const { permissions } = useSession();
+	const maySeePayouts = hasPermission(permissions, "payout.view");
 	const report = useQuery({
 		queryKey: ["months", year],
 		queryFn: () => api.months(year),
+	});
+	// the endpoint needs `payout.view`, so it is only asked for when the right is granted
+	const payouts = useQuery({
+		queryKey: ["payouts", year],
+		queryFn: () => api.payouts(year),
+		enabled: maySeePayouts,
+		retry: false,
 	});
 
 	const months = report.data?.months ?? [];
@@ -130,6 +140,16 @@ export function Reports(): React.JSX.Element {
 												(report.data?.year.vacationDays ?? 0),
 										})}
 									</Typography>
+									{maySeePayouts && (
+										<Typography
+											variant="body2"
+											color="text.secondary"
+										>
+											{t("reports.paidOut", {
+												minutes: formatMinutes(payouts.data?.totalMinutes ?? 0),
+											})}
+										</Typography>
+									)}
 								</CardContent>
 							</Card>
 						</Grid>

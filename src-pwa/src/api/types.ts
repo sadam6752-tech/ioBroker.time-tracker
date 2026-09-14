@@ -70,6 +70,19 @@ export interface PunchResult {
 	rounded?: { from: number; to: number; roundMinutes: number };
 }
 
+/** A payout as `GET /payouts` returns it. */
+export interface Payout {
+	id: number;
+	userId: number;
+	year: number;
+	month: number | null;
+	minutes: number;
+	amount: number | null;
+	note: string | null;
+	createdAt: number;
+	createdBy: number | null;
+}
+
 /** Current status of the caller, as `GET /punch/status` answers it. */
 export interface PunchStatus {
 	date: string;

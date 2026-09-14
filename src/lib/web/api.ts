@@ -18,6 +18,7 @@ import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
+import type { PayoutsRepository } from "../db/repositories/payouts";
 import type { RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
 import type { UserRecord, UsersRepository, WorkProfileRecord } from "../db/repositories/users";
@@ -28,8 +29,8 @@ import type { SyncService } from "../services/sync";
 import { NotFoundError, ValidationError } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
-import { isValidTimeZone, localDate } from "../util/time";
-import { problem } from "./problem";
+import { dateRange, isValidTimeZone, localDate } from "../util/time";
+import { problem, toProblem } from "./problem";
 import {
 	createRouter,
 	json,
@@ -56,6 +57,8 @@ export interface ApiDeps {
 	holidays: HolidaysRepository;
 	/** Surcharge and break rules */
 	rules: RulesRepository;
+	/** Paid out overtime */
+	payouts: PayoutsRepository;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -146,6 +149,9 @@ const SECRET_SETTING_KEYS = ["secret", "password", "token", "hash", "apikey"];
 /** Settings whose value may be a nested structure (arrays and objects). */
 const JSON_SETTINGS = ["pause_staffel"];
 
+/** Upper bound of a statistics range: every day of every employee is recalculated. */
+const MAX_STATISTICS_DAYS = 366;
+
 /**
  * Settings that may be changed through the API: the instance defaults from the seed plus the structured ones.
  *
@@ -212,6 +218,31 @@ function requireBoolean(body: Record<string, unknown>, field: string): boolean {
 		throw new ValidationError(`${field} is required`);
 	}
 	return value;
+}
+
+/**
+ * Reads a year and an optional month from a body or the query.
+ *
+ * The range matches the validation of the payout repository, so a wrong year is refused by the API before it
+ * reaches the storage layer.
+ *
+ * @param year - raw year
+ * @param month - raw month, `null`/empty for the whole year
+ * @returns validated year and month
+ */
+function readPeriod(year: unknown, month: unknown): { year: number; month: number | null } {
+	const parsedYear = Number(year);
+	if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+		throw new ValidationError(`year must be a four digit year between 2000 and 2100 (got ${JSON.stringify(year)})`);
+	}
+	if (month === null || month === undefined || month === "") {
+		return { year: parsedYear, month: null };
+	}
+	const parsedMonth = Number(month);
+	if (!Number.isInteger(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+		throw new ValidationError(`month must be between 1 and 12 (got ${JSON.stringify(month)})`);
+	}
+	return { year: parsedYear, month: parsedMonth };
 }
 
 /**
@@ -471,7 +502,7 @@ function resolveScope(
  * @returns API with its router
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, holidays, rules, aggregation, sync, settings } = deps;
+	const { auth, users, entries, absences, holidays, rules, payouts, aggregation, sync, settings } = deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, now });
@@ -1442,6 +1473,231 @@ export function createApi(deps: ApiDeps): Api {
 			}),
 		);
 		return json(200, { shiftRules: saved });
+	});
+
+	// payouts (paid out overtime)
+
+	route("GET", "/payouts", { permission: "payout.view" }, context => {
+		const requested = context.query("userId");
+		const userId = requested ? Number(requested) : (context.auth?.user.id ?? 0);
+		if (!Number.isInteger(userId)) {
+			throw new ValidationError("userId must be a whole number");
+		}
+		const period = readPeriod(context.query("year"), context.query("month"));
+		const list = payouts.list(
+			userId,
+			period.month === null ? { year: period.year } : { year: period.year, month: period.month },
+		);
+		return json(200, {
+			userId,
+			...period,
+			totalMinutes: payouts.sumMinutes(userId, period.year, period.month ?? undefined),
+			payouts: list,
+		});
+	});
+
+	route("POST", "/payouts", { permission: "payout.create", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const target = Number(body.userId ?? context.auth.user.id);
+		if (!Number.isInteger(target) || !users.findById(target)) {
+			throw new ValidationError("userId must reference an existing employee");
+		}
+		const period = readPeriod(body.year, body.month);
+		const minutes = optionalNumber(body, "minutes");
+		if (minutes === null || !Number.isInteger(minutes) || minutes === 0) {
+			throw new ValidationError("minutes must be a non-zero whole number");
+		}
+
+		const created = payouts.create({
+			userId: target,
+			...period,
+			minutes,
+			amount: optionalNumber(body, "amount"),
+			note: optionalString(body, "note"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(201, { payout: created }, { location: `/payouts/${created.id}` });
+	});
+
+	route("PATCH", "/payouts/:id", { permission: "payout.create", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		if (!payouts.findById(id)) {
+			throw new NotFoundError(`payout ${id} not found`);
+		}
+		const body = context.jsonBody();
+		const minutes = optionalNumber(body, "minutes");
+		if (minutes !== null && (!Number.isInteger(minutes) || minutes === 0)) {
+			throw new ValidationError("minutes must be a non-zero whole number");
+		}
+
+		const updated = payouts.update({
+			id,
+			patch: {
+				...(minutes !== null ? { minutes } : {}),
+				...(Object.prototype.hasOwnProperty.call(body, "amount")
+					? { amount: optionalNumber(body, "amount") }
+					: {}),
+				...(Object.prototype.hasOwnProperty.call(body, "note") ? { note: optionalString(body, "note") } : {}),
+			},
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(200, { payout: updated });
+	});
+
+	route("DELETE", "/payouts/:id", { permission: "payout.create", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const removed = payouts.remove({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!removed) {
+			throw new NotFoundError(`payout ${context.params.id} not found`);
+		}
+		return noContent();
+	});
+
+	// bulk import of punches (administration and migration)
+
+	route("POST", "/entries/bulk", { permission: "time.import", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		if (!Array.isArray(body.entries)) {
+			throw new ValidationError("entries must be an array");
+		}
+
+		const actor = context.auth;
+		const timestamp = now();
+		const touched = new Map<string, number>();
+		const results: { index: number; entryId?: number; error?: string }[] = [];
+
+		(body.entries as unknown[]).forEach((raw, index) => {
+			try {
+				const item = (raw ?? {}) as Record<string, unknown>;
+				const target = Number(item.userId ?? actor.user.id);
+				if (!Number.isInteger(target)) {
+					throw new ValidationError("userId must be a whole number");
+				}
+				// writing punches for somebody else needs the matching permission
+				if (target !== actor.user.id && !actor.permissions.includes("time.edit_other")) {
+					throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
+				}
+				const user = users.findById(target);
+				if (!user) {
+					throw new NotFoundError(`user ${target} not found`);
+				}
+				const tsUtc = optionalNumber(item, "tsUtc");
+				if (tsUtc === null) {
+					throw new ValidationError("tsUtc is required");
+				}
+
+				const stored = entries.insert({
+					userId: target,
+					tsUtc,
+					clientTsUtc: optionalNumber(item, "clientTsUtc"),
+					timeZone: user.timezone,
+					source: "import",
+					direction: optionalDirection(item),
+					idempotencyKey: optionalString(item, "idempotencyKey"),
+					note: optionalString(item, "note"),
+					actorId: actor.user.id,
+					actorIp: context.request.remoteAddress ?? null,
+					now: timestamp,
+				});
+
+				touched.set(`${target}|${stored.entry.localDate}`, target);
+				results.push({ index, entryId: stored.entry.id });
+			} catch (error) {
+				// a faulty row does not discard the rest of the import
+				const details = toProblem(error).problem;
+				results.push({ index, error: details.code });
+			}
+		});
+
+		// the aggregates of the imported days are refreshed once, not per row
+		for (const key of touched.keys()) {
+			const [userId, localDate] = key.split("|");
+			aggregation.recalculateDay(Number(userId), localDate, { now: timestamp });
+		}
+
+		const imported = results.filter(result => result.entryId !== undefined).length;
+		return json(200, {
+			imported,
+			failed: results.length - imported,
+			recalculatedDays: touched.size,
+			results,
+		});
+	});
+
+	// statistics
+
+	route("GET", "/reports/statistics", { permission: "report.statistics" }, context => {
+		const from = context.query("from");
+		const to = context.query("to") ?? from;
+		if (!from || !to) {
+			throw new ValidationError("from and to are required");
+		}
+		if (from > to) {
+			throw new ValidationError(`from (${from}) must not be after to (${to})`);
+		}
+		// every day of every employee is recalculated, so the range stays bounded
+		const days = dateRange(from, to).length;
+		if (days > MAX_STATISTICS_DAYS) {
+			throw new ValidationError(`the range may cover at most ${MAX_STATISTICS_DAYS} days (got ${days})`);
+		}
+
+		const requested = context.query("userId");
+		if (requested) {
+			// looking at somebody else is a permission of its own
+			if (!context.auth?.permissions.includes("report.view_other")) {
+				throw problem(403, "permission_denied", "request rejected (permission_denied: report.view_other)");
+			}
+		}
+		const employees = requested ? [Number(requested)] : users.list({ includeInactive: false }).map(user => user.id);
+		if (employees.some(id => !Number.isInteger(id) || !users.findById(id))) {
+			throw new ValidationError("userId must reference an existing employee");
+		}
+
+		const timestamp = now();
+		const rows = employees.map(userId => {
+			const user = users.findById(userId);
+			const range = aggregation.recalculateRange(userId, from, to, { now: timestamp });
+			return {
+				userId,
+				displayName: user?.displayName ?? "",
+				...range,
+			};
+		});
+
+		return json(200, {
+			from,
+			to,
+			users: rows,
+			totals: rows.reduce(
+				(sum, row) => ({
+					workedMin: sum.workedMin + row.workedMin,
+					targetMin: sum.targetMin + row.targetMin,
+					balanceMin: sum.balanceMin + row.balanceMin,
+					openDays: sum.openDays + row.openDays,
+				}),
+				{ workedMin: 0, targetMin: 0, balanceMin: 0, openDays: 0 },
+			),
+		});
 	});
 
 	// system

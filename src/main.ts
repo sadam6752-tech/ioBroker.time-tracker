@@ -3,9 +3,18 @@
  * Scaffolded with @iobroker/create-adapter v3.1.5
  */
 
+import * as fs from "node:fs";
+import * as path from "node:path";
 import * as utils from "@iobroker/adapter-core";
+import { openAndMigrate, type Db } from "./lib/db/database";
+import { seed } from "./lib/db/seed";
+import type { HolidayCountry } from "./lib/domain/holidays";
+
+const SUPPORTED_COUNTRIES: HolidayCountry[] = ["CH", "DE", "AT"];
 
 class Zeiterfassung extends utils.Adapter {
+	private db: Db | null = null;
+
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
 			...options,
@@ -18,6 +27,24 @@ class Zeiterfassung extends utils.Adapter {
 		this.on("unload", this.onUnload.bind(this));
 	}
 
+	/** Database file: configured path or `<adapter instance data dir>/zeiterfassung.sqlite`. */
+	private databaseFile(): string {
+		const configured = (this.config.dbPath ?? "").trim();
+		if (configured) {
+			return path.resolve(configured);
+		}
+
+		const dir = utils.getAbsoluteInstanceDataDir(this);
+		fs.mkdirSync(dir, { recursive: true });
+		return path.join(dir, "zeiterfassung.sqlite");
+	}
+
+	/** Configured holiday country, falling back to Switzerland. */
+	private holidayCountry(): HolidayCountry {
+		const configured = (this.config.holidayCountry ?? "").toUpperCase() as HolidayCountry;
+		return SUPPORTED_COUNTRIES.includes(configured) ? configured : "CH";
+	}
+
 	/**
 	 * Is called when databases are connected and adapter received configuration.
 	 */
@@ -26,13 +53,17 @@ class Zeiterfassung extends utils.Adapter {
 			// Reset the connection indicator during startup
 			await this.setState("info.connection", false, true);
 
-			// The adapter config (instance settings, everything under "native") is available via this.config
-			this.log.debug(
-				`Starting on port ${this.config.port} (bind ${this.config.bind}, timezone ${this.config.timezone})`,
+			const file = this.databaseFile();
+			this.db = openAndMigrate(file, message => this.log.debug(message));
+
+			const year = new Date().getUTCFullYear();
+			const country = this.holidayCountry();
+			const result = seed(this.db, { holidayCountry: country, holidayYears: [year, year + 1] });
+			this.log.info(
+				`database ready at ${file} (${result.permissions} permissions, ${result.holidays} holidays added for ${country})`,
 			);
 
 			// NOTE: The implementation follows the internal specification (not part of this repository):
-			//   Phase 2 – SQLite schema and migrations
 			//   Phase 3 – punch logic, target time, breaks, overtime, vacation
 			//   Phase 4 – HTTP/WebSocket API (Fastify), sessions, RBAC
 			//   Phase 5 – PWA delivered from www/
@@ -53,7 +84,10 @@ class Zeiterfassung extends utils.Adapter {
 	private onUnload(callback: () => void): void {
 		try {
 			// Timers created with this.setTimeout/this.setInterval are cleared automatically on unload.
-			// TODO(Phase 4): close the HTTP server and the database connection here.
+			// TODO(Phase 4): close the HTTP server here.
+			this.db?.close();
+			this.db = null;
+
 			callback();
 		} catch (error) {
 			this.log.error(`Error during unloading: ${(error as Error).message}`);

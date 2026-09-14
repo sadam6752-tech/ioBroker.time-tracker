@@ -33,7 +33,7 @@ Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user,
 
 ## Requirements
 
-- ioBroker with js-controller >= 6.0.11 and Node.js >= 20
+- ioBroker with js-controller >= 6.0.11 and **Node.js >= 22** (required by the bundled SQLite driver `better-sqlite3`)
 - HTTPS for the web app (required for PWA/service worker); a reverse proxy with Let's Encrypt is recommended
 - Optional for migration: an existing SMALL-Time `Data` directory (read-only copy)
 

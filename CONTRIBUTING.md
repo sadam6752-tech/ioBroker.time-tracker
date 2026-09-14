@@ -45,6 +45,13 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
       (alle 11 Sprachen vollständig).
 - [ ] Lizenz- und Herkunftshinweise unverändert korrekt (`LICENSE`, `docs/provenance.md`).
 - [ ] Keine Legacy-Dateien, Archive oder Datenkopien im Commit (`SmallTime-master/`, `*.zip`).
+- [ ] Neue/geänderte States: `common.role`, `common.type`, `common.read`, `common.write` passen zusammen —
+      keine generische Rolle `state`, `button` → `boolean` mit `read:false`/`write:true`, Rolle `json` →
+      `common.type = "string"`.
+- [ ] Neue Texte in `common.news` der aktuellen Version in **allen 11 Sprachen** ergänzt (der Adapter-Checker
+      meldet fehlende Übersetzungen der neuesten Version als Fehler).
+- [ ] Secrets ausschließlich über `encryptedNative`/`protectedNative`; kein Klartext in `native` oder in Logs.
+- [ ] Adapter-Checker-Ergebnis im PR genannt, sobald das Adaptergerüst existiert (`npx @iobroker/repochecker <repo-url> --local`).
 
 ## 4. Code-Konventionen
 
@@ -55,6 +62,11 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 - **Eigene Logik:** Vitest für Berechnung, Import-Parser und Zeitzonen-Fälle, Playwright für E2E der PWA;
   Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
 - **Generiertes:** `build/` und `www/` werden erzeugt und nie direkt bearbeitet.
+- **States:** Objekte über `setObjectNotExistsAsync`/`extendObject` anlegen; `common.name` (mindestens `en`+`de`),
+  `common.type`, `common.role`, `common.read`, `common.write` sind Pflicht und müssen zu den Rollenregeln passen
+  (siehe PR-Checkliste).
+- **Konfiguration:** Secrets gehören in `encryptedNative`/`protectedNative`; der `native`-Block,
+  `admin/jsonConfig.json` und `src/lib/adapter-config.d.ts` werden synchron gehalten.
 - **Zeiten:** intern immer UTC-Epoch **und** Minuten-Ganzzahlen; Anzeige über Benutzer-Zeitzone.
 - **Datenbank:** Änderungen ausschließlich über versionierte Migrationen (`schema_migrations`).
 - **Fehler:** API-Fehler als `application/problem+json` mit stabilen Fehlercodes (gemäß interner Spezifikation).

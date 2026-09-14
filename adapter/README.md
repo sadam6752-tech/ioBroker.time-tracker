@@ -27,4 +27,10 @@ Verbindliche Vorgaben für die Umsetzung:
 - **Tests:** `@iobroker/testing` (`tests.packageFiles` und `tests.integration`); eigene Logik zusätzlich mit Vitest.
 - **Timer und Fehler:** Adapter-Timer (`this.setTimeout`/`this.setInterval`) statt globaler Timer; `try`/`catch`
   in jedem Handler, damit keine unbehandelte Rejection den Adapter beendet.
+- **Secrets:** Session-/HMAC-Geheimnisse und Service-Token in `encryptedNative` **und** `protectedNative` — nicht im
+  Klartext in `native`, nie in Logs.
+- **Prüfung vor Veröffentlichung:** `npx @iobroker/repochecker <repo-url> --local` muss fehlerfrei sein;
+  `@iobroker/testing`-Tests (`test:package`, `test:integration`) grün; `common.news` der neuesten Version in allen
+  11 Sprachen.
+- **Node-Version:** Zielvorgabe `engines.node >= 22` (aktuelle ioBroker-Referenzadapter).
 

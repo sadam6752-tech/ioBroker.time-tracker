@@ -37,6 +37,7 @@ export type ProblemCode =
 	| "unsupported_media_type"
 	| "kiosk_disabled"
 	| "not_configured"
+	| "report_font_missing"
 	| "rate_limited"
 	| "internal_error";
 

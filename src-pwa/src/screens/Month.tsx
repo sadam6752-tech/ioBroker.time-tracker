@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes, formatWeekday } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert, Loading } from "../components/feedback";
+import { ReportDownloads } from "../components/ReportDownloads";
 import { useSession } from "../state/session";
 
 /**
@@ -98,6 +99,13 @@ export function Month(): React.JSX.Element {
 			</Card>
 
 			<ErrorAlert error={days.error} />
+			{/* the statement of the shown month can be downloaded as Excel or PDF */}
+			<Box sx={{ mb: 2 }}>
+				<ReportDownloads
+					year={cursor.year}
+					month={cursor.month}
+				/>
+			</Box>
 			{days.isLoading ? (
 				<Loading />
 			) : (

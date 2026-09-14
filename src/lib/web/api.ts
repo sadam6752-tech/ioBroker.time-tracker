@@ -2381,11 +2381,25 @@ export function createApi(deps: ApiDeps): Api {
 		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
 		async context => {
 			const { input, year, month, login } = monthlyReport(context);
-			const statement = await buildMonthStatement({
-				...input,
-				// a Unicode font is only needed for scripts the built-in fonts cannot show (see the renderer)
-				fontPath: settings.get("report_font_path") ?? "",
-			});
+			let statement: Buffer;
+			try {
+				statement = await buildMonthStatement({
+					...input,
+					// a Unicode font is only needed for scripts the built-in fonts cannot show (see the renderer)
+					fontPath: settings.get("report_font_path") ?? "",
+				});
+			} catch (error) {
+				// a language the built-in fonts cannot draw is a configuration problem, not a bad request:
+				// the UI can name the setting that solves it
+				if (error instanceof ValidationError && error.message.includes("Unicode font")) {
+					throw problem(
+						422,
+						"report_font_missing",
+						"this language needs a Unicode font: set report_font_path to a .ttf/.otf file that covers the script",
+					);
+				}
+				throw error;
+			}
 
 			return binary(200, statement, PDF_CONTENT_TYPE, {
 				"content-disposition": `attachment; filename="${reportFileName(login, year, month, "pdf")}"`,

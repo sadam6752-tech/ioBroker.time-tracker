@@ -93,8 +93,9 @@ statement of the caller as an Excel workbook (`.xlsx`) and `GET /api/reports/pdf
 statement as a PDF — both with `content-disposition: attachment`, generated in the language and time zone of
 the employee. The PDF is one page per month with the day table, the totals, the absences and two signature
 lines; for `ru`, `uk` and `zh-cn` a Unicode font has to be configured (`report_font_path`), because the
-built-in PDF fonts only cover Latin-1 — the export refuses such a language with a clear message instead of
-drawing empty boxes.
+built-in PDF fonts only cover Latin-1 — the export refuses such a language with a clear message
+(`report_font_missing`) instead of drawing empty boxes. The web app offers both files as buttons in the month
+view and in the year report, so nobody has to build a URL by hand.
 
 ## States (overview)
 

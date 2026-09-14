@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert, Loading } from "../components/feedback";
+import { ReportDownloads } from "../components/ReportDownloads";
 import { hasPermission, useSession } from "../state/session";
 
 /**
@@ -161,12 +162,26 @@ export function Reports(): React.JSX.Element {
 								<ListItem
 									key={index}
 									secondaryAction={
-										<Typography
-											variant="body2"
-											color={(month?.balanceMin ?? 0) < 0 ? "error" : "text.secondary"}
+										<Stack
+											direction="row"
+											spacing={1}
+											alignItems="center"
 										>
-											{formatMinutes(month?.balanceMin ?? 0)}
-										</Typography>
+											<Typography
+												variant="body2"
+												color={(month?.balanceMin ?? 0) < 0 ? "error" : "text.secondary"}
+											>
+												{formatMinutes(month?.balanceMin ?? 0)}
+											</Typography>
+											{/* the statement of this month, for the months that have one */}
+											{month && (
+												<ReportDownloads
+													year={year}
+													month={index + 1}
+													compact
+												/>
+											)}
+										</Stack>
 									}
 								>
 									<ListItemText

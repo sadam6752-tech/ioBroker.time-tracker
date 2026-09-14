@@ -1676,10 +1676,9 @@ describe("web api", () => {
 			});
 
 			// a clear answer beats a statement with empty boxes
-			expect(response.status).to.equal(400);
+			expect(response.status).to.equal(422);
 			const problem = bodyOf<{ code: string; detail: string }>(response);
-			expect(problem.code).to.equal("bad_request");
-			expect(problem.detail).to.contain("needs a Unicode font");
+			expect(problem.code).to.equal("report_font_missing");
 			expect(problem.detail).to.contain("report_font_path");
 
 			// the Excel export has no such limitation

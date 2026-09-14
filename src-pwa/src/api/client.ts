@@ -124,6 +124,16 @@ export interface ApiClient {
 	conflicts(): Promise<Conflict[]>;
 	/** Resolves a conflict */
 	resolve(entryId: number, action: "accept" | "dismiss", reason?: string): Promise<unknown>;
+	/** Downloads the monthly work time statement of the own account */
+	downloadReport(kind: "xls" | "pdf", year: number, month: number): Promise<DownloadFile>;
+}
+
+/** A downloaded file. */
+export interface DownloadFile {
+	/** Content of the file */
+	blob: Blob;
+	/** File name the API suggests */
+	fileName: string;
 }
 
 /**
@@ -250,6 +260,57 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		return payload as T;
 	}
 
+	/**
+	 * Reads the file name out of a `content-disposition` header.
+	 *
+	 * @param header - value of the header
+	 * @returns the file name or `null`
+	 */
+	function dispositionFileName(header: string | null): string | null {
+		const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(header ?? "");
+		return match ? decodeURIComponent(match[1]) : null;
+	}
+
+	/**
+	 * Fetches a download and returns its bytes with the suggested file name.
+	 *
+	 * Downloads cannot be opened as a plain link: the API needs the session token, which a navigation would not
+	 * send. The response is therefore read as a blob and handed to the caller.
+	 *
+	 * @param path - path below the API prefix
+	 * @param query - query parameters
+	 * @returns blob and file name
+	 */
+	async function requestDownload(path: string, query: Record<string, string | number>): Promise<DownloadFile> {
+		const headers: Record<string, string> = {};
+		if (cached) {
+			headers["x-session-token"] = cached.token;
+			headers["x-csrf-token"] = cached.csrfToken;
+		}
+
+		let response: Response;
+		try {
+			response = await fetch(`${API_PREFIX}${path}${buildQuery(query)}`, {
+				headers,
+				credentials: "same-origin",
+			});
+		} catch (error) {
+			throw new ApiError(0, "network_error", error instanceof Error ? error.message : "network error");
+		}
+
+		if (!response.ok) {
+			// a failed download is a problem document, so the usual error handling applies
+			const details = (await response.json().catch(() => ({}))) as { code?: string; detail?: string };
+			throw new ApiError(response.status, details.code ?? "unknown_error", details.detail);
+		}
+
+		return {
+			blob: await response.blob(),
+			fileName:
+				dispositionFileName(response.headers.get("content-disposition")) ?? path.split("/").pop() ?? "download",
+		};
+	}
+
 	return {
 		session: () => cached,
 
@@ -355,6 +416,8 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		resolve: (entryId, action, reason) =>
 			request("POST", `/entries/${entryId}/resolve`, { body: { action, ...(reason ? { reason } : {}) } }),
+
+		downloadReport: (kind, year, month) => requestDownload(`/reports/${kind}`, { year, month }),
 	};
 }
 

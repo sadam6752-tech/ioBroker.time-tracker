@@ -63,6 +63,9 @@ describe("web event stream", () => {
 	let annaCsrf: string;
 	let adminToken: string;
 	let adminCsrf: string;
+	/** Intervals the stream asked the caller for, and the timers it stopped again. */
+	let startedIntervals: number[];
+	let stoppedTimers: unknown[];
 
 	/**
 	 * Connects a client, buffers its frames and consumes the greeting.
@@ -166,6 +169,8 @@ describe("web event stream", () => {
 	}
 
 	beforeEach(async () => {
+		startedIntervals = [];
+		stoppedTimers = [];
 		db = openAndMigrate(":memory:");
 		seed(db, { holidayYears: [2026] });
 		const users = createUsersRepository(db);
@@ -205,7 +210,20 @@ describe("web event stream", () => {
 		server = await startWebServer({
 			router: api.router,
 			port: 0,
-			stream: { auth, events: api.events, version: "9.9.9", now: () => 1000 },
+			stream: {
+				auth,
+				events: api.events,
+				version: "9.9.9",
+				now: () => 1000,
+				// the adapter hands in its own timer functions; here stubs record what the stream does with them
+				timers: {
+					setInterval: (_handler, milliseconds) => {
+						startedIntervals.push(milliseconds);
+						return 42;
+					},
+					clearInterval: handle => stoppedTimers.push(handle),
+				},
+			},
 		});
 
 		annaToken = await login("anna");
@@ -262,5 +280,13 @@ describe("web event stream", () => {
 		const closed = new Promise<number>(resolve => anna.socket.once("close", code => resolve(code)));
 		await server.stream?.close();
 		expect(await closed).to.equal(1001);
+	});
+
+	it("takes the keep-alive timer from the caller and stops it on close", async () => {
+		// no plain timer of its own: the adapter's timer functions are used, so nothing survives the adapter
+		expect(startedIntervals).to.deep.equal([30_000]);
+
+		await server.stream?.close();
+		expect(stoppedTimers).to.deep.equal([42]);
 	});
 });

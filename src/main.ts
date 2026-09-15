@@ -239,7 +239,16 @@ class Zeiterfassung extends utils.Adapter {
 				bind: this.config.bind || "127.0.0.1",
 				staticFiles,
 				// live events for the PWA and the terminal: `/api/stream?token=...`
-				stream: { auth, events: api.events, version: this.version },
+				stream: {
+					auth,
+					events: api.events,
+					version: this.version,
+					timers: {
+						// the adapter's own timer functions: they are cleared with the adapter on unload
+						setInterval: (handler, milliseconds) => this.setInterval(handler, milliseconds),
+						clearInterval: handle => this.clearInterval(handle as ioBroker.Interval),
+					},
+				},
 				log: {
 					info: message => this.log.info(message),
 					warn: message => this.log.warn(message),

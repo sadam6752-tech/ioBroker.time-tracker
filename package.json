@@ -10,6 +10,7 @@
 	"homepage": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung",
 	"license": "MIT",
 	"keywords": [
+		"ioBroker",
 		"time tracking",
 		"zeiterfassung",
 		"clock in",
@@ -46,7 +47,6 @@
 		"@types/better-sqlite3": "^9.6.0",
 		"@types/iobroker": "npm:@iobroker/types@^7.2.2",
 		"@types/luxon": "^3.7.5",
-		"@types/mocha": "^10.0.10",
 		"@types/node": "^22.20.2",
 		"@types/pdfkit": "^0.17.6",
 		"@types/ws": "^8.18.1",

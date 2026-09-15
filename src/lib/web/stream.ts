@@ -31,7 +31,22 @@ export interface EventStreamOptions {
 	now?: () => number;
 	/** Interval of the protocol pings in milliseconds (default 30 s) */
 	pingIntervalMs?: number;
+	/**
+	 * Timer functions of the caller. The adapter passes its own (`this.setInterval`/`this.clearInterval`), so
+	 * the ping timer belongs to the adapter and cannot outlive it; without them no ping is sent (tests do not
+	 * need one).
+	 */
+	timers?: {
+		setInterval: (handler: () => void, milliseconds: number) => TimerHandle;
+		clearInterval: (handle: TimerHandle) => void;
+	};
 }
+
+/**
+ * Handle of a repeating timer: the adapter marks its own handles with a brand type, Node returns `Timeout`
+ * objects. `null`/`undefined` are allowed because the adapter's own type declaration permits them.
+ */
+type TimerHandle = number | null | undefined | ReturnType<typeof setInterval>;
 
 /** The running stream endpoint. */
 export interface EventStream {
@@ -164,19 +179,24 @@ export function attachEventStream(options: EventStreamOptions): EventStream {
 		}
 	});
 
-	const pingTimer = setInterval(() => {
-		for (const socket of clients.keys()) {
-			if (socket.readyState === socket.OPEN) {
-				socket.ping();
-			}
-		}
-	}, pingIntervalMs);
-	// the timer must not keep the process alive on shutdown
-	pingTimer.unref?.();
+	// The adapter hands in its own timers, so the keep-alive ping is cleared with the adapter even when the
+	// stream is never closed explicitly.
+	const pingTimer =
+		options.timers === undefined
+			? null
+			: options.timers.setInterval(() => {
+					for (const socket of clients.keys()) {
+						if (socket.readyState === socket.OPEN) {
+							socket.ping();
+						}
+					}
+				}, pingIntervalMs);
 
 	return {
 		async close(): Promise<void> {
-			clearInterval(pingTimer);
+			if (pingTimer !== null && options.timers !== undefined) {
+				options.timers.clearInterval(pingTimer);
+			}
 			unsubscribe();
 			options.server.off("upgrade", onUpgrade);
 			for (const socket of [...clients.keys()]) {

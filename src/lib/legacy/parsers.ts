@@ -137,6 +137,10 @@ export interface LegacySettings {
 	editWindowDays: number | null;
 	/** Line 26: rounding of the quick punch in minutes */
 	quickRoundMinutes: number | null;
+	/** Line 22: hours from which the automatic pause applies (decimal hours) */
+	autoPauseFromHours: number | null;
+	/** Line 23: length of the automatic pause in minutes */
+	autoPauseDurationMinutes: number | null;
 	/** Line 28: only calculate absences until today */
 	absenceCalcUntilToday: boolean | null;
 	/** Line 29: subtract working time for absences */
@@ -537,6 +541,8 @@ export function parseSettings(text: string): LegacySettings {
 		printLimitDays: number(value(21) ?? undefined),
 		editWindowDays: number(value(24) ?? undefined),
 		quickRoundMinutes: number(value(26) ?? undefined),
+		autoPauseFromHours: number(value(22) ?? undefined),
+		autoPauseDurationMinutes: number(value(23) ?? undefined),
 		absenceCalcUntilToday: flag(28),
 		absenceDeductWorktime: flag(29),
 		warnings,

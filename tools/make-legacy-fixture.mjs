@@ -22,8 +22,18 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "fixtures", "smalltime");
 
-/** Scenario: part time employee, 60 %, 25.5 h per week on five working days. */
-const DAILY_TARGET_MIN = Math.round((25.5 * 60) / 5); // 306 min = 5.1 h
+/**
+ * Scenario: part time employee, employment level 60 %, 42.5 h per week at 100 % on five working days.
+ *
+ * The legacy file keeps the employment level (line 2) and the contract hours (line 3) apart, so the
+ * effective weekly time is `42.5 h * 60 % = 25.5 h` — exactly the value the target calculation of the
+ * adapter derives from the same two fields.
+ */
+const WEEKLY_HOURS_AT_100 = 42.5;
+const PERCENT = 60;
+/** Effective weekly hours of the employee (25.5 h). */
+const EFFECTIVE_WEEKLY_HOURS = (WEEKLY_HOURS_AT_100 * PERCENT) / 100;
+const DAILY_TARGET_MIN = Math.round((EFFECTIVE_WEEKLY_HOURS * 60) / 5); // 306 min = 5.1 h
 /** Punch pairs of the fixture: 08:00–12:30 and 13:30–14:30 local (Europe/Zurich in February is UTC+1). */
 const PUNCH_PAIRS = [
 	[8, 0, 12, 30],
@@ -40,20 +50,34 @@ const FIXTURE_YEAR = 2026;
 const FIXTURE_MONTH = 2;
 
 /**
- * Counts the working days (Monday to Friday) of a month.
+ * Public holidays of the fixture year (country CH, same dates as `src/lib/domain/holidays.ts`).
+ *
+ * The golden targets are monthly values, and the adapter owes no target time on a public holiday, so the
+ * fixture has to know the holidays as well. Hard coded on purpose: the fixture must not import adapter code,
+ * it has to be computable on its own.
+ */
+const HOLIDAYS = ["2026-01-01", "2026-04-03", "2026-05-14", "2026-12-25"];
+
+/**
+ * Counts the working days (Monday to Friday) of a month, without the public holidays.
  *
  * @param year - calendar year
  * @param month - month, 1 based
- * @returns number of weekdays
+ * @returns number of working days
  */
-function weekdays(year, month) {
+function workingDays(year, month) {
 	const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+	const prefix = `${year}-${String(month).padStart(2, "0")}-`;
 	let count = 0;
 	for (let day = 1; day <= days; day++) {
 		const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-		if (weekday >= 1 && weekday <= 5) {
-			count++;
+		if (weekday < 1 || weekday > 5) {
+			continue;
 		}
+		if (HOLIDAYS.includes(`${prefix}${String(day).padStart(2, "0")}`)) {
+			continue;
+		}
+		count++;
 	}
 	return count;
 }
@@ -107,12 +131,12 @@ write(
 	[
 		"Teilzeit Muster",
 		"1767222000",
-		"60",
-		"25.5",
+		String(PERCENT),
+		String(WEEKLY_HOURS_AT_100),
 		"0",
 		"20",
 		"12;3",
-		"0;1;1;1;1;0;0",
+		"0;1;1;1;1;1;0",
 		Array.from({ length: 24 }, () => "0").join(";"),
 		...Array.from({ length: 7 }, () => "-1;-1;100"),
 		"2",
@@ -133,11 +157,11 @@ write(
 );
 
 // --- Timetable --------------------------------------------------------------------
-const targetMinutes = weekdays(FIXTURE_YEAR, FIXTURE_MONTH) * DAILY_TARGET_MIN;
+const targetMinutes = workingDays(FIXTURE_YEAR, FIXTURE_MONTH) * DAILY_TARGET_MIN;
 const workedMinutes = PUNCHED_DAYS.length * WORKED_PER_DAY_MIN;
 const monthLines = [];
 for (let month = 1; month <= 12; month++) {
-	const target = weekdays(FIXTURE_YEAR, month) * DAILY_TARGET_MIN;
+	const target = workingDays(FIXTURE_YEAR, month) * DAILY_TARGET_MIN;
 	const worked = month === FIXTURE_MONTH ? workedMinutes : 0;
 	const hours = value => Number((value / 60).toFixed(2));
 	monthLines.push(`${hours(worked - target)};0;${hours(target)};0`);
@@ -159,9 +183,11 @@ write(`Data/TeilZeit1/Timetable/${FIXTURE_YEAR}.${FIXTURE_MONTH}`, punches.join(
 write(
 	`Data/TeilZeit1/Timetable/A${FIXTURE_YEAR}`,
 	[
-		// field 1 is ambiguous in the legacy code (day of the month or day of the year) — the importer warns
-		"14;F;1",
-		"16;K;0.5",
+		// Field 1 is ambiguous in the legacy code (day of the year or day of the month) — the importer
+		// reports it as a warning. Both rows are dated on a weekend on purpose: the golden targets in
+		// `Timetable/<year>` are computed from the working days only and would otherwise not match.
+		"3;F;1",
+		"4;K;0.5",
 	].join("\n"),
 );
 write(`Data/TeilZeit1/Timetable/auszahlungen`, "1;2026;3");
@@ -195,16 +221,21 @@ write(
 		"| Item | Value |",
 		"| --- | --- |",
 		"| Admin | `administrator` (group 1), legacy password hash of `admin` |",
-		`| Employee | \`TeilZeit1\` — 60 %, 25.5 h/week, workdays Monday to Friday, ends 12/${FIXTURE_YEAR} |`,
+		`| Employee | \`TeilZeit1\` — ${PERCENT} % employment level, ${WEEKLY_HOURS_AT_100} h/week at 100 % (${EFFECTIVE_WEEKLY_HOURS} h effective), workdays Monday to Friday, ends 12/${FIXTURE_YEAR} |`,
 		`| Punches | ${PUNCHED_DAYS.length} days in ${FIXTURE_MONTH}/${FIXTURE_YEAR}, 08:00–12:30 and 13:30–14:30 local |`,
 		`| Worked | ${(workedMinutes / 60).toFixed(2)} h in that month |`,
-		`| Daily target | ${(DAILY_TARGET_MIN / 60).toFixed(2)} h (25.5 h / 5 days) |`,
-		`| Monthly target | ${(targetMinutes / 60).toFixed(2)} h (${weekdays(FIXTURE_YEAR, FIXTURE_MONTH)} working days) |`,
-		"| Absences | `A2026` with two rows, `absenz.txt` with seven types |",
+		`| Daily target | ${(DAILY_TARGET_MIN / 60).toFixed(2)} h (${EFFECTIVE_WEEKLY_HOURS} h / 5 days) |`,
+		`| Monthly target | ${(targetMinutes / 60).toFixed(2)} h (${workingDays(FIXTURE_YEAR, FIXTURE_MONTH)} working days) |`,
+		"| Absences | `A2026` with two rows (both on a weekend), `absenz.txt` with seven types |",
 		"| Payout | one row in `auszahlungen` (3 h) |",
 		"",
 		"The target hours in `Timetable/2026` come from the calendar (working days × daily target), the balance from",
 		"the punch durations — computed independently of the adapter, so they can serve as a golden reference.",
+		"The absence rows are dated on weekends: the golden file counts working days only, so absences on working",
+		"days would make the two sources contradict each other.",
+		"",
+		`Public holidays (${HOLIDAYS.join(", ")}) carry no target time, so the monthly targets of those months are`,
+		"smaller than their number of weekdays suggests.",
 		"",
 	].join("\n"),
 );

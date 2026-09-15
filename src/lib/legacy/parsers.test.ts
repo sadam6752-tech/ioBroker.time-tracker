@@ -75,13 +75,14 @@ describe("legacy file parsers", () => {
 		// 1767222000 is 1.1.2026 00:00 local as a UTC instant (mktime) — it is stored unchanged
 		expect(profile.startDateUtc).to.equal(1767222000);
 		expect(profile.percent).to.equal(60);
-		expect(profile.weeklyHours).to.equal(25.5);
+		// the legacy file stores the contract hours at 100 % (line 3) next to the employment level (line 2)
+		expect(profile.weeklyHours).to.equal(42.5);
 		expect(profile.vorholzeitPerYearMinutes).to.equal(0);
 		expect(profile.vacationPerYearDays).to.equal(20);
 		expect(profile.overtimeCarryoverMinutes).to.equal(720);
 		expect(profile.vacationCarryoverDays).to.equal(3);
-		// index 0 = Sunday — the order must not be changed
-		expect(profile.workdays).to.deep.equal([false, true, true, true, true, false, false]);
+		// index 0 = Sunday — the order must not be changed; the employee works Monday to Friday
+		expect(profile.workdays).to.deep.equal([false, true, true, true, true, true, false]);
 		expect(profile.holidayFlags).to.have.length(24);
 		expect(profile.shiftRules).to.have.length(7);
 		expect(profile.shiftRules[0]).to.deep.equal({
@@ -160,14 +161,15 @@ describe("legacy file parsers", () => {
 		expect(targets).to.have.length(12);
 		// February is the month with punches: 22 h worked against 102 h target
 		expect(targets[1]).to.deep.equal({ month: 2, balanceHours: -80, targetHours: 102 });
-		expect(targets[0].targetHours).to.equal(112.2);
+		// January: 22 weekdays minus New Year → 21 working days × 5.1 h
+		expect(targets[0]).to.deep.equal({ month: 1, balanceHours: -107.1, targetHours: 107.1 });
 	});
 
 	it("reads absences and warns about the ambiguous day field", () => {
 		const { absences, warnings } = parseAbsences(read("Data/TeilZeit1/Timetable/A2026"));
 		expect(absences).to.deep.equal([
-			{ day: 14, code: "F", days: 1 },
-			{ day: 16, code: "K", days: 0.5 },
+			{ day: 3, code: "F", days: 1 },
+			{ day: 4, code: "K", days: 0.5 },
 		]);
 		expect(warnings).to.have.length(1);
 		expect(warnings[0]).to.contain("not documented");
@@ -203,6 +205,8 @@ describe("legacy file parsers", () => {
 			quickRoundMinutes: 15,
 			absenceCalcUntilToday: true,
 			absenceDeductWorktime: true,
+			autoPauseFromHours: 6,
+			autoPauseDurationMinutes: 30,
 			warnings: [],
 		});
 

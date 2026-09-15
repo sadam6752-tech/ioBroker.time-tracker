@@ -249,34 +249,34 @@ export function Presence(): React.JSX.Element {
 								setPin("");
 							}}
 						>
-							<CardContent>
-								<Stack
-									direction="row"
-									spacing={2}
-									alignItems="center"
+							{/* deliberately flat: one line of text next to a bigger picture, so a screen full of
+							    tiles stays readable at a glance */}
+							<Stack
+								direction="row"
+								spacing={1.5}
+								alignItems="center"
+								sx={{ px: 1.5, py: 0.5 }}
+							>
+								<Avatar
+									// the stored picture, or the placeholder of the project when none is set
+									src={user.avatarUrl ?? "/person.png"}
+									sx={{ width: 56, height: 56, bgcolor: user.present ? "success.main" : "grey.500" }}
 								>
-									<Avatar
-										// the stored picture, or the placeholder of the project when none is set
-										src={user.avatarUrl ?? "/person.png"}
-										sx={{ bgcolor: user.present ? "success.main" : "grey.500" }}
-									>
-										{initials(user.displayName)}
-									</Avatar>
-									<Box sx={{ minWidth: 0 }}>
-										<Typography
-											variant="subtitle1"
-											noWrap
-										>
-											{user.displayName}
-										</Typography>
-										<Chip
-											size="small"
-											color={user.present ? "success" : "default"}
-											label={t(user.present ? "presence.present" : "presence.absent")}
-										/>
-									</Box>
-								</Stack>
-							</CardContent>
+									{initials(user.displayName)}
+								</Avatar>
+								<Typography
+									variant="subtitle1"
+									noWrap
+									sx={{ flexGrow: 1, minWidth: 0 }}
+								>
+									{user.displayName}
+								</Typography>
+								<Chip
+									size="small"
+									color={user.present ? "success" : "default"}
+									label={t(user.present ? "presence.present" : "presence.absent")}
+								/>
+							</Stack>
 						</CardActionArea>
 					</Card>
 				))}

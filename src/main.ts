@@ -7,7 +7,7 @@ import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as utils from "@iobroker/adapter-core";
-import { openAndMigrate, type Db } from "./lib/db/database";
+import { currentSchemaVersion, openAndMigrate, type Db } from "./lib/db/database";
 import { seed } from "./lib/db/seed";
 import type { HolidayCountry } from "./lib/domain/holidays";
 import { createAbsencesRepository } from "./lib/db/repositories/absences";
@@ -122,6 +122,9 @@ class Zeiterfassung extends utils.Adapter {
 			// specification: "Standard-Admin, Passwort mit Pflichtwechsel").
 			this.ensureAdministrator(this.db);
 
+			// the settings of the admin UI win over the stored values (before the services are built)
+			this.applyConfiguration(createSettingsRepository(this.db));
+
 			// NOTE: The implementation follows the internal specification (not part of this repository):
 			//   Phase 1–3 – storage, punch logic, target time, breaks, overtime, vacation
 			//   Phase 4   – REST API on an own port (router, sessions, RBAC)
@@ -129,11 +132,19 @@ class Zeiterfassung extends utils.Adapter {
 			//   Phase 8   – publish aggregates as states and react to command.*
 
 			await this.startApi();
+			// creates the command and info states, so the instance information can be published afterwards
 			await this.subscribeCommands();
+			await this.publishInstanceInfo();
 			await this.refreshStates();
 
 			// figures are refreshed regularly (the timer is cleared automatically on unload)
-			this.setInterval(() => void this.refreshStates(), STATE_REFRESH_MINUTES * 60 * 1000);
+			this.setInterval(
+				() => {
+					void this.publishInstanceInfo();
+					void this.refreshStates();
+				},
+				STATE_REFRESH_MINUTES * 60 * 1000,
+			);
 
 			// one backup per day: the check runs every hour, so a missed run is caught up after a restart
 			await this.runScheduledBackup();
@@ -142,7 +153,9 @@ class Zeiterfassung extends utils.Adapter {
 			// Service is ready
 			await this.setState("info.connection", true, true);
 		} catch (error) {
-			this.log.error(`Startup failed: ${(error as Error).message}`);
+			const message = (error as Error).message;
+			this.log.error(`Startup failed: ${message}`);
+			await this.setState("info.lastError", message, true);
 		}
 	}
 
@@ -189,6 +202,55 @@ class Zeiterfassung extends utils.Adapter {
 			this.log.warn(
 				`administrator "${login}" created with the start password "${password}" - change it at the first login`,
 			);
+		}
+	}
+
+	/**
+	 * Copies the instance configuration into the stored settings and publishes the instance information.
+	 *
+	 * The ioBroker admin UI is where an operator configures the instance, so a configured value wins over what
+	 * is stored in the database; `PUT /api/settings` stays for the keys the admin UI does not offer. Empty
+	 * fields are ignored, so clearing a field never wipes a stored setting.
+	 *
+	 * @param settings - instance settings
+	 */
+	private applyConfiguration(settings: SettingsRepository): void {
+		const text = (value: string | undefined): string | null => (value?.trim() ? value.trim() : null);
+		const number = (value: number | undefined): string | null =>
+			typeof value === "number" && Number.isFinite(value) ? String(value) : null;
+		const flag = (value: boolean | undefined): string | null => (value === undefined ? null : value ? "1" : "0");
+
+		const mapped: [string, string | null][] = [
+			["holiday_country", text(this.config.holidayCountry)?.toUpperCase() ?? null],
+			["timezone", text(this.config.timezone)],
+			["default_language", text(this.config.defaultLanguage)],
+			["edit_window_days", number(this.config.editWindowDays)],
+			["quick_round_minutes", number(this.config.quickRoundMinutes)],
+			["session_ttl_minutes", number(this.config.sessionTtlMinutes)],
+			["backup_retention_days", number(this.config.backupRetentionDays)],
+			["absence_calc_until_today", flag(this.config.absenceCalcUntilToday)],
+			["absence_deduct_worktime", flag(this.config.absenceDeductWorktime)],
+		];
+
+		const now = Math.floor(Date.now() / 1000);
+		for (const [key, value] of mapped) {
+			if (value !== null && settings.get(key) !== value) {
+				settings.set(key, value, null, now);
+			}
+		}
+	}
+
+	/**
+	 * Publishes version, database size and schema version as states (specification 5.1).
+	 *
+	 * The objects are created by `createInfoStates`, so this runs after the command states were set up.
+	 */
+	private async publishInstanceInfo(): Promise<void> {
+		await this.setState("info.version", this.version ?? "0.0.0", true);
+		const file = this.db ? this.databaseFile() : "";
+		await this.setState("info.dbSizeBytes", file && fs.existsSync(file) ? fs.statSync(file).size : 0, true);
+		if (this.db) {
+			await this.setState("info.schemaVersion", String(currentSchemaVersion(this.db)), true);
 		}
 	}
 
@@ -277,9 +339,17 @@ class Zeiterfassung extends utils.Adapter {
 		// both entrance points (the `commands.import` state and `POST /api/import/run`) share this: it runs the
 		// import and publishes the report as `info.lastImport`
 		this.runImport = options => {
+			// the configured directory is the default, so `commands.import` and the API may omit `baseDir`
+			const configured = (this.config.legacyDataDir ?? "").trim();
+			const baseDir = (options.baseDir || configured).trim();
+			if (!baseDir) {
+				throw new Error(
+					'no legacy directory: pass "baseDir" or set "Legacy data directory" in the instance settings',
+				);
+			}
 			const report = runLegacyImport(
 				{ db, users, entries, absences, rules, settings, payouts, aggregation },
-				options,
+				{ ...options, baseDir },
 			);
 			void this.setState("info.lastImport", JSON.stringify(report), true);
 			return report;

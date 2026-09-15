@@ -321,6 +321,22 @@ export async function createCommandStates(port: StatePort): Promise<void> {
 export async function createInfoStates(port: StatePort): Promise<void> {
 	await port.setObjectNotExists("info", channelObject({ en: "Information", de: "Information" }));
 	await port.setObjectNotExists(
+		"info.version",
+		stateObject({ en: "Adapter version", de: "Adapter-Version" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"info.schemaVersion",
+		stateObject({ en: "Database schema version", de: "Datenbank-Schemaversion" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"info.dbSizeBytes",
+		stateObject({ en: "Database size", de: "Datenbank-Größe" }, "number", "value", { unit: "bytes" }),
+	);
+	await port.setObjectNotExists(
+		"info.lastError",
+		stateObject({ en: "Last error", de: "Letzter Fehler" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
 		"info.lastBackup",
 		stateObject({ en: "Last backup", de: "Letzte Sicherung" }, "number", "value.time"),
 	);

@@ -238,9 +238,8 @@ function runImportCommand(deps: CommandDeps, value: ioBroker.StateValue): Comman
 			'commands.import expects JSON like {"baseDir":"/path/to/SMALL-Time","mode":"dry-run"}',
 		);
 	}
-	if (typeof parsed.baseDir !== "string" || parsed.baseDir.trim() === "") {
-		throw new ValidationError("commands.import needs a baseDir");
-	}
+	// `baseDir` may stay empty: the adapter then uses the configured "Legacy data directory"
+	const baseDir = typeof parsed.baseDir === "string" ? parsed.baseDir.trim() : "";
 
 	const actor = deps.users.list().find(user => deps.users.roles(user.id).includes("admin"));
 	if (!actor) {
@@ -248,7 +247,7 @@ function runImportCommand(deps: CommandDeps, value: ioBroker.StateValue): Comman
 	}
 
 	const options: LegacyImportOptions = {
-		baseDir: parsed.baseDir,
+		baseDir,
 		mode: parsed.mode === "commit" ? "commit" : "dry-run",
 		actorId: actor.id,
 		resetImport: parsed.resetImport === true,

@@ -100,6 +100,18 @@ tests.integration(path.join(__dirname, ".."), {
 
 				const connection = await harness.states.getState("zeiterfassung.0.info.connection");
 				expect(connection?.val).to.equal(true);
+
+				// the instance information of specification 5.1 is published as well
+				for (const id of ["info.version", "info.schemaVersion", "info.dbSizeBytes", "info.lastError"]) {
+					const object = await harness.objects.getObject(`zeiterfassung.0.${id}`);
+					expect(object, id).to.not.equal(null);
+				}
+				const version = await harness.states.getState("zeiterfassung.0.info.version");
+				expect(version?.val).to.equal("0.0.1");
+				const schema = await harness.states.getState("zeiterfassung.0.info.schemaVersion");
+				expect(Number(schema?.val)).to.be.greaterThan(0);
+				const size = await harness.states.getState("zeiterfassung.0.info.dbSizeBytes");
+				expect(Number(size?.val)).to.be.greaterThan(0);
 			});
 
 			it("writes a backup when the command state is triggered", async function () {

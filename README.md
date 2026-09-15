@@ -152,6 +152,12 @@ app asks for a new password right after the login. Accounts imported from the ol
 their legacy SHA-1 is verified **once**, replaced by a modern hash during that login and deleted immediately
 afterwards.
 
+The instance settings of the ioBroker admin are applied on every start and **win over the values stored in the
+database** — holiday country, time zone (also the time zone of new accounts), default language for new users,
+edit window, quick rounding, session lifetime, backup retention and the absence switches. `PUT /api/settings`
+stays for the keys the admin UI does not offer; an empty field never wipes a stored value. The adapter also
+publishes `info.version`, `info.schemaVersion`, `info.dbSizeBytes` and `info.lastError`.
+
 ## Legacy import (SMALL-Time)
 
 An existing installation can take its data over from the old PHP system (**SMALL-Time v0.9.205**). The import

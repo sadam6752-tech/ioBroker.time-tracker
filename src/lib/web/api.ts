@@ -2467,7 +2467,8 @@ export function createApi(deps: ApiDeps): Api {
 				}
 
 				const body = context.jsonBody();
-				const baseDir = requireString(body, "baseDir");
+				// `baseDir` may be omitted: the adapter then uses the configured "Legacy data directory"
+				const baseDir = optionalString(body, "baseDir") ?? "";
 				const mode = body.mode === "commit" ? "commit" : "dry-run";
 				const resetImport = body.resetImport === true;
 				const timezone = optionalString(body, "timezone");

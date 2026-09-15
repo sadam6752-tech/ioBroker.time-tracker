@@ -35,15 +35,25 @@ describe("web app delivery", () => {
 	const index = fs.readFileSync(path.join(www, "index.html"), "utf8");
 
 	it("ships the app shell, the icons and the service worker", () => {
-		for (const file of [
-			"index.html",
-			"manifest.webmanifest",
-			"sw.js",
-			"favicon.svg",
-			"icon-192.png",
-			"icon-512.png",
-		]) {
+		for (const file of ["index.html", "manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png"]) {
 			expect(fs.existsSync(path.join(www, file)), `${file} is part of the build`).to.equal(true);
+		}
+	});
+
+	it("declares a maskable icon and ships it in the size the manifest promises", () => {
+		const manifest = fs.readFileSync(path.join(www, "manifest.webmanifest"), "utf8");
+		expect(manifest).to.contain('"purpose":"maskable"');
+
+		for (const [file, size] of [
+			["icon-192.png", 192],
+			["icon-512.png", 512],
+		] as const) {
+			const image = fs.readFileSync(path.join(www, file));
+			// IHDR of a PNG: width, height, bit depth, colour type (6 = RGBA, so the launcher can mask it)
+			expect(image.readUInt32BE(16), `${file} width`).to.equal(size);
+			expect(image.readUInt32BE(20), `${file} height`).to.equal(size);
+			expect(image[24], `${file} bit depth`).to.equal(8);
+			expect(image[25], `${file} colour type`).to.equal(6);
 		}
 	});
 

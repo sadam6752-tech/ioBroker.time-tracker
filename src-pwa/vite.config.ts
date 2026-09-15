@@ -18,7 +18,8 @@ export default defineConfig({
 		react(),
 		VitePWA({
 			registerType: "autoUpdate",
-			includeAssets: ["favicon.svg"],
+			// the app icons are generated from the master logo (tools/make-pwa-icons.mjs); nothing has to be
+			// added here, `globPatterns` below precaches every image of the build
 			manifest: {
 				name: "Zeiterfassung",
 				short_name: "Zeiterfassung",

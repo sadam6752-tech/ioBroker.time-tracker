@@ -1,24 +1,44 @@
 /**
- * Generates the app icons of the web app (a clock on the ioBroker blue).
+ * Generates the app icons of the web app from the master logo.
  *
- * The icons are checked in, so a build does not depend on this script; it exists so the icons can be
- * regenerated in any size without an image library:
+ * The icons are checked in, so a build never depends on this script; it exists so both sizes can be produced
+ * again whenever the logo changes:
  *
  *   node tools/make-pwa-icons.mjs
  *
- * PNG is written by hand (IHDR/IDAT/IEND with zlib and CRC32), which keeps the repository free of binary tools.
+ * The master is `admin/src/zeiterfassung.png` (512x512, 8 bit RGBA, not interlaced): part of the repository,
+ * but not of the npm package (the `files` rule of `package.json` excludes `admin/src`). PNG is read and
+ * written by hand (zlib and CRC32 from Node), which keeps the repository free of image libraries and binary
+ * tooling.
+ *
+ * The layout follows two requirements of the manifest:
+ *
+ * - the content is cropped to its visible pixels first (alpha > 8), so transparent padding in the master does
+ *   not shrink the mark,
+ * - the mark is centred at 72 % of the icon edge on an opaque white background. The 512 icon is declared as
+ *   `maskable`, and a launcher only guarantees the central 80 % of the image, so the mark keeps a margin of
+ *   about 4 % per side. The opaque white background (the `background_color` of the manifest) also avoids the
+ *   black plate iOS paints below a transparent touch icon.
  */
 
-import { deflateSync } from "node:zlib";
-import { writeFileSync } from "node:fs";
+import { inflateSync, deflateSync } from "node:zlib";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const masterPath = join(here, "..", "admin", "src", "zeiterfassung.png");
 const targetDir = join(here, "..", "src-pwa", "public");
 
-const BACKGROUND = [25, 118, 210, 255];
-const FACE = [255, 255, 255, 255];
+/** Edge length of the visible mark in relation to the icon (the rest is margin). */
+const MARK_RATIO = 0.72;
+/** Alpha above which a pixel counts as part of the mark. */
+const ALPHA_THRESHOLD = 8;
+const BACKGROUND = [255, 255, 255];
+const SIZES = [192, 512];
+
+/** Bytes per pixel of the expected master format (RGBA, 8 bit). */
+const BPP = 4;
 
 /** CRC32 table (PNG uses the standard polynomial). */
 const crcTable = Array.from({ length: 256 }, (_value, index) => {
@@ -60,55 +80,47 @@ function chunk(type, data) {
 }
 
 /**
- * Blends a colour over another one.
+ * Reverses the per scanline filters of a PNG image.
  *
- * @param {number[]} base - bottom colour
- * @param {number[]} top - top colour
- * @param {number} alpha - coverage of the top colour
- * @returns {number[]} resulting colour
+ * @param {Buffer} raw - inflated image data (a filter byte plus pixels per scanline)
+ * @param {number} width - image width in pixels
+ * @param {number} height - image height in pixels
+ * @returns {Buffer} unfiltered RGBA pixels
  */
-function blend(base, top, alpha) {
-	return base.map((value, index) => Math.round(value * (1 - alpha) + top[index] * alpha));
-}
+function unfilter(raw, width, height) {
+	const stride = width * BPP;
+	const pixels = Buffer.alloc(stride * height);
 
-/**
- * Draws the icon as RGBA pixels.
- *
- * @param {number} size - edge length in pixels
- * @returns {Buffer} raw RGBA data
- */
-function draw(size) {
-	const pixels = Buffer.alloc(size * size * 4);
-	const center = size / 2;
-	const faceRadius = size * 0.36;
-	const handWidth = size * 0.055;
+	for (let y = 0; y < height; y++) {
+		const filter = raw[y * (stride + 1)];
+		const line = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+		const target = y * stride;
+		const previous = target - stride;
 
-	for (let y = 0; y < size; y++) {
-		for (let x = 0; x < size; x++) {
-			const dx = x + 0.5 - center;
-			const dy = y + 0.5 - center;
-			const distance = Math.hypot(dx, dy);
+		for (let i = 0; i < stride; i++) {
+			const left = i >= BPP ? pixels[target + i - BPP] : 0;
+			const up = y > 0 ? pixels[previous + i] : 0;
+			const upLeft = y > 0 && i >= BPP ? pixels[previous + i - BPP] : 0;
+			const value = line[i];
 
-			let colour = BACKGROUND;
-
-			// clock face with a soft edge
-			const faceCoverage = Math.min(1, Math.max(0, faceRadius + 1 - distance));
-			if (faceCoverage > 0) {
-				colour = blend(colour, FACE, faceCoverage);
+			if (filter === 0) {
+				pixels[target + i] = value;
+			} else if (filter === 1) {
+				pixels[target + i] = (value + left) & 0xff;
+			} else if (filter === 2) {
+				pixels[target + i] = (value + up) & 0xff;
+			} else if (filter === 3) {
+				pixels[target + i] = (value + ((left + up) >> 1)) & 0xff;
+			} else if (filter === 4) {
+				const p = left + up - upLeft;
+				const pa = Math.abs(p - left);
+				const pb = Math.abs(p - up);
+				const pc = Math.abs(p - upLeft);
+				const predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
+				pixels[target + i] = (value + predictor) & 0xff;
+			} else {
+				throw new Error(`unknown PNG filter ${filter} in scanline ${y}`);
 			}
-
-			// minute hand (up) and hour hand (right), drawn over the face
-			const onVerticalHand = Math.abs(dx) <= handWidth / 2 && dy <= 0 && Math.abs(dy) <= size * 0.26;
-			const onHorizontalHand = Math.abs(dy) <= handWidth / 2 && dx >= 0 && dx <= size * 0.2;
-			if ((onVerticalHand || onHorizontalHand) && distance <= faceRadius) {
-				colour = BACKGROUND;
-			}
-
-			const offset = (y * size + x) * 4;
-			pixels[offset] = colour[0];
-			pixels[offset + 1] = colour[1];
-			pixels[offset + 2] = colour[2];
-			pixels[offset + 3] = 255;
 		}
 	}
 
@@ -116,18 +128,168 @@ function draw(size) {
 }
 
 /**
- * Writes a PNG file.
+ * Reads a PNG image in the only format the master may use (8 bit RGBA, not interlaced).
+ *
+ * @param {string} path - file to read
+ * @returns {{ width: number, height: number, pixels: Buffer }} image data
+ */
+function readPng(path) {
+	const file = readFileSync(path);
+	const idat = [];
+	let width = 0;
+	let height = 0;
+	let header = null;
+
+	for (let offset = 8; offset < file.length;) {
+		const length = file.readUInt32BE(offset);
+		const type = file.toString("ascii", offset + 4, offset + 8);
+		const data = file.subarray(offset + 8, offset + 8 + length);
+
+		if (type === "IHDR") {
+			width = data.readUInt32BE(0);
+			height = data.readUInt32BE(4);
+			header = { depth: data[8], colour: data[9], interlace: data[12] };
+		} else if (type === "IDAT") {
+			idat.push(data);
+		} else if (type === "IEND") {
+			break;
+		}
+
+		offset += 12 + length;
+	}
+
+	if (!header) {
+		throw new Error(`${path} has no IHDR chunk`);
+	}
+	if (header.depth !== 8 || header.colour !== 6 || header.interlace !== 0) {
+		throw new Error(
+			`${path} must be an 8 bit RGBA PNG without interlacing (found depth ${header.depth}, ` +
+				`colour type ${header.colour}, interlace ${header.interlace})`,
+		);
+	}
+
+	return { width, height, pixels: unfilter(inflateSync(Buffer.concat(idat)), width, height) };
+}
+
+/**
+ * Finds the box of the visible pixels, so transparent padding in the master is ignored.
+ *
+ * @param {Buffer} pixels - RGBA pixels
+ * @param {number} width - image width in pixels
+ * @param {number} height - image height in pixels
+ * @returns {{ x: number, y: number, width: number, height: number }} visible box
+ */
+function visibleBox(pixels, width, height) {
+	let minX = width;
+	let minY = height;
+	let maxX = -1;
+	let maxY = -1;
+
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			if (pixels[(y * width + x) * BPP + 3] <= ALPHA_THRESHOLD) {
+				continue;
+			}
+			if (x < minX) {
+				minX = x;
+			}
+			if (y < minY) {
+				minY = y;
+			}
+			if (x > maxX) {
+				maxX = x;
+			}
+			if (y > maxY) {
+				maxY = y;
+			}
+		}
+	}
+
+	if (maxX < 0) {
+		throw new Error("the master has no visible pixels");
+	}
+
+	return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}
+
+/**
+ * Draws one icon: the visible mark, scaled to `MARK_RATIO` of the edge, centred on an opaque background.
+ *
+ * Scaling averages the source pixels covering a target pixel (box filter) and composites them over the
+ * background first, so the anti aliased edge of the mark stays clean at every size. The master has to be at
+ * least as large as the mark — for these icons it is.
+ *
+ * @param {Buffer} pixels - pixels of the master
+ * @param {number} sourceWidth - width of the master
+ * @param {{ x: number, y: number, width: number, height: number }} box - visible box inside the master
+ * @param {number} size - edge length of the icon
+ * @returns {Buffer} RGBA pixels of the icon
+ */
+function draw(pixels, sourceWidth, box, size) {
+	const mark = Math.round(size * MARK_RATIO);
+	const offset = Math.floor((size - mark) / 2);
+	const icon = Buffer.alloc(size * size * BPP);
+
+	for (let y = 0; y < size; y++) {
+		for (let x = 0; x < size; x++) {
+			const target = (y * size + x) * BPP;
+			let red = 0;
+			let green = 0;
+			let blue = 0;
+			let weight = 0;
+
+			if (x >= offset && x < offset + mark && y >= offset && y < offset + mark) {
+				const fromX = box.x + ((x - offset) * box.width) / mark;
+				const toX = box.x + ((x - offset + 1) * box.width) / mark;
+				const fromY = box.y + ((y - offset) * box.height) / mark;
+				const toY = box.y + ((y - offset + 1) * box.height) / mark;
+
+				for (let sy = Math.floor(fromY); sy < Math.ceil(toY) && sy < box.y + box.height; sy++) {
+					const overlapY = Math.min(toY, sy + 1) - Math.max(fromY, sy);
+					for (let sx = Math.floor(fromX); sx < Math.ceil(toX) && sx < box.x + box.width; sx++) {
+						const area = (Math.min(toX, sx + 1) - Math.max(fromX, sx)) * overlapY;
+						if (area <= 0) {
+							continue;
+						}
+						const source = (sy * sourceWidth + sx) * BPP;
+						const alpha = pixels[source + 3] / 255;
+						red += (pixels[source] * alpha + BACKGROUND[0] * (1 - alpha)) * area;
+						green += (pixels[source + 1] * alpha + BACKGROUND[1] * (1 - alpha)) * area;
+						blue += (pixels[source + 2] * alpha + BACKGROUND[2] * (1 - alpha)) * area;
+						weight += area;
+					}
+				}
+			}
+
+			if (weight > 0) {
+				icon[target] = Math.round(red / weight);
+				icon[target + 1] = Math.round(green / weight);
+				icon[target + 2] = Math.round(blue / weight);
+			} else {
+				icon[target] = BACKGROUND[0];
+				icon[target + 1] = BACKGROUND[1];
+				icon[target + 2] = BACKGROUND[2];
+			}
+			icon[target + 3] = 255;
+		}
+	}
+
+	return icon;
+}
+
+/**
+ * Writes an icon as PNG.
  *
  * @param {number} size - edge length in pixels
+ * @param {Buffer} pixels - RGBA pixels
  * @returns {void}
  */
-function writeIcon(size) {
-	const pixels = draw(size);
+function writeIcon(size, pixels) {
 	// one filter byte (0 = none) in front of every scanline
-	const raw = Buffer.alloc(size * (size * 4 + 1));
+	const raw = Buffer.alloc(size * (size * BPP + 1));
 	for (let y = 0; y < size; y++) {
-		raw[y * (size * 4 + 1)] = 0;
-		pixels.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4);
+		raw[y * (size * BPP + 1)] = 0;
+		pixels.copy(raw, y * (size * BPP + 1) + 1, y * size * BPP, (y + 1) * size * BPP);
 	}
 
 	const header = Buffer.alloc(13);
@@ -148,8 +310,13 @@ function writeIcon(size) {
 
 	const path = join(targetDir, `icon-${size}.png`);
 	writeFileSync(path, file);
-	console.log(`wrote ${path} (${file.length} bytes)`);
+	console.log(`wrote ${path} (${file.length} bytes, mark ${Math.round(size * MARK_RATIO)} px)`);
 }
 
-writeIcon(192);
-writeIcon(512);
+const master = readPng(masterPath);
+const box = visibleBox(master.pixels, master.width, master.height);
+console.log(`master ${master.width}x${master.height}, visible ${box.width}x${box.height} at ${box.x},${box.y}`);
+
+for (const size of SIZES) {
+	writeIcon(size, draw(master.pixels, master.width, box, size));
+}

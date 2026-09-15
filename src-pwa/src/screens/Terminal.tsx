@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -327,6 +328,14 @@ export function Terminal(): React.JSX.Element {
 							<Button
 								key={user.id}
 								variant={selected?.id === user.id ? "contained" : "outlined"}
+								startIcon={
+									<Avatar
+										// the stored picture, or the placeholder of the project when none is set
+										src={user.avatarUrl ?? "/person.png"}
+										alt=""
+										sx={{ width: 24, height: 24 }}
+									/>
+								}
 								onClick={() => setSelected(user)}
 							>
 								{user.displayName}

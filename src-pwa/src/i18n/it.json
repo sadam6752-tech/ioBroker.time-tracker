@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN",
 	"admin.user.pinHint": "Da 4 a 8 cifre per il terminale",
 	"admin.user.pinTitle": "PIN del badge di {{name}}",
-	"admin.user.roles": "Ruolo",
+	"admin.user.roles": "Ruoli",
 	"admin.users": "Dipendenti",
 	"app.offline": "Offline: le timbrature sono in coda",
 	"app.online": "Collegato",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Scrivi questo link sul tag o aprilo sul telefono:",
 	"admin.tag.delete": "Elimina",
 	"admin.tag.empty": "Nessun badge creato finora.",
-	"admin.user.roles": "Ruoli",
 	"nav.statistics": "Statistiche",
 	"statistics.from": "Da",
 	"statistics.to": "A",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Tutti i dipendenti",
 	"scan.title": "Badge",
 	"scan.done": "Timbrato per {{name}} alle {{time}}",
-	"scan.failed": "Il badge non è stato utilizzato: {{reason}}"
+	"scan.failed": "Il badge non è stato utilizzato: {{reason}}",
+	"presence.title": "Presenza",
+	"presence.present": "Presente",
+	"presence.absent": "Assente",
+	"presence.tapPin": "Inserisci il PIN per timbrare",
+	"presence.cancel": "Annulla",
+	"presence.updated": "{{name}} ora è {{state}}",
+	"presence.disabled": "Il terminale chiosco è disattivato nelle impostazioni dell'istanza."
 }

@@ -101,7 +101,7 @@
 	"admin.user.name": "Name",
 	"admin.user.password": "Password",
 	"admin.user.passwordHint": "At least 8 characters with upper and lower case and digits.",
-	"admin.user.roles": "Role",
+	"admin.user.roles": "Roles",
 	"admin.user.active": "Active",
 	"admin.user.inactive": "Deactivated",
 	"admin.user.create": "Add employee",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Write this link onto the tag or open it on the phone:",
 	"admin.tag.delete": "Delete",
 	"admin.tag.empty": "No badge created yet.",
-	"admin.user.roles": "Roles",
 	"nav.statistics": "Statistics",
 	"statistics.from": "From",
 	"statistics.to": "To",
@@ -180,5 +179,12 @@
 	"statistics.totals": "All employees",
 	"scan.title": "Badge",
 	"scan.done": "Punched for {{name}} at {{time}}",
-	"scan.failed": "The badge could not be used: {{reason}}"
+	"scan.failed": "The badge could not be used: {{reason}}",
+	"presence.title": "Presence",
+	"presence.present": "Present",
+	"presence.absent": "Away",
+	"presence.tapPin": "Enter the PIN to clock in or out",
+	"presence.cancel": "Cancel",
+	"presence.updated": "{{name}} is now {{state}}",
+	"presence.disabled": "The kiosk terminal is switched off in the instance settings."
 }

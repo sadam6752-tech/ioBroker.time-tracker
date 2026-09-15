@@ -28,7 +28,7 @@
 	"admin.user.pin": "Code PIN",
 	"admin.user.pinHint": "4 à 8 chiffres pour le terminal",
 	"admin.user.pinTitle": "Code PIN du badge de {{name}}",
-	"admin.user.roles": "Rôle",
+	"admin.user.roles": "Rôles",
 	"admin.users": "Employés",
 	"app.offline": "Hors ligne : les pointages sont mis en file d'attente",
 	"app.online": "Connecté",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Écrivez ce lien sur le badge ou ouvrez-le sur le téléphone :",
 	"admin.tag.delete": "Supprimer",
 	"admin.tag.empty": "Aucun badge créé pour l'instant.",
-	"admin.user.roles": "Rôles",
 	"nav.statistics": "Statistiques",
 	"statistics.from": "Du",
 	"statistics.to": "Au",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Tous les employés",
 	"scan.title": "Badge",
 	"scan.done": "Pointé pour {{name}} à {{time}}",
-	"scan.failed": "Le badge n'a pas pu être utilisé : {{reason}}"
+	"scan.failed": "Le badge n'a pas pu être utilisé : {{reason}}",
+	"presence.title": "Présence",
+	"presence.present": "Présent",
+	"presence.absent": "Absent",
+	"presence.tapPin": "Saisissez le code PIN pour pointer",
+	"presence.cancel": "Annuler",
+	"presence.updated": "{{name}} est maintenant {{state}}",
+	"presence.disabled": "Le terminal borne est désactivé dans les paramètres de l'instance."
 }

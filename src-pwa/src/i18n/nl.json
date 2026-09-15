@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN",
 	"admin.user.pinHint": "4 tot 8 cijfers voor de terminal",
 	"admin.user.pinTitle": "Badge-pincode voor {{name}}",
-	"admin.user.roles": "Rol",
+	"admin.user.roles": "Rollen",
 	"admin.users": "Medewerkers",
 	"app.offline": "Offline – stoten worden in de wachtrij geplaatst",
 	"app.online": "Aangesloten",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Schrijf deze link op de tag of open hem op de telefoon:",
 	"admin.tag.delete": "Verwijderen",
 	"admin.tag.empty": "Nog geen pas aangemaakt.",
-	"admin.user.roles": "Rollen",
 	"nav.statistics": "Statistieken",
 	"statistics.from": "Van",
 	"statistics.to": "Tot",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Alle medewerkers",
 	"scan.title": "Pas",
 	"scan.done": "Gestempeld voor {{name}} om {{time}}",
-	"scan.failed": "De pas kon niet worden gebruikt: {{reason}}"
+	"scan.failed": "De pas kon niet worden gebruikt: {{reason}}",
+	"presence.title": "Aanwezigheid",
+	"presence.present": "Aanwezig",
+	"presence.absent": "Afwezig",
+	"presence.tapPin": "Voer de pincode in om in of uit te klokken",
+	"presence.cancel": "Annuleren",
+	"presence.updated": "{{name}} is nu {{state}}",
+	"presence.disabled": "De kioskterminal is uitgeschakeld in de instellingen van de instantie."
 }

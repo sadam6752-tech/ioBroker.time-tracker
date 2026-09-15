@@ -101,7 +101,7 @@
 	"admin.user.name": "Name",
 	"admin.user.password": "Passwort",
 	"admin.user.passwordHint": "Mindestens 8 Zeichen mit Gross- und Kleinschreibung und Ziffern.",
-	"admin.user.roles": "Rolle",
+	"admin.user.roles": "Rollen",
 	"admin.user.active": "Aktiv",
 	"admin.user.inactive": "Deaktiviert",
 	"admin.user.create": "Mitarbeiter anlegen",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Diesen Link auf den Tag schreiben oder am Handy öffnen:",
 	"admin.tag.delete": "Löschen",
 	"admin.tag.empty": "Noch kein Ausweis angelegt.",
-	"admin.user.roles": "Rollen",
 	"nav.statistics": "Statistik",
 	"statistics.from": "Von",
 	"statistics.to": "Bis",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Alle Mitarbeiter",
 	"scan.title": "Ausweis",
 	"scan.done": "Für {{name}} gestempelt um {{time}}",
-	"scan.failed": "Der Ausweis konnte nicht verwendet werden: {{reason}}"
+	"scan.failed": "Der Ausweis konnte nicht verwendet werden: {{reason}}",
+	"presence.title": "Anwesenheit",
+	"presence.present": "Anwesend",
+	"presence.absent": "Abwesend",
+	"presence.tapPin": "PIN eingeben, um ein- oder auszustempeln",
+	"presence.cancel": "Abbrechen",
+	"presence.updated": "{{name}} ist jetzt {{state}}",
+	"presence.disabled": "Das Kiosk-Terminal ist in den Instanz-Einstellungen ausgeschaltet."
 }

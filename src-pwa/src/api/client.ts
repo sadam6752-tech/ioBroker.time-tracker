@@ -246,6 +246,8 @@ export interface TerminalUser {
 	id: number;
 	/** Shown name */
 	displayName: string;
+	/** True when the employee has an open punch, so is at the workplace right now */
+	present: boolean;
 }
 
 /** Result of a punch at the terminal (`POST /terminal/punch`). */

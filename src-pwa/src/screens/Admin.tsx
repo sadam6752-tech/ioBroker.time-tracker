@@ -474,6 +474,10 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 	const deviceUrl = issued
 		? `${window.location.origin}/terminal?token=${encodeURIComponent(issued.deviceToken)}`
 		: "";
+	// the same device token opens the simplified presence screen (who is at the workplace right now)
+	const presenceUrl = issued
+		? `${window.location.origin}/presence?token=${encodeURIComponent(issued.deviceToken)}`
+		: "";
 
 	const stale = `${t("common.none")}`;
 	const detailsOf = (terminal: AdminTerminal): string =>
@@ -512,6 +516,18 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
 					>
 						{deviceUrl}
+					</Typography>
+					<Typography
+						variant="body2"
+						sx={{ mt: 1 }}
+					>
+						{t("presence.title")}:
+					</Typography>
+					<Typography
+						variant="body2"
+						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+					>
+						{presenceUrl}
 					</Typography>
 				</Alert>
 			)}

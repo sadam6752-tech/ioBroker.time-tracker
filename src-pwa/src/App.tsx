@@ -17,6 +17,7 @@ import { Dashboard } from "./screens/Dashboard";
 import { Login } from "./screens/Login";
 import { Month } from "./screens/Month";
 import { PasswordChange } from "./screens/PasswordChange";
+import { Presence } from "./screens/Presence";
 import { Profile } from "./screens/Profile";
 import { Reports } from "./screens/Reports";
 import { Statistics } from "./screens/Statistics";
@@ -128,8 +129,8 @@ function Routed(): React.JSX.Element {
 /**
  * Entry point of the routing.
  *
- * The kiosk terminal authenticates with its own device token instead of a user session, so its route lives
- * outside the login guard of `Routed`.
+ * The kiosk terminal and the presence screen authenticate with their own device token instead of a user session,
+ * so their routes live outside the login guard of `Routed`.
  *
  * @returns the screen the URL asks for
  */
@@ -147,6 +148,10 @@ function Root(): React.JSX.Element {
 			<Route
 				path="/terminal"
 				element={<Terminal />}
+			/>
+			<Route
+				path="/presence"
+				element={<Presence />}
 			/>
 			<Route
 				path="*"

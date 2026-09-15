@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN",
 	"admin.user.pinHint": "4 a 8 dígitos para el terminal",
 	"admin.user.pinTitle": "PIN de la tarjeta de {{name}}",
-	"admin.user.roles": "Role",
+	"admin.user.roles": "Roles",
 	"admin.users": "Empleados",
 	"app.offline": "Sin conexión: los marcajes están en cola",
 	"app.online": "Conectado",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Escribe este enlace en la etiqueta o ábrelo en el teléfono:",
 	"admin.tag.delete": "Eliminar",
 	"admin.tag.empty": "Todavía no se ha creado ninguna tarjeta.",
-	"admin.user.roles": "Roles",
 	"nav.statistics": "Estadísticas",
 	"statistics.from": "Desde",
 	"statistics.to": "Hasta",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Todos los empleados",
 	"scan.title": "Tarjeta",
 	"scan.done": "Fichado para {{name}} a las {{time}}",
-	"scan.failed": "No se pudo usar la tarjeta: {{reason}}"
+	"scan.failed": "No se pudo usar la tarjeta: {{reason}}",
+	"presence.title": "Presencia",
+	"presence.present": "Presente",
+	"presence.absent": "Ausente",
+	"presence.tapPin": "Introduce el PIN para fichar",
+	"presence.cancel": "Cancelar",
+	"presence.updated": "{{name}} ahora está {{state}}",
+	"presence.disabled": "El terminal de quiosco está desactivado en la configuración de la instancia."
 }

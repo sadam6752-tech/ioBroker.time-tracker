@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "将此链接写入标签，或在手机上打开：",
 	"admin.tag.delete": "删除",
 	"admin.tag.empty": "尚未创建工牌。",
-	"admin.user.roles": "角色",
 	"nav.statistics": "统计",
 	"statistics.from": "从",
 	"statistics.to": "至",
@@ -180,5 +179,12 @@
 	"statistics.totals": "所有员工",
 	"scan.title": "工牌",
 	"scan.done": "已为 {{name}} 打卡，时间 {{time}}",
-	"scan.failed": "无法使用工牌：{{reason}}"
+	"scan.failed": "无法使用工牌：{{reason}}",
+	"presence.title": "在岗状态",
+	"presence.present": "在岗",
+	"presence.absent": "离岗",
+	"presence.tapPin": "输入 PIN 码进行打卡",
+	"presence.cancel": "取消",
+	"presence.updated": "{{name}} 现在 {{state}}",
+	"presence.disabled": "在实例设置中已关闭自助终端。"
 }

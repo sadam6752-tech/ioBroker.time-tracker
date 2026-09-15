@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN",
 	"admin.user.pinHint": "4 a 8 dígitos para o terminal",
 	"admin.user.pinTitle": "PIN do crachá de {{name}}",
-	"admin.user.roles": "Papel",
+	"admin.user.roles": "Funções",
 	"admin.users": "Funcionários",
 	"app.offline": "Off-line – os socos estão na fila",
 	"app.online": "Conectado",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Escreva este link no cartão ou abra-o no telemóvel:",
 	"admin.tag.delete": "Eliminar",
 	"admin.tag.empty": "Ainda não foi criado nenhum cartão.",
-	"admin.user.roles": "Funções",
 	"nav.statistics": "Estatísticas",
 	"statistics.from": "De",
 	"statistics.to": "Até",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Todos os funcionários",
 	"scan.title": "Cartão",
 	"scan.done": "Registado para {{name}} às {{time}}",
-	"scan.failed": "Não foi possível usar o cartão: {{reason}}"
+	"scan.failed": "Não foi possível usar o cartão: {{reason}}",
+	"presence.title": "Presença",
+	"presence.present": "Presente",
+	"presence.absent": "Ausente",
+	"presence.tapPin": "Introduza o PIN para registar a entrada ou a saída",
+	"presence.cancel": "Cancelar",
+	"presence.updated": "{{name}} está agora {{state}}",
+	"presence.disabled": "O terminal de quiosque está desligado nas definições da instância."
 }

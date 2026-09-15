@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN-код",
 	"admin.user.pinHint": "Від 4 до 8 цифр для терміналу",
 	"admin.user.pinTitle": "PIN-код бейджа для {{name}}",
-	"admin.user.roles": "Роль",
+	"admin.user.roles": "Ролі",
 	"admin.users": "Співробітники",
 	"app.offline": "Offline – удари в черзі",
 	"app.online": "Підключено",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Запишіть це посилання на мітку або відкрийте його на телефоні:",
 	"admin.tag.delete": "Видалити",
 	"admin.tag.empty": "Перепустку ще не створено.",
-	"admin.user.roles": "Ролі",
 	"nav.statistics": "Статистика",
 	"statistics.from": "З",
 	"statistics.to": "До",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Усі працівники",
 	"scan.title": "Перепустка",
 	"scan.done": "Відмітку для {{name}} о {{time}}",
-	"scan.failed": "Перепустку не вдалося використати: {{reason}}"
+	"scan.failed": "Перепустку не вдалося використати: {{reason}}",
+	"presence.title": "Присутність",
+	"presence.present": "На робочому місці",
+	"presence.absent": "Відсутній",
+	"presence.tapPin": "Введіть PIN-код, щоб відмітитися",
+	"presence.cancel": "Скасувати",
+	"presence.updated": "{{name}} тепер {{state}}",
+	"presence.disabled": "Кіоск-термінал вимкнено в налаштуваннях екземпляра."
 }

@@ -2053,11 +2053,15 @@ export function createApi(deps: ApiDeps): Api {
 		{ public: true, rateLimit: { name: "terminal-users", limit: 60, windowSeconds: 60 } },
 		context => {
 			requireTerminal(context);
-			// only what a badge/PIN selection needs — no mail address, no profile, no working times
+			// only what a badge/PIN selection needs — no mail address, no profile, no working times. Whether the
+			// employee is at the workplace right now is the one exception: the presence screen highlights it.
+			const timestamp = now();
 			return json(200, {
-				users: users
-					.list({ includeInactive: false })
-					.map(user => ({ id: user.id, displayName: user.displayName })),
+				users: users.list({ includeInactive: false }).map(user => ({
+					id: user.id,
+					displayName: user.displayName,
+					present: aggregation.day(user.id, localDate(timestamp, user.timezone))?.hasOpenEntry === true,
+				})),
 			});
 		},
 	);

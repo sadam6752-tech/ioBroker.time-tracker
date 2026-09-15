@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN",
 	"admin.user.pinHint": "4 do 8 cyfr dla terminala",
 	"admin.user.pinTitle": "PIN identyfikatora dla {{name}}",
-	"admin.user.roles": "Rola",
+	"admin.user.roles": "Role",
 	"admin.users": "Pracownicy",
 	"app.offline": "Offline – ciosy są w kolejce",
 	"app.online": "Połączony",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Zapisz ten link na tagu albo otwórz go w telefonie:",
 	"admin.tag.delete": "Usuń",
 	"admin.tag.empty": "Nie utworzono jeszcze karty.",
-	"admin.user.roles": "Role",
 	"nav.statistics": "Statystyki",
 	"statistics.from": "Od",
 	"statistics.to": "Do",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Wszyscy pracownicy",
 	"scan.title": "Karta",
 	"scan.done": "Zastemplowano dla {{name}} o {{time}}",
-	"scan.failed": "Nie udało się użyć karty: {{reason}}"
+	"scan.failed": "Nie udało się użyć karty: {{reason}}",
+	"presence.title": "Obecność",
+	"presence.present": "Obecny",
+	"presence.absent": "Nieobecny",
+	"presence.tapPin": "Wprowadź PIN, aby się zalogować lub wylogować",
+	"presence.cancel": "Anuluj",
+	"presence.updated": "{{name}} jest teraz {{state}}",
+	"presence.disabled": "Terminal kiosku jest wyłączony w ustawieniach instancji."
 }

@@ -28,7 +28,7 @@
 	"admin.user.pin": "PIN-код",
 	"admin.user.pinHint": "От 4 до 8 цифр для терминала",
 	"admin.user.pinTitle": "PIN-код бейджа для {{name}}",
-	"admin.user.roles": "Роль",
+	"admin.user.roles": "Роли",
 	"admin.users": "Сотрудники",
 	"app.offline": "Оффлайн – удары поставлены в очередь",
 	"app.online": "Подключено",
@@ -168,7 +168,6 @@
 	"admin.tag.linkOnce": "Запишите эту ссылку на метку или откройте её на телефоне:",
 	"admin.tag.delete": "Удалить",
 	"admin.tag.empty": "Пропуск ещё не создан.",
-	"admin.user.roles": "Роли",
 	"nav.statistics": "Статистика",
 	"statistics.from": "С",
 	"statistics.to": "По",
@@ -180,5 +179,12 @@
 	"statistics.totals": "Все сотрудники",
 	"scan.title": "Пропуск",
 	"scan.done": "Отметка для {{name}} в {{time}}",
-	"scan.failed": "Пропуск не удалось использовать: {{reason}}"
+	"scan.failed": "Пропуск не удалось использовать: {{reason}}",
+	"presence.title": "Присутствие",
+	"presence.present": "На рабочем месте",
+	"presence.absent": "Отсутствует",
+	"presence.tapPin": "Введите ПИН-код, чтобы отметиться",
+	"presence.cancel": "Отмена",
+	"presence.updated": "{{name}}: {{state}}",
+	"presence.disabled": "Киоск-терминал отключён в настройках экземпляра."
 }

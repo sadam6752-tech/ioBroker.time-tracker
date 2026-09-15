@@ -186,5 +186,10 @@
 	"presence.tapPin": "Wprowadź PIN, aby się zalogować lub wylogować",
 	"presence.cancel": "Anuluj",
 	"presence.updated": "{{name}} jest teraz {{state}}",
-	"presence.disabled": "Terminal kiosku jest wyłączony w ustawieniach instancji."
+	"presence.disabled": "Terminal kiosku jest wyłączony w ustawieniach instancji.",
+	"admin.user.photo": "Zdjęcie",
+	"admin.user.photoTitle": "Zdjęcie {{name}}",
+	"admin.user.photoChoose": "Wybierz obraz",
+	"admin.user.photoRemove": "Usuń obraz",
+	"admin.user.photoHint": "PNG, JPEG, WEBP lub GIF do 256 KB. Bez zdjęcia wyświetlany jest obraz zastępczy."
 }

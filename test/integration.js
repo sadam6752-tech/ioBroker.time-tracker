@@ -198,6 +198,16 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(harness.hasLog(/command commands\.punch: .*punched/)).to.equal(true);
 			});
 
+			it("refuses to hand out a picture without any credential", async function () {
+				this.timeout(testTimeout);
+				// the picture of an employee is only given to a session or to a kiosk terminal
+				const anonymous = await fetch(`http://127.0.0.1:${apiPort()}/api/users/1/avatar`, {
+					headers: { accept: "image/png" },
+				});
+				expect(anonymous.status).to.equal(401);
+				expect(await anonymous.json()).to.include({ code: "no_session" });
+			});
+
 			it("turns presence on and off through the state of the employee", async function () {
 				this.timeout(testTimeout);
 				// the switch is created with the channel of the employee and is writable, so a fingerprint

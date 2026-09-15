@@ -186,5 +186,10 @@
 	"presence.tapPin": "PIN eingeben, um ein- oder auszustempeln",
 	"presence.cancel": "Abbrechen",
 	"presence.updated": "{{name}} ist jetzt {{state}}",
-	"presence.disabled": "Das Kiosk-Terminal ist in den Instanz-Einstellungen ausgeschaltet."
+	"presence.disabled": "Das Kiosk-Terminal ist in den Instanz-Einstellungen ausgeschaltet.",
+	"admin.user.photo": "Foto",
+	"admin.user.photoTitle": "Foto von {{name}}",
+	"admin.user.photoChoose": "Bild wählen",
+	"admin.user.photoRemove": "Bild entfernen",
+	"admin.user.photoHint": "PNG, JPEG, WEBP oder GIF bis 256 KB. Ohne Bild wird der Platzhalter angezeigt."
 }

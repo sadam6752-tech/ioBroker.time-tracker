@@ -39,13 +39,14 @@ import type { BackupService } from "../services/backup";
 import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
+import { MAX_AVATAR_BYTES, parseAvatarDataUrl, readAvatar } from "../domain/avatar";
 import { reportLabels } from "../reports/labels";
 import { buildMonthReport } from "../reports/xls";
 import { buildMonthStatement } from "../reports/pdf";
 import { reportFileName, type ReportInput } from "../reports/types";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
 import type { LegacyImportOptions, LegacyImportReport } from "../legacy/import";
-import { clearCookie, SESSION_COOKIE, serializeCookie } from "./cookies";
+import { clearCookie, parseCookies, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { createPinGuard } from "./pin-guard";
 import { HttpProblem, problem, toProblem } from "./problem";
@@ -496,6 +497,8 @@ export interface PublicUserPayload {
 	updatedAt: number;
 	/** Instant of the last login, `null` if never */
 	lastLoginAt: number | null;
+	/** Address of the picture of the user, `null` when none is stored (the web app shows a placeholder) */
+	avatarUrl: string | null;
 }
 
 /**
@@ -518,6 +521,9 @@ function publicUser(user: UserRecord): PublicUserPayload {
 		locale: user.locale,
 		language: user.locale,
 		timezone: user.timezone,
+		// the picture is served by its own route, so it never travels inside the JSON answer; the version in the
+		// query makes the browser fetch it again after a change
+		avatarUrl: user.avatar ? `/api/users/${user.id}/avatar?v=${user.updatedAt}` : null,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
 		lastLoginAt: user.lastLoginAt,
@@ -1512,6 +1518,31 @@ export function createApi(deps: ApiDeps): Api {
 
 	route("GET", "/roles", { permission: "user.view" }, () => json(200, { roles: users.roleCatalog() }));
 
+	route("GET", "/users/:id/avatar", { public: true }, context => {
+		// The picture is shown by the kiosk and the presence screen as well, and those authenticate with the device
+		// token of a terminal instead of a user session — so either credential is accepted here, and nothing else.
+		const id = numberParam(context, "id");
+		const terminalSession = context.query("terminalSession") ?? "";
+		const browserToken =
+			context.header("x-session-token") ?? parseCookies(context.header("cookie"))[SESSION_COOKIE] ?? "";
+		const browserOk =
+			browserToken !== "" &&
+			deps.auth.authenticate({ token: browserToken, permission: undefined, now: now() }).ok;
+		const terminalOk = terminalSession !== "" && terminals.findBySession(terminalSession, now()) !== null;
+		if (!browserOk && !terminalOk) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+
+		const user = users.findById(id);
+		const image = user ? readAvatar(user.avatar) : null;
+		if (!image) {
+			throw new NotFoundError(`user ${id} has no picture`);
+		}
+		return binary(200, Buffer.from(image.base64, "base64"), image.contentType, {
+			"cache-control": "private, max-age=300",
+		});
+	});
+
 	route("PATCH", "/users/:id", { permission: "user.edit", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
@@ -1577,6 +1608,24 @@ export function createApi(deps: ApiDeps): Api {
 		}
 		if (password !== null) {
 			patch.passwordHash = hashPassword(password);
+		}
+
+		// The picture is not part of the audited patch — `setAvatar` stores it on its own (and keeps the image out
+		// of the audit trail). Sending `avatar: null` removes it, leaving the field out keeps it.
+		if (Object.prototype.hasOwnProperty.call(body, "avatar")) {
+			const avatar = optionalString(body, "avatar");
+			if (avatar !== null && !parseAvatarDataUrl(avatar)) {
+				throw new ValidationError(
+					`avatar must be a data URL of a png, jpeg, webp or gif of up to ${MAX_AVATAR_BYTES} bytes`,
+				);
+			}
+			users.setAvatar({
+				userId: id,
+				avatar,
+				actorId: context.auth.user.id,
+				actorIp: context.request.remoteAddress ?? null,
+				now: now(),
+			});
 		}
 
 		const updated = users.update({
@@ -2056,11 +2105,17 @@ export function createApi(deps: ApiDeps): Api {
 			// only what a badge/PIN selection needs — no mail address, no profile, no working times. Whether the
 			// employee is at the workplace right now is the one exception: the presence screen highlights it.
 			const timestamp = now();
+			const terminalSession = context.query("terminalSession") ?? "";
 			return json(200, {
 				users: users.list({ includeInactive: false }).map(user => ({
 					id: user.id,
 					displayName: user.displayName,
 					present: aggregation.day(user.id, localDate(timestamp, user.timezone))?.hasOpenEntry === true,
+					// the picture is fetched by the browser from its own route; the session of this device travels
+					// in the query, so a plain `<img>` can load it
+					avatarUrl: user.avatar
+						? `/api/users/${user.id}/avatar?terminalSession=${encodeURIComponent(terminalSession)}&v=${user.updatedAt}`
+						: null,
 				})),
 			});
 		},

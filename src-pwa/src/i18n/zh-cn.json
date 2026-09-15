@@ -186,5 +186,10 @@
 	"presence.tapPin": "输入 PIN 码进行打卡",
 	"presence.cancel": "取消",
 	"presence.updated": "{{name}} 现在 {{state}}",
-	"presence.disabled": "在实例设置中已关闭自助终端。"
+	"presence.disabled": "在实例设置中已关闭自助终端。",
+	"admin.user.photo": "照片",
+	"admin.user.photoTitle": "{{name}} 的照片",
+	"admin.user.photoChoose": "选择图片",
+	"admin.user.photoRemove": "删除图片",
+	"admin.user.photoHint": "PNG、JPEG、WEBP 或 GIF，最大 256 KB。没有图片时显示占位图。"
 }

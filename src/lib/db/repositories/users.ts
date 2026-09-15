@@ -37,6 +37,8 @@ export interface UserRecord {
 	timezone: string;
 	/** Hash of the personal kiosk PIN, `null` when none is set */
 	pinHash: string | null;
+	/** Picture of the employee as a data URL, `null` when none is stored */
+	avatar: string | null;
 	/** Instant of creation, UTC epoch seconds */
 	createdAt: number;
 	/** Instant of the last change, UTC epoch seconds */
@@ -175,6 +177,19 @@ export interface UsersRepository {
 		actorIp?: string | null;
 		now?: number;
 	}): void;
+	/** Stores or clears the picture of an employee (the image itself never reaches the audit trail) */
+	setAvatar(input: {
+		/** Id of the employee */
+		userId: number;
+		/** Data URL of the picture, `null` clears it */
+		avatar: string | null;
+		/** Who changes the picture */
+		actorId: number;
+		/** Client IP address of the actor */
+		actorIp?: string | null;
+		/** Instant of the change, defaults to now */
+		now?: number;
+	}): void;
 	/**
 	 * Replaces the legacy SHA-1 hash of an account with a real password hash (specification 2.9.1).
 	 *
@@ -242,6 +257,7 @@ interface UserRow {
 	locale: string;
 	timezone: string;
 	pin_hash: string | null;
+	avatar: string | null;
 	created_at: number;
 	updated_at: number;
 	last_login_at: number | null;
@@ -283,6 +299,7 @@ export function mapUserRow(row: UserRow): UserRecord {
 		locale: row.locale,
 		timezone: row.timezone,
 		pinHash: row.pin_hash,
+		avatar: row.avatar,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 		lastLoginAt: row.last_login_at,
@@ -314,7 +331,7 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 }
 
 const USER_COLUMNS = `id, login, password_hash, legacy_sha1, display_name, email, rfid_card, is_active,
-\tmust_change_pw, locale, timezone, pin_hash, created_at, updated_at, last_login_at`;
+\tmust_change_pw, locale, timezone, pin_hash, avatar, created_at, updated_at, last_login_at`;
 
 const PROFILE_COLUMNS = `user_id, percent, weekly_hours, workdays, start_date, end_date, overtime_carryover,
 \tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags, legacy_source`;
@@ -358,6 +375,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectByLogin = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE login = ? COLLATE NOCASE`);
 	const selectByRfid = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE rfid_card = ? COLLATE NOCASE LIMIT 1`);
 	const setPinHash = db.prepare("UPDATE users SET pin_hash = ?, updated_at = ? WHERE id = ?");
+	const setAvatarData = db.prepare("UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?");
 	// the legacy hash is cleared in the same statement, so it cannot be replayed afterwards
 	const migrateLegacyHash = db.prepare(
 		"UPDATE users SET password_hash = ?, legacy_sha1 = NULL, must_change_pw = ?, updated_at = ? WHERE id = ?",
@@ -551,6 +569,33 @@ export function createUsersRepository(db: Db): UsersRepository {
 					entityId: input.userId,
 					// the hash itself never reaches the audit trail
 					detail: { cleared: input.pinHash === null },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+		},
+
+		setAvatar(input: {
+			userId: number;
+			avatar: string | null;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): void {
+			if (!read(input.userId)) {
+				throw new NotFoundError(`user ${input.userId} not found`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				setAvatarData.run(input.avatar, now, input.userId);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "user.avatar",
+					entity: "user",
+					entityId: input.userId,
+					// the picture itself never reaches the audit trail
+					detail: { cleared: input.avatar === null },
 					ip: input.actorIp ?? null,
 				});
 			});

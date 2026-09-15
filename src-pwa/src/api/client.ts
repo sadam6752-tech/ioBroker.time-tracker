@@ -248,6 +248,8 @@ export interface TerminalUser {
 	displayName: string;
 	/** True when the employee has an open punch, so is at the workplace right now */
 	present: boolean;
+	/** Address of the picture of the employee, `null` when none is stored */
+	avatarUrl: string | null;
 }
 
 /** Result of a punch at the terminal (`POST /terminal/punch`). */

@@ -162,6 +162,8 @@ export interface AdminUser {
 	timezone: string;
 	/** Role keys of the user */
 	roles: string[];
+	/** Address of the picture of the employee, `null` when none is stored */
+	avatarUrl: string | null;
 }
 
 /** A role of the catalogue. */
@@ -206,6 +208,8 @@ export interface UpdateUserInput {
 	roleKeys?: string[];
 	/** New password */
 	password?: string;
+	/** Data URL of a new picture, `null` removes the stored one */
+	avatar?: string | null;
 }
 
 /** The caller as `GET /auth/me` reports it. */

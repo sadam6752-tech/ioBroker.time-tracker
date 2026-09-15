@@ -179,7 +179,9 @@ describe("database", () => {
 			).run();
 			old.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('other', 'Europe/Zurich', 0)").run();
 
-			expect(migrate(old)).to.equal(1);
+			// migration 8 and everything that came after it are pending for this installation
+			const pending = migrations.filter(entry => entry.version > 7).length;
+			expect(migrate(old)).to.equal(pending);
 			expect(currentSchemaVersion(old)).to.equal(Math.max(...migrations.map(entry => entry.version)));
 
 			// the old default moves over, a deliberately chosen zone stays

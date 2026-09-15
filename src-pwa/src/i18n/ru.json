@@ -186,5 +186,10 @@
 	"presence.tapPin": "Введите ПИН-код, чтобы отметиться",
 	"presence.cancel": "Отмена",
 	"presence.updated": "{{name}}: {{state}}",
-	"presence.disabled": "Киоск-терминал отключён в настройках экземпляра."
+	"presence.disabled": "Киоск-терминал отключён в настройках экземпляра.",
+	"admin.user.photo": "Фото",
+	"admin.user.photoTitle": "Фото {{name}}",
+	"admin.user.photoChoose": "Выбрать изображение",
+	"admin.user.photoRemove": "Удалить изображение",
+	"admin.user.photoHint": "PNG, JPEG, WEBP или GIF до 256 КБ. Без изображения показывается заполнитель."
 }

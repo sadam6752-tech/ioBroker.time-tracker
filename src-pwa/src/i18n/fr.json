@@ -186,5 +186,10 @@
 	"presence.tapPin": "Saisissez le code PIN pour pointer",
 	"presence.cancel": "Annuler",
 	"presence.updated": "{{name}} est maintenant {{state}}",
-	"presence.disabled": "Le terminal borne est désactivé dans les paramètres de l'instance."
+	"presence.disabled": "Le terminal borne est désactivé dans les paramètres de l'instance.",
+	"admin.user.photo": "Photo",
+	"admin.user.photoTitle": "Photo de {{name}}",
+	"admin.user.photoChoose": "Choisir une image",
+	"admin.user.photoRemove": "Supprimer l'image",
+	"admin.user.photoHint": "PNG, JPEG, WEBP ou GIF jusqu'à 256 Ko. Sans image, la vignette par défaut s'affiche."
 }

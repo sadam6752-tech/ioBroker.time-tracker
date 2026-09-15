@@ -186,5 +186,10 @@
 	"presence.tapPin": "Voer de pincode in om in of uit te klokken",
 	"presence.cancel": "Annuleren",
 	"presence.updated": "{{name}} is nu {{state}}",
-	"presence.disabled": "De kioskterminal is uitgeschakeld in de instellingen van de instantie."
+	"presence.disabled": "De kioskterminal is uitgeschakeld in de instellingen van de instantie.",
+	"admin.user.photo": "Foto",
+	"admin.user.photoTitle": "Foto van {{name}}",
+	"admin.user.photoChoose": "Afbeelding kiezen",
+	"admin.user.photoRemove": "Afbeelding verwijderen",
+	"admin.user.photoHint": "PNG, JPEG, WEBP of GIF tot 256 KB. Zonder afbeelding wordt de plaatshouder getoond."
 }

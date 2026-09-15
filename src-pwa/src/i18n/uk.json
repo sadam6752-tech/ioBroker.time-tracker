@@ -186,5 +186,10 @@
 	"presence.tapPin": "Введіть PIN-код, щоб відмітитися",
 	"presence.cancel": "Скасувати",
 	"presence.updated": "{{name}} тепер {{state}}",
-	"presence.disabled": "Кіоск-термінал вимкнено в налаштуваннях екземпляра."
+	"presence.disabled": "Кіоск-термінал вимкнено в налаштуваннях екземпляра.",
+	"admin.user.photo": "Фото",
+	"admin.user.photoTitle": "Фото {{name}}",
+	"admin.user.photoChoose": "Вибрати зображення",
+	"admin.user.photoRemove": "Видалити зображення",
+	"admin.user.photoHint": "PNG, JPEG, WEBP або GIF до 256 КБ. Без зображення показується заповнювач."
 }

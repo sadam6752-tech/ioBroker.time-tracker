@@ -187,6 +187,8 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const [creating, setCreating] = useState(false);
 	const [pinUser, setPinUser] = useState<AdminUser | null>(null);
 	const [pin, setPin] = useState("");
+	const [photoUser, setPhotoUser] = useState<AdminUser | null>(null);
+	const [photo, setPhoto] = useState<string | null>(null);
 	const [rolesUser, setRolesUser] = useState<AdminUser | null>(null);
 	// assigning roles is a right of its own (the server checks it again)
 	const mayManageRoles = hasPermission(permissions, "user.manage_roles");
@@ -211,6 +213,14 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 			await reload();
 		},
 	});
+	const savePhoto = useMutation({
+		mutationFn: ({ id, value }: { id: number; value: string | null }) => api.updateUser(id, { avatar: value }),
+		onSuccess: async () => {
+			setPhotoUser(null);
+			setPhoto(null);
+			await reload();
+		},
+	});
 
 	if (users.isLoading) {
 		return <Loading />;
@@ -218,7 +228,7 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={users.error ?? change.error ?? savePin.error} />
+			<ErrorAlert error={users.error ?? change.error ?? savePin.error ?? savePhoto.error} />
 
 			{mayCreate && (
 				<Box sx={{ mb: 2 }}>
@@ -254,6 +264,15 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 												}}
 											>
 												{t("admin.user.pin")}
+											</Button>
+											<Button
+												size="small"
+												onClick={() => {
+													setPhotoUser(user);
+													setPhoto(null);
+												}}
+											>
+												{t("admin.user.photo")}
 											</Button>
 											{mayManageRoles && (
 												<Button
@@ -333,6 +352,71 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 						variant="contained"
 						disabled={pin.length < 4 || savePin.isPending}
 						onClick={() => pinUser && savePin.mutate({ id: pinUser.id, value: pin })}
+					>
+						{t("common.save")}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog
+				open={photoUser !== null}
+				onClose={() => setPhotoUser(null)}
+			>
+				<DialogTitle>{t("admin.user.photoTitle", { name: photoUser?.displayName ?? "" })}</DialogTitle>
+				<DialogContent>
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<img
+							// what is stored now — the placeholder until a picture of this employee is chosen
+							src={photo ?? photoUser?.avatarUrl ?? "/person.png"}
+							alt=""
+							width={96}
+							height={96}
+							style={{ objectFit: "cover", borderRadius: 8 }}
+						/>
+						<Button
+							variant="outlined"
+							component="label"
+						>
+							{t("admin.user.photoChoose")}
+							<input
+								hidden
+								type="file"
+								accept="image/png,image/jpeg,image/webp,image/gif"
+								onChange={event => {
+									const file = event.target.files?.[0];
+									if (!file) {
+										return;
+									}
+									const reader = new FileReader();
+									reader.onload = () =>
+										setPhoto(typeof reader.result === "string" ? reader.result : null);
+									reader.readAsDataURL(file);
+								}}
+							/>
+						</Button>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+						>
+							{t("admin.user.photoHint")}
+						</Typography>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setPhotoUser(null)}>{t("common.cancel")}</Button>
+					<Button
+						disabled={photoUser?.avatarUrl === null || photoUser?.avatarUrl === undefined}
+						onClick={() => photoUser && savePhoto.mutate({ id: photoUser.id, value: null })}
+					>
+						{t("admin.user.photoRemove")}
+					</Button>
+					<Button
+						variant="contained"
+						disabled={photo === null || savePhoto.isPending}
+						onClick={() => photoUser && savePhoto.mutate({ id: photoUser.id, value: photo })}
 					>
 						{t("common.save")}
 					</Button>

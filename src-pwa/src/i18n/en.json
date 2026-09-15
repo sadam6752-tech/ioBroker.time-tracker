@@ -186,5 +186,10 @@
 	"presence.tapPin": "Enter the PIN to clock in or out",
 	"presence.cancel": "Cancel",
 	"presence.updated": "{{name}} is now {{state}}",
-	"presence.disabled": "The kiosk terminal is switched off in the instance settings."
+	"presence.disabled": "The kiosk terminal is switched off in the instance settings.",
+	"admin.user.photo": "Photo",
+	"admin.user.photoTitle": "Photo of {{name}}",
+	"admin.user.photoChoose": "Choose picture",
+	"admin.user.photoRemove": "Remove picture",
+	"admin.user.photoHint": "PNG, JPEG, WEBP or GIF up to 256 KB. Without a picture the placeholder is shown."
 }

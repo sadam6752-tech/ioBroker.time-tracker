@@ -186,5 +186,10 @@
 	"presence.tapPin": "Inserisci il PIN per timbrare",
 	"presence.cancel": "Annulla",
 	"presence.updated": "{{name}} ora è {{state}}",
-	"presence.disabled": "Il terminale chiosco è disattivato nelle impostazioni dell'istanza."
+	"presence.disabled": "Il terminale chiosco è disattivato nelle impostazioni dell'istanza.",
+	"admin.user.photo": "Foto",
+	"admin.user.photoTitle": "Foto di {{name}}",
+	"admin.user.photoChoose": "Scegli immagine",
+	"admin.user.photoRemove": "Rimuovi immagine",
+	"admin.user.photoHint": "PNG, JPEG, WEBP o GIF fino a 256 KB. Senza immagine viene mostrato il segnaposto."
 }

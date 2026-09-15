@@ -362,4 +362,9 @@ export const migrations: Migration[] = [
 			UPDATE app_settings SET value    = 'Europe/Berlin' WHERE key = 'timezone' AND value = 'Europe/Zurich';
 		`,
 	},
+	{
+		version: 9,
+		name: "users: picture of the employee",
+		sql: `ALTER TABLE users ADD COLUMN avatar TEXT;`,
+	},
 ];

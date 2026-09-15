@@ -186,5 +186,10 @@
 	"presence.tapPin": "Introduce el PIN para fichar",
 	"presence.cancel": "Cancelar",
 	"presence.updated": "{{name}} ahora está {{state}}",
-	"presence.disabled": "El terminal de quiosco está desactivado en la configuración de la instancia."
+	"presence.disabled": "El terminal de quiosco está desactivado en la configuración de la instancia.",
+	"admin.user.photo": "Foto",
+	"admin.user.photoTitle": "Foto de {{name}}",
+	"admin.user.photoChoose": "Elegir imagen",
+	"admin.user.photoRemove": "Quitar imagen",
+	"admin.user.photoHint": "PNG, JPEG, WEBP o GIF hasta 256 KB. Sin imagen se muestra el marcador."
 }

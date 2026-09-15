@@ -52,6 +52,8 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
 
 1. **Verwaltung → Benutzer**: Mitarbeiter anlegen (Login, Name, Passwort, Rolle), jedem eine **Badge-PIN**
    (4–8 Ziffern) setzen, wenn er am Kiosk per PIN stempeln soll.
+   Mit **Foto** hinterlegt man ein Bild des Mitarbeiters (PNG/JPEG/WEBP/GIF bis 256 KB). Es erscheint auf den
+   Kacheln des Anwesenheits-Bildschirms und am Kiosk; ohne Bild zeigt die Oberfläche den Platzhalter.
 2. **Verwaltung → Terminals**: Terminal anlegen (PIN-Pflicht an), **Geräte-Token kopieren** und die angezeigte
    Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4.
 3. **Verwaltung → Einstellungen**: `report_font_path` auf eine Unicode-`.ttf`/`.otf` setzen, wenn Ausweise in

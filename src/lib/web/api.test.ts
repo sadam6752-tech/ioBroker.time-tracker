@@ -1375,7 +1375,7 @@ describe("web api", () => {
 			expect(people.status).to.equal(200);
 			const people2 = bodyOf<{ users: Record<string, unknown>[] }>(people).users;
 			expect(people2).to.have.lengthOf(2);
-			expect(Object.keys(people2[0]).sort()).to.deep.equal(["displayName", "id", "present"]);
+			expect(Object.keys(people2[0]).sort()).to.deep.equal(["avatarUrl", "displayName", "id", "present"]);
 
 			// a badge alone is not enough when the device demands a PIN
 			expect(

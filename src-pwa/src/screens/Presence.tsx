@@ -255,7 +255,11 @@ export function Presence(): React.JSX.Element {
 									spacing={2}
 									alignItems="center"
 								>
-									<Avatar sx={{ bgcolor: user.present ? "success.main" : "grey.500" }}>
+									<Avatar
+										// the stored picture, or the placeholder of the project when none is set
+										src={user.avatarUrl ?? "/person.png"}
+										sx={{ bgcolor: user.present ? "success.main" : "grey.500" }}
+									>
 										{initials(user.displayName)}
 									</Avatar>
 									<Box sx={{ minWidth: 0 }}>

@@ -186,5 +186,10 @@
 	"presence.tapPin": "Introduza o PIN para registar a entrada ou a saída",
 	"presence.cancel": "Cancelar",
 	"presence.updated": "{{name}} está agora {{state}}",
-	"presence.disabled": "O terminal de quiosque está desligado nas definições da instância."
+	"presence.disabled": "O terminal de quiosque está desligado nas definições da instância.",
+	"admin.user.photo": "Fotografia",
+	"admin.user.photoTitle": "Fotografia de {{name}}",
+	"admin.user.photoChoose": "Escolher imagem",
+	"admin.user.photoRemove": "Remover imagem",
+	"admin.user.photoHint": "PNG, JPEG, WEBP ou GIF até 256 KB. Sem imagem é mostrado o marcador."
 }

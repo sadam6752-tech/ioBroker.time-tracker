@@ -80,7 +80,7 @@
 		"test:package": "mocha test/package --exit",
 		"test:integration": "mocha test/integration --exit",
 		"test": "npm run test:ts && npm run test:package",
-		"check": "tsc --noEmit",
+		"check": "tsc --noEmit && npm --prefix src-pwa run check",
 		"coverage": "nyc npm run test:ts",
 		"lint": "eslint -c eslint.config.mjs .",
 		"lint:pwa": "eslint -c eslint.config.mjs src-pwa/src",

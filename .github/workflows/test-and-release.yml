@@ -26,18 +26,16 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            # The web app is a second npm project. It is installed, type-checked and linted together with the
-            # adapter, because its sources are part of the same lint run and it needs its own dependencies
-            # (react types). Installing it in a step of this job would not work: the checkout inside the action
-            # removes untracked files, and `src-pwa/node_modules` is untracked.
+            # The web app is a second npm project. It is installed together with the adapter, so the default
+            # type check (`npm run check`, which covers both projects) and the lint run can do their work.
+            # Installing it in a step of this job would not work: the checkout inside the action removes
+            # untracked files, and `src-pwa/node_modules` is untracked.
             - uses: ioBroker/testing-action-check@v2
               with:
                   node-version: "22.x"
                   install-command: "npm ci && npm ci --prefix src-pwa"
                   type-checking: true
-                  type-checking-command: "npm run check && npm --prefix src-pwa run check"
                   lint: true
-                  lint-command: "npm run lint"
 
     # Runs adapter tests on all supported node versions and OSes
     adapter-tests:

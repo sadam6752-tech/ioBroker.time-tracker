@@ -186,7 +186,7 @@ docs/         provenance record and translator guide
 | `npm run dev:pwa`          | Vite dev server with `/api` proxied to the running instance                 |
 | `npm run lint`             | ESLint with `@iobroker/eslint-config` (adapter and web app)                 |
 | `npm run lint:pwa`         | ESLint for the web app only                                                 |
-| `npm run check`            | TypeScript type check                                                       |
+| `npm run check`            | TypeScript type check (adapter and web app)                                 |
 | `npm run test:ts`          | Unit tests for the adapter sources                                          |
 | `npm run test:package`     | Validate `package.json` / `io-package.json`                                 |
 | `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`)    |

@@ -68,15 +68,17 @@ jobs:
             # TEMPORARY DIAGNOSIS - remove once the cause of the red (22.x, windows-latest) job is known.
             # GitHub hides the logs of this repository ("Sign in to view logs"), but the annotations of a
             # check run can be read without authentication. This step runs the integration test again after a
-            # failure and publishes the last lines of its output as error annotations.
+            # failure and publishes the tail of its output as error annotations.
             - name: Diagnose the Windows failure
               if: ${{ failure() && runner.os == 'Windows' }}
               shell: bash
               run: |
                   set +e
                   npm run test:integration > integration.log 2>&1
-                  echo "integration exit code: $?"
-                  grep -n -E "passing|failing|Error|AssertionError|Timeout|✗|✔" integration.log | tail -n 10 | tr -d '\r' | sed -e 's/%/%25/g' | while IFS= read -r line; do echo "::error::$line"; done
+                  echo "::error::re-run exit code: $?"
+                  echo "::error::log lines: $(wc -l < integration.log)"
+                  tail -n 18 integration.log | sed -e 's/%/%25/g' -e 's/\r$//' | while IFS= read -r line; do echo "::error::$line"; done
+                  exit 0
 
     # Deploys the final package to npm and creates the GitHub release.
     # Requires npm "trusted publishing" for this repository and workflow (https://docs.npmjs.com/trusted-publishers);

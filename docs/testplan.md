@@ -82,6 +82,12 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 | T15 | Sprachen | Oberfläche auf `de`, dann `ru`, dann `zh-cn`; Berichte in derselben Sprache | keine abgeschnittenen Texte, Datum/Zahlen lokal formatiert, Bericht in der Sprache des Nutzers |
 | T16 | PWA-Installation | Adapter-URL über **HTTPS** öffnen, „Zum Startbildschirm hinzufügen", App starten, neu bauen und neu laden | App läuft im eigenen Fenster, Icon ist das Logo, Update ohne hängenden Alt-Cache |
 | T17 | Last (Stichprobe) | 5 parallele Stempel über die API (curl-Schleife), danach Monatsansicht prüfen | keine Fehler, alle 5 Stempel vorhanden, Antwortzeiten im Sekundenbereich |
+| T18 | Legacy-Import | Kommando `commands.import` setzen: (a) `{"baseDir":"…/smalltime","mode":"dry-run"}`, (b) danach mit `"mode":"commit"`, (c) denselben Commit ein zweites Mal (mit `"resetImport":true`), (d) Report in `info.lastImport` und in `import_runs` prüfen | (a) Bericht mit Zählern und Warnungen, aber **keine** neuen Zeilen in `time_entries`/`absences`/`payouts`; (b) Import erfolgreich, `status` nicht `mismatch`, Monatswerte reproduzieren `Timetable/<Jahr>` auf ±0,01 h; (c) keine zusätzlichen Zeilen (Idempotenz); (d) `info.lastImport` enthält den Bericht, `import_runs` je Lauf eine Zeile mit Modus, Status, Zählern und Warnungen |
+
+Ein Hinweis zu T18: Der Import wird gegen das synthetische Fixture (`fixtures/smalltime`) geprüft. Für die Abnahme
+am realen Bestand ist eine Kopie des produktiven `Data`-Verzeichnisses nötig (Abschnitt 2.9.11) — erst damit sind
+die heute offenen Feldbedeutungen (Zeitzone der Stempel, Felder 2/4 der Monatsdatei, Feld 1 in `A<Jahr>`)
+verbindlich zu bestätigen.
 
 ## 6. Abnahmekriterien
 

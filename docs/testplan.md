@@ -206,14 +206,28 @@ warn: zeiterfassung.0 administrator "admin" created with the start password "Zf-
 > keinen Hot-Reload: nach Änderungen `npm run build` (Adapter) beziehungsweise `npm run build:pwa` (Web-App)
 > ausführen und die Instanz einmal neu starten.
 
-Damit Änderungen an der Web-App ohne Neuinstallation ankommen, kann der ausgelieferte Ordner auf den des
+Damit Änderungen an der Web-App ohne Neuinstallation ankommen, kann der ausgelieferte `www`-Ordner auf den des
 Repositories zeigen (der Adapter liest die Dateien bei jeder Anfrage von der Platte):
 
 ```powershell
 cd .dev-server\default\node_modules\iobroker.zeiterfassung
-Remove-Item www -Recurse -Force
+cmd /c rmdir www                     # entfernt nur die Verknüpfung, nicht das Ziel
 New-Item -ItemType Junction -Path www -Target <Repository>\www
 ```
+
+> **Nur `www` verknüpfen, und Junctions immer mit `cmd /c rmdir` entfernen.** Zwei Erfahrungen aus dem Aufbau:
+>
+> - Für den Adaptercode (`build/`) ist eine Junction **nicht** geeignet: der js-controller findet den Adapter dann
+>   nicht mehr und beendet ihn mit `CANNOT_FIND_ADAPTER_DIR`.
+> - `Remove-Item -Recurse` auf eine Junction löscht in PowerShell auch den **Inhalt des Ziels**. Mit
+>   `cmd /c rmdir <Pfad>` verschwindet nur die Verknüpfung.
+>
+> Nach Adapteränderungen daher neu bauen und die Dateien kopieren:
+>
+> ```powershell
+> npm run build
+> Copy-Item build .dev-server\default\node_modules\iobroker.zeiterfassung\build -Recurse -Force
+> ```
 
 `.dev-server/` und `iobroker.*.tgz` sind bereits in `.gitignore` abgedeckt.
 

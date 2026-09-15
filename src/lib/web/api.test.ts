@@ -339,6 +339,17 @@ describe("web api", () => {
 			expect(bodyOf(denied).code).to.equal("csrf_rejected");
 		});
 
+		it("accepts a bearer client without a CSRF token", async () => {
+			// `x-session-token` is a header a foreign page cannot set, so integration clients (the load sample
+			// T17, scripts) must get through without the token that only the browser holds
+			const accepted = await send("POST", "/punch", {
+				body: { tsUtc: 3000 },
+				headers: { "x-session-token": annaToken },
+			});
+
+			expect(accepted.status, JSON.stringify(bodyOf(accepted))).to.equal(201);
+		});
+
 		it("is idempotent for a repeated punch and requires the permission", async () => {
 			const payload = { tsUtc: 1000, idempotencyKey: "offline-1" };
 			const first = await send("POST", "/punch", { body: payload, headers: headers(annaToken, annaCsrf) });

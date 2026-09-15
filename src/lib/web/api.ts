@@ -636,7 +636,9 @@ export function createApi(deps: ApiDeps): Api {
 	 * @param routeSettings - permission and visibility of the route
 	 * @param routeSettings.permission - permission required
 	 * @param routeSettings.public - true when no session is needed
-	 * @param routeSettings.csrf - true when a CSRF token is required, false to skip it
+	 * @param routeSettings.csrf - false when the route must never ask for a CSRF token (it runs without a session,
+	 *   for example the login); otherwise the router decides from the credential: a browser session cookie needs the
+	 *   token, an integration client with a bearer token does not
 	 * @param routeSettings.rateLimit - rate limit of the route class
 	 * @param routeSettings.rateLimit.name - name of the counted class
 	 * @param routeSettings.rateLimit.limit - allowed requests inside the window
@@ -667,7 +669,11 @@ export function createApi(deps: ApiDeps): Api {
 			path,
 			permission: routeSettings.permission,
 			requiresAuth: routeSettings.public !== true,
-			requiresCsrf: routeSettings.csrf,
+			// `undefined` hands the decision to the router: a session cookie needs the CSRF token, a bearer
+			// client (integration, `x-session-token`) does not, because no foreign page can set that header.
+			// `false` switches the check off completely — that is for the public routes, which run without a
+			// session, so a CSRF token could not exist yet.
+			requiresCsrf: routeSettings.csrf === false ? false : undefined,
 			rateLimit: routeSettings.rateLimit,
 			handler,
 		});

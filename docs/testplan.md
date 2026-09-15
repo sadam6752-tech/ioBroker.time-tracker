@@ -2,6 +2,8 @@
 
 Dieses Dokument ist die Arbeitsanleitung für die **ersten Tests auf einer echten ioBroker-Installation**.
 Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T18 mit Erwartung und die Abnahmekriterien.
+Für die Installation bis zum ersten Stempel gibt es `docs/erste-schritte.md`; die Schritte dort entsprechen der
+Vorbereitung unten.
 Die öffentliche `README.md` bleibt englisch (Vorgabe des Adapter-Checkers) — dieses Betriebsdokument ist
 bewusst deutsch, wie `docs/adapter-check.md`.
 

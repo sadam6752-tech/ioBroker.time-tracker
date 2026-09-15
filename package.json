@@ -90,6 +90,7 @@
 		"dev-server": "dev-server",
 		"cleanroom": "pwsh -NoProfile -File tools/cleanroom-check.ps1 -FailOnHit",
 		"load-smoke": "node tools/load-smoke.mjs",
+		"first-run": "node tools/first-run-check.mjs",
 		"e2e": "playwright test",
 		"check:i18n": "pwsh -NoProfile -File tools/check-i18n.ps1 -FailOnIssue",
 		"check:i18n:report": "pwsh -NoProfile -File tools/check-i18n.ps1",

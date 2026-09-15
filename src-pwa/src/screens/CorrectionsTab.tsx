@@ -216,67 +216,72 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 			<ErrorAlert error={users.error ?? entries.error ?? change.error ?? remove.error ?? add.error} />
 
 			<Card sx={{ p: 2, mb: 2 }}>
-				<Stack
-					direction={{ xs: "column", sm: "row" }}
-					spacing={2}
-					alignItems={{ xs: "stretch", sm: "center" }}
-				>
-					<TextField
-						select
-						size="small"
-						label={t("corrections.employee")}
-						value={employee ?? ""}
-						onChange={event => setUserId(Number(event.target.value))}
-						sx={{ minWidth: 200 }}
-					>
-						{(users.data ?? []).map(user => (
-							<MenuItem
-								key={user.id}
-								value={user.id}
-							>
-								{user.displayName}
-							</MenuItem>
-						))}
-					</TextField>
-
+				<Stack spacing={2}>
+					{/* first row: who and which month; the button for a missing punch stays at the right edge */}
 					<Stack
-						direction="row"
-						spacing={0.5}
-						alignItems="center"
+						direction={{ xs: "column", sm: "row" }}
+						spacing={2}
+						alignItems={{ xs: "stretch", sm: "center" }}
 					>
-						<IconButton
-							onClick={() => step(-1)}
-							title={t("corrections.previous")}
-							aria-label={t("corrections.previous")}
+						<TextField
+							select
+							size="small"
+							label={t("corrections.employee")}
+							value={employee ?? ""}
+							onChange={event => setUserId(Number(event.target.value))}
+							sx={{ minWidth: 200 }}
 						>
-							<ChevronLeftIcon />
-						</IconButton>
-						<Typography sx={{ minWidth: 90, textAlign: "center" }}>{period}</Typography>
-						<IconButton
-							onClick={() => step(1)}
-							title={t("corrections.next")}
-							aria-label={t("corrections.next")}
+							{(users.data ?? []).map(user => (
+								<MenuItem
+									key={user.id}
+									value={user.id}
+								>
+									{user.displayName}
+								</MenuItem>
+							))}
+						</TextField>
+
+						<Stack
+							direction="row"
+							spacing={0.5}
+							alignItems="center"
 						>
-							<ChevronRightIcon />
-						</IconButton>
+							<IconButton
+								onClick={() => step(-1)}
+								title={t("corrections.previous")}
+								aria-label={t("corrections.previous")}
+							>
+								<ChevronLeftIcon />
+							</IconButton>
+							<Typography sx={{ minWidth: 90, textAlign: "center" }}>{period}</Typography>
+							<IconButton
+								onClick={() => step(1)}
+								title={t("corrections.next")}
+								aria-label={t("corrections.next")}
+							>
+								<ChevronRightIcon />
+							</IconButton>
+						</Stack>
+
+						<Button
+							variant="contained"
+							disabled={employee === null}
+							sx={{ ml: { sm: "auto" } }}
+							onClick={() => setAdding({ date: range.from, from: "08:00", to: "17:00", note: "" })}
+						>
+							{t("corrections.add")}
+						</Button>
 					</Stack>
 
+					{/* the reason gets its own row: with its hint it is too wide for the row above */}
 					<TextField
 						size="small"
 						label={t("corrections.reason")}
 						helperText={t("corrections.reasonHint")}
 						value={reason}
 						onChange={event => setReason(event.target.value)}
-						sx={{ flexGrow: 1, minWidth: 220 }}
+						fullWidth
 					/>
-
-					<Button
-						variant="contained"
-						disabled={employee === null}
-						onClick={() => setAdding({ date: range.from, from: "08:00", to: "17:00", note: "" })}
-					>
-						{t("corrections.add")}
-					</Button>
 				</Stack>
 			</Card>
 

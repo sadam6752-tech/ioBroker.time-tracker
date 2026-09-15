@@ -86,4 +86,15 @@ test("an administrator adds a forgotten day and finds it in the correction list"
 
 	await expect(page.getByText(/09:30/).first()).toBeVisible();
 	await expect(page.getByText(/nicht akzeptiert/)).toHaveCount(0);
+
+	// Adding a punch through the dialog is the other everyday job (“forgot to clock in and out”): the test uses the
+	// button and the dialog of the screen, so a broken request is noticed here and not by the user.
+	await page.getByRole("button", { name: "Stempel oder Tag nachtragen" }).click();
+	await page.getByLabel("Kommen").fill("06:00");
+	await page.getByLabel("Gehen").fill("14:00");
+	await page.getByLabel("Notiz").fill("Nachgetragen über den Dialog");
+	await page.getByRole("button", { name: "Speichern" }).click();
+
+	await expect(page.getByText("Nachgetragen über den Dialog").first()).toBeVisible();
+	await expect(page.getByText(/nicht akzeptiert/)).toHaveCount(0);
 });

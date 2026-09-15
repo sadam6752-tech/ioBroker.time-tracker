@@ -123,10 +123,16 @@ export interface ApiClient {
 		/** Why the correction was made (audit trail) */
 		reason?: string | null;
 	}): Promise<PunchResult>;
-	/** Changes a punch: its time, its direction or its note */
+	/**
+	 * Changes the time or the note of a punch.
+	 *
+	 * `revision` is the version that was read: the server refuses the change when the punch was changed in the
+	 * meantime (`revision_conflict`). The direction is not editable on purpose — the server derives it from the order
+	 * of the punches of that day.
+	 */
 	updateEntry(
 		id: number,
-		input: { tsUtc?: number; direction?: "in" | "out"; note?: string | null; reason?: string | null },
+		input: { revision: number; tsUtc?: number; note?: string | null; reason?: string | null },
 	): Promise<{ entry: Entry; day: PunchResult["day"] }>;
 	/** Removes a punch */
 	deleteEntry(id: number, reason?: string | null): Promise<void>;

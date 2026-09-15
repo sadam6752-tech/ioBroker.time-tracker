@@ -162,10 +162,8 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 	};
 
 	const change = useMutation({
-		mutationFn: (input: {
-			id: number;
-			patch: { tsUtc?: number; direction?: "in" | "out"; note?: string | null };
-		}) => api.updateEntry(input.id, { ...input.patch, reason: reason.trim() || null }),
+		mutationFn: (input: { id: number; revision: number; patch: { tsUtc?: number; note?: string | null } }) =>
+			api.updateEntry(input.id, { ...input.patch, revision: input.revision, reason: reason.trim() || null }),
 		onSuccess: reload,
 	});
 	const remove = useMutation({
@@ -294,8 +292,8 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 								>
 									<IconButton
 										size="small"
-										title={t("corrections.edit")}
-										aria-label={t("corrections.edit")}
+										title={t("corrections.editTitle")}
+										aria-label={t("corrections.editTitle")}
 										onClick={() => {
 											const localDate = entry.localDate;
 											const time = formatTime(entry.tsUtc, timeZone, "de-DE");
@@ -370,17 +368,8 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 								InputLabelProps={{ shrink: true }}
 								fullWidth
 							/>
-							<TextField
-								select
-								label={t("corrections.direction")}
-								value={editing.direction}
-								onChange={event =>
-									setEditing({ ...editing, direction: event.target.value as "in" | "out" })
-								}
-							>
-								<MenuItem value="in">{t("punch.in")}</MenuItem>
-								<MenuItem value="out">{t("punch.out")}</MenuItem>
-							</TextField>
+							{/* the direction is not editable on purpose: the server derives it from the order of the
+							    punches of that day, so only the time (and the note) can be corrected */}
 							<TextField
 								label={t("corrections.note")}
 								value={editing.note}
@@ -397,9 +386,10 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 							onClick={() => {
 								change.mutate({
 									id: editing.entry.id,
+									// the version the caller saw: the server refuses a change on a stale punch
+									revision: editing.entry.revision,
 									patch: {
 										tsUtc: localToUtc(editing.date, editing.time, timeZone),
-										direction: editing.direction,
 										note: editing.note.trim() || null,
 									},
 								});

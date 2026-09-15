@@ -77,4 +77,13 @@ test("an administrator adds a forgotten day and finds it in the correction list"
 	await expect(page.getByText("Nachtrag Test").first()).toBeVisible();
 	await expect(page.getByText(/durch die Verwaltung/).first()).toBeVisible();
 	await expect(page.getByLabel("Begründung").first()).toBeVisible();
+
+	// Correcting a punch is what the administration does every day, and it is exactly what was broken once (the
+	// server insists on the revision of the punch): the test therefore saves a change instead of only looking.
+	await page.getByLabel("Stempel ändern").first().click();
+	await page.getByLabel("Kommen").fill("09:30");
+	await page.getByRole("button", { name: "Speichern" }).click();
+
+	await expect(page.getByText(/09:30/).first()).toBeVisible();
+	await expect(page.getByText(/nicht akzeptiert/)).toHaveCount(0);
 });

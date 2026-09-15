@@ -16,21 +16,28 @@
 Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user, with an installable web app
 (PWA), a badge/PIN terminal, absence and vacation management, and monthly reports.
 
-> **Status: early development.** The project scaffolding (Phase 0) exists, the adapter logic follows
-> step by step. The package is therefore **not installable from npm** yet and there are no stable states.
+> **Status: work in progress.** The adapter is implemented and tested: database with migrations, domain logic
+> (time pairs, breaks, target time, overtime models, vacation, holidays), REST API with roles and permissions,
+> web app (PWA) incl. offline queue, badge/PIN terminal, RFID scan, monthly reports (PDF/XLS), live events and
+> backups with a tested restore. Still missing before the first release: the migration of existing SMALL-Time
+> data, the acceptance tests and the publication itself. The package is therefore **not installable from npm**
+> yet and there are no stable states.
 
-## Features (planned)
+## Features
+
+Everything in this table is implemented unless it is marked as open. The remaining work is listed under
+[Development](#development).
 
 | Area                | Content                                                                                                                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Punching            | Web app (PWA, installable, offline-capable with queued sync), kiosk terminal with badge/PIN, NFC deep links, QR code fallback                                                                     |
+| Punching            | Web app (PWA, installable, offline-capable with queued sync), kiosk terminal with badge/PIN, NFC deep links                                                                                       |
 | Users & rights      | Multi-user with roles (admin/manager/employee) and a full permission catalogue – all decisions server-side                                                                                        |
 | Working time        | Target time from weekly hours / employment level / working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
 | Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts                                                                                                    |
 | Reports             | Monthly PDF timesheet, XLS export, statistics, payouts/compensation                                                                                                                               |
 | ioBroker            | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations                                                                                 |
 | Data                | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states                                                                                                        |
-| Migration           | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification)                                                                                                             |
+| Migration           | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification) – **still open**                                                                                            |
 
 ## Requirements
 
@@ -40,7 +47,14 @@ Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user,
 
 ## Installation
 
-Not yet available. Once released:
+Not published yet: the adapter is neither on npm nor in the official repository list. To run the current
+state, build it locally (see [Development](#development)) and start it with the dev server:
+
+```bash
+npm ci && npm run install:pwa && npm run build:pwa && npm run build
+```
+
+Once released:
 
 ```bash
 iobroker add zeiterfassung
@@ -104,22 +118,22 @@ database backups (list, retention, "create now").
 
 ## States (overview)
 
-| State                                                | Type    | Role                | Purpose                                        |
-| ---------------------------------------------------- | ------- | ------------------- | ---------------------------------------------- |
-| `zeiterfassung.0.info.connection`                    | boolean | indicator.connected | adapter/service ready                          |
-| `zeiterfassung.0.info.lastBackup`                    | number  | value.time          | instant of the newest database backup          |
-| `zeiterfassung.0.users.<id>.displayName`             | string  | info.name           | name of the employee                           |
-| `zeiterfassung.0.users.<id>.hasOpenEntry`            | boolean | indicator.working   | employee is clocked in                         |
-| `zeiterfassung.0.users.<id>.lastPunch`               | number  | value.time          | instant of the last punch of today             |
-| `zeiterfassung.0.users.<id>.todayWorkedMinutes`      | number  | value               | minutes worked today                           |
-| `zeiterfassung.0.users.<id>.todayBalanceMinutes`     | number  | value               | balance of today in minutes                    |
-| `zeiterfassung.0.users.<id>.openConflicts`           | number  | value               | punches waiting for a decision                 |
-| `zeiterfassung.0.commands.punchUserId`               | number  | value               | employee the punch commands apply to           |
-| `zeiterfassung.0.commands.punch`                     | boolean | button              | punch in or out                                |
-| `zeiterfassung.0.commands.quickPunch`                | boolean | button              | punch with the configured quick rounding       |
-| `zeiterfassung.0.commands.closeMonth`                | string  | text                | close a month, value `YYYY-MM`                 |
-| `zeiterfassung.0.commands.recalc`                    | string  | text                | recalculate a period, `YYYY-MM` or `YYYY`      |
-| `zeiterfassung.0.commands.backup`                    | boolean | button              | write a database backup                        |
+| State                                            | Type    | Role                | Purpose                                   |
+| ------------------------------------------------ | ------- | ------------------- | ----------------------------------------- |
+| `zeiterfassung.0.info.connection`                | boolean | indicator.connected | adapter/service ready                     |
+| `zeiterfassung.0.info.lastBackup`                | number  | value.time          | instant of the newest database backup     |
+| `zeiterfassung.0.users.<id>.displayName`         | string  | info.name           | name of the employee                      |
+| `zeiterfassung.0.users.<id>.hasOpenEntry`        | boolean | indicator.working   | employee is clocked in                    |
+| `zeiterfassung.0.users.<id>.lastPunch`           | number  | value.time          | instant of the last punch of today        |
+| `zeiterfassung.0.users.<id>.todayWorkedMinutes`  | number  | value               | minutes worked today                      |
+| `zeiterfassung.0.users.<id>.todayBalanceMinutes` | number  | value               | balance of today in minutes               |
+| `zeiterfassung.0.users.<id>.openConflicts`       | number  | value               | punches waiting for a decision            |
+| `zeiterfassung.0.commands.punchUserId`           | number  | value               | employee the punch commands apply to      |
+| `zeiterfassung.0.commands.punch`                 | boolean | button              | punch in or out                           |
+| `zeiterfassung.0.commands.quickPunch`            | boolean | button              | punch with the configured quick rounding  |
+| `zeiterfassung.0.commands.closeMonth`            | string  | text                | close a month, value `YYYY-MM`            |
+| `zeiterfassung.0.commands.recalc`                | string  | text                | recalculate a period, `YYYY-MM` or `YYYY` |
+| `zeiterfassung.0.commands.backup`                | boolean | button              | write a database backup                   |
 
 Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 
@@ -163,25 +177,25 @@ tools/        clean-room and i18n verification scripts
 docs/         provenance record and translator guide
 ```
 
-| Script                     | Description                                                              |
-| -------------------------- | ------------------------------------------------------------------------ |
-| `npm run build`            | Compile the TypeScript sources                                           |
-| `npm run watch`            | Compile and watch for changes                                            |
-| `npm run install:pwa`      | Install the dependencies of the web app (`src-pwa`, own `node_modules`)  |
-| `npm run build:pwa`        | Type check and build the web app into `www/`                             |
-| `npm run dev:pwa`          | Vite dev server with `/api` proxied to the running instance              |
-| `npm run lint`             | ESLint with `@iobroker/eslint-config` (adapter and web app)              |
-| `npm run lint:pwa`         | ESLint for the web app only                                              |
-| `npm run check`            | TypeScript type check                                                    |
-| `npm run test:ts`          | Unit tests for the adapter sources                                       |
-| `npm run test:package`     | Validate `package.json` / `io-package.json`                              |
-| `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`) |
-| `npm run translate`        | Keep the 11 translation files in sync                                    |
-| `npm run check:i18n`       | Verify that all 11 languages are complete                                |
+| Script                     | Description                                                                 |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `npm run build`            | Compile the TypeScript sources                                              |
+| `npm run watch`            | Compile and watch for changes                                               |
+| `npm run install:pwa`      | Install the dependencies of the web app (`src-pwa`, own `node_modules`)     |
+| `npm run build:pwa`        | Type check and build the web app into `www/`                                |
+| `npm run dev:pwa`          | Vite dev server with `/api` proxied to the running instance                 |
+| `npm run lint`             | ESLint with `@iobroker/eslint-config` (adapter and web app)                 |
+| `npm run lint:pwa`         | ESLint for the web app only                                                 |
+| `npm run check`            | TypeScript type check                                                       |
+| `npm run test:ts`          | Unit tests for the adapter sources                                          |
+| `npm run test:package`     | Validate `package.json` / `io-package.json`                                 |
+| `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`)    |
+| `npm run translate`        | Keep the 11 translation files in sync                                       |
+| `npm run check:i18n`       | Verify that all 11 languages are complete                                   |
 | `npm run check:adapter`    | Local pre-check of the ioBroker adapter rules (see `docs/adapter-check.md`) |
-| `npm run cleanroom`        | Verify that no source was copied from the legacy project                 |
-| `npm run release`          | Create a release (version, changelog, tag)                               |
-| `dev-server watch`         | Run and debug the adapter locally                                        |
+| `npm run cleanroom`        | Verify that no source was copied from the legacy project                    |
+| `npm run release`          | Create a release (version, changelog, tag)                                  |
+| `dev-server watch`         | Run and debug the adapter locally                                           |
 
 The web app is built into `www/`, which the adapter serves on its own port (`/` = app, `/api` = REST). Both
 steps are needed for a release:
@@ -194,6 +208,16 @@ npm run build
 
 `node tools/make-pwa-icons.mjs` regenerates the app icons (checked in, no image library required).
 
+### Still open
+
+- **Migration** of existing SMALL-Time data (specification 2.9): parsers, re-hashing of legacy passwords,
+  dry-run report and the golden comparison against `Timetable/<year>` — requires a real `Data` directory.
+- **Acceptance:** end-to-end tests (Playwright), load smoke test, documented security verification, review of
+  the layouts in all 11 languages and PDF rendering for `ru`, `uk` and `zh-cn` with a Unicode font.
+- **Publication:** npm package, entry in `ioBroker.repositories`, official adapter checker, first release.
+- **Smaller gaps:** statistics screen in the web app, role change / terminal management / settings in the admin
+  area, and the nine web app language files that still contain English texts (structure is complete).
+
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
 implementation; no code, comments or identifiers from the legacy project; state roles, types and access
 flags must follow the official role rules; secrets only via `encryptedNative`/`protectedNative`.
@@ -203,7 +227,7 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ### **WORK IN PROGRESS**
 
 - (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin
-  configuration fields, CI workflow (@iobroker/testing, Node 20/22/24), clean-room and i18n checks
+  configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), clean-room and i18n checks
 
 ### 0.0.1
 
@@ -216,13 +240,10 @@ determined from a running SMALL-Time installation (SmallTime v0.9.205, © IT-Mas
 existing data can be reused. **No source code** was taken from that project. Details and the verification
 record: [`docs/provenance.md`](docs/provenance.md).
 
-## Kurzfassung (Deutsch)
+## German summary
 
-Zeiterfassung für ioBroker: Stempeln über die installierbare Web-App (PWA) oder ein Kiosk-Terminal mit
-Badge/PIN, Rollen und Rechte, Soll-/Pausen-/Überstunden- und Ferienregeln, Monatsberichte (PDF/XLS),
-Abwesenheiten sowie Veröffentlichung von Aggregaten als ioBroker-States – alle Daten lokal in SQLite.
-Eigenständige Neuimplementierung unter MIT-Lizenz; der Import bestehender SMALL-Time-Daten ist vorgesehen.
-**Status:** frühe Entwicklungsphase, noch keine installierbare Version.
+A short summary in German (and why the README itself is English-only) is in
+[`docs/kurzfassung-de.md`](docs/kurzfassung-de.md).
 
 ## License
 
@@ -247,4 +268,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-

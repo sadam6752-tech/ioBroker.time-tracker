@@ -1,24 +1,42 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: "/"
-    schedule:
-      interval: monthly
-      day: 24
-      time: "00:05"
-      timezone: Europe/Berlin
-    open-pull-requests-limit: 5
-    assignees:
-      - sadam6752-tech
-    versioning-strategy: increase
+    - package-ecosystem: npm
+      directory: "/"
+      schedule:
+          interval: monthly
+          time: "00:05"
+          timezone: Europe/Berlin
+      open-pull-requests-limit: 15
+      # wait a week before an update is proposed (supply chain risk)
+      cooldown:
+          default: 7
+      assignees:
+          - sadam6752-tech
+      versioning-strategy: increase
+      ignore:
+          # major jumps of @types/node must match the minimum Node version of package.json -> engines.node
+          - dependency-name: "@types/node"
+            update-types:
+                - "version-update:semver-major"
 
-  - package-ecosystem: github-actions
-    directory: "/"
-    schedule:
-      interval: monthly
-      day: 24
-      time: "00:05"
-      timezone: Europe/Berlin
-    open-pull-requests-limit: 5
-    assignees:
-      - sadam6752-tech
+    - package-ecosystem: npm
+      directory: "/src-pwa"
+      schedule:
+          interval: monthly
+          time: "00:05"
+          timezone: Europe/Berlin
+      open-pull-requests-limit: 15
+      cooldown:
+          default: 7
+      assignees:
+          - sadam6752-tech
+
+    - package-ecosystem: github-actions
+      directory: "/"
+      schedule:
+          interval: monthly
+          time: "00:05"
+          timezone: Europe/Berlin
+      open-pull-requests-limit: 15
+      assignees:
+          - sadam6752-tech

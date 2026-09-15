@@ -47,11 +47,14 @@ describe("web app delivery", () => {
 		}
 	});
 
-	it("carries the logo in the SVG favicon", () => {
+	it("carries the logo as vector in the SVG favicon", () => {
 		const favicon = fs.readFileSync(path.join(www, "favicon.svg"), "utf8");
 		expect(favicon).to.contain("<svg");
-		// the master logo is a raster image, so the SVG carries it as an embedded PNG
-		expect(favicon).to.contain("data:image/png;base64,");
+		expect(favicon).to.contain("<path ");
+		// the viewBox is computed from the drawing, so a tab shows the whole mark and never a clipped rim
+		expect(favicon).to.match(/viewBox="-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+"/);
+		// vector, not a raster wrapped into an SVG
+		expect(favicon).to.not.contain("<image");
 	});
 
 	it("declares a maskable icon and ships it in the size the manifest promises", () => {

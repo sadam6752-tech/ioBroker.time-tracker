@@ -6,10 +6,14 @@
  *
  *   node tools/make-pwa-icons.mjs
  *
- * Written are `src-pwa/public/icon-192.png`, `icon-512.png` and `favicon.svg`. The master is
- * `admin/src/zeiterfassung.png` (512x512, 8 bit RGBA, not interlaced): part of the repository, but not of the
- * npm package (the `files` rule of `package.json` excludes `admin/src`). PNG is read and written by hand
- * (zlib and CRC32 from Node), which keeps the repository free of image libraries and binary tooling.
+ * Written are `src-pwa/public/icon-192.png`, `icon-512.png` and `favicon.svg`. There are two masters, both
+ * part of the repository but not of the npm package (the `files` rule of `package.json` excludes
+ * `admin/src`):
+ *
+ * - `admin/src/zeiterfassung.png` (512x512, 8 bit RGBA, not interlaced) for the two icons. PNG is read and
+ *   written by hand (zlib and CRC32 from Node), which keeps the repository free of image libraries.
+ * - `admin/src/zeiterfassung.svg` (a tracing of the logo) for the favicon: the drawing is vector, so a tab
+ *   keeps it sharp at any size. Its `viewBox` is computed from the drawing, see `writeFavicon`.
  *
  * The layout follows two requirements of the manifest:
  *
@@ -28,6 +32,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const masterPath = join(here, "..", "admin", "src", "zeiterfassung.png");
+const vectorPath = join(here, "..", "admin", "src", "zeiterfassung.svg");
 const targetDir = join(here, "..", "src-pwa", "public");
 
 /** Edge length of the visible mark in relation to the icon (the rest is margin). */
@@ -36,8 +41,8 @@ const MARK_RATIO = 0.72;
 const ALPHA_THRESHOLD = 8;
 const BACKGROUND = [255, 255, 255];
 const SIZES = [192, 512];
-/** Edge length of the raster embedded in `favicon.svg` (browsers draw tabs at 16-32 px). */
-const FAVICON_SIZE = 64;
+/** Margin around the drawing in `favicon.svg`, in relation to the drawing (it needs no white plate). */
+const FAVICON_MARGIN = 0.05;
 
 /** Bytes per pixel of the expected master format (RGBA, 8 bit). */
 const BPP = 4;
@@ -328,29 +333,198 @@ function writeIcon(size, pixels) {
 }
 
 /**
- * Writes `favicon.svg`.
+ * Collects the points of a path (absolute, in user units), curve control points included.
  *
- * The master is a raster image (a blue disc with the logo drawing, 4171 colours), so there is no vector
- * source to write out. The SVG therefore carries the icon as an embedded PNG — same layout as the app icons,
- * which keeps the tab icon and the installed app identical. `index.html` keeps a PNG link as fallback.
+ * @param {string} d - value of the `d` attribute
+ * @returns {number[][]} pairs of coordinates
+ */
+function pathPoints(d) {
+	const tokens = d.match(/[A-Za-z]|-?\d*\.?\d+/g) ?? [];
+	const points = [];
+	let command = "";
+	let x = 0;
+	let y = 0;
+	let index = 0;
+
+	/** Reads one coordinate of the path data. */
+	const read = () => Number(tokens[index++]);
+
+	while (index < tokens.length) {
+		if (/[A-Za-z]/.test(tokens[index])) {
+			command = tokens[index++];
+		}
+		if (command === "") {
+			throw new Error(`path data without a command in ${vectorPath}`);
+		}
+
+		// a relative command counts from the current point, an absolute one from the origin
+		const originX = command === command.toLowerCase() ? x : 0;
+		const originY = command === command.toLowerCase() ? y : 0;
+		/** Reads a point and remembers it for the box. */
+		const take = () => {
+			const point = [originX + read(), originY + read()];
+			points.push(point);
+			return point;
+		};
+
+		switch (command.toUpperCase()) {
+			case "M":
+			case "L":
+			case "T": {
+				[x, y] = take();
+				if (command === "M") {
+					command = "L";
+				} else if (command === "m") {
+					command = "l";
+				}
+				break;
+			}
+			case "H": {
+				x = originX + read();
+				break;
+			}
+			case "V": {
+				y = originY + read();
+				break;
+			}
+			case "C": {
+				take();
+				take();
+				[x, y] = take();
+				break;
+			}
+			case "S":
+			case "Q": {
+				take();
+				[x, y] = take();
+				break;
+			}
+			case "A": {
+				read();
+				read();
+				read();
+				read();
+				read();
+				[x, y] = take();
+				break;
+			}
+			default: {
+				if (command !== "Z" && command !== "z") {
+					throw new Error(`unsupported SVG path command "${command}" in ${vectorPath}`);
+				}
+			}
+		}
+	}
+
+	return points;
+}
+
+/**
+ * Reads the transform of an element as scale and offset.
  *
- * @param {Buffer} pixels - pixels of the master
- * @param {number} sourceWidth - width of the master
- * @param {{ x: number, y: number, width: number, height: number }} box - visible box inside the master
+ * Rotation and skew are refused instead of being ignored: a wrong box would clip the drawing without anybody
+ * noticing, and the logo masters only use `translate`/`scale`/`matrix`.
+ *
+ * @param {string} transform - value of the `transform` attribute
+ * @returns {{ scaleX: number, scaleY: number, moveX: number, moveY: number }} the transform
+ */
+function svgTransform(transform) {
+	let scaleX = 1;
+	let scaleY = 1;
+	let moveX = 0;
+	let moveY = 0;
+
+	for (const part of transform.split(")").filter(Boolean)) {
+		const [name, values] = part.split("(");
+		const args = (values ?? "")
+			.split(/[\s,]+/)
+			.filter(Boolean)
+			.map(Number);
+		if (name.trim() === "translate") {
+			moveX += args[0];
+			moveY += args[1] ?? 0;
+		} else if (name.trim() === "scale") {
+			scaleX *= args[0];
+			scaleY *= args[1] ?? args[0];
+		} else if (name.trim() === "matrix" && args[1] === 0 && args[2] === 0) {
+			scaleX *= args[0];
+			scaleY *= args[3];
+			moveX += args[4];
+			moveY += args[5];
+		} else {
+			throw new Error(`unsupported SVG transform "${transform}" in ${vectorPath}`);
+		}
+	}
+
+	return { scaleX, scaleY, moveX, moveY };
+}
+
+/**
+ * Computes the box around the drawing of an SVG.
+ *
+ * @param {string} svg - content of the SVG file
+ * @returns {{ x: number, y: number, width: number, height: number }} box around the drawing
+ */
+function svgDrawingBox(svg) {
+	const paths = [...svg.matchAll(/<path\b([^>]*)>/g)];
+	if (paths.length === 0) {
+		throw new Error(`${vectorPath} has no <path> elements`);
+	}
+
+	let minX = Infinity;
+	let minY = Infinity;
+	let maxX = -Infinity;
+	let maxY = -Infinity;
+
+	for (const [, attributes] of paths) {
+		const transform = svgTransform(/transform="([^"]*)"/.exec(attributes)?.[1] ?? "");
+		for (const [pathX, pathY] of pathPoints(/d="([^"]+)"/.exec(attributes)?.[1] ?? "")) {
+			const x = pathX * transform.scaleX + transform.moveX;
+			const y = pathY * transform.scaleY + transform.moveY;
+			minX = Math.min(minX, x);
+			maxX = Math.max(maxX, x);
+			minY = Math.min(minY, y);
+			maxY = Math.max(maxY, y);
+		}
+	}
+
+	return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * Writes `favicon.svg` from the vector master.
+ *
+ * The master is a tracing of the logo (VTracer, 435x435, 9 flat colours). It carries no `viewBox` and its
+ * disc sticks out over the edge of the canvas, so the viewBox is **computed from the drawing**: a browser
+ * would clip the overflowing parts, and that cut would sit right at the rim of the mark. `width`/`height` are
+ * dropped for the same reason — without them the SVG follows every size, from 16 px in a tab to a large
+ * bookmark tile. The paths themselves are written through unchanged.
+ *
  * @returns {void}
  */
-function writeFavicon(pixels, sourceWidth, box) {
-	const png = toPng(FAVICON_SIZE, draw(pixels, sourceWidth, box, FAVICON_SIZE));
+function writeFavicon() {
+	const master = readFileSync(vectorPath, "utf8");
+	const box = svgDrawingBox(master);
+	const margin = Math.max(box.width, box.height) * FAVICON_MARGIN;
+	const side = Math.max(box.width, box.height) + margin * 2;
+	// a square viewBox, centred on the drawing
+	const x = box.x + box.width / 2 - side / 2;
+	const y = box.y + box.height / 2 - side / 2;
+	const round = value => Math.round(value * 100) / 100;
+
 	const svg = [
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${FAVICON_SIZE} ${FAVICON_SIZE}" role="img" aria-label="Zeiterfassung">`,
-		`\t<image width="${FAVICON_SIZE}" height="${FAVICON_SIZE}" href="data:image/png;base64,${png.toString("base64")}"/>`,
+		"<!-- Generated by tools/make-pwa-icons.mjs from admin/src/zeiterfassung.svg, do not edit. -->",
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${round(x)} ${round(y)} ${round(side)} ${round(side)}" role="img" aria-label="Zeiterfassung">`,
+		...[...master.matchAll(/<path\b[^>]*>/g)].map(match => `\t${match[0]}`),
 		"</svg>",
 		"",
 	].join("\n");
 
 	const path = join(targetDir, "favicon.svg");
 	writeFileSync(path, svg, "utf8");
-	console.log(`wrote ${path} (${svg.length} bytes, embedded ${FAVICON_SIZE} px PNG)`);
+	console.log(
+		`wrote ${path} (${svg.length} bytes, drawing ${round(box.width)}x${round(box.height)} at ${round(box.x)},${round(box.y)})`,
+	);
 }
 
 const master = readPng(masterPath);
@@ -361,4 +535,4 @@ for (const size of SIZES) {
 	writeIcon(size, draw(master.pixels, master.width, box, size));
 }
 
-writeFavicon(master.pixels, master.width, box);
+writeFavicon();

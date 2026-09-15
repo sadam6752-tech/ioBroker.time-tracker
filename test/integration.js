@@ -213,11 +213,11 @@ tests.integration(path.join(__dirname, ".."), {
 
 				await waitForLog(new RegExp(`presence users\\.1\\.present: .*punched ${want ? "in" : "out"}`));
 
-				// The published state of the day is deliberately not asserted here: every punch of this suite falls
-				// into the same minute and the entry repository rounds `tsUtc` to the minute, so a pair within one
-				// minute shares its timestamp and the day aggregation does not count it as a pair. `hasOpenEntry`
-				// therefore stays "open". That is a finding of its own and is tracked outside this test; the switch
-				// itself is covered above and by the unit tests.
+				// The published state of the day is deliberately not asserted here: the punches of this suite follow
+				// each other within seconds and `buildDayPunches` treats a punch closer than 30 seconds to the
+				// previous one as a double scan, so the new punch is not counted by the day and `hasOpenEntry` keeps
+				// its previous value. That 30 second window is a rule of the adapter (it keeps a reader that fires
+				// twice harmless), so it is documented here instead of being worked around.
 				const published = await harness.states.getState("zeiterfassung.0.users.1.present");
 				expect(published, "the presence switch exists and was written back").to.not.equal(null);
 			});

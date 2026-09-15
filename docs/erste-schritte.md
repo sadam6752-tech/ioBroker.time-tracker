@@ -83,6 +83,10 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   stempelt aus — gedacht für einen Fingerabdruck-Reader, eine RFID-Brücke, ein Dashboard oder ein Skript. Der
   Schreibvorgang ist idempotent (ein zweites `true` erzeugt keinen zweiten Stempel) und erscheint als normaler
   Stempel mit der Notiz `state.present`. `users.<id>.hasOpenEntry` bleibt die reine Anzeige dazu.
+- **Dublettenschutz (wichtig für Lesegeräte):** zwei Stempel innerhalb von **30 Sekunden** gelten als Doppelscan —
+  der zweite wird nicht gezählt. Ein Fingerabdruck- oder RFID-Leser, der mehrfach auslöst, ist dadurch harmlos; für
+  „sofort wieder ausstempeln“ muss der Abstand größer als 30 Sekunden sein. Das gilt für alle Wege (Web-App, Kiosk,
+  Badge, ioBroker-Objekt).
 - Offline-Probe: WLAN trennen, stempeln, wieder verbinden — der Stempel wird nachgereicht (`Sync`-Ansicht).
 - Verwaltung → **Backups**: „create now" drücken; der Zustand `zeiterfassung.0.info.lastBackup` springt an.
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des

@@ -236,17 +236,18 @@ async function main() {
 	const reportMonth = new Date().getMonth() + 1;
 
 	// 5. Stempeln: hinein, hinaus, Schnellstempel — und die Auswertung dazu
+	const beforePunch = await call(base, "GET", "/punch/status", { token: employeeToken });
 	const first = await call(base, "POST", "/punch", { body: { note: "first-run-check #1" }, token: employeeToken });
-	expectStatus("Stempeln (kommen)", first, [200, 201]);
+	expectStatus("Stempeln (erster Stempel dieses Laufs)", first, [200, 201]);
 	const opened = await call(base, "GET", "/punch/status", { token: employeeToken });
 	step(
-		"Tagesstatus nach dem Kommen",
-		opened.body?.hasOpenEntry === true,
-		`hasOpenEntry=${opened.body?.hasOpenEntry}`,
+		"Tagesstatus wechselt mit dem Stempel",
+		opened.body?.hasOpenEntry === !beforePunch.body?.hasOpenEntry,
+		`vorher offen=${beforePunch.body?.hasOpenEntry}, Richtung ${beforePunch.body?.nextDirection}, nachher offen=${opened.body?.hasOpenEntry}`,
 	);
 
 	const second = await call(base, "POST", "/punch", { body: { note: "first-run-check #2" }, token: employeeToken });
-	expectStatus("Stempeln (gehen)", second, [200, 201]);
+	expectStatus("Stempeln (zweiter Stempel dieses Laufs)", second, [200, 201]);
 
 	const quick = await call(base, "POST", "/punch/quick", {
 		body: { note: "first-run-check #3" },

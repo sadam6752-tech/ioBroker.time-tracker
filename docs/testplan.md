@@ -128,7 +128,7 @@ verbindlich zu bestätigen.
 
 | Lücke | Auswirkung beim Test |
 | --- | --- |
-| **Import der Altdaten** (Phase 9) | Der Test läuft mit frischen Testdaten. Altdaten können noch **nicht** übernommen werden. |
+| **Import der Altdaten** (Phase 9) | Implementiert (`commands.import` bzw. `POST /api/import/run`, Dry-Run → Commit → Idempotenz). Für den verbindlichen Golden-Abgleich braucht T18 eine **echte Kopie des `Data`-Verzeichnisses** des Altsystems; mit dem synthetischen Fixture ist er nur eingeschränkt aussagekräftig. |
 | Statistik-Ansicht in der Web-App | Die API `/reports/statistics` liefert Zahlen, die Oberfläche zeigt sie noch nicht. |
 | Adminbereich-Ausbau | Rollenwechsel pro Zeile, Einstellungen, Tags, Feiertage und der Import-Report laufen weiterhin über ioBroker-Objekte bzw. die API; die PWA-Verwaltung deckt Benutzer, **Terminals** und Backups ab. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |

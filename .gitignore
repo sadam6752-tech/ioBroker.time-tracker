@@ -39,16 +39,18 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # ============================================================
-# Laufzeitdaten / Datenbank
+# Laufzeitdaten / Datenbank (nur im Wurzelverzeichnis: die
+# Legacy-Fixtures unter fixtures/smalltime/Data/ bleiben im Git)
 # ============================================================
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
-iobroker-data/
-.admin/
-data/
-logs/
+/iobroker-data/
+/data/
+/logs/
+/.admin/
 *.log
+!fixtures/smalltime/Data/
 
 # ============================================================
 # Tests / Coverage

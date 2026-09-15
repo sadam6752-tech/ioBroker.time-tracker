@@ -5,7 +5,7 @@
  * and trigger time tracking without speaking to the REST API:
  *
  * ```
- * users.<userId>.displayName / hasOpenEntry / lastPunch / todayWorkedMinutes / todayBalanceMinutes
+ * users.<userId>.displayName / present / hasOpenEntry / lastPunch / todayWorkedMinutes / todayBalanceMinutes
  * users.<userId>.openConflicts
  * commands.punchUserId / punch / quickPunch / closeMonth / recalc
  * ```
@@ -167,6 +167,7 @@ export function readUserSnapshot(args: {
 export async function publishUserSnapshot(port: StatePort, snapshot: UserSnapshot): Promise<void> {
 	const id = `users.${snapshot.userId}`;
 	await port.setState(`${id}.displayName`, snapshot.displayName, true);
+	await port.setState(`${id}.present`, snapshot.hasOpenEntry, true);
 	await port.setState(`${id}.hasOpenEntry`, snapshot.hasOpenEntry, true);
 	await port.setState(`${id}.lastPunch`, snapshot.lastPunchUtc ?? 0, true);
 	await port.setState(`${id}.todayWorkedMinutes`, snapshot.workedMinutes, true);
@@ -222,6 +223,17 @@ export async function createUserChannel(port: StatePort, userId: number): Promis
 	const id = `users.${userId}`;
 	await port.setObjectNotExists(id, channelObject({ en: "Employee", de: "Mitarbeiter" }));
 	await port.setObjectNotExists(`${id}.displayName`, stateObject({ en: "Name", de: "Name" }, "string", "info.name"));
+	// the writable twin of `hasOpenEntry`: a script, a fingerprint reader or a dashboard writes it to say that
+	// somebody arrived (`true`) or left (`false`) — see `presence.ts` for what the adapter does with it
+	await port.setObjectNotExists(
+		`${id}.present`,
+		stateObject(
+			{ en: "Present (working time is running)", de: "Anwesenheit (Arbeitszeit läuft)" },
+			"boolean",
+			"switch",
+			{ write: true },
+		),
+	);
 	await port.setObjectNotExists(
 		`${id}.hasOpenEntry`,
 		stateObject({ en: "Punched in", de: "Eingestempelt" }, "boolean", "indicator.working"),

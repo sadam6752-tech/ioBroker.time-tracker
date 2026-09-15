@@ -78,6 +78,11 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   legt den Mitarbeiter `pruefung` samt Stempeln und PIN an — für saubere Daten danach in der Verwaltung löschen.
   Was es bewusst auslässt (weil es eine Einstellung oder echte Daten braucht), sagt es am Ende selbst: Kiosk-
   Terminal, Ausweis-Link und Altdaten-Import prüft der Testplan von Hand.
+- **Anwesenheit aus ioBroker steuern:** jeder Mitarbeiter hat den schreibbaren State
+  `zeiterfassung.0.users.<id>.present` (Rolle `switch`). `true` stempelt ein (bezahlte Arbeitszeit läuft), `false`
+  stempelt aus — gedacht für einen Fingerabdruck-Reader, eine RFID-Brücke, ein Dashboard oder ein Skript. Der
+  Schreibvorgang ist idempotent (ein zweites `true` erzeugt keinen zweiten Stempel) und erscheint als normaler
+  Stempel mit der Notiz `state.present`. `users.<id>.hasOpenEntry` bleibt die reine Anzeige dazu.
 - Offline-Probe: WLAN trennen, stempeln, wieder verbinden — der Stempel wird nachgereicht (`Sync`-Ansicht).
 - Verwaltung → **Backups**: „create now" drücken; der Zustand `zeiterfassung.0.info.lastBackup` springt an.
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des

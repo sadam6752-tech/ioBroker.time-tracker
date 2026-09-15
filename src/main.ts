@@ -28,6 +28,7 @@ import { createClosingService, type ClosingService } from "./lib/services/closin
 import { createBackupService, type BackupService } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
+import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
 import { handleCommand } from "./lib/adapter/commands";
 import { runLegacyImport, type LegacyImportOptions, type LegacyImportReport } from "./lib/legacy/import";
 import { createApi } from "./lib/web/api";
@@ -427,6 +428,8 @@ class Zeiterfassung extends utils.Adapter {
 			await createCommandStates(this);
 			await createInfoStates(this);
 			await this.subscribeStatesAsync("commands.*");
+			// the presence switch of every employee: written by a script, a fingerprint reader or a dashboard
+			await this.subscribeStatesAsync(`users.*.${PRESENCE_SUFFIX}`);
 			this.log.debug("command states ready");
 		} catch (error) {
 			this.log.warn(`command states could not be created: ${(error as Error).message}`);
@@ -476,6 +479,43 @@ class Zeiterfassung extends utils.Adapter {
 			userId: null,
 			data: { backup: name },
 		});
+	}
+
+	/**
+	 * Applies a write on the presence state of an employee.
+	 *
+	 * `users.<id>.present` is the writable twin of `users.<id>.hasOpenEntry`: `true` opens an entry, `false` closes
+	 * it. Afterwards the figures of all employees are republished, so a dashboard sees the new state right away.
+	 *
+	 * @param id - state id without the instance prefix
+	 * @param value - value written by the user or a script
+	 */
+	private async runPresence(id: string, value: ioBroker.StateValue): Promise<void> {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+
+		try {
+			const result = handlePresenceState(
+				{
+					entries: services.entries,
+					users: services.users,
+					aggregation: services.aggregation,
+				},
+				id,
+				value,
+			);
+			if (result.ok) {
+				this.log.info(`presence ${id}: ${result.message}`);
+			} else {
+				// a value the state does not understand, an unknown employee: worth a warning, not an error
+				this.log.warn(`presence ${id}: ${result.message}`);
+			}
+			await this.refreshStates();
+		} catch (error) {
+			this.log.error(`Error in runPresence for ${id}: ${(error as Error).message}`);
+		}
 	}
 
 	/**
@@ -612,6 +652,10 @@ class Zeiterfassung extends utils.Adapter {
 			const localId = id.startsWith(prefix) ? id.slice(prefix.length) : id;
 			if (localId.startsWith("commands.")) {
 				void this.runCommand(localId, state.val);
+				return;
+			}
+			if (parsePresenceStateId(localId) !== null) {
+				void this.runPresence(localId, state.val);
 				return;
 			}
 

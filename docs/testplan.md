@@ -231,4 +231,9 @@ New-Item -ItemType Junction -Path www -Target <Repository>\www
 
 `.dev-server/` und `iobroker.*.tgz` sind bereits in `.gitignore` abgedeckt.
 
+> **Beim Testen auf den Port achten:** `npm run test:integration` startet eine eigene ioBroker-Instanz und bindet
+> denselben Port wie der Adapter (Standard `8082`). Läuft die eigene Instanz dabei, kann die Testinstanz ihre API
+> nicht öffnen und die Prüfung scheitert mit „starts the HTTP API on the configured port“ — die eigene Instanz also
+> vorher stoppen (`iobroker.js stop zeiterfassung.0`).
+
 

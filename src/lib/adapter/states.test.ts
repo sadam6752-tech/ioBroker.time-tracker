@@ -24,10 +24,12 @@ import { createBackupService } from "../services/backup";
 import { createClosingService, type ClosingService } from "../services/closing";
 import { createSyncService, type SyncService } from "../services/sync";
 import { handleCommand, type CommandDeps } from "./commands";
+import { handlePresenceState, parsePresenceStateId, readPresenceValue, type PresenceDeps } from "./presence";
 import {
 	COMMAND_IDS,
 	createCommandStates,
 	createInfoStates,
+	createUserChannel,
 	publishAllUserStates,
 	publishUserSnapshot,
 	readUserSnapshot,
@@ -264,6 +266,87 @@ describe("adapter states and commands", () => {
 			} finally {
 				fs.rmSync(dir, { recursive: true, force: true });
 			}
+		});
+	});
+
+	describe("presence state", () => {
+		/**
+		 * Data sources of the presence handler.
+		 *
+		 * @returns the handler arguments
+		 */
+		const presenceDeps = (): PresenceDeps => ({ entries, users, aggregation, now: () => now });
+
+		it("recognises its own state id and nothing else", () => {
+			expect(parsePresenceStateId(`users.${annaId}.present`)).to.equal(annaId);
+			expect(parsePresenceStateId("users.7.hasOpenEntry")).to.equal(null);
+			expect(parsePresenceStateId(COMMAND_IDS.punch)).to.equal(null);
+		});
+
+		it("understands the values dashboards and scripts write", () => {
+			expect(readPresenceValue(true)).to.equal(true);
+			expect(readPresenceValue(1)).to.equal(true);
+			expect(readPresenceValue("true")).to.equal(true);
+			expect(readPresenceValue(false)).to.equal(false);
+			expect(readPresenceValue(0)).to.equal(false);
+			expect(readPresenceValue("OFF")).to.equal(false);
+			expect(readPresenceValue("vielleicht")).to.equal(null);
+		});
+
+		it("opens and closes an entry through the state", () => {
+			const arrived = handlePresenceState(presenceDeps(), `users.${annaId}.present`, true);
+
+			expect(arrived.ok).to.equal(true);
+			expect(arrived.changed).to.equal(true);
+			expect(arrived.present).to.equal(true);
+			const stored = entries.listByRange(annaId, "1970-01-01", "1970-12-31");
+			expect(stored).to.have.lengthOf(1);
+			expect(stored[0]).to.include({ source: "api", note: "state.present", direction: "in" });
+
+			// a real day has different instants for coming and going; the repository rounds a punch to the minute,
+			// so two writes within the same minute would share a timestamp and the pair would not be counted
+			now += 120;
+			const left = handlePresenceState(presenceDeps(), `users.${annaId}.present`, false);
+			expect(left.changed).to.equal(true);
+			// the day state is checked below with the details attached, so a failure names the cause
+			expect(entries.listByRange(annaId, "1970-01-01", "1970-12-31")).to.have.lengthOf(2);
+			// the write path reports the day as it recalculates it — that is what the state tree publishes
+			expect(left.present, "the day of the employee is closed after leaving").to.equal(false);
+			expect(entries.listByDate(annaId, left.localDate ?? "")).to.have.lengthOf(2);
+		});
+
+		it("writes nothing when the reader fires twice", () => {
+			handlePresenceState(presenceDeps(), `users.${annaId}.present`, true);
+			const again = handlePresenceState(presenceDeps(), `users.${annaId}.present`, true);
+
+			expect(again.ok).to.equal(true);
+			expect(again.changed).to.equal(false);
+			expect(again.message).to.contain("already present");
+			expect(entries.listByRange(annaId, "1970-01-01", "1970-12-31")).to.have.lengthOf(1);
+		});
+
+		it("refuses unknown employees and unusable values", () => {
+			const unknown = handlePresenceState(presenceDeps(), "users.999.present", true);
+			expect(unknown.ok).to.equal(false);
+			expect(unknown.message).to.contain("does not exist");
+
+			const broken = handlePresenceState(presenceDeps(), `users.${annaId}.present`, "vielleicht");
+			expect(broken.ok).to.equal(false);
+			expect(broken.message).to.contain("write true or false");
+			expect(entries.listByRange(annaId, "1970-01-01", "1970-12-31")).to.deep.equal([]);
+		});
+
+		it("creates the presence switch as a writable state and publishes it", async () => {
+			await createUserChannel(recorder, annaId);
+			const common = (recorder.objects.get(`users.${annaId}.present`) as ioBroker.StateObject | undefined)
+				?.common;
+			expect(common).to.include({ type: "boolean", role: "switch", write: true });
+			expect(common?.read ?? true).to.equal(true);
+
+			const snapshot = readUserSnapshot({ aggregation, users, sync, userId: annaId, now });
+			expect(snapshot).to.not.equal(null);
+			await publishUserSnapshot(recorder, snapshot as NonNullable<typeof snapshot>);
+			expect(recorder.values.get(`users.${annaId}.present`)).to.equal(snapshot?.hasOpenEntry);
 		});
 	});
 });

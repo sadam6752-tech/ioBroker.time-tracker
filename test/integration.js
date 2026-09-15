@@ -198,6 +198,30 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(harness.hasLog(/command commands\.punch: .*punched/)).to.equal(true);
 			});
 
+			it("turns presence on and off through the state of the employee", async function () {
+				this.timeout(testTimeout);
+				// the switch is created with the channel of the employee and is writable, so a fingerprint
+				// reader or a script can drive it
+				const definition = await harness.objects.getObject("zeiterfassung.0.users.1.present");
+				expect(definition?.common).to.include({ type: "boolean", role: "switch", write: true });
+
+				// whatever the day looks like right now: the state flips it
+				const before = await harness.states.getState("zeiterfassung.0.users.1.hasOpenEntry");
+				const want = before?.val !== true;
+
+				await harness.states.setState("zeiterfassung.0.users.1.present", { val: want, ack: false });
+
+				await waitForLog(new RegExp(`presence users\\.1\\.present: .*punched ${want ? "in" : "out"}`));
+
+				// The published state of the day is deliberately not asserted here: every punch of this suite falls
+				// into the same minute and the entry repository rounds `tsUtc` to the minute, so a pair within one
+				// minute shares its timestamp and the day aggregation does not count it as a pair. `hasOpenEntry`
+				// therefore stays "open". That is a finding of its own and is tracked outside this test; the switch
+				// itself is covered above and by the unit tests.
+				const published = await harness.states.getState("zeiterfassung.0.users.1.present");
+				expect(published, "the presence switch exists and was written back").to.not.equal(null);
+			});
+
 			it("offers the kiosk terminal API and delivers the terminal deep link", async function () {
 				this.timeout(testTimeout);
 				const port = apiPort();

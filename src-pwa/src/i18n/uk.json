@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Запишіть це посилання на мітку або відкрийте його на телефоні:",
 	"admin.tag.delete": "Видалити",
 	"admin.tag.empty": "Перепустку ще не створено.",
-	"admin.user.roles": "Ролі"
+	"admin.user.roles": "Ролі",
+	"nav.statistics": "Статистика",
+	"statistics.from": "З",
+	"statistics.to": "До",
+	"statistics.employee": "Працівник",
+	"statistics.worked": "Відпрацьовано",
+	"statistics.target": "План",
+	"statistics.balance": "Баланс",
+	"statistics.openDays": "Відкриті дні",
+	"statistics.totals": "Усі працівники",
+	"scan.title": "Перепустка",
+	"scan.done": "Відмітку для {{name}} о {{time}}",
+	"scan.failed": "Перепустку не вдалося використати: {{reason}}"
 }

@@ -173,6 +173,10 @@ export interface ApiClient {
 	}): Promise<{ tag: RfidTagRecord; url: string }>;
 	/** Deletes a tag */
 	deleteTag(id: number): Promise<void>;
+	/** Figures of a date range, per employee and in total */
+	statistics(from: string, to: string, userId?: number): Promise<StatisticsResult>;
+	/** Redeems a scanned badge link (public, no session needed) */
+	scanTag(token: string): Promise<ScanResult>;
 	/** Starts a legacy import run */
 	runImport(input: {
 		baseDir?: string;
@@ -341,6 +345,44 @@ export interface RfidTagRecord {
 	expiresAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
+}
+
+/** One employee row of the statistics (`GET /reports/statistics`). */
+export interface StatisticsRow {
+	/** Employee id */
+	userId: number;
+	/** Shown name */
+	displayName: string;
+	/** Minutes worked in the range */
+	workedMin: number;
+	/** Target minutes of the range */
+	targetMin: number;
+	/** Balance in minutes (worked minus target) */
+	balanceMin: number;
+	/** Days of the range that are still open */
+	openDays: number;
+}
+
+/** Result of the statistics (`GET /reports/statistics`). */
+export interface StatisticsResult {
+	/** First day of the range */
+	from: string;
+	/** Last day of the range */
+	to: string;
+	/** One row per employee */
+	users: StatisticsRow[];
+	/** Sum over all shown employees */
+	totals: { workedMin: number; targetMin: number; balanceMin: number; openDays: number };
+}
+
+/** Result of a scanned badge (`POST /rfid/scan`). */
+export interface ScanResult {
+	/** Employee the punch belongs to */
+	user?: { id: number; displayName: string };
+	/** The stored punch */
+	entry?: { tsUtc: number; direction: string; localDate: string };
+	/** Figures of that day */
+	day?: { workedMin: number; targetMin: number; balanceMin: number; hasOpenEntry: boolean };
 }
 
 /**
@@ -739,6 +781,17 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async deleteTag(id: number): Promise<void> {
 			await request<void>("DELETE", `/rfid/tags/${id}`);
+		},
+
+		async statistics(from: string, to: string, userId?: number): Promise<StatisticsResult> {
+			return request<StatisticsResult>("GET", "/reports/statistics", {
+				query: { from, to, ...(userId ? { userId } : {}) },
+			});
+		},
+
+		async scanTag(token: string): Promise<ScanResult> {
+			// the route is public on purpose: the tag carries its own signature, so a scan needs no session
+			return request<ScanResult>("POST", "/rfid/scan", { body: { token }, anonymous: true });
 		},
 
 		backups: () => request("GET", "/backup"),

@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "将此链接写入标签，或在手机上打开：",
 	"admin.tag.delete": "删除",
 	"admin.tag.empty": "尚未创建工牌。",
-	"admin.user.roles": "角色"
+	"admin.user.roles": "角色",
+	"nav.statistics": "统计",
+	"statistics.from": "从",
+	"statistics.to": "至",
+	"statistics.employee": "员工",
+	"statistics.worked": "已工作",
+	"statistics.target": "目标",
+	"statistics.balance": "差额",
+	"statistics.openDays": "未完成天数",
+	"statistics.totals": "所有员工",
+	"scan.title": "工牌",
+	"scan.done": "已为 {{name}} 打卡，时间 {{time}}",
+	"scan.failed": "无法使用工牌：{{reason}}"
 }

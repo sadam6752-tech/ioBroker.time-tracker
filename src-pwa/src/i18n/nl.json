@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Schrijf deze link op de tag of open hem op de telefoon:",
 	"admin.tag.delete": "Verwijderen",
 	"admin.tag.empty": "Nog geen pas aangemaakt.",
-	"admin.user.roles": "Rollen"
+	"admin.user.roles": "Rollen",
+	"nav.statistics": "Statistieken",
+	"statistics.from": "Van",
+	"statistics.to": "Tot",
+	"statistics.employee": "Medewerker",
+	"statistics.worked": "Gewerkt",
+	"statistics.target": "Doel",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Open dagen",
+	"statistics.totals": "Alle medewerkers",
+	"scan.title": "Pas",
+	"scan.done": "Gestempeld voor {{name}} om {{time}}",
+	"scan.failed": "De pas kon niet worden gebruikt: {{reason}}"
 }

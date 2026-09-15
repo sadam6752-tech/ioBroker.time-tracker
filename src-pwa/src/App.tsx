@@ -6,6 +6,7 @@
  */
 
 import CssBaseline from "@mui/material/CssBaseline";
+import { useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -18,7 +19,9 @@ import { Month } from "./screens/Month";
 import { PasswordChange } from "./screens/PasswordChange";
 import { Profile } from "./screens/Profile";
 import { Reports } from "./screens/Reports";
+import { Statistics } from "./screens/Statistics";
 import { Sync } from "./screens/Sync";
+import { TagScan } from "./screens/TagScan";
 import { Terminal } from "./screens/Terminal";
 import { SessionProvider, useSession } from "./state/session";
 import { SyncProvider } from "./offline/useSync";
@@ -90,6 +93,10 @@ function Routed(): React.JSX.Element {
 				element={<Reports />}
 			/>
 			<Route
+				path="/statistics"
+				element={<Statistics />}
+			/>
+			<Route
 				path="/absences"
 				element={<Absences />}
 			/>
@@ -127,6 +134,14 @@ function Routed(): React.JSX.Element {
  * @returns the screen the URL asks for
  */
 function Root(): React.JSX.Element {
+	// a badge link (`?tag=…`) is redeemed by its own screen: the tag proves itself, so no session is needed.
+	// The check runs once — the screen takes the token out of the address bar afterwards.
+	const [scanned] = useState(() => new URLSearchParams(window.location.search).has("tag"));
+
+	if (scanned) {
+		return <TagScan />;
+	}
+
 	return (
 		<Routes>
 			<Route

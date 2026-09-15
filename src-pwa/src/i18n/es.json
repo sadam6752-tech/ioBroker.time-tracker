@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Escribe este enlace en la etiqueta o ábrelo en el teléfono:",
 	"admin.tag.delete": "Eliminar",
 	"admin.tag.empty": "Todavía no se ha creado ninguna tarjeta.",
-	"admin.user.roles": "Roles"
+	"admin.user.roles": "Roles",
+	"nav.statistics": "Estadísticas",
+	"statistics.from": "Desde",
+	"statistics.to": "Hasta",
+	"statistics.employee": "Empleado",
+	"statistics.worked": "Trabajado",
+	"statistics.target": "Objetivo",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Días abiertos",
+	"statistics.totals": "Todos los empleados",
+	"scan.title": "Tarjeta",
+	"scan.done": "Fichado para {{name}} a las {{time}}",
+	"scan.failed": "No se pudo usar la tarjeta: {{reason}}"
 }

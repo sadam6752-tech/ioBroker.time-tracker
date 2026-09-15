@@ -16,6 +16,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import InsightsIcon from "@mui/icons-material/Insights";
 import BeachAccessIcon from "@mui/icons-material/BeachAccess";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CloudOffIcon from "@mui/icons-material/CloudOff";
@@ -33,6 +34,7 @@ const TABS = [
 	{ path: "/", key: "nav.dashboard", icon: <AccessTimeIcon /> },
 	{ path: "/month", key: "nav.month", icon: <CalendarMonthIcon /> },
 	{ path: "/reports", key: "nav.reports", icon: <BarChartIcon /> },
+	{ path: "/statistics", key: "nav.statistics", icon: <InsightsIcon /> },
 	{ path: "/absences", key: "nav.absences", icon: <BeachAccessIcon /> },
 	{ path: "/sync", key: "nav.sync", icon: <SyncIcon /> },
 ];

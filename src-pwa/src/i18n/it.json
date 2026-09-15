@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Scrivi questo link sul tag o aprilo sul telefono:",
 	"admin.tag.delete": "Elimina",
 	"admin.tag.empty": "Nessun badge creato finora.",
-	"admin.user.roles": "Ruoli"
+	"admin.user.roles": "Ruoli",
+	"nav.statistics": "Statistiche",
+	"statistics.from": "Da",
+	"statistics.to": "A",
+	"statistics.employee": "Dipendente",
+	"statistics.worked": "Lavorato",
+	"statistics.target": "Obiettivo",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Giorni aperti",
+	"statistics.totals": "Tutti i dipendenti",
+	"scan.title": "Badge",
+	"scan.done": "Timbrato per {{name}} alle {{time}}",
+	"scan.failed": "Il badge non è stato utilizzato: {{reason}}"
 }

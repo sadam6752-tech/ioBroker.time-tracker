@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Escreva este link no cartão ou abra-o no telemóvel:",
 	"admin.tag.delete": "Eliminar",
 	"admin.tag.empty": "Ainda não foi criado nenhum cartão.",
-	"admin.user.roles": "Funções"
+	"admin.user.roles": "Funções",
+	"nav.statistics": "Estatísticas",
+	"statistics.from": "De",
+	"statistics.to": "Até",
+	"statistics.employee": "Funcionário",
+	"statistics.worked": "Trabalhado",
+	"statistics.target": "Objetivo",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Dias abertos",
+	"statistics.totals": "Todos os funcionários",
+	"scan.title": "Cartão",
+	"scan.done": "Registado para {{name}} às {{time}}",
+	"scan.failed": "Não foi possível usar o cartão: {{reason}}"
 }

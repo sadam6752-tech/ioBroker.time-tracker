@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Diesen Link auf den Tag schreiben oder am Handy öffnen:",
 	"admin.tag.delete": "Löschen",
 	"admin.tag.empty": "Noch kein Ausweis angelegt.",
-	"admin.user.roles": "Rollen"
+	"admin.user.roles": "Rollen",
+	"nav.statistics": "Statistik",
+	"statistics.from": "Von",
+	"statistics.to": "Bis",
+	"statistics.employee": "Mitarbeiter",
+	"statistics.worked": "Gearbeitet",
+	"statistics.target": "Soll",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Offene Tage",
+	"statistics.totals": "Alle Mitarbeiter",
+	"scan.title": "Ausweis",
+	"scan.done": "Für {{name}} gestempelt um {{time}}",
+	"scan.failed": "Der Ausweis konnte nicht verwendet werden: {{reason}}"
 }

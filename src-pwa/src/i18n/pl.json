@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Zapisz ten link na tagu albo otwórz go w telefonie:",
 	"admin.tag.delete": "Usuń",
 	"admin.tag.empty": "Nie utworzono jeszcze karty.",
-	"admin.user.roles": "Role"
+	"admin.user.roles": "Role",
+	"nav.statistics": "Statystyki",
+	"statistics.from": "Od",
+	"statistics.to": "Do",
+	"statistics.employee": "Pracownik",
+	"statistics.worked": "Przepracowano",
+	"statistics.target": "Norma",
+	"statistics.balance": "Saldo",
+	"statistics.openDays": "Otwarte dni",
+	"statistics.totals": "Wszyscy pracownicy",
+	"scan.title": "Karta",
+	"scan.done": "Zastemplowano dla {{name}} o {{time}}",
+	"scan.failed": "Nie udało się użyć karty: {{reason}}"
 }

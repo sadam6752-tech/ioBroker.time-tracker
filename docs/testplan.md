@@ -131,8 +131,7 @@ verbindlich zu bestätigen.
 | Lücke | Auswirkung beim Test |
 | --- | --- |
 | **Import der Altdaten** (Phase 9) | Implementiert (`commands.import` bzw. `POST /api/import/run`, Dry-Run → Commit → Idempotenz). Für den verbindlichen Golden-Abgleich braucht T18 eine **echte Kopie des `Data`-Verzeichnisses** des Altsystems; mit dem synthetischen Fixture ist er nur eingeschränkt aussagekräftig. |
-| Statistik-Ansicht in der Web-App | Die API `/reports/statistics` liefert Zahlen, die Oberfläche zeigt sie noch nicht. |
-| Adminbereich-Ausbau | Rollenwechsel pro Zeile, Einstellungen, Tags, Feiertage und der Import-Report laufen weiterhin über ioBroker-Objekte bzw. die API; die PWA-Verwaltung deckt Benutzer, **Terminals** und Backups ab. |
+| Adminbereich-Ausbau | Nur noch die **NFC-Bedienung** fehlt in der PWA; Rollenwechsel pro Zeile, Einstellungen, Tags und Feiertage sind seit der letzten Runde vorhanden. Statistik und Ausweise sind über die API erreichbar. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |
 | Keine E2E-Tests (Playwright) | Die Prüfung erfolgt manuell nach diesem Plan; die Automatik deckt Unit-, Paket- und Integrationstests ab (inklusive Kiosk-Terminal-Vertrag `/terminal/status`, `403 kiosk_disabled` und `/terminal`-Deep-Link in `test/integration.js`). |
 | PDF-Schriften (`ru`, `uk`, `zh-cn`) | Braucht eine Unicode-Schriftdatei über `report_font_path`; ohne sie kommt eine klare Fehlermeldung. |

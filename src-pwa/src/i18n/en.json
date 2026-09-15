@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Write this link onto the tag or open it on the phone:",
 	"admin.tag.delete": "Delete",
 	"admin.tag.empty": "No badge created yet.",
-	"admin.user.roles": "Roles"
+	"admin.user.roles": "Roles",
+	"nav.statistics": "Statistics",
+	"statistics.from": "From",
+	"statistics.to": "To",
+	"statistics.employee": "Employee",
+	"statistics.worked": "Worked",
+	"statistics.target": "Target",
+	"statistics.balance": "Balance",
+	"statistics.openDays": "Open days",
+	"statistics.totals": "All employees",
+	"scan.title": "Badge",
+	"scan.done": "Punched for {{name}} at {{time}}",
+	"scan.failed": "The badge could not be used: {{reason}}"
 }

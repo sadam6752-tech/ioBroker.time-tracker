@@ -168,5 +168,17 @@
 	"admin.tag.linkOnce": "Запишите эту ссылку на метку или откройте её на телефоне:",
 	"admin.tag.delete": "Удалить",
 	"admin.tag.empty": "Пропуск ещё не создан.",
-	"admin.user.roles": "Роли"
+	"admin.user.roles": "Роли",
+	"nav.statistics": "Статистика",
+	"statistics.from": "С",
+	"statistics.to": "По",
+	"statistics.employee": "Сотрудник",
+	"statistics.worked": "Отработано",
+	"statistics.target": "План",
+	"statistics.balance": "Баланс",
+	"statistics.openDays": "Открытые дни",
+	"statistics.totals": "Все сотрудники",
+	"scan.title": "Пропуск",
+	"scan.done": "Отметка для {{name}} в {{time}}",
+	"scan.failed": "Пропуск не удалось использовать: {{reason}}"
 }

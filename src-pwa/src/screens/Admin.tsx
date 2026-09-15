@@ -1468,7 +1468,11 @@ export function Admin(): React.JSX.Element {
 			<Tabs
 				value={active}
 				onChange={(_event, value: number) => setTab(value)}
-				variant="fullWidth"
+				// scrollable instead of fullWidth: seven labels do not fit a wide window when squeezed, and a
+				// clipped tab name is worse than a scrollable row
+				variant="scrollable"
+				scrollButtons="auto"
+				allowScrollButtonsMobile
 				sx={{ mb: 2 }}
 			>
 				{tabs.map(entry => (

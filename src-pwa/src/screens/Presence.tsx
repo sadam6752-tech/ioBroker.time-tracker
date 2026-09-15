@@ -266,18 +266,21 @@ export function Presence(): React.JSX.Element {
 								>
 									{initials(user.displayName)}
 								</Avatar>
-								<Typography
-									variant="subtitle1"
-									noWrap
-									sx={{ flexGrow: 1, minWidth: 0 }}
-								>
-									{user.displayName}
-								</Typography>
-								<Chip
-									size="small"
-									color={user.present ? "success" : "default"}
-									label={t(user.present ? "presence.present" : "presence.absent")}
-								/>
+								{/* the state above the name: both lines then have the whole width of the tile */}
+								<Box sx={{ minWidth: 0, flexGrow: 1 }}>
+									<Chip
+										size="small"
+										color={user.present ? "success" : "default"}
+										label={t(user.present ? "presence.present" : "presence.absent")}
+									/>
+									<Typography
+										variant="subtitle1"
+										noWrap
+										sx={{ lineHeight: 1.3 }}
+									>
+										{user.displayName}
+									</Typography>
+								</Box>
 							</Stack>
 						</CardActionArea>
 					</Card>

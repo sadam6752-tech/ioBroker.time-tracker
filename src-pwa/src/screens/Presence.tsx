@@ -229,8 +229,10 @@ export function Presence(): React.JSX.Element {
 			<Box
 				sx={{
 					display: "grid",
-					gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(3, 1fr)" },
-					gap: 2,
+					// the tiles size themselves from their content: a wide screen gets more of them side by side
+					// instead of three stretched ones
+					gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+					gap: 1.5,
 				}}
 			>
 				{users.map(user => (

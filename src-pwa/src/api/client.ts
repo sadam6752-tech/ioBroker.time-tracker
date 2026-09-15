@@ -141,6 +141,16 @@ export interface ApiClient {
 	updateUser(id: number, patch: UpdateUserInput): Promise<AdminUser>;
 	/** Sets the badge PIN of an employee (empty value removes it) */
 	setPin(id: number, pin: string): Promise<void>;
+	/** Kiosk terminals including the revoked ones */
+	terminals(): Promise<AdminTerminal[]>;
+	/** Creates a terminal; the device token is part of the answer exactly once */
+	createTerminal(input: {
+		name: string;
+		location?: string;
+		pinRequired?: boolean;
+	}): Promise<{ terminal: AdminTerminal; deviceToken: string }>;
+	/** Revokes a terminal, its device token stops working immediately */
+	revokeTerminal(id: number): Promise<void>;
 	/** Known database backups and the retention */
 	backups(): Promise<{ retentionDays: number; backups: BackupFile[] }>;
 	/** Takes a database backup */
@@ -210,6 +220,26 @@ export interface TerminalPunchResult {
 	entry: { id: number; tsUtc: number; direction: "in" | "out" | "auto"; localDate: string };
 	/** Figures of that day */
 	day: { workedMin: number; targetMin: number; balanceMin: number; hasOpenEntry: boolean };
+}
+
+/** A kiosk terminal as the administration sees it (`GET /terminals`). */
+export interface AdminTerminal {
+	/** Primary key */
+	id: number;
+	/** Display name */
+	name: string;
+	/** Optional location */
+	location: string | null;
+	/** True when a badge has to be combined with the personal PIN */
+	pinRequired: boolean;
+	/** False for revoked devices */
+	isActive: boolean;
+	/** Instant the device token expires, `null` = never */
+	expiresAt: number | null;
+	/** Instant of the last heartbeat */
+	lastSeenAt: number | null;
+	/** Instant of creation */
+	createdAt: number;
 }
 
 /**
@@ -543,6 +573,19 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async setPin(id, pin): Promise<void> {
 			await request("POST", `/users/${id}/pin`, { body: { pin } });
+		},
+
+		async terminals(): Promise<AdminTerminal[]> {
+			const result = await request<{ terminals: AdminTerminal[] }>("GET", "/terminals");
+			return result.terminals ?? [];
+		},
+
+		async createTerminal(input) {
+			return request<{ terminal: AdminTerminal; deviceToken: string }>("POST", "/terminals", { body: input });
+		},
+
+		async revokeTerminal(id: number): Promise<void> {
+			await request<void>("DELETE", `/terminals/${id}`);
 		},
 
 		backups: () => request("GET", "/backup"),

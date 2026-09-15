@@ -120,9 +120,10 @@ database backups (list, retention, "create now").
 ### Kiosk terminal
 
 With **Enable kiosk terminal** switched on, a tablet in the workshop or at the entrance can punch for everybody
-without logging in. Create a terminal in the instance settings (`POST /api/terminals`, permission
-`terminal.manage`); the response contains the device token **exactly once** — copy it, because only its hash is
-stored. Then open it on the device:
+without logging in. Create the device in the administration of the web app (**Administration → Terminals**; the
+API below it is `POST /api/terminals` with the permission `terminal.manage`). The device token is shown **exactly
+once** — copy it right away, because only its hash is stored — and the screen also offers the ready-made address
+for the tablet. Then open it on the device:
 
 ```
 http://<adapter host>:<port>/terminal?token=<device token>

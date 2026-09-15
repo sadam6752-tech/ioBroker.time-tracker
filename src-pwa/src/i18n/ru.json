@@ -127,5 +127,16 @@
 	"terminal.badge": "Пропуск",
 	"terminal.pin": "PIN-код",
 	"terminal.select": "Выберите имя",
-	"terminal.disabled": "Терминал отключён в настройках адаптера."
+	"terminal.disabled": "Терминал отключён в настройках адаптера.",
+	"admin.terminals": "Терминалы",
+	"admin.terminal.name": "Название",
+	"admin.terminal.location": "Местоположение",
+	"admin.terminal.pinRequired": "Сотрудникам нужен их PIN-код",
+	"admin.terminal.create": "Создать терминал",
+	"admin.terminal.tokenOnce": "Скопируйте токен устройства сейчас — он хранится только как хеш и показывается один раз:",
+	"admin.terminal.url": "Откройте этот адрес на устройстве киоска:",
+	"admin.terminal.revoke": "Отозвать",
+	"admin.terminal.revoked": "отозван",
+	"admin.terminal.empty": "Терминал ещё не создан.",
+	"admin.terminal.confirmRevoke": "Отозвать «{{name}}»? Токен устройства перестанет работать сразу."
 }

@@ -127,5 +127,16 @@
 	"terminal.badge": "Tarjeta",
 	"terminal.pin": "PIN",
 	"terminal.select": "Elija su nombre",
-	"terminal.disabled": "El terminal está desactivado en la configuración del adaptador."
+	"terminal.disabled": "El terminal está desactivado en la configuración del adaptador.",
+	"admin.terminals": "Terminales",
+	"admin.terminal.name": "Nombre",
+	"admin.terminal.location": "Ubicación",
+	"admin.terminal.pinRequired": "Los empleados necesitan su PIN",
+	"admin.terminal.create": "Crear terminal",
+	"admin.terminal.tokenOnce": "Copia ahora el token del dispositivo — solo se guarda como hash y se muestra una única vez:",
+	"admin.terminal.url": "Abre esta dirección en el dispositivo del kiosco:",
+	"admin.terminal.revoke": "Revocar",
+	"admin.terminal.revoked": "revocado",
+	"admin.terminal.empty": "Todavía no se ha creado ningún terminal.",
+	"admin.terminal.confirmRevoke": "¿Revocar «{{name}}»? Su token de dispositivo deja de funcionar de inmediato."
 }

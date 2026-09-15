@@ -127,5 +127,16 @@
 	"terminal.badge": "工牌",
 	"terminal.pin": "PIN 码",
 	"terminal.select": "选择姓名",
-	"terminal.disabled": "终端已在适配器设置中关闭。"
+	"terminal.disabled": "终端已在适配器设置中关闭。",
+	"admin.terminals": "终端",
+	"admin.terminal.name": "名称",
+	"admin.terminal.location": "位置",
+	"admin.terminal.pinRequired": "员工需要使用其 PIN 码",
+	"admin.terminal.create": "创建终端",
+	"admin.terminal.tokenOnce": "请立即复制设备令牌——它仅以哈希形式保存，且只显示一次：",
+	"admin.terminal.url": "在自助终端设备上打开此地址：",
+	"admin.terminal.revoke": "撤销",
+	"admin.terminal.revoked": "已撤销",
+	"admin.terminal.empty": "尚未创建终端。",
+	"admin.terminal.confirmRevoke": "撤销“{{name}}”？其设备令牌将立即失效。"
 }

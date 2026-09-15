@@ -127,5 +127,16 @@
 	"terminal.badge": "Badge",
 	"terminal.pin": "PIN",
 	"terminal.select": "Choose your name",
-	"terminal.disabled": "The terminal is switched off in the adapter settings."
+	"terminal.disabled": "The terminal is switched off in the adapter settings.",
+	"admin.terminals": "Terminals",
+	"admin.terminal.name": "Name",
+	"admin.terminal.location": "Location",
+	"admin.terminal.pinRequired": "Employees need their PIN",
+	"admin.terminal.create": "Create terminal",
+	"admin.terminal.tokenOnce": "Copy the device token now — it is stored as a hash and shown only once:",
+	"admin.terminal.url": "Open this address on the kiosk device:",
+	"admin.terminal.revoke": "Revoke",
+	"admin.terminal.revoked": "revoked",
+	"admin.terminal.empty": "No terminal created yet.",
+	"admin.terminal.confirmRevoke": "Revoke “{{name}}”? Its device token stops working immediately."
 }

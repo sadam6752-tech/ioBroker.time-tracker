@@ -127,5 +127,16 @@
 	"terminal.badge": "Перепустка",
 	"terminal.pin": "PIN-код",
 	"terminal.select": "Виберіть ім'я",
-	"terminal.disabled": "Термінал вимкнено в налаштуваннях адаптера."
+	"terminal.disabled": "Термінал вимкнено в налаштуваннях адаптера.",
+	"admin.terminals": "Термінали",
+	"admin.terminal.name": "Назва",
+	"admin.terminal.location": "Розташування",
+	"admin.terminal.pinRequired": "Працівникам потрібен їхній PIN-код",
+	"admin.terminal.create": "Створити термінал",
+	"admin.terminal.tokenOnce": "Скопіюйте токен пристрою зараз — він зберігається лише як хеш і показується один раз:",
+	"admin.terminal.url": "Відкрийте цю адресу на пристрої кіоску:",
+	"admin.terminal.revoke": "Відкликати",
+	"admin.terminal.revoked": "відкликано",
+	"admin.terminal.empty": "Термінал ще не створено.",
+	"admin.terminal.confirmRevoke": "Відкликати «{{name}}»? Токен пристрою перестане працювати негайно."
 }

@@ -127,5 +127,16 @@
 	"terminal.badge": "Pas",
 	"terminal.pin": "Pincode",
 	"terminal.select": "Kies uw naam",
-	"terminal.disabled": "De terminal is uitgeschakeld in de adapterinstellingen."
+	"terminal.disabled": "De terminal is uitgeschakeld in de adapterinstellingen.",
+	"admin.terminals": "Terminals",
+	"admin.terminal.name": "Naam",
+	"admin.terminal.location": "Locatie",
+	"admin.terminal.pinRequired": "Medewerkers hebben hun pincode nodig",
+	"admin.terminal.create": "Terminal aanmaken",
+	"admin.terminal.tokenOnce": "Kopieer het apparaattoken nu — het wordt alleen als hash opgeslagen en maar één keer getoond:",
+	"admin.terminal.url": "Open dit adres op het kioskapparaat:",
+	"admin.terminal.revoke": "Intrekken",
+	"admin.terminal.revoked": "ingetrokken",
+	"admin.terminal.empty": "Nog geen terminal aangemaakt.",
+	"admin.terminal.confirmRevoke": "«{{name}}» intrekken? Het apparaattoken werkt daarna direct niet meer."
 }

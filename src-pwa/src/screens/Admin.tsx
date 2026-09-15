@@ -28,10 +28,11 @@ import Typography from "@mui/material/Typography";
 import BackupIcon from "@mui/icons-material/Backup";
 import KeyIcon from "@mui/icons-material/Key";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, type AdminTerminal } from "../api/client";
 import type { AdminUser, CreateUserInput } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -340,6 +341,263 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Dialog that creates a kiosk terminal and hands the device token back once.
+ *
+ * @param props - close handler and success handler
+ * @param props.onClose - called when the dialog is closed
+ * @param props.onCreated - called with the created terminal and its device token
+ * @returns the dialog
+ */
+function CreateTerminalDialog({
+	onClose,
+	onCreated,
+}: {
+	onClose: () => void;
+	onCreated: (issued: { terminal: AdminTerminal; deviceToken: string }) => Promise<void>;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	const [name, setName] = useState("");
+	const [location, setLocation] = useState("");
+	const [pinRequired, setPinRequired] = useState(true);
+
+	const create = useMutation({
+		mutationFn: () =>
+			api.createTerminal({
+				name: name.trim(),
+				...(location.trim() ? { location: location.trim() } : {}),
+				pinRequired,
+			}),
+		onSuccess: onCreated,
+	});
+
+	return (
+		<Dialog
+			open
+			onClose={onClose}
+			fullWidth
+		>
+			<DialogTitle>{t("admin.terminal.create")}</DialogTitle>
+			<DialogContent>
+				<Stack
+					spacing={2}
+					sx={{ mt: 1 }}
+				>
+					<TextField
+						label={t("admin.terminal.name")}
+						value={name}
+						onChange={event => setName(event.target.value)}
+						fullWidth
+						autoFocus
+					/>
+					<TextField
+						label={t("admin.terminal.location")}
+						value={location}
+						onChange={event => setLocation(event.target.value)}
+						fullWidth
+					/>
+					<Stack
+						direction="row"
+						spacing={1}
+						alignItems="center"
+					>
+						<Switch
+							checked={pinRequired}
+							onChange={(_event, checked) => setPinRequired(checked)}
+						/>
+						<Typography>{t("admin.terminal.pinRequired")}</Typography>
+					</Stack>
+					<ErrorAlert error={create.error} />
+				</Stack>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onClose}>{t("common.cancel")}</Button>
+				<Button
+					variant="contained"
+					disabled={name.trim().length === 0 || create.isPending}
+					onClick={() => create.mutate()}
+				>
+					{t("admin.terminal.create")}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+/**
+ * Kiosk terminals: create a device, show its token once and revoke it again.
+ *
+ * @param props - language of the display
+ * @param props.language - language of the display
+ * @returns the terminal tab
+ */
+function TerminalsTab({ language }: { language: string }): React.JSX.Element {
+	const { t } = useTranslation();
+	const queryClient = useQueryClient();
+	const terminals = useQuery({ queryKey: ["admin", "terminals"], queryFn: () => api.terminals() });
+	const [creating, setCreating] = useState(false);
+	const [revoking, setRevoking] = useState<AdminTerminal | null>(null);
+	const [issued, setIssued] = useState<{ terminal: AdminTerminal; deviceToken: string } | null>(null);
+
+	const revoke = useMutation({
+		mutationFn: (id: number) => api.revokeTerminal(id),
+		onSuccess: async () => {
+			setRevoking(null);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "terminals"] });
+		},
+	});
+
+	// the address the kiosk is opened with — it carries the token for the first start
+	const deviceUrl = issued
+		? `${window.location.origin}/terminal?token=${encodeURIComponent(issued.deviceToken)}`
+		: "";
+
+	const stale = `${t("common.none")}`;
+	const detailsOf = (terminal: AdminTerminal): string =>
+		[terminal.location || stale, formatStamp(terminal.createdAt, language)].join(" · ");
+
+	return (
+		<>
+			<ErrorAlert error={terminals.error ?? revoke.error} />
+
+			{issued && (
+				<Alert
+					severity="success"
+					sx={{ mb: 2 }}
+				>
+					<Typography
+						variant="body2"
+						gutterBottom
+					>
+						{t("admin.terminal.tokenOnce")}
+					</Typography>
+					<Typography
+						variant="body2"
+						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+						gutterBottom
+					>
+						{issued.deviceToken}
+					</Typography>
+					<Typography
+						variant="body2"
+						gutterBottom
+					>
+						{t("admin.terminal.url")}
+					</Typography>
+					<Typography
+						variant="body2"
+						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+					>
+						{deviceUrl}
+					</Typography>
+				</Alert>
+			)}
+
+			<Box sx={{ mb: 2 }}>
+				<Button
+					variant="contained"
+					startIcon={<TerminalIcon />}
+					disabled={creating}
+					onClick={() => setCreating(true)}
+				>
+					{t("admin.terminal.create")}
+				</Button>
+			</Box>
+
+			<Card>
+				<List dense>
+					{(terminals.data ?? []).map(terminal => (
+						<ListItem
+							key={terminal.id}
+							divider
+							secondaryAction={
+								terminal.isActive ? (
+									<Button
+										size="small"
+										color="error"
+										onClick={() => setRevoking(terminal)}
+									>
+										{t("admin.terminal.revoke")}
+									</Button>
+								) : undefined
+							}
+						>
+							<ListItemText
+								primary={
+									<Stack
+										direction="row"
+										spacing={1}
+										alignItems="center"
+										sx={{ flexWrap: "wrap", gap: 1 }}
+									>
+										<Typography>{terminal.name}</Typography>
+										{terminal.pinRequired && (
+											<Chip
+												size="small"
+												label={t("admin.terminal.pinRequired")}
+											/>
+										)}
+										{!terminal.isActive && (
+											<Chip
+												size="small"
+												variant="outlined"
+												label={t("admin.terminal.revoked")}
+											/>
+										)}
+									</Stack>
+								}
+								secondary={detailsOf(terminal)}
+							/>
+						</ListItem>
+					))}
+					{terminals.isLoading && (
+						<ListItem>
+							<ListItemText secondary={t("common.loading")} />
+						</ListItem>
+					)}
+					{!terminals.isLoading && (terminals.data ?? []).length === 0 && (
+						<ListItem>
+							<ListItemText secondary={t("admin.terminal.empty")} />
+						</ListItem>
+					)}
+				</List>
+			</Card>
+
+			{creating && (
+				<CreateTerminalDialog
+					onClose={() => setCreating(false)}
+					onCreated={async created => {
+						setCreating(false);
+						setIssued(created);
+						await queryClient.invalidateQueries({ queryKey: ["admin", "terminals"] });
+					}}
+				/>
+			)}
+
+			{revoking && (
+				<Dialog
+					open
+					onClose={() => setRevoking(null)}
+				>
+					<DialogTitle>{t("admin.terminal.revoke")}</DialogTitle>
+					<DialogContent>{t("admin.terminal.confirmRevoke", { name: revoking.name })}</DialogContent>
+					<DialogActions>
+						<Button onClick={() => setRevoking(null)}>{t("common.cancel")}</Button>
+						<Button
+							color="error"
+							variant="contained"
+							disabled={revoke.isPending}
+							onClick={() => revoke.mutate(revoking.id)}
+						>
+							{t("admin.terminal.revoke")}
+						</Button>
+					</DialogActions>
+				</Dialog>
+			)}
+		</>
+	);
+}
+
+/**
  * Database backups: list, retention and a button that takes one now.
  *
  * @param props - language of the display
@@ -424,11 +682,21 @@ function BackupTab({ language }: { language: string }): React.JSX.Element {
 export function Admin(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
 	const { permissions } = useSession();
-	const maySeeUsers = hasPermission(permissions, "user.view");
-	const maySeeBackup = hasPermission(permissions, "backup.run");
 	const [tab, setTab] = useState(0);
 
-	if (!maySeeUsers && !maySeeBackup) {
+	// only the tabs the caller may use become part of the screen; the server checks each request again
+	const tabs: { label: string; render: () => React.JSX.Element }[] = [];
+	if (hasPermission(permissions, "user.view")) {
+		tabs.push({ label: t("admin.users"), render: () => <UsersTab language={i18n.language} /> });
+	}
+	if (hasPermission(permissions, "terminal.manage")) {
+		tabs.push({ label: t("admin.terminals"), render: () => <TerminalsTab language={i18n.language} /> });
+	}
+	if (hasPermission(permissions, "backup.run")) {
+		tabs.push({ label: t("admin.backup"), render: () => <BackupTab language={i18n.language} /> });
+	}
+
+	if (tabs.length === 0) {
 		return (
 			<AppShell title={t("admin.title")}>
 				<Alert severity="info">{t("admin.forbidden")}</Alert>
@@ -436,21 +704,26 @@ export function Admin(): React.JSX.Element {
 		);
 	}
 
+	// a permission change can leave the index behind, so it is clamped to the allowed range
+	const active = Math.min(tab, tabs.length - 1);
+
 	return (
 		<AppShell title={t("admin.title")}>
 			<Tabs
-				value={tab}
+				value={active}
 				onChange={(_event, value: number) => setTab(value)}
 				variant="fullWidth"
 				sx={{ mb: 2 }}
 			>
-				{maySeeUsers && <Tab label={t("admin.users")} />}
-				{maySeeBackup && <Tab label={t("admin.backup")} />}
+				{tabs.map(entry => (
+					<Tab
+						key={entry.label}
+						label={entry.label}
+					/>
+				))}
 			</Tabs>
 
-			{/* the tab index follows the visible tabs, so the first allowed one is `0` */}
-			{maySeeUsers && tab === 0 && <UsersTab language={i18n.language} />}
-			{maySeeBackup && tab === (maySeeUsers ? 1 : 0) && <BackupTab language={i18n.language} />}
+			{tabs[active]?.render()}
 		</AppShell>
 	);
 }

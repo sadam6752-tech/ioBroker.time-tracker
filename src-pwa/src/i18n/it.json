@@ -127,5 +127,16 @@
 	"terminal.badge": "Badge",
 	"terminal.pin": "PIN",
 	"terminal.select": "Scegli il nome",
-	"terminal.disabled": "Il terminal è disattivato nelle impostazioni dell'adattatore."
+	"terminal.disabled": "Il terminal è disattivato nelle impostazioni dell'adattatore.",
+	"admin.terminals": "Terminali",
+	"admin.terminal.name": "Nome",
+	"admin.terminal.location": "Posizione",
+	"admin.terminal.pinRequired": "I dipendenti hanno bisogno del loro PIN",
+	"admin.terminal.create": "Crea terminale",
+	"admin.terminal.tokenOnce": "Copia ora il token del dispositivo — viene salvato solo come hash e mostrato una sola volta:",
+	"admin.terminal.url": "Apri questo indirizzo sul dispositivo del chiosco:",
+	"admin.terminal.revoke": "Revoca",
+	"admin.terminal.revoked": "revocato",
+	"admin.terminal.empty": "Nessun terminale creato finora.",
+	"admin.terminal.confirmRevoke": "Revocare «{{name}}»? Il token del dispositivo smette subito di funzionare."
 }

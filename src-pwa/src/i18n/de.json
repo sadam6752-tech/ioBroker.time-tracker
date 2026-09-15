@@ -127,5 +127,16 @@
 	"terminal.badge": "Ausweis",
 	"terminal.pin": "PIN",
 	"terminal.select": "Namen auswählen",
-	"terminal.disabled": "Das Terminal ist in den Adapter-Einstellungen ausgeschaltet."
+	"terminal.disabled": "Das Terminal ist in den Adapter-Einstellungen ausgeschaltet.",
+	"admin.terminals": "Terminals",
+	"admin.terminal.name": "Name",
+	"admin.terminal.location": "Standort",
+	"admin.terminal.pinRequired": "Mitarbeiter brauchen ihre PIN",
+	"admin.terminal.create": "Terminal anlegen",
+	"admin.terminal.tokenOnce": "Geräte-Token jetzt kopieren — er wird nur als Hash gespeichert und nur einmal angezeigt:",
+	"admin.terminal.url": "Diese Adresse am Kiosk-Gerät öffnen:",
+	"admin.terminal.revoke": "Widerrufen",
+	"admin.terminal.revoked": "widerrufen",
+	"admin.terminal.empty": "Noch kein Terminal angelegt.",
+	"admin.terminal.confirmRevoke": "„{{name}}“ widerrufen? Der Geräte-Token funktioniert sofort nicht mehr."
 }

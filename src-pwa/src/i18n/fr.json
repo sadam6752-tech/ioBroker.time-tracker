@@ -127,5 +127,16 @@
 	"terminal.badge": "Badge",
 	"terminal.pin": "Code PIN",
 	"terminal.select": "Choisissez votre nom",
-	"terminal.disabled": "Le terminal est désactivé dans les paramètres de l'adaptateur."
+	"terminal.disabled": "Le terminal est désactivé dans les paramètres de l'adaptateur.",
+	"admin.terminals": "Terminaux",
+	"admin.terminal.name": "Nom",
+	"admin.terminal.location": "Emplacement",
+	"admin.terminal.pinRequired": "Les employés ont besoin de leur code PIN",
+	"admin.terminal.create": "Créer un terminal",
+	"admin.terminal.tokenOnce": "Copiez le jeton de l'appareil maintenant — il n'est conservé que comme hachage et affiché une seule fois :",
+	"admin.terminal.url": "Ouvrez cette adresse sur l'appareil du kiosque :",
+	"admin.terminal.revoke": "Révoquer",
+	"admin.terminal.revoked": "révoqué",
+	"admin.terminal.empty": "Aucun terminal créé pour l'instant.",
+	"admin.terminal.confirmRevoke": "Révoquer « {{name}} » ? Son jeton d'appareil cesse immédiatement de fonctionner."
 }

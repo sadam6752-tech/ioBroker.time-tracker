@@ -127,5 +127,16 @@
 	"terminal.badge": "Karta",
 	"terminal.pin": "PIN",
 	"terminal.select": "Wybierz nazwisko",
-	"terminal.disabled": "Terminal jest wyłączony w ustawieniach adaptera."
+	"terminal.disabled": "Terminal jest wyłączony w ustawieniach adaptera.",
+	"admin.terminals": "Terminale",
+	"admin.terminal.name": "Nazwa",
+	"admin.terminal.location": "Lokalizacja",
+	"admin.terminal.pinRequired": "Pracownicy potrzebują swojego PIN-u",
+	"admin.terminal.create": "Utwórz terminal",
+	"admin.terminal.tokenOnce": "Skopiuj teraz token urządzenia — jest przechowywany tylko jako hash i pokazywany jednorazowo:",
+	"admin.terminal.url": "Otwórz ten adres na urządzeniu kiosku:",
+	"admin.terminal.revoke": "Odwołaj",
+	"admin.terminal.revoked": "odwołany",
+	"admin.terminal.empty": "Nie utworzono jeszcze żadnego terminala.",
+	"admin.terminal.confirmRevoke": "Odwołać „{{name}}”? Token urządzenia przestanie działać natychmiast."
 }

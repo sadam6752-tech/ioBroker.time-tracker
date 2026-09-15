@@ -127,5 +127,16 @@
 	"terminal.badge": "Cartão",
 	"terminal.pin": "PIN",
 	"terminal.select": "Escolha o nome",
-	"terminal.disabled": "O terminal está desligado nas configurações do adaptador."
+	"terminal.disabled": "O terminal está desligado nas configurações do adaptador.",
+	"admin.terminals": "Terminais",
+	"admin.terminal.name": "Nome",
+	"admin.terminal.location": "Localização",
+	"admin.terminal.pinRequired": "Os funcionários precisam do seu PIN",
+	"admin.terminal.create": "Criar terminal",
+	"admin.terminal.tokenOnce": "Copie agora o token do dispositivo — é guardado apenas como hash e mostrado uma única vez:",
+	"admin.terminal.url": "Abra este endereço no dispositivo do quiosque:",
+	"admin.terminal.revoke": "Revogar",
+	"admin.terminal.revoked": "revogado",
+	"admin.terminal.empty": "Ainda não foi criado nenhum terminal.",
+	"admin.terminal.confirmRevoke": "Revogar «{{name}}»? O token do dispositivo deixa de funcionar imediatamente."
 }

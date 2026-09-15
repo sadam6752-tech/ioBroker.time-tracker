@@ -216,6 +216,8 @@ export interface SessionUser {
 	timezone: string;
 	language: string;
 	isActive: boolean;
+	/** True while the start password (or a password from the old system) still has to be replaced */
+	mustChangePw: boolean;
 }
 
 /** Result of a login. */

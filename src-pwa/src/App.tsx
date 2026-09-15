@@ -15,6 +15,7 @@ import { Admin } from "./screens/Admin";
 import { Dashboard } from "./screens/Dashboard";
 import { Login } from "./screens/Login";
 import { Month } from "./screens/Month";
+import { PasswordChange } from "./screens/PasswordChange";
 import { Profile } from "./screens/Profile";
 import { Reports } from "./screens/Reports";
 import { Sync } from "./screens/Sync";
@@ -55,6 +56,19 @@ function Routed(): React.JSX.Element {
 				<Route
 					path="*"
 					element={<Login />}
+				/>
+			</Routes>
+		);
+	}
+
+	if (session.user.mustChangePw) {
+		// the start password of the first administrator (and a password taken over from the old system) opens the
+		// door exactly once, so every route leads to the password change until a new password is stored
+		return (
+			<Routes>
+				<Route
+					path="*"
+					element={<PasswordChange />}
 				/>
 			</Routes>
 		);

@@ -1,15 +1,15 @@
 /**
- * Generates the app icons of the web app from the master logo.
+ * Generates the app icons and the favicon of the web app from the master logo.
  *
- * The icons are checked in, so a build never depends on this script; it exists so both sizes can be produced
- * again whenever the logo changes:
+ * The files are checked in, so a build never depends on this script; it exists so they can be produced again
+ * whenever the logo changes:
  *
  *   node tools/make-pwa-icons.mjs
  *
- * The master is `admin/src/zeiterfassung.png` (512x512, 8 bit RGBA, not interlaced): part of the repository,
- * but not of the npm package (the `files` rule of `package.json` excludes `admin/src`). PNG is read and
- * written by hand (zlib and CRC32 from Node), which keeps the repository free of image libraries and binary
- * tooling.
+ * Written are `src-pwa/public/icon-192.png`, `icon-512.png` and `favicon.svg`. The master is
+ * `admin/src/zeiterfassung.png` (512x512, 8 bit RGBA, not interlaced): part of the repository, but not of the
+ * npm package (the `files` rule of `package.json` excludes `admin/src`). PNG is read and written by hand
+ * (zlib and CRC32 from Node), which keeps the repository free of image libraries and binary tooling.
  *
  * The layout follows two requirements of the manifest:
  *
@@ -36,6 +36,8 @@ const MARK_RATIO = 0.72;
 const ALPHA_THRESHOLD = 8;
 const BACKGROUND = [255, 255, 255];
 const SIZES = [192, 512];
+/** Edge length of the raster embedded in `favicon.svg` (browsers draw tabs at 16-32 px). */
+const FAVICON_SIZE = 64;
 
 /** Bytes per pixel of the expected master format (RGBA, 8 bit). */
 const BPP = 4;
@@ -278,13 +280,13 @@ function draw(pixels, sourceWidth, box, size) {
 }
 
 /**
- * Writes an icon as PNG.
+ * Writes a PNG file.
  *
  * @param {number} size - edge length in pixels
  * @param {Buffer} pixels - RGBA pixels
- * @returns {void}
+ * @returns {Buffer} the PNG file
  */
-function writeIcon(size, pixels) {
+function toPng(size, pixels) {
 	// one filter byte (0 = none) in front of every scanline
 	const raw = Buffer.alloc(size * (size * BPP + 1));
 	for (let y = 0; y < size; y++) {
@@ -308,9 +310,47 @@ function writeIcon(size, pixels) {
 		chunk("IEND", Buffer.alloc(0)),
 	]);
 
+	return file;
+}
+
+/**
+ * Writes one of the app icons.
+ *
+ * @param {number} size - edge length in pixels
+ * @param {Buffer} pixels - RGBA pixels
+ * @returns {void}
+ */
+function writeIcon(size, pixels) {
+	const file = toPng(size, pixels);
 	const path = join(targetDir, `icon-${size}.png`);
 	writeFileSync(path, file);
 	console.log(`wrote ${path} (${file.length} bytes, mark ${Math.round(size * MARK_RATIO)} px)`);
+}
+
+/**
+ * Writes `favicon.svg`.
+ *
+ * The master is a raster image (a blue disc with the logo drawing, 4171 colours), so there is no vector
+ * source to write out. The SVG therefore carries the icon as an embedded PNG — same layout as the app icons,
+ * which keeps the tab icon and the installed app identical. `index.html` keeps a PNG link as fallback.
+ *
+ * @param {Buffer} pixels - pixels of the master
+ * @param {number} sourceWidth - width of the master
+ * @param {{ x: number, y: number, width: number, height: number }} box - visible box inside the master
+ * @returns {void}
+ */
+function writeFavicon(pixels, sourceWidth, box) {
+	const png = toPng(FAVICON_SIZE, draw(pixels, sourceWidth, box, FAVICON_SIZE));
+	const svg = [
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${FAVICON_SIZE} ${FAVICON_SIZE}" role="img" aria-label="Zeiterfassung">`,
+		`\t<image width="${FAVICON_SIZE}" height="${FAVICON_SIZE}" href="data:image/png;base64,${png.toString("base64")}"/>`,
+		"</svg>",
+		"",
+	].join("\n");
+
+	const path = join(targetDir, "favicon.svg");
+	writeFileSync(path, svg, "utf8");
+	console.log(`wrote ${path} (${svg.length} bytes, embedded ${FAVICON_SIZE} px PNG)`);
 }
 
 const master = readPng(masterPath);
@@ -320,3 +360,5 @@ console.log(`master ${master.width}x${master.height}, visible ${box.width}x${box
 for (const size of SIZES) {
 	writeIcon(size, draw(master.pixels, master.width, box, size));
 }
+
+writeFavicon(master.pixels, master.width, box);

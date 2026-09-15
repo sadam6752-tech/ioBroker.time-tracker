@@ -35,9 +35,23 @@ describe("web app delivery", () => {
 	const index = fs.readFileSync(path.join(www, "index.html"), "utf8");
 
 	it("ships the app shell, the icons and the service worker", () => {
-		for (const file of ["index.html", "manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png"]) {
+		for (const file of [
+			"index.html",
+			"manifest.webmanifest",
+			"sw.js",
+			"favicon.svg",
+			"icon-192.png",
+			"icon-512.png",
+		]) {
 			expect(fs.existsSync(path.join(www, file)), `${file} is part of the build`).to.equal(true);
 		}
+	});
+
+	it("carries the logo in the SVG favicon", () => {
+		const favicon = fs.readFileSync(path.join(www, "favicon.svg"), "utf8");
+		expect(favicon).to.contain("<svg");
+		// the master logo is a raster image, so the SVG carries it as an embedded PNG
+		expect(favicon).to.contain("data:image/png;base64,");
 	});
 
 	it("declares a maskable icon and ships it in the size the manifest promises", () => {

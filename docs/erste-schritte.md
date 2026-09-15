@@ -67,6 +67,17 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   ```
 
   Erwartet: `OK: kein Fehler, alle Stempel vorhanden, Antwortzeiten im Sekundenbereich.` (Code 0).
+- Erststart-Strecke automatisch durchprüfen (Anmeldung, Pflicht-Passwortwechsel, Mitarbeiter samt Badge-PIN,
+  Stempeln, Tages- und Monatsauswertung, XLS- und PDF-Bericht, Sicherung):
+
+  ```bash
+  npm run first-run -- --login admin --password '<Startpasswort>'
+  ```
+
+  Erwartet: `Ergebnis: <alle>/<alle> Schritte erfüllt` und `OK: Erststart-Strecke ohne Fehler.` (Code 0). Das Skript
+  legt den Mitarbeiter `pruefung` samt Stempeln und PIN an — für saubere Daten danach in der Verwaltung löschen.
+  Was es bewusst auslässt (weil es eine Einstellung oder echte Daten braucht), sagt es am Ende selbst: Kiosk-
+  Terminal, Ausweis-Link und Altdaten-Import prüft der Testplan von Hand.
 - Offline-Probe: WLAN trennen, stempeln, wieder verbinden — der Stempel wird nachgereicht (`Sync`-Ansicht).
 - Verwaltung → **Backups**: „create now" drücken; der Zustand `zeiterfassung.0.info.lastBackup` springt an.
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des

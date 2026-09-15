@@ -1,7 +1,7 @@
 # Abnahme- und Testplan (erste reale Tests)
 
 Dieses Dokument ist die Arbeitsanleitung für die **ersten Tests auf einer echten ioBroker-Installation**.
-Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T17 mit Erwartung und die Abnahmekriterien.
+Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T18 mit Erwartung und die Abnahmekriterien.
 Die öffentliche `README.md` bleibt englisch (Vorgabe des Adapter-Checkers) — dieses Betriebsdokument ist
 bewusst deutsch, wie `docs/adapter-check.md`.
 
@@ -85,7 +85,7 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 | T14 | ioBroker-States und Befehle | States unter `zeiterfassung.0.*` prüfen, `commands.punch` setzen | Werte plausibel, `info.connection` true, Button-States `read: false`, gelöschter Benutzer hinterlässt keine States |
 | T15 | Sprachen | Oberfläche auf `de`, dann `ru`, dann `zh-cn`; Berichte in derselben Sprache | keine abgeschnittenen Texte, Datum/Zahlen lokal formatiert, Bericht in der Sprache des Nutzers |
 | T16 | PWA-Installation | Adapter-URL über **HTTPS** öffnen, „Zum Startbildschirm hinzufügen", App starten, neu bauen und neu laden | App läuft im eigenen Fenster, Icon ist das Logo, Update ohne hängenden Alt-Cache |
-| T17 | Last (Stichprobe) | 5 parallele Stempel über die API (curl-Schleife), danach Monatsansicht prüfen | keine Fehler, alle 5 Stempel vorhanden, Antwortzeiten im Sekundenbereich |
+| T17 | Last (Stichprobe) | `npm run load-smoke -- --login <Benutzer> --password '<Passwort>'` (Standard: 5 Stempel parallel; `--count 10 --base http://…` möglich, Passwort alternativ in `ZT_PASSWORD`) | keine Fehler, alle 5 Stempel vorhanden, Antwortzeiten im Sekundenbereich — das Skript prüft beides selbst und endet nur dann mit Code 0 |
 | T18 | Legacy-Import | Kommando `commands.import` setzen: (a) `{"baseDir":"…/smalltime","mode":"dry-run"}`, (b) danach mit `"mode":"commit"`, (c) denselben Commit ein zweites Mal (mit `"resetImport":true`), (d) Report in `info.lastImport` und in `import_runs` prüfen | (a) Bericht mit Zählern und Warnungen, aber **keine** neuen Zeilen in `time_entries`/`absences`/`payouts`; (b) Import erfolgreich, `status` nicht `mismatch`, Monatswerte reproduzieren `Timetable/<Jahr>` auf ±0,01 h; (c) keine zusätzlichen Zeilen (Idempotenz); (d) `info.lastImport` enthält den Bericht, `import_runs` je Lauf eine Zeile mit Modus, Status, Zählern und Warnungen |
 
 Ein Hinweis zu T18: Der Import wird gegen das synthetische Fixture (`fixtures/smalltime`) geprüft. Für die Abnahme

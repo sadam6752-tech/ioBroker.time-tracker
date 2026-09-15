@@ -226,6 +226,31 @@ describe("monthly report (pdf)", () => {
 		).to.throw;
 	});
 
+	it("refuses Ukrainian and Chinese the same way and uses their labels", async () => {
+		// the other two scripts the built-in Latin-1 fonts cannot draw (specification 6, language table)
+		const english = reportLabels("en-GB");
+		for (const locale of ["uk-UA", "zh-CN"]) {
+			const chosen = reportLabels(locale);
+			expect(chosen.language, locale).to.be.oneOf(["uk", "zh-cn"]);
+			expect(chosen.labels.title, `${locale} needs its own texts`).to.not.equal(english.labels.title);
+
+			let failure: unknown = null;
+			try {
+				await buildMonthStatement({
+					...baseInput,
+					labels: chosen.labels,
+					language: chosen.language,
+					locale,
+					days: [],
+				});
+			} catch (error) {
+				failure = error;
+			}
+			expect(failure, `${locale} must be refused without a font`).to.be.instanceOf(ValidationError);
+			expect((failure as ValidationError).message).to.contain("report_font_path");
+		}
+	});
+
 	// runs only where the machine has a TrueType font to embed
 	(systemFont ? it : it.skip)("embeds a configured Unicode font", async () => {
 		const russian = reportLabels("ru-RU");

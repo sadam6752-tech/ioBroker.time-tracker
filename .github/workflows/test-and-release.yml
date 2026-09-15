@@ -60,6 +60,10 @@ jobs:
                   install-command: "npm ci && npm ci --prefix src-pwa"
                   build: true
                   build-command: "npm run build && npm run build:pwa"
+                  # The unit tests and the package checks belong to this job as well. By default the action
+                  # looks for a `test:unit` script, this adapter names the unit tests `test:ts`.
+                  unit-test-check-pattern: "test:ts"
+                  unit-test-command: "npm run test:ts && npm run test:package"
 
     # Deploys the final package to npm and creates the GitHub release.
     # Requires npm "trusted publishing" for this repository and workflow (https://docs.npmjs.com/trusted-publishers);

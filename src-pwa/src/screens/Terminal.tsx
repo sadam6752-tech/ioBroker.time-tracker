@@ -28,6 +28,7 @@ import {
 	type TerminalSessionResult,
 	type TerminalUser,
 } from "../api/client";
+import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
 
 /** Where the device token of this kiosk is remembered. */
@@ -131,26 +132,39 @@ export function Terminal(): React.JSX.Element {
 		})();
 	}, [token, enabled, forgetToken]);
 
-	// keep the session alive; when it is gone, the effect above starts a new one
+	// Keep the session alive. A kiosk browser throttles timers while the screen sleeps, so the heartbeat can be
+	// late: when it fails, a new session is requested right away with the stored device token.
 	useEffect(() => {
-		if (!session) {
+		if (!session || !token) {
 			return;
 		}
 		const timer = window.setInterval(() => {
-			void api.terminalHeartbeat(session.terminalSession).catch(() => setSession(null));
+			void api.terminalHeartbeat(session.terminalSession).catch(async () => {
+				try {
+					setSession(await renewTerminalSession(token));
+				} catch {
+					// the device token itself is not usable any more: the kiosk has to be set up again
+					forgetToken();
+				}
+			});
 		}, HEARTBEAT_MILLISECONDS);
 		return () => window.clearInterval(timer);
-	}, [session]);
+	}, [session, token, forgetToken]);
 
 	/** Sends a punch and shows the confirmation for a moment. */
 	const punch = useCallback(
 		async (input: { badge?: string; userId?: number; pin?: string }): Promise<void> => {
-			if (!session) {
+			if (!session || !token) {
 				return;
 			}
 			setProblem(null);
 			try {
-				const done = await api.terminalPunch({ terminalSession: session.terminalSession, ...input });
+				const done = await withFreshSession({
+					deviceToken: token,
+					session,
+					call: current => api.terminalPunch({ terminalSession: current.terminalSession, ...input }),
+					onRenewed: setSession,
+				});
 				setResult(done);
 				setSelected(null);
 				setBadge("");
@@ -160,7 +174,7 @@ export function Terminal(): React.JSX.Element {
 				setProblem(error);
 			}
 		},
-		[session],
+		[session, token],
 	);
 
 	if (enabled === null) {

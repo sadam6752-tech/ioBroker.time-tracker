@@ -121,6 +121,24 @@ test("shows who is present, uses the stored picture and the placeholder otherwis
 	await expect(page.getByText(/Anna Muster ist jetzt Anwesend/)).toBeVisible();
 });
 
+test("keeps working after the terminal session expired (no reload needed)", async ({ page, request }) => {
+	const session = await signIn(request);
+	const deviceToken = await createTerminal(request, session);
+
+	await page.goto(`/presence?token=${encodeURIComponent(deviceToken)}`);
+	await expect(page.getByRole("button", { name: /Anna Muster/ }).first()).toBeVisible();
+
+	// the test server lets a terminal session live about six seconds; a screen in a workshop runs much longer than
+	// that and has to get a new session on its own — the heartbeat is late in a sleeping browser, so the call itself
+	// has to renew it
+	await page.waitForTimeout(7000);
+	await page.getByRole("button", { name: "Aktualisieren" }).click();
+
+	// the tiles are there again, and the screen never told the user to sign in or to reload
+	await expect(page.getByRole("button", { name: /Anna Muster/ }).first()).toBeVisible();
+	await expect(page.getByText(/abgelaufen/)).toHaveCount(0);
+});
+
 test("asks the presence screen for its device token", async ({ page }) => {
 	await page.goto("/presence");
 	await expect(page.getByLabel("Geräte-Token")).toBeVisible();

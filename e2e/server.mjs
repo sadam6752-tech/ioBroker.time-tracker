@@ -84,6 +84,8 @@ const api = createApi({
 	sync,
 	settings,
 	kioskEnabled: true,
+	// a terminal session lives seconds in the tests, so the specs also cover a screen that has to renew itself
+	terminalSessionMinutes: 0.1,
 	hmacSecret: "e2e-hmac-secret",
 	version,
 	now,

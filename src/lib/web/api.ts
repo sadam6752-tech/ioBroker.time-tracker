@@ -87,6 +87,8 @@ export interface ApiDeps {
 	hmacSecret?: string;
 	/** True when the kiosk terminal is switched on (instance setting) */
 	kioskEnabled?: boolean;
+	/** Lifetime of a terminal session in minutes; the heartbeat of the device extends it (default 15) */
+	terminalSessionMinutes?: number;
 	/**
 	 * Trusts `x-forwarded-*` of a reverse proxy: the forwarded address is used for the rate limits and the
 	 * audit trail, and `x-forwarded-proto: https` makes the session cookie `Secure`.
@@ -199,8 +201,8 @@ const JSON_SETTINGS = ["pause_staffel"];
 /** Upper bound of a statistics range: every day of every employee is recalculated. */
 const MAX_STATISTICS_DAYS = 366;
 
-/** Lifetime of a terminal session; the heartbeat of the device extends it. */
-const TERMINAL_SESSION_MINUTES = 15;
+/** Default lifetime of a terminal session; the heartbeat of the device extends it. */
+const TERMINAL_SESSION_MINUTES_DEFAULT = 15;
 
 /** A terminal as it is handed out over the API (without any secret). */
 export interface PublicTerminalPayload {
@@ -2018,6 +2020,10 @@ export function createApi(deps: ApiDeps): Api {
 			throw problem(403, "kiosk_disabled", "the kiosk terminal is switched off in the adapter settings");
 		}
 	};
+
+	// how long a session of a kiosk device lives; the heartbeat of the device extends it. A test may shorten it,
+	// and an instance may raise it for a tablet that is never touched.
+	const TERMINAL_SESSION_MINUTES = deps.terminalSessionMinutes ?? TERMINAL_SESSION_MINUTES_DEFAULT;
 
 	/**
 	 * Resolves the terminal of a request.

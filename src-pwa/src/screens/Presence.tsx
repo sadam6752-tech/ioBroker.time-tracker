@@ -19,11 +19,14 @@ import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
 import { api, type TerminalPunchResult, type TerminalSessionResult, type TerminalUser } from "../api/client";
+import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
 
 /** Where the device token of this device is remembered. */
@@ -31,6 +34,9 @@ const STORAGE_KEY = "zeiterfassung.presence";
 
 /** How often the tiles are refreshed, so the screen also shows punches made elsewhere (milliseconds). */
 const REFRESH_MILLISECONDS = 60_000;
+
+/** How often the device tells the server that it is still there (milliseconds; the session lives 15 minutes). */
+const HEARTBEAT_MILLISECONDS = 5 * 60 * 1000;
 
 /** How long the confirmation of a punch stays on the screen (milliseconds). */
 const CONFIRMATION_MILLISECONDS = 8000;
@@ -75,6 +81,16 @@ export function Presence(): React.JSX.Element {
 	const [enabled, setEnabled] = useState<boolean | null>(null);
 	const [busy, setBusy] = useState(false);
 
+	/** Forgets the device token of this device, so the screen asks for a new one. */
+	const forgetToken = useCallback((): void => {
+		try {
+			window.localStorage.removeItem(STORAGE_KEY);
+		} catch {
+			// nothing to clean up
+		}
+		setToken(null);
+	}, []);
+
 	useEffect(() => {
 		void (async () => {
 			try {
@@ -103,19 +119,24 @@ export function Presence(): React.JSX.Element {
 		})();
 	}, [token]);
 
-	/** Loads the employees together with their presence. */
+	/** Loads the employees together with their presence; renews the session when it expired. */
 	const loadUsers = useCallback(async (): Promise<void> => {
-		if (!session) {
+		if (!session || !token) {
 			return;
 		}
 		try {
-			const answer = await api.terminalUsers(session.terminalSession);
+			const answer = await withFreshSession({
+				deviceToken: token,
+				session,
+				call: current => api.terminalUsers(current.terminalSession),
+				onRenewed: setSession,
+			});
 			setUsers(answer.users);
 			setProblem(null);
 		} catch (error) {
 			setProblem(error);
 		}
-	}, [session]);
+	}, [session, token]);
 
 	useEffect(() => {
 		void loadUsers();
@@ -123,6 +144,26 @@ export function Presence(): React.JSX.Element {
 		const timer = window.setInterval(() => void loadUsers(), REFRESH_MILLISECONDS);
 		return () => window.clearInterval(timer);
 	}, [loadUsers]);
+
+	// Keep the session alive. A browser in the workshop throttles timers and may sleep for a long time, so the
+	// heartbeat alone is not enough — when it fails, a new session is requested right away with the device token.
+	useEffect(() => {
+		if (!session || !token) {
+			return;
+		}
+		const timer = window.setInterval(() => {
+			void api.terminalHeartbeat(session.terminalSession).catch(async () => {
+				try {
+					setSession(await renewTerminalSession(token));
+				} catch (error) {
+					// the device token itself is not usable any more: the screen has to be set up again
+					setProblem(error);
+					forgetToken();
+				}
+			});
+		}, HEARTBEAT_MILLISECONDS);
+		return () => window.clearInterval(timer);
+	}, [session, token, forgetToken]);
 
 	useEffect(() => {
 		if (!confirmation) {
@@ -134,15 +175,17 @@ export function Presence(): React.JSX.Element {
 
 	/** Clocks the selected employee in or out. */
 	const submit = useCallback(async (): Promise<void> => {
-		if (!session || !selected || pin.length === 0) {
+		if (!session || !token || !selected || pin.length === 0) {
 			return;
 		}
 		setBusy(true);
 		try {
-			const result = await api.terminalPunch({
-				terminalSession: session.terminalSession,
-				userId: selected.id,
-				pin,
+			const result = await withFreshSession({
+				deviceToken: token,
+				session,
+				call: current =>
+					api.terminalPunch({ terminalSession: current.terminalSession, userId: selected.id, pin }),
+				onRenewed: setSession,
 			});
 			setConfirmation(result);
 			// the answer carries the new state of the day, so the tile is right without asking again
@@ -159,7 +202,7 @@ export function Presence(): React.JSX.Element {
 		} finally {
 			setBusy(false);
 		}
-	}, [pin, selected, session]);
+	}, [pin, selected, session, token]);
 
 	// this device is not set up yet: ask for the device token, the same flow as the kiosk terminal
 	if (!token) {
@@ -201,7 +244,21 @@ export function Presence(): React.JSX.Element {
 				sx={{ mb: 2 }}
 			>
 				<Typography variant="h5">{t("presence.title")}</Typography>
-				<Typography variant="body1">{session?.terminal.name ?? ""}</Typography>
+				<Stack
+					direction="row"
+					spacing={1}
+					alignItems="center"
+				>
+					<Typography variant="body1">{session?.terminal.name ?? ""}</Typography>
+					<IconButton
+						size="small"
+						title={t("common.refresh")}
+						aria-label={t("common.refresh")}
+						onClick={() => void loadUsers()}
+					>
+						<RefreshIcon fontSize="small" />
+					</IconButton>
+				</Stack>
 			</Stack>
 
 			{enabled === false && (

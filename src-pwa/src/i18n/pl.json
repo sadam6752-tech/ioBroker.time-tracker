@@ -153,5 +153,20 @@
 	"admin.import.start": "Rozpocznij import",
 	"admin.import.result": "Tryb {{mode}}, status {{status}}, {{warnings}} ostrzeżeń, przebieg {{runId}}",
 	"admin.import.counters": "Liczniki",
-	"admin.import.runs": "Ostatnie przebiegi"
+	"admin.import.runs": "Ostatnie przebiegi",
+	"admin.holidays": "Dni świąteczne",
+	"admin.holiday.date": "Data (RRRR-MM-DD)",
+	"admin.holiday.name": "Nazwa",
+	"admin.holiday.add": "Dodaj dzień świąteczny",
+	"admin.holiday.year": "Rok",
+	"admin.holiday.region": "Region (opcjonalnie)",
+	"admin.holiday.empty": "W tym roku nie zapisano dni świątecznych.",
+	"admin.tags": "Karty (RFID/NFC)",
+	"admin.tag.label": "Etykieta",
+	"admin.tag.user": "Pracownik",
+	"admin.tag.create": "Utwórz kartę",
+	"admin.tag.linkOnce": "Zapisz ten link na tagu albo otwórz go w telefonie:",
+	"admin.tag.delete": "Usuń",
+	"admin.tag.empty": "Nie utworzono jeszcze karty.",
+	"admin.user.roles": "Role"
 }

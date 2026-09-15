@@ -153,5 +153,20 @@
 	"admin.import.start": "Import starten",
 	"admin.import.result": "Modus {{mode}}, Status {{status}}, {{warnings}} Warnung(en), Lauf {{runId}}",
 	"admin.import.counters": "Zähler",
-	"admin.import.runs": "Letzte Läufe"
+	"admin.import.runs": "Letzte Läufe",
+	"admin.holidays": "Feiertage",
+	"admin.holiday.date": "Datum (JJJJ-MM-TT)",
+	"admin.holiday.name": "Bezeichnung",
+	"admin.holiday.add": "Feiertag hinzufügen",
+	"admin.holiday.year": "Jahr",
+	"admin.holiday.region": "Region (optional)",
+	"admin.holiday.empty": "Für dieses Jahr ist kein Feiertag erfasst.",
+	"admin.tags": "Ausweise (RFID/NFC)",
+	"admin.tag.label": "Bezeichnung",
+	"admin.tag.user": "Mitarbeiter",
+	"admin.tag.create": "Ausweis anlegen",
+	"admin.tag.linkOnce": "Diesen Link auf den Tag schreiben oder am Handy öffnen:",
+	"admin.tag.delete": "Löschen",
+	"admin.tag.empty": "Noch kein Ausweis angelegt.",
+	"admin.user.roles": "Rollen"
 }

@@ -157,6 +157,22 @@ export interface ApiClient {
 	updateSettings(patch: Record<string, string>): Promise<Record<string, string>>;
 	/** The last legacy import runs */
 	importRuns(): Promise<ImportRunRecord[]>;
+	/** Public holidays of a year, optionally limited to a region */
+	holidays(year: number, region?: string): Promise<HolidayRecord[]>;
+	/** Adds a public holiday */
+	createHoliday(input: { date: string; name: string; region?: string }): Promise<HolidayRecord>;
+	/** Removes a public holiday */
+	deleteHoliday(id: number): Promise<void>;
+	/** Signed badge/NFC tags */
+	rfidTags(): Promise<RfidTagRecord[]>;
+	/** Creates a tag; the link to write onto it is part of the answer */
+	createTag(input: {
+		userId: number;
+		label?: string;
+		ttlDays?: number;
+	}): Promise<{ tag: RfidTagRecord; url: string }>;
+	/** Deletes a tag */
+	deleteTag(id: number): Promise<void>;
 	/** Starts a legacy import run */
 	runImport(input: {
 		baseDir?: string;
@@ -297,6 +313,34 @@ export interface ImportReport {
 	stats: Record<string, number>;
 	/** Remarks, including the ones of the parsers */
 	warnings: string[];
+}
+
+/** A public holiday (`GET /holidays`). */
+export interface HolidayRecord {
+	/** Primary key */
+	id: number;
+	/** Date (`YYYY-MM-DD`) */
+	date: string;
+	/** Name of the holiday */
+	name: string;
+	/** Region it belongs to, `null` for all */
+	region: string | null;
+}
+
+/** A signed badge/NFC tag (`GET /rfid/tags`). */
+export interface RfidTagRecord {
+	/** Primary key */
+	id: number;
+	/** Uid written on the tag */
+	uid: string | null;
+	/** Employee the tag belongs to */
+	userId: number;
+	/** Optional label */
+	label: string | null;
+	/** Instant the link on the tag expires, UTC epoch seconds */
+	expiresAt: number | null;
+	/** Instant of creation */
+	createdAt: number;
 }
 
 /**
@@ -666,6 +710,35 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				body: input,
 			});
 			return result.report ?? result;
+		},
+
+		async holidays(year: number, region?: string): Promise<HolidayRecord[]> {
+			const result = await request<{ holidays: HolidayRecord[] }>("GET", "/holidays", {
+				query: { year, ...(region ? { region } : {}) },
+			});
+			return result.holidays ?? [];
+		},
+
+		async createHoliday(input) {
+			const result = await request<{ holiday: HolidayRecord }>("POST", "/holidays", { body: input });
+			return result.holiday;
+		},
+
+		async deleteHoliday(id: number): Promise<void> {
+			await request<void>("DELETE", `/holidays/${id}`);
+		},
+
+		async rfidTags(): Promise<RfidTagRecord[]> {
+			const result = await request<{ tags: RfidTagRecord[] }>("GET", "/rfid/tags");
+			return result.tags ?? [];
+		},
+
+		async createTag(input) {
+			return request<{ tag: RfidTagRecord; url: string }>("POST", "/rfid/tags", { body: input });
+		},
+
+		async deleteTag(id: number): Promise<void> {
+			await request<void>("DELETE", `/rfid/tags/${id}`);
 		},
 
 		backups: () => request("GET", "/backup"),

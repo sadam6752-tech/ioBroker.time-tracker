@@ -153,5 +153,20 @@
 	"admin.import.start": "Avvia importazione",
 	"admin.import.result": "Modalità {{mode}}, stato {{status}}, {{warnings}} avviso(i), esecuzione {{runId}}",
 	"admin.import.counters": "Contatori",
-	"admin.import.runs": "Ultime esecuzioni"
+	"admin.import.runs": "Ultime esecuzioni",
+	"admin.holidays": "Giorni festivi",
+	"admin.holiday.date": "Data (AAAA-MM-GG)",
+	"admin.holiday.name": "Nome",
+	"admin.holiday.add": "Aggiungi giorno festivo",
+	"admin.holiday.year": "Anno",
+	"admin.holiday.region": "Regione (facoltativo)",
+	"admin.holiday.empty": "Nessun giorno festivo registrato per quest'anno.",
+	"admin.tags": "Badge (RFID/NFC)",
+	"admin.tag.label": "Etichetta",
+	"admin.tag.user": "Dipendente",
+	"admin.tag.create": "Crea badge",
+	"admin.tag.linkOnce": "Scrivi questo link sul tag o aprilo sul telefono:",
+	"admin.tag.delete": "Elimina",
+	"admin.tag.empty": "Nessun badge creato finora.",
+	"admin.user.roles": "Ruoli"
 }

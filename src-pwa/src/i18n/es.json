@@ -153,5 +153,20 @@
 	"admin.import.start": "Iniciar importación",
 	"admin.import.result": "Modo {{mode}}, estado {{status}}, {{warnings}} aviso(s), ejecución {{runId}}",
 	"admin.import.counters": "Contadores",
-	"admin.import.runs": "Últimas ejecuciones"
+	"admin.import.runs": "Últimas ejecuciones",
+	"admin.holidays": "Días festivos",
+	"admin.holiday.date": "Fecha (AAAA-MM-DD)",
+	"admin.holiday.name": "Nombre",
+	"admin.holiday.add": "Añadir día festivo",
+	"admin.holiday.year": "Año",
+	"admin.holiday.region": "Región (opcional)",
+	"admin.holiday.empty": "No hay días festivos registrados para este año.",
+	"admin.tags": "Tarjetas (RFID/NFC)",
+	"admin.tag.label": "Etiqueta",
+	"admin.tag.user": "Empleado",
+	"admin.tag.create": "Crear tarjeta",
+	"admin.tag.linkOnce": "Escribe este enlace en la etiqueta o ábrelo en el teléfono:",
+	"admin.tag.delete": "Eliminar",
+	"admin.tag.empty": "Todavía no se ha creado ninguna tarjeta.",
+	"admin.user.roles": "Roles"
 }

@@ -153,5 +153,20 @@
 	"admin.import.start": "Start import",
 	"admin.import.result": "Mode {{mode}}, status {{status}}, {{warnings}} warning(s), run {{runId}}",
 	"admin.import.counters": "Counters",
-	"admin.import.runs": "Last runs"
+	"admin.import.runs": "Last runs",
+	"admin.holidays": "Public holidays",
+	"admin.holiday.date": "Date (YYYY-MM-DD)",
+	"admin.holiday.name": "Name",
+	"admin.holiday.add": "Add holiday",
+	"admin.holiday.year": "Year",
+	"admin.holiday.region": "Region (optional)",
+	"admin.holiday.empty": "No holiday recorded for this year.",
+	"admin.tags": "Badges (RFID/NFC)",
+	"admin.tag.label": "Label",
+	"admin.tag.user": "Employee",
+	"admin.tag.create": "Create badge",
+	"admin.tag.linkOnce": "Write this link onto the tag or open it on the phone:",
+	"admin.tag.delete": "Delete",
+	"admin.tag.empty": "No badge created yet.",
+	"admin.user.roles": "Roles"
 }

@@ -153,5 +153,20 @@
 	"admin.import.start": "Почати імпорт",
 	"admin.import.result": "Режим {{mode}}, статус {{status}}, попереджень: {{warnings}}, прогін {{runId}}",
 	"admin.import.counters": "Лічильники",
-	"admin.import.runs": "Останні прогони"
+	"admin.import.runs": "Останні прогони",
+	"admin.holidays": "Святкові дні",
+	"admin.holiday.date": "Дата (РРРР-ММ-ДД)",
+	"admin.holiday.name": "Назва",
+	"admin.holiday.add": "Додати святковий день",
+	"admin.holiday.year": "Рік",
+	"admin.holiday.region": "Регіон (необов'язково)",
+	"admin.holiday.empty": "За цей рік святкові дні не внесено.",
+	"admin.tags": "Перепустки (RFID/NFC)",
+	"admin.tag.label": "Мітка",
+	"admin.tag.user": "Працівник",
+	"admin.tag.create": "Створити перепустку",
+	"admin.tag.linkOnce": "Запишіть це посилання на мітку або відкрийте його на телефоні:",
+	"admin.tag.delete": "Видалити",
+	"admin.tag.empty": "Перепустку ще не створено.",
+	"admin.user.roles": "Ролі"
 }

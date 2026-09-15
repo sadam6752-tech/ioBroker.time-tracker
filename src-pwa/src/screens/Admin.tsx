@@ -20,6 +20,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Tab from "@mui/material/Tab";
@@ -33,7 +34,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type AdminTerminal } from "../api/client";
+import { api, formatDate, type AdminTerminal } from "../api/client";
 import type { AdminUser, CreateUserInput } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -186,6 +187,9 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const [creating, setCreating] = useState(false);
 	const [pinUser, setPinUser] = useState<AdminUser | null>(null);
 	const [pin, setPin] = useState("");
+	const [rolesUser, setRolesUser] = useState<AdminUser | null>(null);
+	// assigning roles is a right of its own (the server checks it again)
+	const mayManageRoles = hasPermission(permissions, "user.manage_roles");
 
 	const users = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users(true) });
 
@@ -251,6 +255,14 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 											>
 												{t("admin.user.pin")}
 											</Button>
+											{mayManageRoles && (
+												<Button
+													size="small"
+													onClick={() => setRolesUser(user)}
+												>
+													{t("admin.user.roles")}
+												</Button>
+											)}
 											<Switch
 												checked={user.isActive}
 												title={t(user.isActive ? "admin.user.active" : "admin.user.inactive")}
@@ -326,6 +338,17 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			{rolesUser && (
+				<RolesDialog
+					user={rolesUser}
+					onClose={() => setRolesUser(null)}
+					onSaved={roleKeys => {
+						change.mutate({ id: rolesUser.id, patch: { roleKeys } });
+						setRolesUser(null);
+					}}
+				/>
+			)}
 
 			{creating && (
 				<CreateUserDialog
@@ -779,6 +802,349 @@ function ImportTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Dialog that assigns the roles of an employee.
+ *
+ * @param props - employee, close handler and save handler
+ * @param props.user - employee to edit
+ * @param props.onClose - called when the dialog is closed
+ * @param props.onSaved - called with the chosen role keys
+ * @returns the dialog
+ */
+function RolesDialog({
+	user,
+	onClose,
+	onSaved,
+}: {
+	user: AdminUser;
+	onClose: () => void;
+	onSaved: (roleKeys: string[]) => void;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	const roles = useQuery({ queryKey: ["admin", "roles"], queryFn: () => api.roles() });
+	const [chosen, setChosen] = useState<string[]>(user.roles);
+
+	/**
+	 * Adds or removes a role.
+	 *
+	 * @param key - role key
+	 * @param checked - true when the role should be granted
+	 */
+	const toggle = (key: string, checked: boolean): void =>
+		setChosen(current => (checked ? [...new Set([...current, key])] : current.filter(entry => entry !== key)));
+
+	return (
+		<Dialog
+			open
+			onClose={onClose}
+			fullWidth
+		>
+			<DialogTitle>{t("admin.user.roles")}</DialogTitle>
+			<DialogContent>
+				<Stack
+					spacing={1}
+					sx={{ mt: 1 }}
+				>
+					{(roles.data ?? []).map(role => (
+						<Stack
+							key={role.key}
+							direction="row"
+							spacing={1}
+							alignItems="center"
+						>
+							<Switch
+								checked={chosen.includes(role.key)}
+								onChange={(_event, checked) => toggle(role.key, checked)}
+							/>
+							<Typography>{role.name}</Typography>
+						</Stack>
+					))}
+				</Stack>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onClose}>{t("common.cancel")}</Button>
+				<Button
+					variant="contained"
+					disabled={chosen.length === 0}
+					onClick={() => onSaved(chosen)}
+				>
+					{t("common.save")}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+/**
+ * Public holidays of a year: list, add and remove.
+ *
+ * @param props - language of the display
+ * @param props.language - language of the display
+ * @returns the holiday tab
+ */
+function HolidaysTab({ language }: { language: string }): React.JSX.Element {
+	const { t } = useTranslation();
+	const queryClient = useQueryClient();
+	const [year, setYear] = useState(String(new Date().getFullYear()));
+	const [date, setDate] = useState("");
+	const [name, setName] = useState("");
+	const [region, setRegion] = useState("");
+
+	const holidays = useQuery({
+		queryKey: ["admin", "holidays", year],
+		queryFn: () => api.holidays(Number(year)),
+	});
+
+	/** Refreshes the list of the shown year. */
+	const reload = async (): Promise<void> => {
+		await queryClient.invalidateQueries({ queryKey: ["admin", "holidays", year] });
+	};
+
+	const add = useMutation({
+		mutationFn: () =>
+			api.createHoliday({
+				date: date.trim(),
+				name: name.trim(),
+				...(region.trim() ? { region: region.trim() } : {}),
+			}),
+		onSuccess: async () => {
+			setDate("");
+			setName("");
+			setRegion("");
+			await reload();
+		},
+	});
+
+	const remove = useMutation({
+		mutationFn: (id: number) => api.deleteHoliday(id),
+		onSuccess: reload,
+	});
+
+	const ready = /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) && name.trim().length > 0;
+
+	return (
+		<>
+			<ErrorAlert error={holidays.error ?? add.error ?? remove.error} />
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Stack
+						direction={{ xs: "column", sm: "row" }}
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<TextField
+							label={t("admin.holiday.year")}
+							value={year}
+							onChange={event => setYear(event.target.value.replace(/\D/g, "").slice(0, 4))}
+							sx={{ width: 140 }}
+						/>
+						<TextField
+							label={t("admin.holiday.date")}
+							value={date}
+							onChange={event => setDate(event.target.value)}
+						/>
+						<TextField
+							label={t("admin.holiday.name")}
+							value={name}
+							onChange={event => setName(event.target.value)}
+							fullWidth
+						/>
+						<TextField
+							label={t("admin.holiday.region")}
+							value={region}
+							onChange={event => setRegion(event.target.value)}
+							sx={{ width: 200 }}
+						/>
+					</Stack>
+					<Box sx={{ mt: 2 }}>
+						<Button
+							variant="contained"
+							disabled={!ready || add.isPending}
+							onClick={() => add.mutate()}
+						>
+							{t("admin.holiday.add")}
+						</Button>
+					</Box>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<List dense>
+					{(holidays.data ?? []).map(holiday => (
+						<ListItem
+							key={holiday.id}
+							divider
+							secondaryAction={
+								<Button
+									size="small"
+									color="error"
+									onClick={() => remove.mutate(holiday.id)}
+								>
+									{t("admin.tag.delete")}
+								</Button>
+							}
+						>
+							<ListItemText
+								primary={`${formatDate(holiday.date, language)} · ${holiday.name}`}
+								secondary={holiday.region ?? t("common.none")}
+							/>
+						</ListItem>
+					))}
+					{!holidays.isLoading && (holidays.data ?? []).length === 0 && (
+						<ListItem>
+							<ListItemText secondary={t("admin.holiday.empty")} />
+						</ListItem>
+					)}
+				</List>
+			</Card>
+		</>
+	);
+}
+
+/**
+ * Badges of the employees: create a signed link for a tag, list and remove them.
+ *
+ * @param props - language of the display
+ * @param props.language - language of the display
+ * @returns the badge tab
+ */
+function TagsTab({ language }: { language: string }): React.JSX.Element {
+	const { t } = useTranslation();
+	const queryClient = useQueryClient();
+	const tags = useQuery({ queryKey: ["admin", "tags"], queryFn: () => api.rfidTags() });
+	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
+	const [userId, setUserId] = useState("");
+	const [label, setLabel] = useState("");
+	const [issued, setIssued] = useState<string | null>(null);
+
+	/** Refreshes the list of the badges. */
+	const reload = async (): Promise<void> => {
+		await queryClient.invalidateQueries({ queryKey: ["admin", "tags"] });
+	};
+
+	const create = useMutation({
+		mutationFn: () => api.createTag({ userId: Number(userId), ...(label.trim() ? { label: label.trim() } : {}) }),
+		onSuccess: async created => {
+			setIssued(created.url);
+			setLabel("");
+			await reload();
+		},
+	});
+
+	const remove = useMutation({
+		mutationFn: (id: number) => api.deleteTag(id),
+		onSuccess: reload,
+	});
+
+	/**
+	 * Name of the employee a badge belongs to.
+	 *
+	 * @param id - user id
+	 * @returns shown name
+	 */
+	const nameOf = (id: number): string => (people.data ?? []).find(user => user.id === id)?.displayName ?? `#${id}`;
+
+	return (
+		<>
+			<ErrorAlert error={tags.error ?? create.error ?? remove.error} />
+
+			{issued && (
+				<Alert
+					severity="success"
+					sx={{ mb: 2 }}
+				>
+					<Typography
+						variant="body2"
+						gutterBottom
+					>
+						{t("admin.tag.linkOnce")}
+					</Typography>
+					<Typography
+						variant="body2"
+						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+					>
+						{issued}
+					</Typography>
+				</Alert>
+			)}
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Stack
+						direction={{ xs: "column", sm: "row" }}
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<TextField
+							select
+							label={t("admin.tag.user")}
+							value={userId}
+							onChange={event => setUserId(event.target.value)}
+							sx={{ minWidth: 220 }}
+						>
+							{(people.data ?? []).map(user => (
+								<MenuItem
+									key={user.id}
+									value={String(user.id)}
+								>
+									{`${user.displayName} (${user.login})`}
+								</MenuItem>
+							))}
+						</TextField>
+						<TextField
+							label={t("admin.tag.label")}
+							value={label}
+							onChange={event => setLabel(event.target.value)}
+							fullWidth
+						/>
+						<Button
+							variant="contained"
+							disabled={!userId || create.isPending}
+							onClick={() => create.mutate()}
+						>
+							{t("admin.tag.create")}
+						</Button>
+					</Stack>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<List dense>
+					{(tags.data ?? []).map(tag => {
+						const until = tag.expiresAt ? formatStamp(tag.expiresAt, language) : t("common.none");
+						return (
+							<ListItem
+								key={tag.id}
+								divider
+								secondaryAction={
+									<Button
+										size="small"
+										color="error"
+										onClick={() => remove.mutate(tag.id)}
+									>
+										{t("admin.tag.delete")}
+									</Button>
+								}
+							>
+								<ListItemText
+									primary={`${tag.label ?? tag.uid ?? `#${tag.id}`} · ${nameOf(tag.userId)}`}
+									secondary={`${tag.uid ?? t("common.none")} · ${until}`}
+								/>
+							</ListItem>
+						);
+					})}
+					{!tags.isLoading && (tags.data ?? []).length === 0 && (
+						<ListItem>
+							<ListItemText secondary={t("admin.tag.empty")} />
+						</ListItem>
+					)}
+				</List>
+			</Card>
+		</>
+	);
+}
+
+/**
  * Instance settings: the font for the PDF statements and a technical editor for the rest.
  *
  * @returns the settings tab
@@ -975,6 +1341,12 @@ export function Admin(): React.JSX.Element {
 	}
 	if (hasPermission(permissions, "import.run")) {
 		tabs.push({ label: t("admin.import"), render: () => <ImportTab language={i18n.language} /> });
+	}
+	if (hasPermission(permissions, "holiday.manage")) {
+		tabs.push({ label: t("admin.holidays"), render: () => <HolidaysTab language={i18n.language} /> });
+	}
+	if (hasPermission(permissions, "rfid.manage")) {
+		tabs.push({ label: t("admin.tags"), render: () => <TagsTab language={i18n.language} /> });
 	}
 	if (hasPermission(permissions, "backup.run")) {
 		tabs.push({ label: t("admin.backup"), render: () => <BackupTab language={i18n.language} /> });

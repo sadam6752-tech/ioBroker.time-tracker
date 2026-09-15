@@ -153,5 +153,20 @@
 	"admin.import.start": "Iniciar importação",
 	"admin.import.result": "Modo {{mode}}, estado {{status}}, {{warnings}} aviso(s), execução {{runId}}",
 	"admin.import.counters": "Contadores",
-	"admin.import.runs": "Últimas execuções"
+	"admin.import.runs": "Últimas execuções",
+	"admin.holidays": "Feriados",
+	"admin.holiday.date": "Data (AAAA-MM-DD)",
+	"admin.holiday.name": "Nome",
+	"admin.holiday.add": "Adicionar feriado",
+	"admin.holiday.year": "Ano",
+	"admin.holiday.region": "Região (opcional)",
+	"admin.holiday.empty": "Não há feriados registados para este ano.",
+	"admin.tags": "Cartões (RFID/NFC)",
+	"admin.tag.label": "Rótulo",
+	"admin.tag.user": "Funcionário",
+	"admin.tag.create": "Criar cartão",
+	"admin.tag.linkOnce": "Escreva este link no cartão ou abra-o no telemóvel:",
+	"admin.tag.delete": "Eliminar",
+	"admin.tag.empty": "Ainda não foi criado nenhum cartão.",
+	"admin.user.roles": "Funções"
 }

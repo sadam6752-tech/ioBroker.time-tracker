@@ -153,5 +153,20 @@
 	"admin.import.start": "Import starten",
 	"admin.import.result": "Modus {{mode}}, status {{status}}, {{warnings}} waarschuwing(en), run {{runId}}",
 	"admin.import.counters": "Tellers",
-	"admin.import.runs": "Laatste runs"
+	"admin.import.runs": "Laatste runs",
+	"admin.holidays": "Feestdagen",
+	"admin.holiday.date": "Datum (JJJJ-MM-DD)",
+	"admin.holiday.name": "Naam",
+	"admin.holiday.add": "Feestdag toevoegen",
+	"admin.holiday.year": "Jaar",
+	"admin.holiday.region": "Regio (optioneel)",
+	"admin.holiday.empty": "Voor dit jaar is geen feestdag vastgelegd.",
+	"admin.tags": "Passen (RFID/NFC)",
+	"admin.tag.label": "Label",
+	"admin.tag.user": "Medewerker",
+	"admin.tag.create": "Pas aanmaken",
+	"admin.tag.linkOnce": "Schrijf deze link op de tag of open hem op de telefoon:",
+	"admin.tag.delete": "Verwijderen",
+	"admin.tag.empty": "Nog geen pas aangemaakt.",
+	"admin.user.roles": "Rollen"
 }

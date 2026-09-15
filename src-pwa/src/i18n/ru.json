@@ -153,5 +153,20 @@
 	"admin.import.start": "Начать импорт",
 	"admin.import.result": "Режим {{mode}}, статус {{status}}, предупреждений: {{warnings}}, прогон {{runId}}",
 	"admin.import.counters": "Счётчики",
-	"admin.import.runs": "Последние прогоны"
+	"admin.import.runs": "Последние прогоны",
+	"admin.holidays": "Праздничные дни",
+	"admin.holiday.date": "Дата (ГГГГ-ММ-ДД)",
+	"admin.holiday.name": "Название",
+	"admin.holiday.add": "Добавить праздничный день",
+	"admin.holiday.year": "Год",
+	"admin.holiday.region": "Регион (необязательно)",
+	"admin.holiday.empty": "За этот год праздничные дни не занесены.",
+	"admin.tags": "Пропуска (RFID/NFC)",
+	"admin.tag.label": "Метка",
+	"admin.tag.user": "Сотрудник",
+	"admin.tag.create": "Создать пропуск",
+	"admin.tag.linkOnce": "Запишите эту ссылку на метку или откройте её на телефоне:",
+	"admin.tag.delete": "Удалить",
+	"admin.tag.empty": "Пропуск ещё не создан.",
+	"admin.user.roles": "Роли"
 }

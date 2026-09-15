@@ -153,5 +153,20 @@
 	"admin.import.start": "开始导入",
 	"admin.import.result": "模式 {{mode}}，状态 {{status}}，警告 {{warnings}} 条，运行 {{runId}}",
 	"admin.import.counters": "计数器",
-	"admin.import.runs": "最近的运行"
+	"admin.import.runs": "最近的运行",
+	"admin.holidays": "公共假日",
+	"admin.holiday.date": "日期（YYYY-MM-DD）",
+	"admin.holiday.name": "名称",
+	"admin.holiday.add": "添加假日",
+	"admin.holiday.year": "年份",
+	"admin.holiday.region": "地区（可选）",
+	"admin.holiday.empty": "本年度未记录任何假日。",
+	"admin.tags": "工牌（RFID/NFC）",
+	"admin.tag.label": "标签",
+	"admin.tag.user": "员工",
+	"admin.tag.create": "创建工牌",
+	"admin.tag.linkOnce": "将此链接写入标签，或在手机上打开：",
+	"admin.tag.delete": "删除",
+	"admin.tag.empty": "尚未创建工牌。",
+	"admin.user.roles": "角色"
 }

@@ -15,6 +15,10 @@ import { createRfidRepository, type RfidRepository } from "../db/repositories/rf
 import { createRulesRepository, type RulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
+import { runLegacyImport } from "../legacy/import";
+
+/** The synthetic SMALL-Time fixture (`fixtures/smalltime`), used by the import endpoints. */
+const fixture = path.resolve(__dirname, "..", "..", "..", "fixtures", "smalltime");
 import { createAggregationService, type AggregationService } from "../services/aggregation";
 import { createAuthService, hashPassword, type AuthService } from "../services/auth";
 import { createSyncService, type SyncService } from "../services/sync";
@@ -143,6 +147,8 @@ describe("web api", () => {
 			sync,
 			settings,
 			backup,
+			runImport: options =>
+				runLegacyImport({ db, users, entries, absences, rules, settings, payouts, aggregation }, options),
 			kioskEnabled: true,
 			hmacSecret: TAG_SECRET,
 			now: () => 1000,
@@ -1832,6 +1838,49 @@ describe("web api", () => {
 			});
 			expect(removed.status).to.equal(204);
 			expect(entries.findById(entryId)).to.equal(null);
+		});
+
+		// legacy import (administration)
+
+		it("runs a legacy import and reports what it found", async () => {
+			const response = await send("POST", "/import/run", {
+				headers: headers(adminToken, adminCsrf),
+				body: { baseDir: fixture, mode: "dry-run" },
+			});
+
+			expect(response.status).to.equal(200);
+			const report = bodyOf<{
+				mode: string;
+				status: string;
+				stats: { entries: number; goldenMonths: number };
+			}>(response);
+			expect(report.mode).to.equal("dry-run");
+			expect(report.status).to.equal("warnings");
+			expect(report.stats.entries).to.equal(16);
+			expect(report.stats.goldenMonths).to.equal(12);
+			// a dry-run writes nothing: the adapter database stays as it was
+			expect((db.prepare("SELECT COUNT(*) AS c FROM time_entries").get() as { c: number }).c).to.equal(0);
+			expect((db.prepare("SELECT COUNT(*) AS c FROM users").get() as { c: number }).c).to.equal(2);
+			// the report is stored for the administration
+			const runs = await send("GET", "/import/runs", { headers: headers(adminToken) });
+			expect(runs.status).to.equal(200);
+			expect(bodyOf<{ runs: unknown[] }>(runs).runs).to.have.length(1);
+		});
+
+		it("requires the import.run permission and a base directory", async () => {
+			const forbidden = await send("POST", "/import/run", {
+				headers: headers(annaToken, annaCsrf),
+				body: { baseDir: fixture, mode: "dry-run" },
+			});
+			expect(forbidden.status).to.equal(403);
+			expect(bodyOf(forbidden).code).to.equal("permission_denied");
+
+			const incomplete = await send("POST", "/import/run", {
+				headers: headers(adminToken, adminCsrf),
+				body: {},
+			});
+			expect(incomplete.status).to.equal(400);
+			expect(bodyOf(incomplete).code).to.equal("bad_request");
 		});
 	});
 });

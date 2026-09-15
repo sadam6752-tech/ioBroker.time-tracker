@@ -43,7 +43,7 @@ describe("legacy file parsers", () => {
 			{
 				login: "administrator",
 				displayName: "Administrator",
-				legacySha1: "7110eda4d09e062aa5e4a390b0a572ac0d2c0220",
+				legacySha1: "d033e22ae348aeb5660fc2140aec35850c4da997",
 				rfidCard: "1234",
 			},
 			{

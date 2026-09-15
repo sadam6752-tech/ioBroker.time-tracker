@@ -34,6 +34,10 @@ declare global {
 			backupRetentionDays: number;
 			/** Legacy (SMALL-Time) data directory used for the import */
 			legacyDataDir: string;
+			/** Login of the first administrator (created when the instance has none) */
+			adminLogin: string;
+			/** Start password of the first administrator (encrypted at rest, empty = generated) */
+			adminPassword: string;
 			/** Enable the kiosk terminal */
 			kioskEnabled: boolean;
 		}

@@ -180,9 +180,10 @@ tests.integration(path.join(__dirname, ".."), {
 
 			it("reacts to a command state", async function () {
 				this.timeout(testTimeout);
+				// the adapter creates the first administrator while starting, so a punch has a target
+				await waitForLog(/administrator "admin" created with the start password/);
 				await harness.states.setState("zeiterfassung.0.commands.punch", { val: true, ack: false });
-				// without an employee the command is refused, which proves it was dispatched
-				await waitForLog(/no employee exists yet/);
+				await waitForLog(/command commands\.punch: .*punched in/);
 			});
 		});
 	},

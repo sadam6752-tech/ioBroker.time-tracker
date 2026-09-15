@@ -175,6 +175,26 @@ export interface UsersRepository {
 		actorIp?: string | null;
 		now?: number;
 	}): void;
+	/**
+	 * Replaces the legacy SHA-1 hash of an account with a real password hash (specification 2.9.1).
+	 *
+	 * `legacy_sha1` is cleared in the same statement, so the old hash can never be used again. Neither the
+	 * old nor the new hash reaches the audit trail.
+	 */
+	migrateLegacyPassword(input: {
+		/** Id of the migrated account */
+		userId: number;
+		/** New hash, created with the current scheme by the caller */
+		passwordHash: string;
+		/** True while the user still has to set a new password */
+		mustChangePw: boolean;
+		/** Who performs the migration */
+		actorId: number;
+		/** Client IP address of the actor */
+		actorIp?: string | null;
+		/** Instant of the migration, defaults to now */
+		now?: number;
+	}): UserRecord;
 	/** All users, optionally including the deactivated ones */
 	list(options?: { includeInactive?: boolean }): UserRecord[];
 	/** Changes a user and audits the changed fields */
@@ -338,6 +358,10 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectByLogin = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE login = ? COLLATE NOCASE`);
 	const selectByRfid = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE rfid_card = ? COLLATE NOCASE LIMIT 1`);
 	const setPinHash = db.prepare("UPDATE users SET pin_hash = ?, updated_at = ? WHERE id = ?");
+	// the legacy hash is cleared in the same statement, so it cannot be replayed afterwards
+	const migrateLegacyHash = db.prepare(
+		"UPDATE users SET password_hash = ?, legacy_sha1 = NULL, must_change_pw = ?, updated_at = ? WHERE id = ?",
+	);
 	const selectAll = db.prepare(`SELECT ${USER_COLUMNS} FROM users ORDER BY display_name COLLATE NOCASE, id`);
 	const selectActive = db.prepare(
 		`SELECT ${USER_COLUMNS} FROM users WHERE is_active = 1 ORDER BY display_name COLLATE NOCASE, id`,
@@ -531,6 +555,40 @@ export function createUsersRepository(db: Db): UsersRepository {
 				});
 			});
 			run();
+		},
+
+		migrateLegacyPassword(input: {
+			userId: number;
+			passwordHash: string;
+			mustChangePw: boolean;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): UserRecord {
+			if (!read(input.userId)) {
+				throw new NotFoundError(`user ${input.userId} not found`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				migrateLegacyHash.run(input.passwordHash, input.mustChangePw ? 1 : 0, now, input.userId);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "user.legacy_password_migrated",
+					entity: "user",
+					entityId: input.userId,
+					// the hashes themselves never reach the audit trail
+					detail: { mustChangePw: input.mustChangePw },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			const updated = read(input.userId);
+			if (!updated) {
+				throw new NotFoundError(`user ${input.userId} not found`);
+			}
+			return updated;
 		},
 
 		list(options?: { includeInactive?: boolean }): UserRecord[] {

@@ -38,6 +38,7 @@ export type ProblemCode =
 	| "kiosk_disabled"
 	| "not_configured"
 	| "report_font_missing"
+	| "import_mismatch"
 	| "rate_limited"
 	| "internal_error";
 

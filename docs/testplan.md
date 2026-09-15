@@ -51,7 +51,9 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 
 ## 4. Testdaten
 
-1. Anmeldung im Admin-Formular: das Seed-Konto (`admin`) mit dem Startpasswort — **Passwort sofort ändern**
+1. Anmeldung im Admin-Formular: das Konto `admin` (bzw. der eingestellte Login) mit dem Startpasswort aus der
+   Instanzeinstellung — ist sie leer, steht ein zufälliges Startpasswort **einmalig im Adapter-Log** —
+   **Passwort sofort ändern**
    (der Adapter verlangt das beim ersten Login).
 2. In der Web-App unter **Verwaltung → Mitarbeiter** anlegen:
    - `anna` (Rolle *Mitarbeiter*), Passwort nach Policy (≥ 8 Zeichen, Groß-/Kleinbuchstaben, Ziffern)

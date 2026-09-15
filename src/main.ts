@@ -23,13 +23,13 @@ import type { EntriesRepository } from "./lib/db/repositories/entries";
 import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
 import { createAggregationService, type AggregationService } from "./lib/services/aggregation";
-import { createAuthService } from "./lib/services/auth";
+import { createAuthService, hashPassword } from "./lib/services/auth";
 import { createClosingService, type ClosingService } from "./lib/services/closing";
 import { createBackupService, type BackupService } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { handleCommand } from "./lib/adapter/commands";
-import { runLegacyImport } from "./lib/legacy/import";
+import { runLegacyImport, type LegacyImportOptions, type LegacyImportReport } from "./lib/legacy/import";
 import { createApi } from "./lib/web/api";
 import type { EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
@@ -60,6 +60,11 @@ interface AdapterServices {
 
 class Zeiterfassung extends utils.Adapter {
 	private db: Db | null = null;
+	/**
+	 * Entrance to the legacy import, shared by the command state and the REST API. It runs the import and
+	 * publishes the report as `info.lastImport`, so both ways of starting a run are documented the same way.
+	 */
+	private runImport: ((options: LegacyImportOptions) => LegacyImportReport) | undefined;
 	private webServer: WebServer | null = null;
 	private services: AdapterServices | null = null;
 	/** Bus of the API; `null` until the API is created */
@@ -113,6 +118,10 @@ class Zeiterfassung extends utils.Adapter {
 				`database ready at ${file} (${result.permissions} permissions, ${result.holidays} holidays added for ${country})`,
 			);
 
+			// Without an account nobody can log in, so the first administrator is created here (Phase 2 of the
+			// specification: "Standard-Admin, Passwort mit Pflichtwechsel").
+			this.ensureAdministrator(this.db);
+
 			// NOTE: The implementation follows the internal specification (not part of this repository):
 			//   Phase 1–3 – storage, punch logic, target time, breaks, overtime, vacation
 			//   Phase 4   – REST API on an own port (router, sessions, RBAC)
@@ -134,6 +143,52 @@ class Zeiterfassung extends utils.Adapter {
 			await this.setState("info.connection", true, true);
 		} catch (error) {
 			this.log.error(`Startup failed: ${(error as Error).message}`);
+		}
+	}
+
+	/**
+	 * Creates the first administrator when the instance has none.
+	 *
+	 * The account is created with `must_change_pw = 1`, so the start password opens the door exactly once.
+	 * Login and password can be configured; without a configured password a random one is generated and written
+	 * to the log, because there is no other way to hand it to the operator.
+	 *
+	 * @param db - open database handle
+	 */
+	private ensureAdministrator(db: Db): void {
+		const users = createUsersRepository(db);
+		const administrators = users.list().filter(user => users.roles(user.id).includes("admin"));
+		if (administrators.length > 0) {
+			return;
+		}
+
+		const login = (this.config.adminLogin ?? "").trim() || "admin";
+		const configured = (this.config.adminPassword ?? "").trim();
+		const password = configured || `Zf-${randomBytes(9).toString("base64url")}-7`;
+
+		try {
+			users.create({
+				login,
+				displayName: login,
+				passwordHash: hashPassword(password),
+				mustChangePw: true,
+				timezone: this.config.timezone || "Europe/Berlin",
+				roleKeys: ["admin"],
+				now: Math.floor(Date.now() / 1000),
+			});
+		} catch (error) {
+			this.log.warn(`the administrator "${login}" could not be created: ${(error as Error).message}`);
+			return;
+		}
+
+		if (configured) {
+			this.log.info(
+				`administrator "${login}" created with the configured start password - it has to be changed at the first login`,
+			);
+		} else {
+			this.log.warn(
+				`administrator "${login}" created with the start password "${password}" - change it at the first login`,
+			);
 		}
 	}
 
@@ -215,9 +270,20 @@ class Zeiterfassung extends utils.Adapter {
 			kioskEnabled: this.config.kioskEnabled === true,
 			hmacSecret: this.config.hmacSecret,
 			version: this.version,
+			runImport: this.runImport,
 		});
 
 		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup };
+		// both entrance points (the `commands.import` state and `POST /api/import/run`) share this: it runs the
+		// import and publishes the report as `info.lastImport`
+		this.runImport = options => {
+			const report = runLegacyImport(
+				{ db, users, entries, absences, rules, settings, payouts, aggregation },
+				options,
+			);
+			void this.setState("info.lastImport", JSON.stringify(report), true);
+			return report;
+		};
 		this.events = api.events;
 		this.log.debug(`API routes: ${api.routes().length}`);
 
@@ -383,22 +449,9 @@ class Zeiterfassung extends utils.Adapter {
 					aggregation: services.aggregation,
 					closing: services.closing,
 					backup: services.backup,
-					// the legacy import is deliberately wired here instead of inside the command handler: the
-					// handler stays free of the database layout, and the tests can pass their own importer
-					runImport: options =>
-						runLegacyImport(
-							{
-								db,
-								users: services.users,
-								entries: services.entries,
-								absences: services.absences,
-								rules: createRulesRepository(db),
-								settings: services.settings,
-								payouts: createPayoutsRepository(db),
-								aggregation: services.aggregation,
-							},
-							options,
-						),
+					// the importer is wired in `startApi` (it needs every repository), so the handler stays free
+					// of the database layout
+					runImport: this.runImport,
 				},
 				id,
 				value,

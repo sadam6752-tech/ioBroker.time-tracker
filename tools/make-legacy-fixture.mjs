@@ -100,7 +100,8 @@ function write(relativePath, content) {
 write(
 	"Data/users.txt",
 	[
-		"administrator;Administrator;7110eda4d09e062aa5e4a390b0a572ac0d2c0220;1234",
+		// sha1("admin"): the default password of the old system, so the migrated account can be logged in
+		"administrator;Administrator;d033e22ae348aeb5660fc2140aec35850c4da997;1234",
 		"TeilZeit1;Teilzeit Muster;f0f4d6d5e0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5;",
 	].join("\n"),
 );

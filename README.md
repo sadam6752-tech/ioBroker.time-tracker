@@ -137,6 +137,21 @@ database backups (list, retention, "create now").
 
 Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 
+## First start
+
+The first start creates the database, the roles, the settings — and, when the instance has no administrator
+yet, **one administrator account**, because otherwise nobody could log in:
+
+| Setting | Meaning |
+| --- | --- |
+| `Login of the first administrator` | login of that account, default `admin` |
+| `Start password of the first administrator` | password of that account; empty = a random password is written to the adapter log once |
+
+The account is created with `must_change_pw`, so the start password opens the door exactly once and the web
+app asks for a new password right after the login. Accounts imported from the old system work the same way:
+their legacy SHA-1 is verified **once**, replaced by a modern hash during that login and deleted immediately
+afterwards.
+
 ## Legacy import (SMALL-Time)
 
 An existing installation can take its data over from the old PHP system (**SMALL-Time v0.9.205**). The import

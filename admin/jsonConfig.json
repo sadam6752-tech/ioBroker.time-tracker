@@ -182,6 +182,27 @@
 			"type": "panel",
 			"label": "Migration and backup",
 			"items": {
+				"adminLogin": {
+					"type": "text",
+					"label": "Login of the first administrator",
+					"help": "used once: the account is created when the instance has no administrator yet",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"adminPassword": {
+					"type": "password",
+					"label": "Start password of the first administrator",
+					"help": "empty = a random password is written to the adapter log once; it has to be changed at the first login",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
 				"legacyDataDir": {
 					"type": "text",
 					"label": "Legacy data directory for import (read-only)",

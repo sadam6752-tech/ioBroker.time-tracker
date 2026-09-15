@@ -87,11 +87,13 @@
 	},
 	"protectedNative": [
 		"sessionSecret",
-		"hmacSecret"
+		"hmacSecret",
+		"adminPassword"
 	],
 	"encryptedNative": [
 		"sessionSecret",
-		"hmacSecret"
+		"hmacSecret",
+		"adminPassword"
 	],
 	"native": {
 		"port": 8082,
@@ -109,6 +111,8 @@
 		"absenceDeductWorktime": false,
 		"backupRetentionDays": 30,
 		"legacyDataDir": "",
+		"adminLogin": "admin",
+		"adminPassword": "",
 		"kioskEnabled": false
 	},
 	"objects": [],

@@ -133,7 +133,7 @@ verbindlich zu bestätigen.
 | **Import der Altdaten** (Phase 9) | Implementiert (`commands.import` bzw. `POST /api/import/run`, Dry-Run → Commit → Idempotenz). Für den verbindlichen Golden-Abgleich braucht T18 eine **echte Kopie des `Data`-Verzeichnisses** des Altsystems; mit dem synthetischen Fixture ist er nur eingeschränkt aussagekräftig. |
 | Adminbereich-Ausbau | Nur noch die **NFC-Bedienung** fehlt in der PWA; Rollenwechsel pro Zeile, Einstellungen, Tags und Feiertage sind seit der letzten Runde vorhanden. Statistik und Ausweise sind über die API erreichbar. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |
-| Keine E2E-Tests (Playwright) | Die Prüfung erfolgt manuell nach diesem Plan; die Automatik deckt Unit-, Paket- und Integrationstests ab (inklusive Kiosk-Terminal-Vertrag `/terminal/status`, `403 kiosk_disabled` und `/terminal`-Deep-Link in `test/integration.js`). |
+| Keine E2E-Tests (Playwright) | **Seit der letzten Runde vorhanden** (`npm run e2e`, `e2e/server.mjs` startet die echte API + gebaute PWA). Drei sitzungsgebundene Fälle sind noch `fixme`, weil nach dem Login ein Render-Fehler der PWA offen ist (React #130, in `PROJECT_PROMPT.md` dokumentiert) — T1–T13 laufen deshalb weiterhin manuell. |
 | PDF-Schriften (`ru`, `uk`, `zh-cn`) | Braucht eine Unicode-Schriftdatei über `report_font_path`; ohne sie kommt eine klare Fehlermeldung. |
 
 ## 9. Rückfall-Szenario

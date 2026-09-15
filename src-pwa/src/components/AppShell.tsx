@@ -55,7 +55,16 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 	useLiveEvents(session !== null);
 	// the administration is only offered to callers who may use at least one of its tabs
 	const { permissions } = useSession();
-	const mayAdminister = hasPermission(permissions, "user.view") || hasPermission(permissions, "backup.run");
+	const adminRights = [
+		"user.view",
+		"terminal.manage",
+		"settings.view",
+		"import.run",
+		"holiday.manage",
+		"rfid.manage",
+		"backup.run",
+	];
+	const mayAdminister = adminRights.some(right => hasPermission(permissions, right));
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);

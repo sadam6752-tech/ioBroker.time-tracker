@@ -75,6 +75,10 @@ Thumbs.db
 Desktop.ini
 .commitinfo
 
+# Playwright (browser tests)
+playwright-report
+test-results
+
 # NYC coverage files
 coverage
 

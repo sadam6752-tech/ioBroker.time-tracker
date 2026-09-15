@@ -1,0 +1,41 @@
+name: E2E (Playwright)
+
+# The browser tests run against the real server code: `e2e/server.mjs` starts the API on an in-memory database and
+# serves the built web app, so nothing of ioBroker is needed. Only Linux: one browser and one runner are enough.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # `--ignore-scripts` keeps the native dependency (`better-sqlite3`) on the prebuilt binary of the tarball;
+      # building it from source needs a toolchain that is not worth installing for the tests
+      - name: Install the adapter
+        run: npm ci --ignore-scripts
+      - name: Install the web app
+        run: npm ci --prefix src-pwa
+      - name: Build the adapter and the web app
+        run: npm run build && npm run build:pwa
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run the browser tests
+        run: npm run e2e
+      - name: Upload the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

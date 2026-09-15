@@ -179,4 +179,42 @@ Zwei Fallstricke, die dabei Zeit gekostet haben:
 Nach einer Änderung an `vite.config.ts` den Zwischenspeicher `src-pwa/node_modules/.vite` löschen, sonst antwortet
 der Dev-Server mit `504 Outdated Optimize Dep`.
 
+### Echte ioBroker-Instanz lokal (dev-server)
+
+`npm run dev-server setup` (einmalig) und danach `npm run dev-server watch` legen unter `.dev-server/default` eine
+vollständige ioBroker-Installation mit dem Adapter an. Die Web-App läuft dann unter `http://127.0.0.1:8082`, die
+Admin-Oberfläche unter `http://127.0.0.1:8081`. Ohne Startpasswort in den Instanz-Einstellungen wird eines erzeugt
+und **einmalig** ins Log geschrieben:
+
+```text
+warn: zeiterfassung.0 administrator "admin" created with the start password "Zf-…" - change it at the first login
+```
+
+> **Windows 11 ohne `wmic`:** `dev-server watch` bricht dort mit `spawn wmic.exe ENOENT` ab — das Werkzeug liest die
+> Plattengröße über `wmic`, und dieser Fehler ist in der Version 0.8.0 unbehandelt (`wmic` wurde von Microsoft
+> entfernt). Controller und Adapter sind zu diesem Zeitpunkt schon installiert; es genügt, den Controller direkt zu
+> starten:
+>
+> ```powershell
+> cd .dev-server\default
+> node node_modules\iobroker.js-controller\controller.js                     # läuft im Vordergrund
+> node node_modules\iobroker.js-controller\iobroker.js start zeiterfassung.0  # zweite Konsole
+> node node_modules\iobroker.js-controller\iobroker.js start admin.0          # optional: Admin-Oberfläche
+> ```
+>
+> Beenden mit `iobroker.js stop zeiterfassung.0` beziehungsweise Strg+C im Controller-Fenster. Auf diesem Weg gibt es
+> keinen Hot-Reload: nach Änderungen `npm run build` (Adapter) beziehungsweise `npm run build:pwa` (Web-App)
+> ausführen und die Instanz einmal neu starten.
+
+Damit Änderungen an der Web-App ohne Neuinstallation ankommen, kann der ausgelieferte Ordner auf den des
+Repositories zeigen (der Adapter liest die Dateien bei jeder Anfrage von der Platte):
+
+```powershell
+cd .dev-server\default\node_modules\iobroker.zeiterfassung
+Remove-Item www -Recurse -Force
+New-Item -ItemType Junction -Path www -Target <Repository>\www
+```
+
+`.dev-server/` und `iobroker.*.tgz` sind bereits in `.gitignore` abgedeckt.
+
 

@@ -70,6 +70,8 @@ export const COMMAND_IDS = {
 	recalc: "commands.recalc",
 	/** Write a backup of the database */
 	backup: "commands.backup",
+	/** Run the legacy import, value is JSON (`baseDir`, `mode`, `resetImport`, `timezone`) */
+	legacyImport: "commands.import",
 } as const;
 
 /**
@@ -297,6 +299,18 @@ export async function createCommandStates(port: StatePort): Promise<void> {
 			write: true,
 		}),
 	);
+	await port.setObjectNotExists(
+		COMMAND_IDS.legacyImport,
+		stateObject(
+			{
+				en: "Import SMALL-Time data (JSON: baseDir, mode, resetImport, timezone)",
+				de: "SMALL-Time-Daten importieren (JSON: baseDir, mode, resetImport, timezone)",
+			},
+			"string",
+			"json",
+			{ write: true },
+		),
+	);
 }
 
 /**
@@ -309,5 +323,9 @@ export async function createInfoStates(port: StatePort): Promise<void> {
 	await port.setObjectNotExists(
 		"info.lastBackup",
 		stateObject({ en: "Last backup", de: "Letzte Sicherung" }, "number", "value.time"),
+	);
+	await port.setObjectNotExists(
+		"info.lastImport",
+		stateObject({ en: "Last legacy import", de: "Letzter Legacy-Import" }, "string", "json"),
 	);
 }

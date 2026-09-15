@@ -137,6 +137,39 @@ database backups (list, retention, "create now").
 
 Punch records themselves are **not** mirrored into states – they live in the SQLite database.
 
+## Legacy import (SMALL-Time)
+
+An existing installation can take its data over from the old PHP system (**SMALL-Time v0.9.205**). The import
+reads the `Data` directory read-only and is started with the `commands.import` state:
+
+```json
+{ "baseDir": "/opt/smalltime", "mode": "dry-run" }
+```
+
+| Value | Meaning |
+| --- | --- |
+| `baseDir` | installation folder (containing `Data` and `include`) or the `Data` folder itself |
+| `mode` | `dry-run` (default) counts and checks everything without writing, `commit` writes |
+| `resetImport` | `true` allows a commit into a database that already holds entries, absences or payouts |
+| `timezone` | time zone the legacy punch instants are read in, default `Europe/Zurich` |
+
+What the import takes over:
+
+- users, roles, work profiles, surcharge windows and badge codes from `Data/users.txt`, `Data/group.txt` and
+  `Data/<user>/userdaten.txt` (group 1 becomes `admin`, everyone else `employee`)
+- punch instants from `Data/<user>/Timetable/<year>.<month>`; the idempotency key `import:<user>:<epoch>` keeps
+  a second run a no-op
+- absences from `Timetable/A<year>` and payouts from `Timetable/auszahlungen`
+- absence types of `absenz.txt`, the break rules of `include/Settings/pausen.txt` and the settings of
+  `include/Settings/settings.txt` that the new system still uses
+- after the import **all** aggregates are computed from the imported raw data — the legacy monthly values are
+  never taken over, they only serve as a **golden reference**: a month that deviates by more than ±0.01 h makes
+  the run end with `mismatch`
+
+Every run is documented in the `import_runs` table (mode, status, counters, warnings, deviations), the last
+report is published in `info.lastImport`. Folders that are deliberately not migrated (`Rapport/`,
+`Dokumente/`, `img/`) are only counted in the report.
+
 ## Languages
 
 The adapter's admin UI, the web app and the generated reports are shipped in **11 languages**

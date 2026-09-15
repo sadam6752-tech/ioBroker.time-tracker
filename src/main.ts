@@ -13,10 +13,10 @@ import type { HolidayCountry } from "./lib/domain/holidays";
 import { createAbsencesRepository } from "./lib/db/repositories/absences";
 import { createEntriesRepository } from "./lib/db/repositories/entries";
 import { createHolidaysRepository } from "./lib/db/repositories/holidays";
+import { createPayoutsRepository } from "./lib/db/repositories/payouts";
 import { createRulesRepository } from "./lib/db/repositories/rules";
 import { createSettingsRepository } from "./lib/db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
-import { createPayoutsRepository } from "./lib/db/repositories/payouts";
 import { createTerminalsRepository } from "./lib/db/repositories/terminals";
 import { createRfidRepository } from "./lib/db/repositories/rfid";
 import type { EntriesRepository } from "./lib/db/repositories/entries";
@@ -29,6 +29,7 @@ import { createBackupService, type BackupService } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { handleCommand } from "./lib/adapter/commands";
+import { runLegacyImport } from "./lib/legacy/import";
 import { createApi } from "./lib/web/api";
 import type { EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
@@ -382,6 +383,22 @@ class Zeiterfassung extends utils.Adapter {
 					aggregation: services.aggregation,
 					closing: services.closing,
 					backup: services.backup,
+					// the legacy import is deliberately wired here instead of inside the command handler: the
+					// handler stays free of the database layout, and the tests can pass their own importer
+					runImport: options =>
+						runLegacyImport(
+							{
+								db,
+								users: services.users,
+								entries: services.entries,
+								absences: services.absences,
+								rules: createRulesRepository(db),
+								settings: services.settings,
+								payouts: createPayoutsRepository(db),
+								aggregation: services.aggregation,
+							},
+							options,
+						),
 				},
 				id,
 				value,
@@ -403,6 +420,10 @@ class Zeiterfassung extends utils.Adapter {
 				if (newest) {
 					await this.announceBackup(newest.name, newest.createdAt);
 				}
+			}
+			// the report of the run is published for dashboards and scripts (5.1 `info.lastImport`)
+			if (id === COMMAND_IDS.legacyImport && result.lastImport) {
+				await this.setState("info.lastImport", result.lastImport, true);
 			}
 		} catch (error) {
 			this.log.warn(`command ${id} failed: ${(error as Error).message}`);

@@ -19,5 +19,6 @@
 	"Session secret": "Sitzungsgeheimnis",
 	"Subtract working time from absences": "Arbeitszeit von Abwesenheiten abziehen",
 	"Time rules": "Zeitregeln",
-	"zeiterfassung adapter settings": "Adaptereinstellungen für Zeiterfassung"
+	"zeiterfassung adapter settings": "Adaptereinstellungen für Zeiterfassung",
+	"127.0.0.1 = only this machine": "127.0.0.1 = nur dieser Rechner"
 }

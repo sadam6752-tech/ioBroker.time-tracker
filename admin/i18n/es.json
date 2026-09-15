@@ -19,5 +19,6 @@
 	"Session secret": "Secreto de sesión",
 	"Subtract working time from absences": "Restar el tiempo de trabajo de las ausencias",
 	"Time rules": "reglas de tiempo",
-	"zeiterfassung adapter settings": "Configuración del adaptador para zeiterfassung"
+	"zeiterfassung adapter settings": "Configuración del adaptador para zeiterfassung",
+	"127.0.0.1 = only this machine": "127.0.0.1 = solo este equipo"
 }

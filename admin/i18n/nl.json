@@ -19,5 +19,6 @@
 	"Session secret": "Sessiegeheim",
 	"Subtract working time from absences": "Trek de werktijd af van de afwezigheden",
 	"Time rules": "Tijd regels",
-	"zeiterfassung adapter settings": "Adapterinstellingen voor zeiterfassung"
+	"zeiterfassung adapter settings": "Adapterinstellingen voor zeiterfassung",
+	"127.0.0.1 = only this machine": "127.0.0.1 = alleen deze computer"
 }

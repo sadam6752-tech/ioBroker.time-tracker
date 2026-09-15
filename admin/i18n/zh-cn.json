@@ -19,5 +19,6 @@
 	"Session secret": "会话秘密",
 	"Subtract working time from absences": "从缺勤中减去工作时间",
 	"Time rules": "时间规则",
-	"zeiterfassung adapter settings": "zeiterfassung 的适配器设置"
+	"zeiterfassung adapter settings": "zeiterfassung 的适配器设置",
+	"127.0.0.1 = only this machine": "127.0.0.1 = 仅本机"
 }

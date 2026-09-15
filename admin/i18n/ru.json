@@ -19,5 +19,6 @@
 	"Session secret": "Секрет сеанса",
 	"Subtract working time from absences": "Вычтите рабочее время из отсутствий",
 	"Time rules": "Правила времени",
-	"zeiterfassung adapter settings": "Настройки адаптера для zeiterfassung"
+	"zeiterfassung adapter settings": "Настройки адаптера для zeiterfassung",
+	"127.0.0.1 = only this machine": "127.0.0.1 = только этот компьютер"
 }

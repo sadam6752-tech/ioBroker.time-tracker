@@ -1,11 +1,16 @@
 /**
  * Browser tests of the web app.
  *
- * **Open finding:** the app crashes right after a successful sign in with `React error #130` ("element type is
- * invalid … got: object"). The component stack points at a `<button>` inside the app bar (`AppShell`), i.e. at
- * one of the icon elements rendered in the header. Everything that does not need a session works (kiosk screen,
- * badge link), so the three session-bound tests below are marked `fixme` until that is cleared up — they describe
- * what is expected and start passing as soon as the crash is gone.
+ * **Open finding:** after a successful sign in the app renders nothing and reports `React error #130`
+ * ("element type is invalid … got: object") — on every route that uses the shell, while the login screen, the
+ * kiosk screen and the badge link work. The component stack (temporary error boundary) points at a `<button>`
+ * inside the app bar. **Icons are ruled out** as the cause: replacing `MenuIcon`, the two chip icons and all six
+ * navigation icons by plain text (and removing `Badge`) did not change anything — the crash stayed exactly the
+ * same. Next steps: print the **complete** component stack (the earlier output was cut off after a few frames) and
+ * reproduce it in a React **development** build, which turns the minified message into a readable one.
+ *
+ * Until that is cleared up the three session-bound tests below are marked `fixme`: they describe what is expected
+ * and start passing as soon as the crash is gone.
  */
 import { expect, test, type Page } from "@playwright/test";
 

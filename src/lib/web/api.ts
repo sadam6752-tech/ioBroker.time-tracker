@@ -47,6 +47,7 @@ import { dateRange, isValidTimeZone, localDate } from "../util/time";
 import type { LegacyImportOptions, LegacyImportReport } from "../legacy/import";
 import { clearCookie, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
+import { createPinGuard } from "./pin-guard";
 import { HttpProblem, problem, toProblem } from "./problem";
 import {
 	createRouter,
@@ -615,6 +616,8 @@ export function createApi(deps: ApiDeps): Api {
 	const events = deps.events ?? createEventBus();
 	const registered: ApiRoute[] = [];
 	const router = createRouter({ auth, trustProxy: deps.trustProxy === true, now });
+	// wrong PINs at the terminal are counted per account (specification 4.10); the counters are short lived
+	const pinGuard = createPinGuard();
 
 	/**
 	 * Publishes a live event about a change.
@@ -2070,14 +2073,24 @@ export function createApi(deps: ApiDeps): Api {
 
 			const user = badge !== null ? users.findByRfidCard(badge) : users.findById(targetId ?? 0);
 			if (!user || !user.isActive) {
-				// the same answer for an unknown badge and an unknown user: no enumeration of accounts
+				// the same answer for an unknown badge and an unknown user: no enumeration of accounts.
+				// There is no account to count here — the rate limit of the route covers this case.
 				throw problem(401, "invalid_credentials", "badge or PIN is not known");
+			}
+
+			// a shared device plus a four digit PIN: too many wrong tries block the account for a while (4.10)
+			const blocked = pinGuard.state({ userId: user.id, now: now() });
+			if (blocked.locked) {
+				throw problem(423, "locked_out", `too many wrong PINs, try again in ${blocked.retryAfterSeconds} s`);
 			}
 
 			const pinMatches = pin !== null && user.pinHash !== null && verifyPassword(pin, user.pinHash);
 			if (terminal.pinRequired ? !pinMatches : !pinMatches && badge === null) {
+				pinGuard.fail({ userId: user.id, now: now() });
 				throw problem(401, "invalid_credentials", "badge or PIN is not known");
 			}
+			// the correct PIN clears the counter of that account
+			pinGuard.reset(user.id);
 
 			const timestamp = now();
 			const stored = entries.insert({

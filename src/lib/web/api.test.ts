@@ -1429,6 +1429,31 @@ describe("web api", () => {
 			expect((await send("POST", "/terminal/session", { body: { deviceToken } })).status).to.equal(401);
 		});
 
+		it("blocks an account after too many wrong PINs", async () => {
+			const { terminalSession } = await prepareTerminal({ pin: true, pinRequired: true });
+
+			// five wrong PINs inside the window block the account (specification 4.10) …
+			for (let attempt = 0; attempt < 5; attempt++) {
+				const refused = await send("POST", "/terminal/punch", {
+					body: { terminalSession, userId: annaId, pin: "0000" },
+				});
+				expect(refused.status, `attempt ${attempt + 1}`).to.equal(401);
+			}
+
+			// … and now even the correct PIN is refused, no matter whether it comes with the badge
+			const blocked = await send("POST", "/terminal/punch", {
+				body: { terminalSession, userId: annaId, pin: "1234" },
+			});
+			expect(blocked.status).to.equal(423);
+			expect(bodyOf(blocked).code).to.equal("locked_out");
+			expect(bodyOf(blocked).detail).to.contain("wrong PINs");
+
+			const withBadge = await send("POST", "/terminal/punch", {
+				body: { terminalSession, badge: "CARD-42", pin: "1234" },
+			});
+			expect(withBadge.status, "the block belongs to the account, not to the input form").to.equal(423);
+		});
+
 		it("accepts a badge alone when the device does not ask for a PIN", async () => {
 			const { terminalSession } = await prepareTerminal({ pin: false, pinRequired: false });
 

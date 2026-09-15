@@ -332,6 +332,45 @@ describe("web router", () => {
 			expect(bodyOf<{ secure: boolean }>(untrusted).secure).to.equal(false);
 		});
 
+		it("renews the cookie of an old browser session and drops the old token", async () => {
+			// the seeded lifetime is 720 minutes, so the rotation is due after half of it (six hours)
+			const started = auth.login({ login: "anna", password, now: 1000 });
+			expect(started.ok).to.equal(true);
+			const oldToken = started.ok ? started.token : "";
+
+			const browser = createRouter({ auth, now: () => 1000 + 21601 });
+			browser.add({
+				method: "GET",
+				path: "/session-info",
+				handler: context => json(200, { login: context.auth?.user.login, token: context.sessionToken }),
+			});
+
+			const response = await browser.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { cookie: `${SESSION_COOKIE}=${oldToken}` },
+				remoteAddress: "127.0.0.1",
+			});
+			expect(response.status).to.equal(200);
+			const renewed = /zt_session=([^;]+)/.exec(response.headers["set-cookie"] ?? "")?.[1];
+			expect(renewed, "the response carries a fresh cookie").to.be.a("string");
+			expect(renewed).to.not.equal(oldToken);
+
+			// the old token is gone, the new one carries the session on
+			expect(auth.authenticate({ token: oldToken, now: 1000 + 21601 }).ok).to.equal(false);
+			expect(auth.authenticate({ token: renewed ?? "", now: 1000 + 21601 }).ok).to.equal(true);
+
+			// a bearer client is never rotated: it holds no cookie that could be replaced silently
+			const bearer = await browser.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { "x-session-token": renewed ?? "" },
+				remoteAddress: "127.0.0.1",
+			});
+			expect(bearer.status).to.equal(200);
+			expect(bearer.headers["set-cookie"]).to.equal(undefined);
+		});
+
 		it("uses the forwarded address only for a trusted proxy", async () => {
 			const build = (trustProxy: boolean): Router => {
 				const instance = createRouter({ auth, now: () => 2000, trustProxy });

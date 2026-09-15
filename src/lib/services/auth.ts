@@ -168,6 +168,12 @@ export interface AuthService {
 	logout(input: { token: string; actorId?: number | null; ip?: string | null; now?: number }): boolean;
 	/** Checks a session token, optionally requiring a permission */
 	authenticate(input: { token: string; permission?: string; now?: number }): AuthResult;
+	/**
+	 * Replaces the token of a session that has been in use for a while (specification 4.10: rotation).
+	 *
+	 * @returns the new token and its expiry, or `null` while the session is too young
+	 */
+	rotateIfDue(input: { token: string; now?: number }): { token: string; expiresAt: number } | null;
 	/** Ends all sessions of a user (e.g. after a password change) */
 	revokeSessions(input: { userId: number; actorId: number; now?: number }): number;
 	/** Active sessions of a user */
@@ -582,6 +588,39 @@ export function createAuthService(deps: AuthDeps): AuthService {
 
 		purge(now?: number): number {
 			return purgeSessions.run(now ?? Math.floor(Date.now() / 1000)).changes;
+		},
+
+		rotateIfDue(input: { token: string; now?: number }): { token: string; expiresAt: number } | null {
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const previousId = hashToken(input.token ?? "");
+			const session = readSession(previousId);
+			if (!session || session.revoked || session.expiresAt <= now) {
+				return null;
+			}
+
+			// Only sessions that have really been in use for a while are renewed: half of their lifetime, but at
+			// least a quarter of an hour. Otherwise every single request of the web app would churn the row.
+			const threshold = Math.max(900, Math.floor(ttlSeconds() / 2));
+			if (now - session.createdAt < threshold) {
+				return null;
+			}
+
+			const token = randomBytes(32).toString("base64url");
+			const expiresAt = now + ttlSeconds();
+			db.transaction((): void => {
+				// the old token dies with its row; the user, the session start and the device stay the same
+				revokeSession.run(previousId);
+				insertSession.run(hashToken(token), session.userId, now, expiresAt, session.userAgent, session.ip);
+				writeAuditLog(db, {
+					atUtc: now,
+					action: "auth.session_rotated",
+					entity: "user",
+					entityId: session.userId,
+					detail: { session: hashToken(token) },
+					ip: session.ip,
+				});
+			})();
+			return { token, expiresAt };
 		},
 
 		csrfToken(token: string): string {

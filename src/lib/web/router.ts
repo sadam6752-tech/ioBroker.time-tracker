@@ -10,7 +10,7 @@
  */
 
 import type { AuthContext, AuthService } from "../services/auth";
-import { parseCookies, SESSION_COOKIE } from "./cookies";
+import { parseCookies, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { HttpProblem, PROBLEM_CONTENT_TYPE, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
 import { createRateLimiter } from "./rate-limit";
 
@@ -431,6 +431,7 @@ export function createRouter(options: RouterOptions): Router {
 			}
 
 			let auth: AuthContext | null = null;
+			let rotated: { token: string; expiresAt: number } | null = null;
 
 			if (route.definition.requiresAuth !== false) {
 				const result = options.auth.authenticate({
@@ -447,6 +448,11 @@ export function createRouter(options: RouterOptions): Router {
 				if (requiresCsrf && !options.auth.verifyCsrf({ token, csrfToken: headerValue("x-csrf-token") ?? "" })) {
 					return problemResponse(403, "csrf_rejected", "missing or wrong CSRF token", path);
 				}
+
+				// A browser session that has been in use for a while gets a fresh token: the cookie is replaced
+				// below and the old token dies with its row (specification 4.10: rotation). Bearer clients keep
+				// their token — they hold no cookie that could be renewed without asking them.
+				rotated = cookieToken !== "" ? options.auth.rotateIfDue({ token, now: now() }) : null;
 			}
 
 			/**
@@ -497,6 +503,13 @@ export function createRouter(options: RouterOptions): Router {
 				}
 
 				const responseHeaders = { ...BASE_HEADERS, ...(result.headers ?? {}) };
+				if (rotated && !responseHeaders["set-cookie"]) {
+					// the renewed session cookie of a browser; routes that set their own (login, logout) win
+					responseHeaders["set-cookie"] = serializeCookie(SESSION_COOKIE, rotated.token, {
+						maxAgeSeconds: Math.max(0, rotated.expiresAt - now()),
+						secure,
+					});
+				}
 				if (result.body === undefined) {
 					delete responseHeaders["content-type"];
 					return { status: result.status, headers: responseHeaders, body: "" };

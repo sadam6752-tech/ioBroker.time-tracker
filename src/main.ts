@@ -330,6 +330,9 @@ class Zeiterfassung extends utils.Adapter {
 			settings,
 			backup,
 			kioskEnabled: this.config.kioskEnabled === true,
+			// a reverse proxy in front is the normal case for HTTPS; without the switch the forwarded
+			// headers are ignored, so a client cannot choose its own address or the HTTPS flag
+			trustProxy: this.config.trustProxy === true,
 			hmacSecret: this.config.hmacSecret,
 			version: this.version,
 			runImport: this.runImport,

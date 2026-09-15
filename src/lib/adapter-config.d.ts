@@ -40,6 +40,11 @@ declare global {
 			adminPassword: string;
 			/** Enable the kiosk terminal */
 			kioskEnabled: boolean;
+			/**
+			 * Trust `x-forwarded-*` of a reverse proxy: the forwarded client address is used for the rate
+			 * limits and the audit trail, `x-forwarded-proto: https` makes the session cookie `Secure`.
+			 */
+			trustProxy: boolean;
 		}
 	}
 }

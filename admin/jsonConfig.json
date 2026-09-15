@@ -139,6 +139,17 @@
 					"md": 6,
 					"lg": 2,
 					"xl": 2
+				},
+				"trustProxy": {
+					"type": "checkbox",
+					"label": "Trust the reverse proxy (X-Forwarded-*)",
+					"help": "only switch this on when a reverse proxy is in front of the adapter",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 6,
+					"lg": 4,
+					"xl": 4
 				}
 			}
 		},

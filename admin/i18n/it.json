@@ -20,5 +20,7 @@
 	"Subtract working time from absences": "Sottrarre l'orario di lavoro dalle assenze",
 	"Time rules": "Regole del tempo",
 	"zeiterfassung adapter settings": "Impostazioni dell'adattatore per zeiterfassung",
-	"127.0.0.1 = only this machine": "127.0.0.1 = solo questa macchina"
+	"127.0.0.1 = only this machine": "127.0.0.1 = solo questa macchina",
+	"Trust the reverse proxy (X-Forwarded-*)": "Fidati del proxy inverso (X-Forwarded-*)",
+	"only switch this on when a reverse proxy is in front of the adapter": "attivare solo se davanti all'adattatore c'è un proxy inverso"
 }

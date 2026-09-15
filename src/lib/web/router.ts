@@ -10,6 +10,7 @@
  */
 
 import type { AuthContext, AuthService } from "../services/auth";
+import { parseCookies, SESSION_COOKIE } from "./cookies";
 import { HttpProblem, PROBLEM_CONTENT_TYPE, toProblem, type ProblemCode, type ProblemDetails } from "./problem";
 import { createRateLimiter } from "./rate-limit";
 
@@ -60,6 +61,12 @@ export interface RouteContext {
 	params: Record<string, string>;
 	/** Authenticated context, `null` for public routes */
 	auth: AuthContext | null;
+	/** Session token of the request: the bearer header or, for browsers, the session cookie */
+	sessionToken: string;
+	/** True when no bearer header was sent and the session came from the cookie */
+	viaCookie: boolean;
+	/** True when the client talks HTTPS (a trusted proxy reported `x-forwarded-proto: https`) */
+	secure: boolean;
 	/** Reads a query parameter */
 	query(name: string): string | null;
 	/** Reads a request header */
@@ -96,6 +103,12 @@ export interface RouterOptions {
 	maxBodyBytes?: number;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
+	/**
+	 * Trusts the `x-forwarded-*` headers of a reverse proxy. Only switch this on when a proxy is really in
+	 * front: the declared client address lands in the audit trail and decides the rate limit buckets, so a
+	 * client that is allowed to set the header itself could shift both.
+	 */
+	trustProxy?: boolean;
 }
 
 /** The router. */
@@ -136,10 +149,11 @@ export function json(status: number, body: unknown, headers: Record<string, stri
  * Creates an empty response.
  *
  * @param status - HTTP status code (default 204)
+ * @param headers - additional response headers (e.g. a `set-cookie` that ends a session)
  * @returns route response without a body
  */
-export function noContent(status = 204): RouteResponse {
-	return Object.assign({ status, body: undefined }, { [ROUTE_RESPONSE]: true });
+export function noContent(status = 204, headers: Record<string, string> = {}): RouteResponse {
+	return Object.assign({ status, body: undefined, headers }, { [ROUTE_RESPONSE]: true });
 }
 
 /**
@@ -257,6 +271,54 @@ function problemResponse(
 	};
 }
 
+/** Reads a request header (lower case names). */
+type HeaderReader = (name: string) => string | null;
+
+/**
+ * Reads the last hop of `x-forwarded-for`.
+ *
+ * Every client may send the header itself; the proxy *appends* the address it saw, so the rightmost entry is
+ * the one the trusted proxy wrote. Taking the first one instead would let a caller pick its own address — and
+ * with it the rate limit bucket and the audit entry.
+ *
+ * @param headerValue - header reader
+ * @returns the forwarded client address or `null` when the header is missing or empty
+ */
+function forwardedAddress(headerValue: HeaderReader): string | null {
+	const raw = headerValue("x-forwarded-for");
+	if (!raw) {
+		return null;
+	}
+	const hops = raw
+		.split(",")
+		.map(hop => hop.trim())
+		.filter(hop => hop.length > 0);
+	return hops.length > 0 ? hops[hops.length - 1] : null;
+}
+
+/**
+ * Resolves the client address used for rate limits and the audit trail.
+ *
+ * @param request - incoming request
+ * @param headerValue - header reader
+ * @param trustProxy - true when the operator declared a reverse proxy in front
+ * @returns the client address
+ */
+function resolveClientAddress(request: HttpRequest, headerValue: HeaderReader, trustProxy: boolean): string | null {
+	const forwarded = trustProxy ? forwardedAddress(headerValue) : null;
+	return forwarded ?? request.remoteAddress ?? null;
+}
+
+/**
+ * Reads the protocol a trusted proxy reported.
+ *
+ * @param headerValue - header reader
+ * @returns `https` when the request reached the proxy over TLS, otherwise the raw value
+ */
+function forwardedProto(headerValue: HeaderReader): string {
+	return ((headerValue("x-forwarded-proto") ?? "").split(",")[0] ?? "").trim().toLowerCase();
+}
+
 /**
  * Creates the router.
  *
@@ -292,6 +354,18 @@ export function createRouter(options: RouterOptions): Router {
 				const value = headers[name] ?? headers[name.toLowerCase()];
 				return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 			};
+
+			// Behind a reverse proxy the socket address is the proxy itself, so the address the proxy appended to
+			// `x-forwarded-for` is used — but only when the operator declared the proxy as trusted (`trustProxy`),
+			// because any client can send that header on its own. One hop is assumed, which is what a single
+			// nginx/caddy in front produces.
+			const clientAddress = resolveClientAddress(request, headerValue, options.trustProxy === true);
+			const secure = options.trustProxy === true && forwardedProto(headerValue) === "https";
+			// the handlers see the address the rate limit counted and the audit trail stores
+			const routedRequest: HttpRequest =
+				(request.remoteAddress ?? null) === clientAddress
+					? request
+					: { ...request, remoteAddress: clientAddress };
 
 			const matched: { route: CompiledRoute; params: Record<string, string> }[] = [];
 			for (const route of routes) {
@@ -334,12 +408,20 @@ export function createRouter(options: RouterOptions): Router {
 				return problemResponse(413, "payload_too_large", `body exceeds ${maxBodyBytes} bytes`, path);
 			}
 
-			const requiresCsrf = route.definition.requiresCsrf ?? !SAFE_METHODS.includes(method);
-			const token = headerValue("x-session-token") ?? "";
+			// The session travels in the `x-session-token` header (integration clients) or in the httpOnly
+			// session cookie (browsers, specification 4.x). CSRF is only possible where the browser attaches a
+			// credential by itself, so a state changing request needs the CSRF token as soon as the cookie is
+			// present — while a pure bearer client, which no foreign page can equip with a header, needs none.
+			const bearerToken = headerValue("x-session-token") ?? "";
+			const cookieToken = parseCookies(headerValue("cookie"))[SESSION_COOKIE] ?? "";
+			const token = bearerToken || cookieToken;
+			const viaCookie = bearerToken === "" && cookieToken !== "";
+			const requiresCsrf =
+				route.definition.requiresCsrf ?? (!SAFE_METHODS.includes(method) && cookieToken !== "");
 
 			// the limit is counted per client address, before any work is done
 			if (route.definition.rateLimit) {
-				const limited = limiter.check(route.definition.rateLimit, request.remoteAddress ?? "unknown", now());
+				const limited = limiter.check(route.definition.rateLimit, clientAddress ?? "unknown", now());
 				if (!limited.allowed) {
 					return problemResponse(429, "rate_limited", "too many requests, try again later", path, {
 						"retry-after": String(limited.retryAfterSeconds),
@@ -393,9 +475,12 @@ export function createRouter(options: RouterOptions): Router {
 			}
 
 			const context: RouteContext = {
-				request,
+				request: routedRequest,
 				params,
 				auth,
+				sessionToken: token,
+				viaCookie,
+				secure,
 				query: name => {
 					const value = request.query?.[name];
 					return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);

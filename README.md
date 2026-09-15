@@ -73,6 +73,7 @@ The adapter is configured in the instance settings:
 | Holiday country                     | Country used to generate public holidays                  |
 | Database file                       | Optional path; empty = adapter data directory             |
 | Enable kiosk terminal               | Switches the shared badge/PIN terminal on                 |
+| Trust the reverse proxy             | Use `X-Forwarded-*` of a proxy (client address, HTTPS)    |
 | Session secret                      | Secret for session cookies/tokens (**encrypted at rest**) |
 | Badge link secret (HMAC)            | Secret for signed badge/NFC links (**encrypted at rest**) |
 | Session lifetime in minutes         | Session TTL                                               |
@@ -133,6 +134,22 @@ clock and — after every punch — the name, the direction and the figures of t
 kiosk is switched off the screen says so and nothing else happens; a revoked token sends it back to the setup
 form. For the name/PIN path an employee needs a badge PIN (`POST /api/users/:id/pin`, 4–8 digits), for scanning an
 RFID card id (`rfidCard`).
+
+### Reverse proxy and HTTPS
+
+HTTPS is required for the service worker (PWA installation), so put nginx or caddy in front of the adapter and
+switch on **Trust the reverse proxy** in the instance settings. The adapter then uses the client address the proxy
+appends to `x-forwarded-for` for the rate limits and the audit trail, and `x-forwarded-proto: https` makes the
+session cookie `Secure`. Without that switch both headers are ignored — every client may send them, so a single
+client could otherwise move itself into another rate limit bucket. Only the hop directly in front is evaluated:
+with `x-forwarded-for: client, proxy` the rightmost entry counts, because the left part is client controlled.
+
+The sessions of the web app travel in an `httpOnly` cookie (`SameSite=Lax`, `Secure` behind HTTPS), so a script
+injected into the page cannot read them. State changing requests additionally need the `x-csrf-token` header,
+which `GET /api/auth/me` hands out for the own session. Integration clients keep using the `x-session-token`
+header from the login response; that path needs no CSRF token, because a foreign page cannot equip a request with
+a header of its own. Point the proxy at the whole adapter: the web app, `/api` and the WebSocket `/api/stream`
+live on the same port.
 
 ## States (overview)
 

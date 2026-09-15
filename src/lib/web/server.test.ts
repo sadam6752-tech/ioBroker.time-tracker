@@ -128,11 +128,11 @@ describe("web server", () => {
 		const stored = (await punch.json()) as { entry: { id: number; localDate: string } };
 		expect(punch.headers.get("location")).to.equal(`/entries/${stored.entry.id}`);
 
-		// without a session the report is refused, with CSRF missing the write as well
+		// without a session the report is refused; a browser that holds the cookie but no CSRF token writes nothing
 		expect((await fetch(`${server.url}/api/aggregates/day?date=1970-01-01`)).status).to.equal(401);
 		const withoutCsrf = await fetch(`${server.url}/api/punch`, {
 			method: "POST",
-			headers: { "content-type": "application/json", "x-session-token": session.token },
+			headers: { "content-type": "application/json", cookie: `zt_session=${session.token}` },
 			body: JSON.stringify({ tsUtc: 2000 }),
 		});
 		expect(withoutCsrf.status).to.equal(403);

@@ -273,6 +273,51 @@ describe("web api", () => {
 		});
 	});
 
+	describe("session cookies", () => {
+		it("sets an httpOnly session cookie at the login and removes it again", async () => {
+			const login = await send("POST", "/auth/login", { body: { login: "anna", password } });
+			expect(login.status).to.equal(200);
+			const cookie = login.headers["set-cookie"];
+			expect(cookie).to.contain(`zt_session=${bodyOf<{ token: string }>(login).token}`);
+			expect(cookie).to.contain("HttpOnly");
+			expect(cookie).to.contain("SameSite=Lax");
+			expect(cookie).to.contain("Path=/");
+			// plain HTTP on the loopback interface: a Secure cookie would never come back
+			expect(cookie).to.not.contain("Secure");
+
+			const logout = await send("POST", "/auth/logout", {
+				headers: { cookie: `zt_session=${annaToken}`, "x-csrf-token": annaCsrf },
+			});
+			expect(logout.status).to.equal(204);
+			// the session has to end in the browser as well, otherwise it stays signed in
+			expect(logout.headers["set-cookie"]).to.contain(`zt_session=; Path=/; Max-Age=0`);
+		});
+
+		it("serves a browser that only holds the cookie and hands out the CSRF token of its session", async () => {
+			const cookie = { cookie: `zt_session=${annaToken}` };
+
+			const me = await send("GET", "/auth/me", { headers: cookie });
+			expect(me.status).to.equal(200);
+			const issued = bodyOf<{ csrfToken: string }>(me).csrfToken;
+			expect(issued).to.equal(annaCsrf);
+
+			const punch = await send("POST", "/punch", {
+				body: { tsUtc: 1000 },
+				headers: { ...cookie, "x-csrf-token": issued },
+			});
+			expect(punch.status).to.equal(201);
+		});
+
+		it("ends the browser session when the password changes", async () => {
+			const changed = await send("POST", "/auth/password", {
+				body: { password: "Neu-2026-komplett" },
+				headers: { cookie: `zt_session=${annaToken}`, "x-csrf-token": annaCsrf },
+			});
+			expect(changed.status).to.equal(204);
+			expect(changed.headers["set-cookie"]).to.contain("Max-Age=0");
+		});
+	});
+
 	describe("punching", () => {
 		it("stores a punch and refreshes the day", async () => {
 			const first = await send("POST", "/punch", {
@@ -285,8 +330,11 @@ describe("web api", () => {
 			expect(stored.entry.source).to.equal("web");
 			expect(first.headers.location).to.equal(`/entries/${stored.entry.id}`);
 
-			// without a CSRF token nothing is written
-			const denied = await send("POST", "/punch", { body: { tsUtc: 2000 }, headers: headers(annaToken) });
+			// a browser (the session cookie is present) writes nothing without a CSRF token
+			const denied = await send("POST", "/punch", {
+				body: { tsUtc: 2000 },
+				headers: { cookie: `zt_session=${annaToken}` },
+			});
 			expect(denied.status).to.equal(403);
 			expect(bodyOf(denied).code).to.equal("csrf_rejected");
 		});

@@ -45,6 +45,7 @@ import { buildMonthStatement } from "../reports/pdf";
 import { reportFileName, type ReportInput } from "../reports/types";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
 import type { LegacyImportOptions, LegacyImportReport } from "../legacy/import";
+import { clearCookie, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { HttpProblem, problem, toProblem } from "./problem";
 import {
@@ -84,6 +85,11 @@ export interface ApiDeps {
 	hmacSecret?: string;
 	/** True when the kiosk terminal is switched on (instance setting) */
 	kioskEnabled?: boolean;
+	/**
+	 * Trusts `x-forwarded-*` of a reverse proxy: the forwarded address is used for the rate limits and the
+	 * audit trail, and `x-forwarded-proto: https` makes the session cookie `Secure`.
+	 */
+	trustProxy?: boolean;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -608,7 +614,7 @@ export function createApi(deps: ApiDeps): Api {
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const events = deps.events ?? createEventBus();
 	const registered: ApiRoute[] = [];
-	const router = createRouter({ auth, now });
+	const router = createRouter({ auth, trustProxy: deps.trustProxy === true, now });
 
 	/**
 	 * Publishes a live event about a change.
@@ -664,6 +670,34 @@ export function createApi(deps: ApiDeps): Api {
 		});
 	};
 
+	/**
+	 * Writes the session cookie of a fresh login.
+	 *
+	 * The cookie is `httpOnly` (a script inside the page cannot read it), `SameSite=Lax` and carries `Secure`
+	 * as soon as the client reaches the adapter over HTTPS — directly or through a trusted proxy (specification
+	 * 4.x). The browser sends it with every request by itself, which is exactly why state changing requests
+	 * additionally need the CSRF token from `x-csrf-token`; a bearer client has no such ambient credential.
+	 *
+	 * @param context - route context of the request (for the `Secure` flag)
+	 * @param token - session token
+	 * @param expiresAt - instant the session ends, UTC epoch seconds
+	 * @returns value of the `set-cookie` header
+	 */
+	const sessionCookie = (context: RouteContext, token: string, expiresAt: number): string =>
+		serializeCookie(SESSION_COOKIE, token, {
+			maxAgeSeconds: Math.max(0, expiresAt - now()),
+			secure: context.secure,
+		});
+
+	/**
+	 * Removes the session cookie, so the browser session really ends.
+	 *
+	 * @param context - route context of the request (the flags have to match the ones it was set with)
+	 * @returns value of the `set-cookie` header
+	 */
+	const removeSessionCookie = (context: RouteContext): string =>
+		clearCookie(SESSION_COOKIE, { secure: context.secure });
+
 	// authentication
 
 	route(
@@ -689,23 +723,30 @@ export function createApi(deps: ApiDeps): Api {
 						: "login or password is not correct",
 				);
 			}
-			return json(200, {
-				token: result.token,
-				csrfToken: result.csrfToken,
-				expiresAt: result.expiresAt,
-				user: result.user,
-			});
+			// the token is returned for integration clients (bearer) and set as an httpOnly cookie for the
+			// browser; the CSRF token stays readable for the page on purpose
+			return json(
+				200,
+				{
+					token: result.token,
+					csrfToken: result.csrfToken,
+					expiresAt: result.expiresAt,
+					user: result.user,
+				},
+				{ "set-cookie": sessionCookie(context, result.token, result.expiresAt) },
+			);
 		},
 	);
 
 	route("POST", "/auth/logout", { csrf: true }, context => {
 		auth.logout({
-			token: context.header("x-session-token") ?? "",
+			token: context.sessionToken,
 			actorId: context.auth?.user.id ?? null,
 			ip: context.request.remoteAddress ?? null,
 			now: now(),
 		});
-		return noContent();
+		// the browser session ends with the cookie, not only with the session row
+		return noContent(204, { "set-cookie": removeSessionCookie(context) });
 	});
 
 	route("GET", "/auth/me", {}, context =>
@@ -713,6 +754,8 @@ export function createApi(deps: ApiDeps): Api {
 			user: context.auth?.user,
 			permissions: context.auth?.permissions ?? [],
 			expiresAt: context.auth?.expiresAt,
+			// a client that only holds the cookie has no other way to learn the CSRF token of its session
+			csrfToken: context.auth ? auth.csrfToken(context.sessionToken) : undefined,
 		}),
 	);
 
@@ -725,7 +768,7 @@ export function createApi(deps: ApiDeps): Api {
 		auth.setPassword({ userId: context.auth.user.id, password, actorId: context.auth.user.id, now: now() });
 		// a password change ends all running sessions, including this one
 		auth.revokeSessions({ userId: context.auth.user.id, actorId: context.auth.user.id, now: now() });
-		return noContent();
+		return noContent(204, { "set-cookie": removeSessionCookie(context) });
 	});
 
 	// A session is renewed on every authenticated request (sliding renewal), so this route reports the current
@@ -734,7 +777,7 @@ export function createApi(deps: ApiDeps): Api {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const token = context.header("x-session-token") ?? "";
+		const token = context.sessionToken;
 		return json(200, {
 			expiresAt: context.auth.expiresAt,
 			csrfToken: auth.csrfToken(token),

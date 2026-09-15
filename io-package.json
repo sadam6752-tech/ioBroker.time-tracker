@@ -113,7 +113,8 @@
 		"legacyDataDir": "",
 		"adminLogin": "admin",
 		"adminPassword": "",
-		"kioskEnabled": false
+		"kioskEnabled": false,
+		"trustProxy": false
 	},
 	"objects": [],
 	"instanceObjects": [

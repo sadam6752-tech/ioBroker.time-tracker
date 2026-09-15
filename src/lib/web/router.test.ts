@@ -6,6 +6,7 @@ import { createSettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
 import { createAuthService, type AuthService } from "../services/auth";
 import { NotFoundError } from "../errors";
+import { SESSION_COOKIE } from "./cookies";
 import { binary, createRouter, json, noContent, type HttpRequest, type HttpResponse, type Router } from "./router";
 
 const SECRET = "router-test-secret";
@@ -96,6 +97,17 @@ describe("web router", () => {
 			method: "GET",
 			path: "/me",
 			handler: context => json(200, { login: context.auth?.user.login, permissions: context.auth?.permissions }),
+		});
+		router.add({
+			method: "GET",
+			path: "/session-info",
+			handler: context =>
+				json(200, {
+					token: context.sessionToken,
+					viaCookie: context.viaCookie,
+					secure: context.secure,
+					address: context.request.remoteAddress,
+				}),
 		});
 		router.add({
 			method: "GET",
@@ -238,27 +250,135 @@ describe("web router", () => {
 			expect(allowed.status).to.equal(200);
 		});
 
-		it("requires a CSRF token for state changing requests", async () => {
+		it("requires a CSRF token for state changing requests of a browser", async () => {
+			// the browser sends the httpOnly session cookie by itself — that is the credential a foreign page
+			// could ride on, so exactly this case needs the CSRF token
+			const browser = { cookie: `${SESSION_COOKIE}=${employeeToken}` };
 			const withoutToken = await send("POST", "/punch", {
 				body: JSON.stringify({ tsUtc: 1 }),
-				headers: { "x-session-token": employeeToken, "content-type": "application/json" },
+				headers: { ...browser, "content-type": "application/json" },
 			});
 			expect(withoutToken.status).to.equal(403);
 			expect(bodyOf(withoutToken).code).to.equal("csrf_rejected");
 
 			const wrongToken = await send("POST", "/punch", {
 				body: JSON.stringify({ tsUtc: 1 }),
-				headers: { "x-session-token": employeeToken, "x-csrf-token": "falsch" },
+				headers: { ...browser, "x-csrf-token": "falsch" },
 			});
 			expect(wrongToken.status).to.equal(403);
 
 			const ok = await send("POST", "/punch", {
 				body: JSON.stringify({ tsUtc: 1234 }),
-				headers: { "x-session-token": employeeToken, "x-csrf-token": employeeCsrf },
+				headers: { ...browser, "x-csrf-token": employeeCsrf },
 			});
 			expect(ok.status).to.equal(201);
 			expect(bodyOf(ok)).to.deep.equal({ echo: { tsUtc: 1234 } });
 			expect(ok.headers.location).to.equal("/time/entries/1");
+		});
+
+		it("needs no CSRF token for a bearer client", async () => {
+			// a foreign page cannot equip a request with a header, so a pure bearer request cannot be forged
+			// (specification 4.10: CSRF applies to cookie authentication only)
+			const response = await send("POST", "/punch", {
+				body: JSON.stringify({ tsUtc: 5 }),
+				headers: { "x-session-token": employeeToken, "content-type": "application/json" },
+			});
+			expect(response.status).to.equal(201);
+		});
+
+		it("authenticates a browser with the session cookie alone", async () => {
+			const response = await send("GET", "/me", { headers: { cookie: `${SESSION_COOKIE}=${employeeToken}` } });
+			expect(response.status).to.equal(200);
+			expect(bodyOf<{ login: string }>(response).login).to.equal("anna");
+		});
+
+		it("reports how the session came in and whether the client talks HTTPS", async () => {
+			const withoutCookie = await send("GET", "/session-info", { headers: { "x-session-token": employeeToken } });
+			expect(bodyOf(withoutCookie)).to.deep.equal({
+				token: employeeToken,
+				viaCookie: false,
+				secure: false,
+				address: "127.0.0.1",
+			});
+
+			const withCookie = await send("GET", "/session-info", {
+				headers: { cookie: `${SESSION_COOKIE}=${employeeToken}` },
+			});
+			expect(bodyOf(withCookie)).to.deep.equal({
+				token: employeeToken,
+				viaCookie: true,
+				secure: false,
+				address: "127.0.0.1",
+			});
+
+			// the HTTPS flag only becomes true through a trusted proxy, never because a client claims it
+			const proxied = createRouter({ auth, now: () => 2000, trustProxy: true });
+			proxied.add({
+				method: "GET",
+				path: "/session-info",
+				handler: context => json(200, { secure: context.secure, address: context.request.remoteAddress }),
+			});
+			const claimed = await proxied.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { cookie: `${SESSION_COOKIE}=${employeeToken}`, "x-forwarded-proto": "https" },
+				remoteAddress: "192.0.2.1",
+			});
+			expect(bodyOf(claimed)).to.deep.equal({ secure: true, address: "192.0.2.1" });
+
+			const untrusted = await send("GET", "/session-info", {
+				headers: { "x-session-token": employeeToken, "x-forwarded-proto": "https" },
+			});
+			expect(bodyOf<{ secure: boolean }>(untrusted).secure).to.equal(false);
+		});
+
+		it("uses the forwarded address only for a trusted proxy", async () => {
+			const build = (trustProxy: boolean): Router => {
+				const instance = createRouter({ auth, now: () => 2000, trustProxy });
+				instance.add({
+					method: "GET",
+					path: "/limited",
+					requiresAuth: false,
+					rateLimit: { name: "proxy-limited", limit: 1, windowSeconds: 60 },
+					handler: () => json(200, { ok: true }),
+				});
+				instance.add({
+					method: "GET",
+					path: "/session-info",
+					requiresAuth: false,
+					handler: context => json(200, { address: context.request.remoteAddress }),
+				});
+				return instance;
+			};
+			const distrusting = build(false);
+			const trusting = build(true);
+			const call = (instance: Router, headers: Record<string, string>): Promise<HttpResponse> =>
+				instance.handle({ method: "GET", path: "/limited", headers, remoteAddress: "192.0.2.1" });
+
+			// a client that sets the header itself must not get a bucket of its own …
+			expect((await call(distrusting, { "x-forwarded-for": "10.0.0.7" })).status).to.equal(200);
+			expect((await call(distrusting, { "x-forwarded-for": "10.0.0.8" })).status).to.equal(429);
+
+			// … while a trusted proxy really separates the clients behind it
+			expect((await call(trusting, { "x-forwarded-for": "10.0.0.7" })).status).to.equal(200);
+			expect((await call(trusting, { "x-forwarded-for": "10.0.0.8" })).status).to.equal(200);
+
+			// the rightmost hop is the one the proxy appended; the left part is client controlled
+			const forwarded = await trusting.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { "x-forwarded-for": "10.9.9.9, 203.0.113.5" },
+				remoteAddress: "192.0.2.1",
+			});
+			expect(bodyOf<{ address: string }>(forwarded).address).to.equal("203.0.113.5");
+
+			const ignored = await distrusting.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { "x-forwarded-for": "10.9.9.9, 203.0.113.5" },
+				remoteAddress: "192.0.2.1",
+			});
+			expect(bodyOf<{ address: string }>(ignored).address).to.equal("192.0.2.1");
 		});
 
 		it("does not require a session for public routes", async () => {

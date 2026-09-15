@@ -20,5 +20,7 @@
 	"Subtract working time from absences": "从缺勤中减去工作时间",
 	"Time rules": "时间规则",
 	"zeiterfassung adapter settings": "zeiterfassung 的适配器设置",
-	"127.0.0.1 = only this machine": "127.0.0.1 = 仅本机"
+	"127.0.0.1 = only this machine": "127.0.0.1 = 仅本机",
+	"Trust the reverse proxy (X-Forwarded-*)": "信任反向代理（X-Forwarded-*）",
+	"only switch this on when a reverse proxy is in front of the adapter": "仅当适配器前面有反向代理时才启用"
 }

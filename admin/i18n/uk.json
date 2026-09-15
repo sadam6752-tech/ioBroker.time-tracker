@@ -20,5 +20,7 @@
 	"Subtract working time from absences": "Відніміть робочий час із прогулів",
 	"Time rules": "Правила часу",
 	"zeiterfassung adapter settings": "Налаштування адаптера для zeiterfassung",
-	"127.0.0.1 = only this machine": "127.0.0.1 = лише цей комп'ютер"
+	"127.0.0.1 = only this machine": "127.0.0.1 = лише цей комп'ютер",
+	"Trust the reverse proxy (X-Forwarded-*)": "Довіряти зворотному проксі (X-Forwarded-*)",
+	"only switch this on when a reverse proxy is in front of the adapter": "вмикати лише якщо перед адаптером стоїть зворотний проксі"
 }

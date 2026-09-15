@@ -108,7 +108,28 @@ export interface ApiClient {
 	/** Paid out overtime of a year (own account) */
 	payouts(year: number): Promise<{ totalMinutes: number; payouts: Payout[] }>;
 	/** Punches of a range */
-	entries(from: string, to: string): Promise<Entry[]>;
+	/** Punches of a period; with `userId` the administration reads those of an employee */
+	entries(from: string, to: string, userId?: number): Promise<Entry[]>;
+	/** Adds a punch for an employee (administrative correction, source `admin`) */
+	createEntry(input: {
+		/** Employee the punch belongs to */
+		userId: number;
+		/** Instant of the punch, UTC epoch seconds */
+		tsUtc: number;
+		/** Direction of the punch; omitted lets the server derive it */
+		direction?: "in" | "out";
+		/** Free note */
+		note?: string | null;
+		/** Why the correction was made (audit trail) */
+		reason?: string | null;
+	}): Promise<PunchResult>;
+	/** Changes a punch: its time, its direction or its note */
+	updateEntry(
+		id: number,
+		input: { tsUtc?: number; direction?: "in" | "out"; note?: string | null; reason?: string | null },
+	): Promise<{ entry: Entry; day: PunchResult["day"] }>;
+	/** Removes a punch */
+	deleteEntry(id: number, reason?: string | null): Promise<void>;
 	/** Absences of a year */
 	absences(year: number): Promise<Absence[]>;
 	/** Absence types the caller may use */
@@ -695,9 +716,24 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		payouts: year =>
 			request<{ totalMinutes: number; payouts: Payout[] }>("GET", "/payouts", { query: { year, month: "" } }),
 
-		async entries(from, to): Promise<Entry[]> {
-			const result = await request<{ entries: Entry[] }>("GET", "/entries", { query: { from, to } });
+		async entries(from, to, userId): Promise<Entry[]> {
+			const result = await request<{ entries: Entry[] }>("GET", "/entries", { query: { from, to, userId } });
 			return result.entries ?? [];
+		},
+
+		async createEntry(input): Promise<PunchResult> {
+			return request<PunchResult>("POST", "/entries", {
+				query: { userId: input.userId },
+				body: { tsUtc: input.tsUtc, direction: input.direction, note: input.note, reason: input.reason },
+			});
+		},
+
+		async updateEntry(id, input): Promise<{ entry: Entry; day: PunchResult["day"] }> {
+			return request("PATCH", `/entries/${id}`, { body: input });
+		},
+
+		async deleteEntry(id, reason): Promise<void> {
+			await request("DELETE", `/entries/${id}`, { body: { reason } });
 		},
 
 		async absences(year): Promise<Absence[]> {

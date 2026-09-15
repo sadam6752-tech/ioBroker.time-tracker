@@ -27,6 +27,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { CorrectionsTab } from "./CorrectionsTab";
 import BackupIcon from "@mui/icons-material/Backup";
 import KeyIcon from "@mui/icons-material/Key";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
@@ -1432,6 +1433,10 @@ export function Admin(): React.JSX.Element {
 	const tabs: { label: string; render: () => React.JSX.Element }[] = [];
 	if (hasPermission(permissions, "user.view")) {
 		tabs.push({ label: t("admin.users"), render: () => <UsersTab language={i18n.language} /> });
+	}
+	// correcting punches is the everyday administrative task, so it sits right next to the employees
+	if (hasPermission(permissions, "time.edit_other")) {
+		tabs.push({ label: t("admin.corrections"), render: () => <CorrectionsTab language={i18n.language} /> });
 	}
 	if (hasPermission(permissions, "terminal.manage")) {
 		tabs.push({ label: t("admin.terminals"), render: () => <TerminalsTab language={i18n.language} /> });

@@ -58,6 +58,11 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
    Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4.
 3. **Verwaltung → Einstellungen**: `report_font_path` auf eine Unicode-`.ttf`/`.otf` setzen, wenn Ausweise in
    **ru**, **uk** oder **zh-cn** gedruckt werden sollen (sonst lehnt der Export mit `report_font_missing` ab).
+4. **Verwaltung → Zeitkorrektur**: die Stempel eines Mitarbeiters ansehen und geradeziehen — Mitarbeiter und Monat
+   wählen, dann eine Zeit ändern (Stift-Symbol), einen Stempel löschen (Papierkorb) oder fehlende **nachtragen**
+   („Stempel oder Tag nachtragen“: Datum, Kommen, Gehen; „Gehen“ leer lassen, wenn nur ein Stempel fehlt). Die
+   **Begründung** oben im Reiter landet im Protokoll (Audit-Log), und nachgetragene Stempel sind mit der Herkunft
+   „durch die Verwaltung nachgetragen“ gekennzeichnet — so bleibt jede Korrektur nachvollziehbar.
 
 ## 5. Erste Stempel und Prüfungen
 

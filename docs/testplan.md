@@ -149,4 +149,34 @@ verbindlich zu bestätigen.
 - Erst danach Version taggen (`npm run release -- patch|minor`) — der Deploy-Job veröffentlicht dann über
   npm (trusted publishing vorausgesetzt) und legt das GitHub-Release an.
 
+## 11. Entwicklungshinweise (Web-Oberfläche)
+
+**Browser-Tests** (`npm run e2e`, Ordner `e2e/`): Sie starten `e2e/server.mjs` — das ist die echte API auf einer
+In-Memory-Datenbank mit den gebauten Web-Dateien aus `www/`. Kein ioBroker nötig, keine Netzverbindung. Vor dem
+Lauf **muss** `npm run build:pwa` gelaufen sein; die Tests blockieren den Service Worker, sonst würde Workbox die
+alten Dateien aus dem Precache ausliefern.
+
+> **Wichtig:** Erst den Exit-Code des Builds prüfen, dann das Testergebnis lesen. Ein abgebrochener Build (z. B.
+> unbenutzter Import) hinterlässt `www/` unverändert — die Tests laufen dann still gegen den **alten** Stand.
+
+**Web-App gegen den laufenden Adapter entwickeln** (schnelle Rückmeldung, React im Entwicklungsmodus mit lesbaren
+Fehlern):
+
+```bash
+npm --prefix src-pwa run dev     # Port 5173, holt /api/… über den Proxy von 127.0.0.1:8082
+```
+
+Zwei Fallstricke, die dabei Zeit gekostet haben:
+
+- Der Proxy in `src-pwa/vite.config.ts` muss als **berechneter** Schlüssel `[API_PREFIX]` stehen. Mit `API_PREFIX:`
+  wird der wörtliche Text verglichen, der Proxy greift nie und jede API-Anfrage landet im App-Gerüst (Login läuft
+  dann ins Leere, `GET /api/auth/me` liefert die HTML-Datei zurück).
+- `@mui/icons-material` 5.x liefert jedes Symbol zweimal: als CommonJS (`Menu.js`) und als ES-Modul
+  (`esm/Menu.js`). Ohne den Alias in `vite.config.ts` kann der Default-Import als Modulobjekt `{ default: … }`
+  ankommen — React bricht dann mit „Element type is invalid … got: object“ (React #130) ab, und zwar erst nach
+  dem Anmelden, weil die Symbole nur in der Shell und in den Masken vorkommen.
+
+Nach einer Änderung an `vite.config.ts` den Zwischenspeicher `src-pwa/node_modules/.vite` löschen, sonst antwortet
+der Dev-Server mit `504 Outdated Optimize Dep`.
+
 

@@ -14,6 +14,13 @@ const API_PREFIX = "/api/";
 
 export default defineConfig({
 	base: "./",
+	// `@mui/icons-material` 5.x ships every icon twice: as CommonJS (`Menu.js`) and as ES module (`esm/Menu.js`).
+	// The bundler resolves the CommonJS file for the deep path, and depending on the interop the default export
+	// arrives wrapped in a module object — React then reports "element type is invalid … got: object". Resolving
+	// the ES module variant keeps the plain `import MenuIcon from "@mui/icons-material/Menu"` working.
+	resolve: {
+		alias: [{ find: /^@mui\/icons-material\/(?!esm\/)(.+)$/, replacement: "@mui/icons-material/esm/$1.js" }],
+	},
 	plugins: [
 		react(),
 		VitePWA({
@@ -50,9 +57,11 @@ export default defineConfig({
 	],
 	server: {
 		port: 5173,
-		// during development the API runs on the adapter instance
+		// during development the API runs on the adapter instance; the key has to be computed, otherwise the
+		// literal text `API_PREFIX` would be matched and the proxy would never apply (every `/api/…` call would
+		// fall back to the app shell — which is what broke the login in the dev server)
 		proxy: {
-			API_PREFIX: {
+			[API_PREFIX]: {
 				target: "http://127.0.0.1:8082",
 				changeOrigin: false,
 			},

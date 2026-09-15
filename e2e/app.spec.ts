@@ -1,16 +1,8 @@
 /**
  * Browser tests of the web app.
  *
- * **Open finding:** after a successful sign in the app renders nothing and reports `React error #130`
- * ("element type is invalid … got: object") — on every route that uses the shell, while the login screen, the
- * kiosk screen and the badge link work. The component stack (temporary error boundary) points at a `<button>`
- * inside the app bar. **Icons are ruled out** as the cause: replacing `MenuIcon`, the two chip icons and all six
- * navigation icons by plain text (and removing `Badge`) did not change anything — the crash stayed exactly the
- * same. Next steps: print the **complete** component stack (the earlier output was cut off after a few frames) and
- * reproduce it in a React **development** build, which turns the minified message into a readable one.
- *
- * Until that is cleared up the three session-bound tests below are marked `fixme`: they describe what is expected
- * and start passing as soon as the crash is gone.
+ * They run against `e2e/server.mjs`, which starts the real API on an in-memory database and serves the built web
+ * app — no ioBroker needed. The service worker is blocked on purpose (see `playwright.config.ts`).
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -27,10 +19,12 @@ async function signIn(page: Page): Promise<void> {
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByText("Nicht eingestempelt")).toBeVisible();
+	// the punch screen is there when its button is. Whether the day is started already depends on the other
+	// tests of this file (they share one database), so the state itself must not be asserted here
+	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
 }
 
-test.fixme("refuses a wrong password and lets the administrator in", async ({ page }) => {
+test("refuses a wrong password and lets the administrator in", async ({ page }) => {
 	await page.goto("/");
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill("Falsch-2026-gemischt");
@@ -41,10 +35,10 @@ test.fixme("refuses a wrong password and lets the administrator in", async ({ pa
 
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByText("Nicht eingestempelt")).toBeVisible();
+	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
 });
 
-test.fixme("survives a reload on the cookie alone and can still punch", async ({ page }) => {
+test("survives a reload on the cookie alone and can still punch", async ({ page }) => {
 	await signIn(page);
 
 	// the session token lives in an httpOnly cookie; only the CSRF token and the user are stored in the page
@@ -53,15 +47,17 @@ test.fixme("survives a reload on the cookie alone and can still punch", async ({
 
 	await page.reload();
 	// no login screen: the cookie is enough. The CSRF token is fetched again with `GET /auth/me`
-	await expect(page.getByText("Nicht eingestempelt")).toBeVisible();
+	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
 
-	await page.getByRole("button", { name: "Stempeln" }).first().click();
-	await expect(page.getByText(/Eingestempelt seit/)).toBeVisible();
+	// punching flips the label of that very button
+	const before = await page.getByRole("button", { name: /Einstempeln|Ausstempeln/ }).innerText();
+	await page.getByRole("button", { name: /Einstempeln|Ausstempeln/ }).click();
+	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).not.toHaveText(before);
 });
 
-test.fixme("shows the figures of all employees in the statistics", async ({ page }) => {
+test("shows the figures of all employees in the statistics", async ({ page }) => {
 	await signIn(page);
-	await page.getByRole("tab", { name: "Statistik" }).click();
+	await page.getByRole("button", { name: "Statistik" }).click();
 
 	await expect(page.getByText("Alle Mitarbeiter")).toBeVisible();
 	await expect(page.getByText("Anna Muster")).toBeVisible();

@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} удар(ів) очікує",
 	"sync.permission": "Вам заборонено вирішувати конфлікти.",
 	"sync.resolved": "Конфлікт вирішено.",
-	"sync.title": "Синхронізація"
+	"sync.title": "Синхронізація",
+	"terminal.title": "Термінал",
+	"terminal.deviceToken": "Токен пристрою",
+	"terminal.connect": "Підключити",
+	"terminal.badge": "Перепустка",
+	"terminal.pin": "PIN-код",
+	"terminal.select": "Виберіть ім'я",
+	"terminal.disabled": "Термінал вимкнено в налаштуваннях адаптера."
 }

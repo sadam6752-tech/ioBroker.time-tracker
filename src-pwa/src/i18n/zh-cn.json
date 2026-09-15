@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} 次打孔等待",
 	"sync.permission": "您无权解决冲突。",
 	"sync.resolved": "冲突解决了。",
-	"sync.title": "同步"
+	"sync.title": "同步",
+	"terminal.title": "终端",
+	"terminal.deviceToken": "设备令牌",
+	"terminal.connect": "连接",
+	"terminal.badge": "工牌",
+	"terminal.pin": "PIN 码",
+	"terminal.select": "选择姓名",
+	"terminal.disabled": "终端已在适配器设置中关闭。"
 }

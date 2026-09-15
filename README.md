@@ -116,6 +116,24 @@ absences, the offline queue with its conflict view and the profile. Callers hold
 additionally get an **administration** entry in the menu: employees (create, activate/deactivate, badge PIN) and
 database backups (list, retention, "create now").
 
+### Kiosk terminal
+
+With **Enable kiosk terminal** switched on, a tablet in the workshop or at the entrance can punch for everybody
+without logging in. Create a terminal in the instance settings (`POST /api/terminals`, permission
+`terminal.manage`); the response contains the device token **exactly once** — copy it, because only its hash is
+stored. Then open it on the device:
+
+```
+http://<adapter host>:<port>/terminal?token=<device token>
+```
+
+The screen keeps the token in the browser, so the URL is only needed for the first start. Afterwards it shows the
+badge field (scan or type, Enter punches), the list of active employees for the name plus PIN punch, the server
+clock and — after every punch — the name, the direction and the figures of that day for eight seconds. While the
+kiosk is switched off the screen says so and nothing else happens; a revoked token sends it back to the setup
+form. For the name/PIN path an employee needs a badge PIN (`POST /api/users/:id/pin`, 4–8 digits), for scanning an
+RFID card id (`rfidCard`).
+
 ## States (overview)
 
 | State                                            | Type    | Role                | Purpose                                   |

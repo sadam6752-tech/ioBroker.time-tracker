@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} soco(s) esperando",
 	"sync.permission": "Você não tem permissão para resolver conflitos.",
 	"sync.resolved": "Conflito resolvido.",
-	"sync.title": "Sincronização"
+	"sync.title": "Sincronização",
+	"terminal.title": "Terminal",
+	"terminal.deviceToken": "Token do dispositivo",
+	"terminal.connect": "Ligar",
+	"terminal.badge": "Cartão",
+	"terminal.pin": "PIN",
+	"terminal.select": "Escolha o nome",
+	"terminal.disabled": "O terminal está desligado nas configurações do adaptador."
 }

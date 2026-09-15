@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} punch(es) wachtend",
 	"sync.permission": "Je mag geen conflicten oplossen.",
 	"sync.resolved": "Conflict opgelost.",
-	"sync.title": "Synchronisatie"
+	"sync.title": "Synchronisatie",
+	"terminal.title": "Terminal",
+	"terminal.deviceToken": "Apparaattoken",
+	"terminal.connect": "Verbinden",
+	"terminal.badge": "Pas",
+	"terminal.pin": "Pincode",
+	"terminal.select": "Kies uw naam",
+	"terminal.disabled": "De terminal is uitgeschakeld in de adapterinstellingen."
 }

@@ -19,6 +19,7 @@ import { PasswordChange } from "./screens/PasswordChange";
 import { Profile } from "./screens/Profile";
 import { Reports } from "./screens/Reports";
 import { Sync } from "./screens/Sync";
+import { Terminal } from "./screens/Terminal";
 import { SessionProvider, useSession } from "./state/session";
 import { SyncProvider } from "./offline/useSync";
 import { theme } from "./theme";
@@ -118,6 +119,29 @@ function Routed(): React.JSX.Element {
 }
 
 /**
+ * Entry point of the routing.
+ *
+ * The kiosk terminal authenticates with its own device token instead of a user session, so its route lives
+ * outside the login guard of `Routed`.
+ *
+ * @returns the screen the URL asks for
+ */
+function Root(): React.JSX.Element {
+	return (
+		<Routes>
+			<Route
+				path="/terminal"
+				element={<Terminal />}
+			/>
+			<Route
+				path="*"
+				element={<Routed />}
+			/>
+		</Routes>
+	);
+}
+
+/**
  * Root component of the web app.
  *
  * @returns the application
@@ -130,7 +154,7 @@ export function App(): React.JSX.Element {
 				<SessionProvider>
 					<SyncProvider>
 						<BrowserRouter>
-							<Routed />
+							<Root />
 						</BrowserRouter>
 					</SyncProvider>
 				</SessionProvider>

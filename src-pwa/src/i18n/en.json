@@ -120,5 +120,12 @@
 	"common.retry": "Retry",
 	"common.close": "Close",
 	"common.refresh": "Refresh",
-	"common.none": "–"
+	"common.none": "–",
+	"terminal.title": "Terminal",
+	"terminal.deviceToken": "Device token",
+	"terminal.connect": "Connect",
+	"terminal.badge": "Badge",
+	"terminal.pin": "PIN",
+	"terminal.select": "Choose your name",
+	"terminal.disabled": "The terminal is switched off in the adapter settings."
 }

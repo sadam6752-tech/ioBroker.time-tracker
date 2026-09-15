@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} ciosów czeka",
 	"sync.permission": "Nie wolno Ci rozwiązywać konfliktów.",
 	"sync.resolved": "Konflikt rozwiązany.",
-	"sync.title": "Synchronizacja"
+	"sync.title": "Synchronizacja",
+	"terminal.title": "Terminal",
+	"terminal.deviceToken": "Token urządzenia",
+	"terminal.connect": "Połącz",
+	"terminal.badge": "Karta",
+	"terminal.pin": "PIN",
+	"terminal.select": "Wybierz nazwisko",
+	"terminal.disabled": "Terminal jest wyłączony w ustawieniach adaptera."
 }

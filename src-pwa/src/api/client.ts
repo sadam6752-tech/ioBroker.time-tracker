@@ -145,6 +145,23 @@ export interface ApiClient {
 	backups(): Promise<{ retentionDays: number; backups: BackupFile[] }>;
 	/** Takes a database backup */
 	createBackup(): Promise<{ backup: BackupFile; removed: string[] }>;
+	/** Status of the kiosk terminal */
+	terminalStatus(): Promise<TerminalStatus>;
+	/** Exchanges the device token of a terminal for a short lived terminal session */
+	terminalSession(deviceToken: string): Promise<TerminalSessionResult>;
+	/** Employees the terminal may punch for */
+	terminalUsers(terminalSession: string): Promise<{ users: TerminalUser[] }>;
+	/** Punches for an employee (badge or user plus PIN) */
+	terminalPunch(input: {
+		terminalSession: string;
+		badge?: string;
+		userId?: number;
+		pin?: string;
+	}): Promise<TerminalPunchResult>;
+	/** Keeps the terminal session alive */
+	terminalHeartbeat(
+		terminalSession: string,
+	): Promise<{ status: string; serverTime: number; timezone: string; expiresAt: number }>;
 }
 
 /** A downloaded file. */
@@ -153,6 +170,46 @@ export interface DownloadFile {
 	blob: Blob;
 	/** File name the API suggests */
 	fileName: string;
+}
+
+/** Status of the kiosk terminal (`GET /terminal/status`). */
+export interface TerminalStatus {
+	/** True when the terminal is switched on in the adapter settings */
+	enabled: boolean;
+	/** Server time, UTC epoch seconds */
+	serverTime: number;
+	/** Time zone the terminal displays its clock in */
+	timezone: string;
+	/** Adapter version */
+	version: string;
+}
+
+/** A terminal session (`POST /terminal/session`). */
+export interface TerminalSessionResult {
+	/** Short lived session of this device */
+	terminalSession: string;
+	/** Instant the session expires, UTC epoch seconds */
+	expiresAt: number;
+	/** Device the session belongs to */
+	terminal: { name: string; location: string | null; pinRequired: boolean };
+}
+
+/** Minimal employee entry of the terminal (`GET /terminal/users`). */
+export interface TerminalUser {
+	/** Database id */
+	id: number;
+	/** Shown name */
+	displayName: string;
+}
+
+/** Result of a punch at the terminal (`POST /terminal/punch`). */
+export interface TerminalPunchResult {
+	/** Employee the punch belongs to */
+	user: { id: number; displayName: string };
+	/** The stored punch */
+	entry: { id: number; tsUtc: number; direction: "in" | "out" | "auto"; localDate: string };
+	/** Figures of that day */
+	day: { workedMin: number; targetMin: number; balanceMin: number; hasOpenEntry: boolean };
 }
 
 /**
@@ -216,12 +273,12 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 	}
 
 	/**
-	 * Sends a request to the API.
+	 * Sends a request through the API.
 	 *
 	 * @param method - HTTP method
-	 * @param path - path below the API prefix
-	 * @param options - body, query parameters and headers
-	 * @param options.body - request body (serialised as JSON)
+	 * @param path - path below `/api`
+	 * @param options - body, query and headers
+	 * @param options.body - body object (serialised as JSON)
 	 * @param options.query - query parameters
 	 * @param options.anonymous - true to send without the session
 	 * @param options.headers - additional headers
@@ -343,6 +400,30 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		},
 
 		forget: () => writeSession(null),
+
+		// kiosk terminal: it has no user session, so every call is anonymous — the device token is exchanged
+		// for a short lived terminal session that is carried in the body or the query
+
+		terminalStatus: () => request<TerminalStatus>("GET", "/terminal/status", { anonymous: true }),
+
+		terminalSession: (deviceToken: string) =>
+			request<TerminalSessionResult>("POST", "/terminal/session", { body: { deviceToken }, anonymous: true }),
+
+		terminalUsers: (terminalSession: string) =>
+			request<{ users: TerminalUser[] }>("GET", "/terminal/users", {
+				query: { terminalSession },
+				anonymous: true,
+			}),
+
+		terminalPunch: (input: { terminalSession: string; badge?: string; userId?: number; pin?: string }) =>
+			request<TerminalPunchResult>("POST", "/terminal/punch", { body: input, anonymous: true }),
+
+		terminalHeartbeat: (terminalSession: string) =>
+			request<{ status: string; serverTime: number; timezone: string; expiresAt: number }>(
+				"POST",
+				"/terminal/heartbeat",
+				{ body: { terminalSession }, anonymous: true },
+			),
 
 		async login(login: string, password: string): Promise<StoredSession> {
 			const result = await request<LoginResult>("POST", "/auth/login", {

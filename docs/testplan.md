@@ -61,6 +61,8 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
    - für `anna` einen **Badge-PIN** (4–8 Ziffern) setzen → für T4
 3. Arbeitsprofil von `anna` prüfen: Wochenstunden, Arbeitstage, Pausenstaffel, Überstundenmodell.
 4. Ein **Terminal** anlegen (Name „Werkstatt"), PIN vergeben.
+   Danach die Kiosk-Ansicht auf dem Gerät öffnen: `http://<Adapter-Host>:<Port>/terminal?token=<Gerätetoken>`
+   (den Token zeigt die Anlage **einmalig**; das Gerät merkt ihn sich für den nächsten Start).
 5. Feiertage für das Testjahr erzeugen (Einstellung *Feiertagsland*), Abwesenheitsart *Ferien* prüfen.
 
 ## 5. Testfälle
@@ -128,7 +130,7 @@ verbindlich zu bestätigen.
 | Statistik-Ansicht in der Web-App | Die API `/reports/statistics` liefert Zahlen, die Oberfläche zeigt sie noch nicht. |
 | Adminbereich-Ausbau | Rollenwechsel pro Zeile, Terminal-Verwaltung und Einstellungen laufen über ioBroker-Objekte bzw. die API. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |
-| Keine E2E-Tests (Playwright) | Die Prüfung erfolgt manuell nach diesem Plan; die Automatik deckt Unit-, Paket- und Integrationstests ab. |
+| Keine E2E-Tests (Playwright) | Die Prüfung erfolgt manuell nach diesem Plan; die Automatik deckt Unit-, Paket- und Integrationstests ab (inklusive Kiosk-Terminal-Vertrag `/terminal/status`, `403 kiosk_disabled` und `/terminal`-Deep-Link in `test/integration.js`). |
 | PDF-Schriften (`ru`, `uk`, `zh-cn`) | Braucht eine Unicode-Schriftdatei über `report_font_path`; ohne sie kommt eine klare Fehlermeldung. |
 
 ## 9. Rückfall-Szenario

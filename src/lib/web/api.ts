@@ -479,6 +479,8 @@ export interface PublicUserPayload {
 	mustChangePw: boolean;
 	/** Preferred language */
 	locale: string;
+	/** Same value as `locale`; the web app reads the language of the session from this field */
+	language: string;
 	/** IANA time zone */
 	timezone: string;
 	/** Instant of creation, UTC epoch seconds */
@@ -507,6 +509,7 @@ function publicUser(user: UserRecord): PublicUserPayload {
 		isActive: user.isActive,
 		mustChangePw: user.mustChangePw,
 		locale: user.locale,
+		language: user.locale,
 		timezone: user.timezone,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,

@@ -197,6 +197,45 @@ tests.integration(path.join(__dirname, ".."), {
 				await waitForLog(/command commands\.punch: .*(punched|no employee exists yet)/);
 				expect(harness.hasLog(/command commands\.punch: .*punched/)).to.equal(true);
 			});
+
+			it("offers the kiosk terminal API and delivers the terminal deep link", async function () {
+				this.timeout(testTimeout);
+				const port = apiPort();
+				const api = `http://127.0.0.1:${port}/api`;
+
+				// the terminal screen asks for the switch and the clock before it draws anything
+				const status = await fetch(`${api}/terminal/status`);
+				expect(status.status).to.equal(200);
+				const statusBody = await status.json();
+				expect(statusBody).to.include.keys("enabled", "serverTime", "timezone", "version");
+				// this instance runs with the factory settings, so the kiosk is switched off
+				expect(statusBody.enabled).to.equal(false);
+
+				// a device token is refused with 403 while the kiosk is off: the caller is not sent looking for
+				// credentials that could not work anyway
+				const disabled = await fetch(`${api}/terminal/session`, {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ deviceToken: "gibt-es-nicht" }),
+				});
+				expect(disabled.status).to.equal(403);
+				expect(await disabled.json()).to.include({ code: "kiosk_disabled" });
+
+				// a punch without a terminal session is refused as well — the switch is checked before the session,
+				// so a switched off kiosk answers 403 here too
+				const punch = await fetch(`${api}/terminal/punch`, {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ badge: "4711" }),
+				});
+				expect(punch.status).to.equal(403);
+				expect(await punch.json()).to.include({ code: "kiosk_disabled" });
+
+				// the kiosk screen itself is a deep link of the client side router
+				const page = await fetch(`http://127.0.0.1:${port}/terminal`, { headers: { accept: "text/html" } });
+				expect(page.status).to.equal(200);
+				expect(await page.text()).to.contain('<div id="root">');
+			});
 		});
 	},
 });

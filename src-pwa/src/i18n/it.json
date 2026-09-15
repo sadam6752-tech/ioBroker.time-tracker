@@ -120,5 +120,12 @@
 	"sync.pending": "{{count}} punch in attesa",
 	"sync.permission": "Non ti è consentito risolvere i conflitti.",
 	"sync.resolved": "Conflitto risolto.",
-	"sync.title": "Sincronizzazione"
+	"sync.title": "Sincronizzazione",
+	"terminal.title": "Terminal",
+	"terminal.deviceToken": "Token del dispositivo",
+	"terminal.connect": "Connetti",
+	"terminal.badge": "Badge",
+	"terminal.pin": "PIN",
+	"terminal.select": "Scegli il nome",
+	"terminal.disabled": "Il terminal è disattivato nelle impostazioni dell'adattatore."
 }

@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Відкликати",
 	"admin.terminal.revoked": "відкликано",
 	"admin.terminal.empty": "Термінал ще не створено.",
-	"admin.terminal.confirmRevoke": "Відкликати «{{name}}»? Токен пристрою перестане працювати негайно."
+	"admin.terminal.confirmRevoke": "Відкликати «{{name}}»? Токен пристрою перестане працювати негайно.",
+	"admin.settings": "Налаштування",
+	"admin.settings.fontPath": "Файл шрифту Unicode для PDF-звітів (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Потрібен для російської, української та китайської; порожньо = вбудовані шрифти, що покривають лише Latin-1.",
+	"admin.settings.advanced": "Усі налаштування екземпляра (технічні назви, 1/0 для перемикачів)",
+	"admin.settings.saved": "Налаштування збережено.",
+	"admin.import": "Імпорт",
+	"admin.import.baseDir": "Каталог старих даних (порожньо = налаштований каталог)",
+	"admin.import.timezone": "Часовий пояс старих відміток (порожньо = часовий пояс екземпляра)",
+	"admin.import.dryRun": "Пробний прогін (лише звіт, нічого не записує)",
+	"admin.import.commit": "Імпорт (записує в базу даних)",
+	"admin.import.resetImport": "Повторити вже імпортований набір даних",
+	"admin.import.start": "Почати імпорт",
+	"admin.import.result": "Режим {{mode}}, статус {{status}}, попереджень: {{warnings}}, прогін {{runId}}",
+	"admin.import.counters": "Лічильники",
+	"admin.import.runs": "Останні прогони"
 }

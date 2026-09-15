@@ -10,6 +10,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
@@ -598,6 +599,283 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Legacy import: start a run and read back the last ones.
+ *
+ * @param props - language of the display
+ * @param props.language - language of the display
+ * @returns the import tab
+ */
+function ImportTab({ language }: { language: string }): React.JSX.Element {
+	const { t } = useTranslation();
+	const queryClient = useQueryClient();
+	const runs = useQuery({ queryKey: ["admin", "import"], queryFn: () => api.importRuns() });
+	const [baseDir, setBaseDir] = useState("");
+	const [timezone, setTimezone] = useState("");
+	const [mode, setMode] = useState<"dry-run" | "commit">("dry-run");
+	const [resetImport, setResetImport] = useState(false);
+
+	const start = useMutation({
+		mutationFn: () =>
+			api.runImport({
+				...(baseDir.trim() ? { baseDir: baseDir.trim() } : {}),
+				...(timezone.trim() ? { timezone: timezone.trim() } : {}),
+				mode,
+				resetImport,
+			}),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "import"] });
+		},
+	});
+
+	/**
+	 * Reads the JSON text a stored run keeps its counters and warnings in.
+	 *
+	 * @param text - stored JSON text
+	 * @param fallback - value for an unreadable entry
+	 * @returns parsed value
+	 */
+	const parse = <T,>(text: string | null, fallback: T): T => {
+		try {
+			return text ? (JSON.parse(text) as T) : fallback;
+		} catch {
+			return fallback;
+		}
+	};
+
+	const report = start.data;
+
+	return (
+		<>
+			<ErrorAlert error={runs.error ?? start.error} />
+			{report && (
+				<Alert
+					severity={report.status === "ok" ? "success" : "warning"}
+					sx={{ mb: 2 }}
+				>
+					<Typography
+						variant="body2"
+						gutterBottom
+					>
+						{t("admin.import.result", {
+							mode: report.mode,
+							status: report.status,
+							warnings: report.warnings?.length ?? 0,
+							runId: report.runId,
+						})}
+					</Typography>
+					<Typography
+						variant="caption"
+						gutterBottom
+						sx={{ display: "block" }}
+					>
+						{t("admin.import.counters")}
+					</Typography>
+					{Object.entries(report.stats ?? {}).map(([key, value]) => (
+						<Typography
+							key={key}
+							variant="body2"
+							sx={{ fontFamily: "monospace" }}
+						>
+							{key}: {value}
+						</Typography>
+					))}
+					{(report.warnings ?? []).map(warning => (
+						<Typography
+							key={warning}
+							variant="caption"
+							sx={{ display: "block" }}
+						>
+							{warning}
+						</Typography>
+					))}
+				</Alert>
+			)}
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Stack spacing={2}>
+						<TextField
+							label={t("admin.import.baseDir")}
+							value={baseDir}
+							onChange={event => setBaseDir(event.target.value)}
+							fullWidth
+						/>
+						<TextField
+							label={t("admin.import.timezone")}
+							value={timezone}
+							onChange={event => setTimezone(event.target.value)}
+							fullWidth
+						/>
+						<Stack
+							direction="row"
+							spacing={1}
+							alignItems="center"
+						>
+							<Switch
+								checked={mode === "commit"}
+								onChange={(_event, checked) => setMode(checked ? "commit" : "dry-run")}
+							/>
+							<Typography>
+								{mode === "commit" ? t("admin.import.commit") : t("admin.import.dryRun")}
+							</Typography>
+						</Stack>
+						<Stack
+							direction="row"
+							spacing={1}
+							alignItems="center"
+						>
+							<Switch
+								checked={resetImport}
+								onChange={(_event, checked) => setResetImport(checked)}
+							/>
+							<Typography>{t("admin.import.resetImport")}</Typography>
+						</Stack>
+						<Box>
+							<Button
+								variant="contained"
+								disabled={start.isPending}
+								onClick={() => start.mutate()}
+							>
+								{t("admin.import.start")}
+							</Button>
+						</Box>
+					</Stack>
+				</CardContent>
+			</Card>
+
+			<Typography
+				variant="subtitle1"
+				gutterBottom
+			>
+				{t("admin.import.runs")}
+			</Typography>
+			<Card>
+				<List dense>
+					{(runs.data ?? []).map(run => (
+						<ListItem
+							key={run.id}
+							divider
+						>
+							<ListItemText
+								primary={`#${run.id} · ${run.mode} · ${run.status}`}
+								secondary={`${formatStamp(run.startedAt, language)} · ${run.sourcePath ?? t("common.none")} · ${
+									Object.entries(parse<Record<string, number>>(run.stats, {}))
+										.filter(([, value]) => value > 0)
+										.map(([key, value]) => `${key} ${value}`)
+										.join(", ") || t("common.none")
+								}`}
+							/>
+						</ListItem>
+					))}
+					{(runs.data ?? []).length === 0 && (
+						<ListItem>
+							<ListItemText secondary={t("common.none")} />
+						</ListItem>
+					)}
+				</List>
+			</Card>
+		</>
+	);
+}
+
+/**
+ * Instance settings: the font for the PDF statements and a technical editor for the rest.
+ *
+ * @returns the settings tab
+ */
+function SettingsTab(): React.JSX.Element {
+	const { t } = useTranslation();
+	const { permissions } = useSession();
+	const mayEdit = hasPermission(permissions, "settings.edit");
+	const queryClient = useQueryClient();
+	const settings = useQuery({ queryKey: ["admin", "settings"], queryFn: () => api.settings() });
+	const [draft, setDraft] = useState<Record<string, string>>({});
+
+	const save = useMutation({
+		mutationFn: (patch: Record<string, string>) => api.updateSettings(patch),
+		onSuccess: async () => {
+			setDraft({});
+			await queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+		},
+	});
+
+	if (settings.isLoading) {
+		return <Loading />;
+	}
+
+	const values = settings.data ?? {};
+
+	/**
+	 * Keeps one setting in the pending change set.
+	 *
+	 * @param key - name of the setting
+	 * @param value - new value
+	 */
+	const change = (key: string, value: string): void => setDraft(current => ({ ...current, [key]: value }));
+
+	return (
+		<>
+			<ErrorAlert error={settings.error ?? save.error} />
+			{save.isSuccess && (
+				<Alert
+					severity="success"
+					sx={{ mb: 2 }}
+				>
+					{t("admin.settings.saved")}
+				</Alert>
+			)}
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<TextField
+						label={t("admin.settings.fontPath")}
+						helperText={t("admin.settings.fontPathHint")}
+						value={draft.report_font_path ?? values.report_font_path ?? ""}
+						onChange={event => change("report_font_path", event.target.value)}
+						disabled={!mayEdit}
+						fullWidth
+					/>
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.settings.advanced")}
+					</Typography>
+					<Stack spacing={2}>
+						{Object.keys(values)
+							.sort()
+							.map(key => (
+								<TextField
+									key={key}
+									label={key}
+									value={draft[key] ?? values[key] ?? ""}
+									onChange={event => change(key, event.target.value)}
+									disabled={!mayEdit}
+									size="small"
+									fullWidth
+								/>
+							))}
+					</Stack>
+				</CardContent>
+			</Card>
+
+			<Button
+				variant="contained"
+				disabled={!mayEdit || Object.keys(draft).length === 0 || save.isPending}
+				onClick={() => save.mutate(draft)}
+			>
+				{t("common.save")}
+			</Button>
+		</>
+	);
+}
+
+/**
  * Database backups: list, retention and a button that takes one now.
  *
  * @param props - language of the display
@@ -691,6 +969,12 @@ export function Admin(): React.JSX.Element {
 	}
 	if (hasPermission(permissions, "terminal.manage")) {
 		tabs.push({ label: t("admin.terminals"), render: () => <TerminalsTab language={i18n.language} /> });
+	}
+	if (hasPermission(permissions, "settings.view")) {
+		tabs.push({ label: t("admin.settings"), render: () => <SettingsTab /> });
+	}
+	if (hasPermission(permissions, "import.run")) {
+		tabs.push({ label: t("admin.import"), render: () => <ImportTab language={i18n.language} /> });
 	}
 	if (hasPermission(permissions, "backup.run")) {
 		tabs.push({ label: t("admin.backup"), render: () => <BackupTab language={i18n.language} /> });

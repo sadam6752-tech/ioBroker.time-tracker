@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Revogar",
 	"admin.terminal.revoked": "revogado",
 	"admin.terminal.empty": "Ainda não foi criado nenhum terminal.",
-	"admin.terminal.confirmRevoke": "Revogar «{{name}}»? O token do dispositivo deixa de funcionar imediatamente."
+	"admin.terminal.confirmRevoke": "Revogar «{{name}}»? O token do dispositivo deixa de funcionar imediatamente.",
+	"admin.settings": "Configurações",
+	"admin.settings.fontPath": "Ficheiro de tipo de letra Unicode para os extratos PDF (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Necessário para russo, ucraniano e chinês; vazio = tipos de letra incorporados, que só cobrem Latin-1.",
+	"admin.settings.advanced": "Todas as configurações da instância (nomes técnicos, 1/0 para interruptores)",
+	"admin.settings.saved": "Configurações guardadas.",
+	"admin.import": "Importação",
+	"admin.import.baseDir": "Diretório antigo (vazio = o diretório configurado)",
+	"admin.import.timezone": "Fuso horário dos registos antigos (vazio = fuso horário da instância)",
+	"admin.import.dryRun": "Ensaio (apenas relatório, não escreve nada)",
+	"admin.import.commit": "Importar (escreve na base de dados)",
+	"admin.import.resetImport": "Repetir um conjunto de dados já importado",
+	"admin.import.start": "Iniciar importação",
+	"admin.import.result": "Modo {{mode}}, estado {{status}}, {{warnings}} aviso(s), execução {{runId}}",
+	"admin.import.counters": "Contadores",
+	"admin.import.runs": "Últimas execuções"
 }

@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Revocar",
 	"admin.terminal.revoked": "revocado",
 	"admin.terminal.empty": "Todavía no se ha creado ningún terminal.",
-	"admin.terminal.confirmRevoke": "¿Revocar «{{name}}»? Su token de dispositivo deja de funcionar de inmediato."
+	"admin.terminal.confirmRevoke": "¿Revocar «{{name}}»? Su token de dispositivo deja de funcionar de inmediato.",
+	"admin.settings": "Ajustes",
+	"admin.settings.fontPath": "Archivo de fuente Unicode para los extractos PDF (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Necesario para ruso, ucraniano y chino; vacío = fuentes integradas, que solo cubren Latin-1.",
+	"admin.settings.advanced": "Todos los ajustes de la instancia (nombres técnicos, 1/0 para interruptores)",
+	"admin.settings.saved": "Ajustes guardados.",
+	"admin.import": "Importación",
+	"admin.import.baseDir": "Directorio antiguo (vacío = el directorio configurado)",
+	"admin.import.timezone": "Zona horaria de los fichajes antiguos (vacío = zona horaria de la instancia)",
+	"admin.import.dryRun": "Prueba (solo informe, no escribe nada)",
+	"admin.import.commit": "Importar (escribe en la base de datos)",
+	"admin.import.resetImport": "Repetir un conjunto de datos ya importado",
+	"admin.import.start": "Iniciar importación",
+	"admin.import.result": "Modo {{mode}}, estado {{status}}, {{warnings}} aviso(s), ejecución {{runId}}",
+	"admin.import.counters": "Contadores",
+	"admin.import.runs": "Últimas ejecuciones"
 }

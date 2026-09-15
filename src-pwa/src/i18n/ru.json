@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Отозвать",
 	"admin.terminal.revoked": "отозван",
 	"admin.terminal.empty": "Терминал ещё не создан.",
-	"admin.terminal.confirmRevoke": "Отозвать «{{name}}»? Токен устройства перестанет работать сразу."
+	"admin.terminal.confirmRevoke": "Отозвать «{{name}}»? Токен устройства перестанет работать сразу.",
+	"admin.settings": "Настройки",
+	"admin.settings.fontPath": "Файл шрифта Unicode для PDF-отчётов (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Нужен для русского, украинского и китайского; пусто = встроенные шрифты, покрывающие только Latin-1.",
+	"admin.settings.advanced": "Все настройки экземпляра (технические имена, 1/0 для переключателей)",
+	"admin.settings.saved": "Настройки сохранены.",
+	"admin.import": "Импорт",
+	"admin.import.baseDir": "Каталог старых данных (пусто = настроенный каталог)",
+	"admin.import.timezone": "Часовой пояс старых отметок (пусто = часовой пояс экземпляра)",
+	"admin.import.dryRun": "Пробный прогон (только отчёт, ничего не записывает)",
+	"admin.import.commit": "Импорт (записывает в базу данных)",
+	"admin.import.resetImport": "Повторить уже импортированный набор данных",
+	"admin.import.start": "Начать импорт",
+	"admin.import.result": "Режим {{mode}}, статус {{status}}, предупреждений: {{warnings}}, прогон {{runId}}",
+	"admin.import.counters": "Счётчики",
+	"admin.import.runs": "Последние прогоны"
 }

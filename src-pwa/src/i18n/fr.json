@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Révoquer",
 	"admin.terminal.revoked": "révoqué",
 	"admin.terminal.empty": "Aucun terminal créé pour l'instant.",
-	"admin.terminal.confirmRevoke": "Révoquer « {{name}} » ? Son jeton d'appareil cesse immédiatement de fonctionner."
+	"admin.terminal.confirmRevoke": "Révoquer « {{name}} » ? Son jeton d'appareil cesse immédiatement de fonctionner.",
+	"admin.settings": "Paramètres",
+	"admin.settings.fontPath": "Fichier de police Unicode pour les relevés PDF (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Nécessaire pour le russe, l'ukrainien et le chinois ; vide = polices intégrées, qui ne couvrent que Latin-1.",
+	"admin.settings.advanced": "Tous les paramètres de l'instance (noms techniques, 1/0 pour les commutateurs)",
+	"admin.settings.saved": "Paramètres enregistrés.",
+	"admin.import": "Import",
+	"admin.import.baseDir": "Répertoire de l'ancien système (vide = le répertoire configuré)",
+	"admin.import.timezone": "Fuseau horaire des anciens pointages (vide = fuseau horaire de l'instance)",
+	"admin.import.dryRun": "Essai (rapport uniquement, n'écrit rien)",
+	"admin.import.commit": "Importer (écrit dans la base de données)",
+	"admin.import.resetImport": "Répéter un jeu de données déjà importé",
+	"admin.import.start": "Démarrer l'import",
+	"admin.import.result": "Mode {{mode}}, état {{status}}, {{warnings}} avertissement(s), exécution {{runId}}",
+	"admin.import.counters": "Compteurs",
+	"admin.import.runs": "Dernières exécutions"
 }

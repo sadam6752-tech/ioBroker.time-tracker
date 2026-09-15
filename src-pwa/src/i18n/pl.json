@@ -138,5 +138,20 @@
 	"admin.terminal.revoke": "Odwołaj",
 	"admin.terminal.revoked": "odwołany",
 	"admin.terminal.empty": "Nie utworzono jeszcze żadnego terminala.",
-	"admin.terminal.confirmRevoke": "Odwołać „{{name}}”? Token urządzenia przestanie działać natychmiast."
+	"admin.terminal.confirmRevoke": "Odwołać „{{name}}”? Token urządzenia przestanie działać natychmiast.",
+	"admin.settings": "Ustawienia",
+	"admin.settings.fontPath": "Plik czcionki Unicode dla wyciągów PDF (.ttf/.otf)",
+	"admin.settings.fontPathHint": "Potrzebne dla rosyjskiego, ukraińskiego i chińskiego; puste = wbudowane czcionki obejmujące tylko Latin-1.",
+	"admin.settings.advanced": "Wszystkie ustawienia instancji (nazwy techniczne, 1/0 dla przełączników)",
+	"admin.settings.saved": "Ustawienia zapisane.",
+	"admin.import": "Import",
+	"admin.import.baseDir": "Katalog starych danych (puste = skonfigurowany katalog)",
+	"admin.import.timezone": "Strefa czasowa starych stempli (puste = strefa czasowa instancji)",
+	"admin.import.dryRun": "Próba (tylko raport, nic nie zapisuje)",
+	"admin.import.commit": "Importuj (zapisuje w bazie danych)",
+	"admin.import.resetImport": "Powtórz już zaimportowany zestaw danych",
+	"admin.import.start": "Rozpocznij import",
+	"admin.import.result": "Tryb {{mode}}, status {{status}}, {{warnings}} ostrzeżeń, przebieg {{runId}}",
+	"admin.import.counters": "Liczniki",
+	"admin.import.runs": "Ostatnie przebiegi"
 }

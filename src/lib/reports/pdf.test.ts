@@ -74,7 +74,7 @@ describe("monthly report (pdf)", () => {
 	const generatedAt = 1_800_000_000;
 
 	const baseInput = {
-		user: { displayName: "Anna Muster", login: "anna", timezone: "Europe/Zurich" },
+		user: { displayName: "Anna Muster", login: "anna", timezone: "Europe/Berlin" },
 		labels: REPORT_LABELS.de,
 		language: "de",
 		locale: "de-CH",
@@ -119,7 +119,7 @@ describe("monthly report (pdf)", () => {
 		expect(text).to.contain("Datum");
 		expect(text).to.contain("Arbeitszeit");
 
-		// day rows: 07:00–15:45 in Zurich, 8:30 worked, the second day is open
+		// day rows: 07:00–15:45 in Berlin, 8:30 worked, the second day is open
 		expect(text).to.contain("07:00");
 		expect(text).to.contain("15:45");
 		expect(text).to.contain("8:30");

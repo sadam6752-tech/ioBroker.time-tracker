@@ -14,7 +14,7 @@ import {
 import type { PunchEntry } from "./punch";
 import type { WorkProfile } from "./target";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 const mondayToFriday = "0;1;1;1;1;1;0";
 
 /** Employment: 40 h per week at 100 %, five working days → 8 h (480 minutes) per day. */
@@ -34,7 +34,7 @@ const profile: WorkProfile = {
  * @returns punch entry
  */
 function punch(id: number, iso: string): PunchEntry {
-	return { id, tsUtc: Math.floor(DateTime.fromISO(iso, { zone: zurich }).toSeconds()) };
+	return { id, tsUtc: Math.floor(DateTime.fromISO(iso, { zone: berlin }).toSeconds()) };
 }
 
 describe("calculation service", () => {
@@ -43,7 +43,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T17:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -62,7 +62,7 @@ describe("calculation service", () => {
 				profile,
 				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T17:30")],
 				pauseRules: [{ fromMin: 360, pauseMin: 30 }],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -77,7 +77,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T12:00"), punch(3, "2026-01-07T13:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -100,7 +100,7 @@ describe("calculation service", () => {
 					{ ...punch(3, "2026-01-07T13:00"), syncState: "conflict" },
 					punch(4, "2026-01-07T17:00"),
 				],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -112,7 +112,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T08:00"), punch(3, "2026-01-07T12:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -126,7 +126,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-10T08:00"), punch(2, "2026-01-10T12:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-10",
 			});
 
@@ -139,7 +139,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-05T08:00"), punch(2, "2026-01-05T16:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-05",
 				isHoliday: true,
 			});
@@ -152,7 +152,7 @@ describe("calculation service", () => {
 			const day = calculateDay({
 				profile,
 				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T12:00")],
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 				absence: { factor: 100, dayPortion: 0.5 },
 			});
@@ -166,28 +166,28 @@ describe("calculation service", () => {
 			const before = calculateDay({
 				profile: {
 					...profile,
-					startDate: Math.floor(DateTime.fromISO("2026-02-01", { zone: zurich }).toSeconds()),
+					startDate: Math.floor(DateTime.fromISO("2026-02-01", { zone: berlin }).toSeconds()),
 				},
 				entries,
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 			const after = calculateDay({
 				profile: {
 					...profile,
-					endDate: Math.floor(DateTime.fromISO("2025-12-31", { zone: zurich }).toSeconds()),
+					endDate: Math.floor(DateTime.fromISO("2025-12-31", { zone: berlin }).toSeconds()),
 				},
 				entries,
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 			const inside = calculateDay({
 				profile: {
 					...profile,
-					startDate: Math.floor(DateTime.fromISO("2026-01-05", { zone: zurich }).toSeconds()),
+					startDate: Math.floor(DateTime.fromISO("2026-01-05", { zone: berlin }).toSeconds()),
 				},
 				entries,
-				timeZone: zurich,
+				timeZone: berlin,
 				localDate: "2026-01-07",
 			});
 
@@ -314,7 +314,7 @@ describe("calculation service", () => {
 		});
 
 		it("counts only working days and skips holidays", () => {
-			const week = { from: "2026-01-05", to: "2026-01-11", workdays: mondayToFriday, timeZone: zurich };
+			const week = { from: "2026-01-05", to: "2026-01-11", workdays: mondayToFriday, timeZone: berlin };
 
 			expect(absenceDaysInRange(week)).to.equal(5);
 			expect(absenceDaysInRange({ ...week, holidays: new Set(["2026-01-06"]) })).to.equal(4);
@@ -329,7 +329,7 @@ describe("calculation service", () => {
 					from: "2026-01-10",
 					to: "2026-01-11",
 					workdays: mondayToFriday,
-					timeZone: zurich,
+					timeZone: berlin,
 				}),
 			).to.equal(0);
 		});
@@ -340,7 +340,7 @@ describe("calculation service", () => {
 					from: "2026-01-08",
 					to: "2026-01-05",
 					workdays: mondayToFriday,
-					timeZone: zurich,
+					timeZone: berlin,
 				}),
 			).to.equal(0);
 		});

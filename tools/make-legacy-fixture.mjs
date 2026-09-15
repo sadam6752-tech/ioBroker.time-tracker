@@ -34,7 +34,7 @@ const PERCENT = 60;
 /** Effective weekly hours of the employee (25.5 h). */
 const EFFECTIVE_WEEKLY_HOURS = (WEEKLY_HOURS_AT_100 * PERCENT) / 100;
 const DAILY_TARGET_MIN = Math.round((EFFECTIVE_WEEKLY_HOURS * 60) / 5); // 306 min = 5.1 h
-/** Punch pairs of the fixture: 08:00–12:30 and 13:30–14:30 local (Europe/Zurich in February is UTC+1). */
+/** Punch pairs of the fixture: 08:00–12:30 and 13:30–14:30 local (Europe/Berlin in February is UTC+1). */
 const PUNCH_PAIRS = [
 	[8, 0, 12, 30],
 	[13, 30, 14, 30],
@@ -171,7 +171,7 @@ write(`Data/TeilZeit1/Timetable/${FIXTURE_YEAR}`, monthLines.join("\n"));
 const punches = [];
 for (const day of PUNCHED_DAYS) {
 	for (const [fromH, fromM, toH, toM] of PUNCH_PAIRS) {
-		// The stored value is a UTC instant (`time()` in PHP): local 08:00 in Europe/Zurich (UTC+1 in
+		// The stored value is a UTC instant (`time()` in PHP): local 08:00 in Europe/Berlin (UTC+1 in
 		// February) is 07:00 UTC.
 		punches.push(Math.floor(Date.UTC(FIXTURE_YEAR, FIXTURE_MONTH - 1, day, fromH - 1, fromM) / 1000));
 		punches.push(Math.floor(Date.UTC(FIXTURE_YEAR, FIXTURE_MONTH - 1, day, toH - 1, toM) / 1000));

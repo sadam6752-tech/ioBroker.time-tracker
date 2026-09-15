@@ -114,7 +114,7 @@ describe("auth service", () => {
 				login: "anna",
 				displayName: "Anna",
 				locale: "de-DE",
-				timezone: "Europe/Zurich",
+				timezone: "Europe/Berlin",
 				mustChangePw: false,
 			});
 			expect(JSON.stringify(result.user)).to.not.contain("scrypt");

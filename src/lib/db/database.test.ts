@@ -157,6 +157,48 @@ describe("database", () => {
 		expect((db.prepare("SELECT COUNT(*) AS c FROM absences").get() as { c: number }).c).to.equal(1);
 	});
 
+	it("moves the old default time zone to Europe/Berlin (migration 8)", () => {
+		// an installation that was created before the default changed: migrate up to version 7 and then see
+		// what the new migration does
+		const old = openDatabase(":memory:");
+		try {
+			for (const migration of migrations.filter(entry => entry.version <= 7)) {
+				old.exec(migration.sql);
+			}
+			old.exec(
+				`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at INTEGER NOT NULL)`,
+			);
+			old.prepare("INSERT INTO schema_migrations (version, name, applied_at) VALUES (7, 'pre-test', 0)").run();
+
+			const oldDefault = insertUser(old, "alt");
+			old.prepare("UPDATE users SET timezone = 'Europe/Zurich' WHERE id = ?").run(oldDefault);
+			const chosen = insertUser(old, "usa");
+			old.prepare("UPDATE users SET timezone = 'America/New_York' WHERE id = ?").run(chosen);
+			old.prepare(
+				"INSERT INTO app_settings (key, value, updated_at) VALUES ('timezone', 'Europe/Zurich', 0)",
+			).run();
+			old.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES ('other', 'Europe/Zurich', 0)").run();
+
+			expect(migrate(old)).to.equal(1);
+			expect(currentSchemaVersion(old)).to.equal(Math.max(...migrations.map(entry => entry.version)));
+
+			// the old default moves over, a deliberately chosen zone stays
+			expect(old.prepare("SELECT login, timezone FROM users ORDER BY login").all()).to.deep.equal([
+				{ login: "alt", timezone: "Europe/Berlin" },
+				{ login: "usa", timezone: "America/New_York" },
+			]);
+			expect(
+				(old.prepare("SELECT value FROM app_settings WHERE key = 'timezone'").get() as { value: string }).value,
+			).to.equal("Europe/Berlin");
+			// the same text under another key is not a time zone and stays untouched
+			expect(
+				(old.prepare("SELECT value FROM app_settings WHERE key = 'other'").get() as { value: string }).value,
+			).to.equal("Europe/Zurich");
+		} finally {
+			old.close();
+		}
+	});
+
 	it("keeps WAL and foreign keys enabled", () => {
 		const fileDb = openDatabase(":memory:");
 		expect(fileDb.pragma("foreign_keys", { simple: true })).to.equal(1);

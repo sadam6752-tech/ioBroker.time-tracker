@@ -69,7 +69,7 @@ describe("legacy file parsers", () => {
 	});
 
 	it("reads the work profile of the fixture", () => {
-		const profile = parseUserData(read("Data/TeilZeit1/userdaten.txt"), "Europe/Zurich");
+		const profile = parseUserData(read("Data/TeilZeit1/userdaten.txt"), "Europe/Berlin");
 
 		expect(profile.displayName).to.equal("Teilzeit Muster");
 		// 1767222000 is 1.1.2026 00:00 local as a UTC instant (mktime) — it is stored unchanged
@@ -119,7 +119,7 @@ describe("legacy file parsers", () => {
 				"-1;-1;100",
 				"1",
 			].join("\n"),
-			"Europe/Zurich",
+			"Europe/Berlin",
 		);
 
 		expect(profile.vorholzeitPerYearMinutes).to.equal(150);
@@ -148,7 +148,7 @@ describe("legacy file parsers", () => {
 	it("reads and sorts the punches of one month", () => {
 		const punches = parseMonthPunches(read("Data/TeilZeit1/Timetable/2026.2"));
 		expect(punches).to.have.length(16);
-		// 08:00 local (Europe/Zurich, UTC+1 in February) is 07:00 UTC and is stored as such
+		// 08:00 local (Europe/Berlin, UTC+1 in February) is 07:00 UTC and is stored as such
 		expect(punches[0]).to.equal(Date.UTC(2026, 1, 2, 7, 0, 0) / 1000);
 		expect([...punches].sort((a, b) => a - b)).to.deep.equal(punches);
 

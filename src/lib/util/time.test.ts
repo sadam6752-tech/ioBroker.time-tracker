@@ -28,11 +28,11 @@ function wallSeconds(year: number, month: number, day: number, hour = 0, minute 
 }
 
 describe("time helpers", () => {
-	const zurich = "Europe/Zurich";
+	const berlin = "Europe/Berlin";
 
 	describe("isValidTimeZone", () => {
 		it("accepts IANA names and rejects unknown ones", () => {
-			expect(isValidTimeZone(zurich)).to.equal(true);
+			expect(isValidTimeZone(berlin)).to.equal(true);
 			expect(isValidTimeZone("UTC")).to.equal(true);
 			expect(isValidTimeZone("Mars/Olympus")).to.equal(false);
 		});
@@ -40,18 +40,18 @@ describe("time helpers", () => {
 
 	describe("localDate / localDateTime", () => {
 		it("resolves the legacy start date to local midnight", () => {
-			// 1767222000 = 2025-12-31T23:00:00Z = 2026-01-01T00:00+01:00 in Zurich
-			expect(localDate(1767222000, zurich)).to.equal("2026-01-01");
-			expect(localDateTime(1767222000, zurich).minutes).to.equal(0);
-			expect(startOfLocalDayUtc("2026-01-01", zurich)).to.equal(1767222000);
+			// 1767222000 = 2025-12-31T23:00:00Z = 2026-01-01T00:00+01:00 in Berlin
+			expect(localDate(1767222000, berlin)).to.equal("2026-01-01");
+			expect(localDateTime(1767222000, berlin).minutes).to.equal(0);
+			expect(startOfLocalDayUtc("2026-01-01", berlin)).to.equal(1767222000);
 		});
 
 		it("uses the user's time zone, not UTC", () => {
 			// 23:30 UTC on 31 December, 00:30 local on 1 January
 			const tsUtc = 1767222000 + 1800;
-			expect(localDate(tsUtc, zurich)).to.equal("2026-01-01");
+			expect(localDate(tsUtc, berlin)).to.equal("2026-01-01");
 			expect(localDate(tsUtc, "UTC")).to.equal("2025-12-31");
-			expect(localDateTime(tsUtc, zurich).minutes).to.equal(30);
+			expect(localDateTime(tsUtc, berlin).minutes).to.equal(30);
 		});
 
 		it("handles other time zones", () => {
@@ -63,9 +63,9 @@ describe("time helpers", () => {
 
 	describe("calendar helpers", () => {
 		it("counts weekdays with Sunday as 0", () => {
-			expect(dayOfWeek("2026-01-01", zurich)).to.equal(4); // Thursday
-			expect(dayOfWeek("2026-01-04", zurich)).to.equal(0); // Sunday
-			expect(dayOfWeek("2026-01-05", zurich)).to.equal(1); // Monday
+			expect(dayOfWeek("2026-01-01", berlin)).to.equal(4); // Thursday
+			expect(dayOfWeek("2026-01-04", berlin)).to.equal(0); // Sunday
+			expect(dayOfWeek("2026-01-05", berlin)).to.equal(1); // Monday
 		});
 
 		it("adds and ranges days across month and year boundaries", () => {
@@ -92,7 +92,7 @@ describe("time helpers", () => {
 	describe("wallTimeToUtc (legacy import)", () => {
 		it("converts unambiguous wall times", () => {
 			// 15 June 2026, 12:00 local (CEST, +2) = 10:00 UTC
-			const result = wallTimeToUtc(wallSeconds(2026, 6, 15, 12), zurich);
+			const result = wallTimeToUtc(wallSeconds(2026, 6, 15, 12), berlin);
 			expect(result.nonexistent).to.equal(false);
 			expect(result.ambiguous).to.equal(false);
 			expect(result.tsUtc).to.equal(wallSeconds(2026, 6, 15, 10));
@@ -100,14 +100,14 @@ describe("time helpers", () => {
 
 		it("flags wall times that do not exist (spring forward)", () => {
 			// 29 March 2026: 02:00 → 03:00, so 02:30 does not exist
-			const result = wallTimeToUtc(wallSeconds(2026, 3, 29, 2, 30), zurich);
+			const result = wallTimeToUtc(wallSeconds(2026, 3, 29, 2, 30), berlin);
 			expect(result.nonexistent).to.equal(true);
 			expect(result.ambiguous).to.equal(false);
 		});
 
 		it("flags wall times that exist twice (fall back)", () => {
 			// 25 October 2026: 03:00 → 02:00, so 02:30 happens twice
-			const result = wallTimeToUtc(wallSeconds(2026, 10, 25, 2, 30), zurich);
+			const result = wallTimeToUtc(wallSeconds(2026, 10, 25, 2, 30), berlin);
 			expect(result.ambiguous).to.equal(true);
 			expect(result.nonexistent).to.equal(false);
 			// the earlier instant uses CEST (+2): 00:30 UTC
@@ -120,8 +120,8 @@ describe("time helpers", () => {
 				wallSeconds(2026, 6, 15, 23, 59, 59),
 				wallSeconds(2026, 12, 31, 0, 0),
 			]) {
-				const utc = wallTimeToUtc(wall, zurich).tsUtc;
-				expect(utcToWallTime(utc, zurich)).to.equal(wall);
+				const utc = wallTimeToUtc(wall, berlin).tsUtc;
+				expect(utcToWallTime(utc, berlin)).to.equal(wall);
 			}
 		});
 	});

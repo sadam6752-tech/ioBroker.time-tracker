@@ -89,7 +89,7 @@ export interface CreateUserInput {
 	email?: string | null;
 	/** Preferred language, default `de-DE` */
 	locale?: string;
-	/** IANA time zone, default `Europe/Zurich` */
+	/** IANA time zone, default `Europe/Berlin` */
 	timezone?: string;
 	/** RFID card id */
 	rfidCard?: string | null;
@@ -467,7 +467,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 					1,
 					input.mustChangePw === true ? 1 : 0,
 					input.locale ?? "de-DE",
-					input.timezone ?? "Europe/Zurich",
+					input.timezone ?? "Europe/Berlin",
 					now,
 					now,
 				);

@@ -280,7 +280,7 @@ export function parseUserData(text: string, timeZone: string): LegacyWorkProfile
 	};
 
 	// line 1: start of the time calculation. The value is a UTC instant (`mktime`), **not** a wall clock:
-	// the example value 1767222000 in the specification is exactly 1.1.2026 00:00 Europe/Zurich. The assumed
+	// the example value 1767222000 in the specification is exactly 1.1.2026 00:00 Europe/Berlin. The assumed
 	// time zone is therefore only used to derive local dates from it, never to shift it.
 	const start = number(fields[1]);
 	if (start === null) {

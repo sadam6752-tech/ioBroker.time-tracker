@@ -56,7 +56,7 @@ export type LegacyImportMode = "dry-run" | "commit";
 export type LegacyImportStatus = "ok" | "warnings" | "mismatch" | "failed";
 
 /** Time zone assumed for the legacy punches when no other one is given (2.9.4). */
-export const LEGACY_DEFAULT_TIMEZONE = "Europe/Zurich";
+export const LEGACY_DEFAULT_TIMEZONE = "Europe/Berlin";
 
 /** Tolerance of the golden comparison per month: ±0.01 h (2.9.5). */
 export const GOLDEN_TOLERANCE_MINUTES = 0.6;
@@ -67,7 +67,7 @@ export interface LegacyImportOptions {
 	baseDir: string;
 	/** `dry-run` (default) or `commit` */
 	mode?: LegacyImportMode;
-	/** Time zone the legacy punches are interpreted in, default `Europe/Zurich` */
+	/** Time zone the legacy punches are interpreted in, default `Europe/Berlin` */
 	timezone?: string;
 	/** User starting the import (audit trail and `import_runs.actor_id`) */
 	actorId: number;

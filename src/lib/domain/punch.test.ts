@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { utcToWallTime, wallTimeToUtc } from "../util/time";
 import { buildDayPunches, checkEmploymentWindow, nextDirection, roundToStep, type PunchEntry } from "./punch";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 
 /**
  * Naive wall clock seconds (test helper).
@@ -20,7 +20,7 @@ function wall(year: number, month: number, day: number, hour = 0, minute = 0, se
 }
 
 /**
- * Instant of a Zurich wall clock time on 1 January 2026.
+ * Instant of a Berlin wall clock time on 1 January 2026.
  *
  * @param hour
  * @param minute
@@ -28,7 +28,7 @@ function wall(year: number, month: number, day: number, hour = 0, minute = 0, se
  * @param day
  */
 function at(hour: number, minute = 0, second = 0, day = 1): number {
-	return wallTimeToUtc(wall(2026, 1, day, hour, minute, second), zurich).tsUtc;
+	return wallTimeToUtc(wall(2026, 1, day, hour, minute, second), berlin).tsUtc;
 }
 
 /**
@@ -158,20 +158,20 @@ describe("quick rounding", () => {
 	it("rounds to the nearest step", () => {
 		// nearest multiple wins: 7:57 is closer to 7:55, 7:59 is closer to 8:00
 		// (the legacy manual example “7.57 to 8.02 → 8:00” is imprecise by one minute)
-		expect(utcToWallTime(roundToStep(at(7, 57), 5, zurich), zurich)).to.equal(wall(2026, 1, 1, 7, 55));
-		expect(utcToWallTime(roundToStep(at(7, 59), 5, zurich), zurich)).to.equal(wall(2026, 1, 1, 8, 0));
-		expect(utcToWallTime(roundToStep(at(8, 2), 5, zurich), zurich)).to.equal(wall(2026, 1, 1, 8, 0));
-		expect(utcToWallTime(roundToStep(at(7, 58), 15, zurich), zurich)).to.equal(wall(2026, 1, 1, 8, 0));
-		expect(utcToWallTime(roundToStep(at(7, 57, 40), 5, zurich), zurich)).to.equal(wall(2026, 1, 1, 8, 0));
+		expect(utcToWallTime(roundToStep(at(7, 57), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 7, 55));
+		expect(utcToWallTime(roundToStep(at(7, 59), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));
+		expect(utcToWallTime(roundToStep(at(8, 2), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));
+		expect(utcToWallTime(roundToStep(at(7, 58), 15, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));
+		expect(utcToWallTime(roundToStep(at(7, 57, 40), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));
 	});
 
 	it("does nothing when rounding is disabled", () => {
-		expect(roundToStep(at(7, 57), 0, zurich)).to.equal(at(7, 57));
+		expect(roundToStep(at(7, 57), 0, berlin)).to.equal(at(7, 57));
 	});
 
 	it("shifts a rounded time out of the daylight saving gap", () => {
 		// 29 March 2026: 02:00 → 03:00; 01:58 rounds to 02:00 which does not exist
-		const rounded = roundToStep(wallTimeToUtc(wall(2026, 3, 29, 1, 58), zurich).tsUtc, 5, zurich);
-		expect(utcToWallTime(rounded, zurich)).to.equal(wall(2026, 3, 29, 3, 0));
+		const rounded = roundToStep(wallTimeToUtc(wall(2026, 3, 29, 1, 58), berlin).tsUtc, 5, berlin);
+		expect(utcToWallTime(rounded, berlin)).to.equal(wall(2026, 3, 29, 3, 0));
 	});
 });

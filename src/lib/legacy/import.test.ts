@@ -106,7 +106,7 @@ describe("legacy import", () => {
 		// come from the ambiguous day field of `A<year>` and from the absence types that match the built-ins
 		expect(report.status).to.equal("warnings");
 		expect(report.deviations).to.deep.equal([]);
-		expect(report.timezoneAssumed).to.equal("Europe/Zurich");
+		expect(report.timezoneAssumed).to.equal("Europe/Berlin");
 		expect(report.stats).to.include({
 			userFolders: 2,
 			usersCreated: 2,
@@ -146,7 +146,7 @@ describe("legacy import", () => {
 		};
 		expect(stored.mode).to.equal("dry-run");
 		expect(stored.status).to.equal("warnings");
-		expect(stored.timezone_assumed).to.equal("Europe/Zurich");
+		expect(stored.timezone_assumed).to.equal("Europe/Berlin");
 		expect(JSON.parse(stored.stats)).to.include({ entries: 16 });
 		expect(JSON.parse(stored.warnings)).to.be.an("array").that.has.length.greaterThan(0);
 	});

@@ -155,7 +155,7 @@ describe("adapter states and commands", () => {
 		});
 
 		it("reports an open punch and the worked minutes", async () => {
-			entries.insert({ userId: annaId, tsUtc: now - 3600, timeZone: "Europe/Zurich" });
+			entries.insert({ userId: annaId, tsUtc: now - 3600, timeZone: "Europe/Berlin" });
 
 			const snapshot = readUserSnapshot({ aggregation, users, sync, userId: annaId, now });
 

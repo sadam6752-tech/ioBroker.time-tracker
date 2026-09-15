@@ -11,7 +11,7 @@ import { createSettingsRepository, type SettingsRepository } from "../db/reposit
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
 import { createAggregationService, type AggregationService } from "./aggregation";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 
 describe("aggregation service", () => {
 	let db: Db;
@@ -32,7 +32,7 @@ describe("aggregation service", () => {
 	 * @param timeZone - time zone of the punch
 	 * @returns id of the created punch
 	 */
-	function punch(userId: number, iso: string, timeZone: string = zurich): number {
+	function punch(userId: number, iso: string, timeZone: string = berlin): number {
 		return entries.insert({
 			userId,
 			tsUtc: Math.floor(DateTime.fromISO(iso, { zone: timeZone }).toSeconds()),

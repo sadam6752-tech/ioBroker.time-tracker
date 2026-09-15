@@ -60,7 +60,7 @@ describe("users repository", () => {
 			expect(user.id).to.be.greaterThan(0);
 			expect(user.login).to.equal("anna");
 			expect(user.locale).to.equal("de-DE");
-			expect(user.timezone).to.equal("Europe/Zurich");
+			expect(user.timezone).to.equal("Europe/Berlin");
 			expect(user.isActive).to.equal(true);
 			expect(user.mustChangePw).to.equal(false);
 			expect(user.createdAt).to.equal(1000);

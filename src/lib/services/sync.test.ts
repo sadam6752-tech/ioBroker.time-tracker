@@ -12,7 +12,7 @@ import { createUsersRepository, type UsersRepository } from "../db/repositories/
 import { createAggregationService, type AggregationService } from "./aggregation";
 import { createSyncService, type SyncService } from "./sync";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 
 /**
  * Converts a local wall clock time into UTC epoch seconds.
@@ -21,7 +21,7 @@ const zurich = "Europe/Zurich";
  * @returns UTC epoch seconds
  */
 function utc(iso: string): number {
-	return Math.floor(DateTime.fromISO(iso, { zone: zurich }).toSeconds());
+	return Math.floor(DateTime.fromISO(iso, { zone: berlin }).toSeconds());
 }
 
 describe("sync service", () => {
@@ -87,7 +87,7 @@ describe("sync service", () => {
 		it("accepts a batch, sorts it and refreshes the affected days", () => {
 			const result = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{ idempotencyKey: "d", tsUtc: utc("2026-01-07T17:00") },
 					{ idempotencyKey: "b", tsUtc: utc("2026-01-07T12:00") },
@@ -111,7 +111,7 @@ describe("sync service", () => {
 		it("is idempotent for a repeated batch", () => {
 			const batch = {
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{ idempotencyKey: "a", tsUtc: utc("2026-01-07T08:00") },
 					{ idempotencyKey: "b", tsUtc: utc("2026-01-07T12:00") },
@@ -142,7 +142,7 @@ describe("sync service", () => {
 		it("stores a punch with a clock skew as conflict", () => {
 			const result = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{
 						idempotencyKey: "skewed",
@@ -166,7 +166,7 @@ describe("sync service", () => {
 			// a small skew is accepted
 			const tolerated = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{
 						idempotencyKey: "ok",
@@ -190,7 +190,7 @@ describe("sync service", () => {
 
 			const result = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [{ idempotencyKey: "late", tsUtc: utc("2026-01-07T08:00") }],
 				actorId: annaId,
 				now: utc("2026-01-07T20:00"),
@@ -205,14 +205,14 @@ describe("sync service", () => {
 			entries.insert({
 				userId: annaId,
 				tsUtc: utc("2026-01-07T08:00"),
-				timeZone: zurich,
+				timeZone: berlin,
 				source: "web",
 				idempotencyKey: "original",
 			});
 
 			const result = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [{ idempotencyKey: "offline-copy", tsUtc: utc("2026-01-07T08:00") + 10 }],
 				actorId: annaId,
 				now: utc("2026-01-07T20:00"),
@@ -226,7 +226,7 @@ describe("sync service", () => {
 		it("rejects punches that are unusable or far in the future", () => {
 			const result = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{ idempotencyKey: "   ", tsUtc: utc("2026-01-07T08:00") },
 					{ idempotencyKey: "broken", tsUtc: Number.NaN },
@@ -247,7 +247,7 @@ describe("sync service", () => {
 		it("accepts a conflict with a corrected instant and refreshes the day", () => {
 			const conflicted = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{
 						idempotencyKey: "skewed",
@@ -283,7 +283,7 @@ describe("sync service", () => {
 		it("accepts a conflict without changing the instant", () => {
 			const conflicted = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{
 						idempotencyKey: "skewed",
@@ -308,7 +308,7 @@ describe("sync service", () => {
 		it("dismisses a conflict and deletes the punch", () => {
 			const conflicted = service.sync({
 				userId: annaId,
-				timeZone: zurich,
+				timeZone: berlin,
 				punches: [
 					{
 						idempotencyKey: "skewed",
@@ -340,7 +340,7 @@ describe("sync service", () => {
 			const stored = entries.insert({
 				userId: annaId,
 				tsUtc: utc("2026-01-07T08:00"),
-				timeZone: zurich,
+				timeZone: berlin,
 				source: "web",
 			}).entry;
 
@@ -361,7 +361,7 @@ describe("sync service", () => {
 		 * @returns id of the punch
 		 */
 		function insert(iso: string): number {
-			return entries.insert({ userId: annaId, tsUtc: utc(iso), timeZone: zurich, source: "web" }).entry.id;
+			return entries.insert({ userId: annaId, tsUtc: utc(iso), timeZone: berlin, source: "web" }).entry.id;
 		}
 
 		it("finds neighbouring punches inside the tolerance", () => {
@@ -389,13 +389,13 @@ describe("sync service", () => {
 			entries.insert({
 				userId: annaId,
 				tsUtc: utc("2026-01-07T09:00"),
-				timeZone: zurich,
+				timeZone: berlin,
 				syncState: "conflict",
 			});
 			entries.insert({
 				userId: annaId,
 				tsUtc: utc("2026-01-07T09:00:20"),
-				timeZone: zurich,
+				timeZone: berlin,
 				syncState: "conflict",
 			});
 
@@ -437,7 +437,7 @@ describe("sync service", () => {
 			const other = entries.insert({
 				userId: adminId,
 				tsUtc: utc("2026-01-07T08:00:30"),
-				timeZone: zurich,
+				timeZone: berlin,
 				source: "web",
 			}).entry.id;
 

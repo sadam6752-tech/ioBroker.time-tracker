@@ -41,7 +41,7 @@ describe("backup service", () => {
 		entries.insert({
 			userId: user.id,
 			tsUtc: 1_000_000,
-			timeZone: "Europe/Zurich",
+			timeZone: "Europe/Berlin",
 			source: "web",
 			actorId: user.id,
 			now: 1_000_000,

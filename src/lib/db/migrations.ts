@@ -35,7 +35,7 @@ export const migrations: Migration[] = [
 				is_active       INTEGER NOT NULL DEFAULT 1,
 				must_change_pw  INTEGER NOT NULL DEFAULT 0,
 				locale          TEXT    NOT NULL DEFAULT 'de-DE',
-				timezone        TEXT    NOT NULL DEFAULT 'Europe/Zurich',
+				timezone        TEXT    NOT NULL DEFAULT 'Europe/Berlin',
 				created_at      INTEGER NOT NULL,
 				updated_at      INTEGER NOT NULL,
 				last_login_at   INTEGER
@@ -348,6 +348,18 @@ export const migrations: Migration[] = [
 		sql: `
 			ALTER TABLE kiosk_terminals ADD COLUMN session_hash       TEXT;
 			ALTER TABLE kiosk_terminals ADD COLUMN session_expires_at INTEGER;
+		`,
+	},
+	{
+		version: 8,
+		name: "defaults: time zone Europe/Zurich becomes Europe/Berlin",
+		sql: `
+			-- The default time zone of the adapter is Europe/Berlin now. Migration 1 is append-only, so a new
+			-- database already gets the new default with it; existing installations are adjusted here: every
+			-- employee and every instance setting that still carries the old default is moved over. Values that
+			-- were chosen deliberately keep their name — they only change when they are exactly the old default.
+			UPDATE users        SET timezone = 'Europe/Berlin' WHERE timezone = 'Europe/Zurich';
+			UPDATE app_settings SET value    = 'Europe/Berlin' WHERE key = 'timezone' AND value = 'Europe/Zurich';
 		`,
 	},
 ];

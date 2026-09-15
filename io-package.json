@@ -97,7 +97,7 @@
 		"port": 8082,
 		"bind": "127.0.0.1",
 		"dbPath": "",
-		"timezone": "Europe/Zurich",
+		"timezone": "Europe/Berlin",
 		"defaultLanguage": "de",
 		"holidayCountry": "CH",
 		"sessionSecret": "",

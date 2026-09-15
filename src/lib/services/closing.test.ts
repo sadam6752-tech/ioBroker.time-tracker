@@ -13,7 +13,7 @@ import { createUsersRepository, type UsersRepository } from "../db/repositories/
 import { createAggregationService } from "./aggregation";
 import { createClosingService, type ClosingService } from "./closing";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 
 describe("closing service", () => {
 	let db: Db;
@@ -35,8 +35,8 @@ describe("closing service", () => {
 		for (const time of [from, to]) {
 			entries.insert({
 				userId: annaId,
-				tsUtc: Math.floor(DateTime.fromISO(`${date}T${time}`, { zone: zurich }).toSeconds()),
-				timeZone: zurich,
+				tsUtc: Math.floor(DateTime.fromISO(`${date}T${time}`, { zone: berlin }).toSeconds()),
+				timeZone: berlin,
 			});
 		}
 	}

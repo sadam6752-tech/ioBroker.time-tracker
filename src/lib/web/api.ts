@@ -1938,7 +1938,7 @@ export function createApi(deps: ApiDeps): Api {
 		json(200, {
 			enabled: deps.kioskEnabled === true,
 			serverTime: now(),
-			timezone: settings.get("timezone") ?? "Europe/Zurich",
+			timezone: settings.get("timezone") ?? "Europe/Berlin",
 			version: deps.version ?? "0.0.0",
 		}),
 	);
@@ -1983,7 +1983,7 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, {
 			status: "ok",
 			serverTime: now(),
-			timezone: settings.get("timezone") ?? "Europe/Zurich",
+			timezone: settings.get("timezone") ?? "Europe/Berlin",
 			version: deps.version ?? "0.0.0",
 			expiresAt: extended.expiresAt,
 		});

@@ -109,7 +109,7 @@ describe("monthly report (xlsx)", () => {
 	const generatedAt = 1_800_000_000;
 
 	const baseInput = {
-		user: { displayName: "Anna Muster", login: "anna", timezone: "Europe/Zurich" },
+		user: { displayName: "Anna Muster", login: "anna", timezone: "Europe/Berlin" },
 		labels: REPORT_LABELS.de,
 		language: "de",
 		locale: "de-CH",
@@ -151,7 +151,7 @@ describe("monthly report (xlsx)", () => {
 		expect(text(sheet, "D6")).to.equal("Arbeitszeit");
 		expect(text(sheet, "G6")).to.equal("Saldo");
 
-		// first day: 07:00–15:45 in Zurich, 8:30 worked
+		// first day: 07:00–15:45 in Berlin, 8:30 worked
 		expect(text(sheet, "A7")).to.contain("01.09.2026");
 		expect(text(sheet, "B7")).to.equal("07:00");
 		expect(text(sheet, "C7")).to.equal("15:45");

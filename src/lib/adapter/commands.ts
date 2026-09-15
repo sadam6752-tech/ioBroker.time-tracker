@@ -215,7 +215,7 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
  * Runs `commands.import`.
  *
  * The state value is JSON: `{ "baseDir": "…", "mode": "dry-run" | "commit", "resetImport": true,
- * "timezone": "Europe/Zurich" }`. `mode` defaults to `dry-run`, so a value that only names the folder is
+ * "timezone": "Europe/Berlin" }`. `mode` defaults to `dry-run`, so a value that only names the folder is
  * always safe.
  *
  * `import_runs.actor_id` and the audit rows reference `users`, so a state driven import is attributed to the

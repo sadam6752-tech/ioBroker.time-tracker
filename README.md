@@ -68,7 +68,7 @@ The adapter is configured in the instance settings:
 | ----------------------------------- | --------------------------------------------------------- |
 | Port                                | Port of the built-in HTTP server (web app, API, terminal) |
 | Bind address                        | Interface to listen on (`0.0.0.0` = all)                  |
-| Instance time zone                  | Fallback time zone (IANA name), e.g. `Europe/Zurich`      |
+| Instance time zone                  | Fallback time zone (IANA name), e.g. `Europe/Berlin`      |
 | Default language for new users      | One of the 11 supported languages                         |
 | Holiday country                     | Country used to generate public holidays                  |
 | Database file                       | Optional path; empty = adapter data directory             |
@@ -151,7 +151,7 @@ reads the `Data` directory read-only and is started with the `commands.import` s
 | `baseDir` | installation folder (containing `Data` and `include`) or the `Data` folder itself |
 | `mode` | `dry-run` (default) counts and checks everything without writing, `commit` writes |
 | `resetImport` | `true` allows a commit into a database that already holds entries, absences or payouts |
-| `timezone` | time zone the legacy punch instants are read in, default `Europe/Zurich` |
+| `timezone` | time zone the legacy punch instants are read in, default `Europe/Berlin` |
 
 What the import takes over:
 

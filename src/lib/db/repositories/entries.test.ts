@@ -4,7 +4,7 @@ import { openAndMigrate, type Db } from "../database";
 import { readTimeEntryAudit } from "./audit";
 import { createEntriesRepository, RevisionConflictError, toPunchEntries } from "./entries";
 
-const zurich = "Europe/Zurich";
+const berlin = "Europe/Berlin";
 const t0 = 1767222000; // 2026-01-01T00:00+01:00
 
 function insertUser(db: Db, login = "tester"): number {
@@ -41,7 +41,7 @@ describe("entries repository", () => {
 	});
 
 	it("derives the local cache fields from the time zone", () => {
-		const { entry, created } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry, created } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 
 		expect(created).to.equal(true);
 		expect(entry.localDate).to.equal("2026-01-01");
@@ -53,7 +53,7 @@ describe("entries repository", () => {
 	});
 
 	it("records the creation in the audit trail", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		const audit = readTimeEntryAudit(db, entry.id);
 
 		expect(audit).to.have.lengthOf(1);
@@ -64,8 +64,8 @@ describe("entries repository", () => {
 	});
 
 	it("returns the existing punch for a repeated idempotency key", () => {
-		const first = repo.insert({ userId, tsUtc: t0, timeZone: zurich, idempotencyKey: "uuid-1", now: 1000 });
-		const second = repo.insert({ userId, tsUtc: t0 + 60, timeZone: zurich, idempotencyKey: "uuid-1", now: 2000 });
+		const first = repo.insert({ userId, tsUtc: t0, timeZone: berlin, idempotencyKey: "uuid-1", now: 1000 });
+		const second = repo.insert({ userId, tsUtc: t0 + 60, timeZone: berlin, idempotencyKey: "uuid-1", now: 2000 });
 
 		expect(first.created).to.equal(true);
 		expect(second.created).to.equal(false);
@@ -76,14 +76,14 @@ describe("entries repository", () => {
 	});
 
 	it("accepts the same idempotency key for another user", () => {
-		repo.insert({ userId, tsUtc: t0, timeZone: zurich, idempotencyKey: "shared", now: 1000 });
-		repo.insert({ userId: adminId, tsUtc: t0, timeZone: zurich, idempotencyKey: "shared", now: 1000 });
+		repo.insert({ userId, tsUtc: t0, timeZone: berlin, idempotencyKey: "shared", now: 1000 });
+		repo.insert({ userId: adminId, tsUtc: t0, timeZone: berlin, idempotencyKey: "shared", now: 1000 });
 
 		expect(countEntries(db)).to.equal(2);
 	});
 
 	it("updates a punch and audits the changed fields", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		const updated = repo.update({
 			id: entry.id,
 			expectedRevision: 1,
@@ -91,7 +91,7 @@ describe("entries repository", () => {
 			reason: "typo while punching",
 			actorId: adminId,
 			actorIp: "10.0.0.1",
-			timeZone: zurich,
+			timeZone: berlin,
 			now: 2000,
 		});
 
@@ -111,13 +111,13 @@ describe("entries repository", () => {
 	});
 
 	it("recomputes the local date when the timestamp moves to another day", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		const updated = repo.update({
 			id: entry.id,
 			expectedRevision: 1,
 			patch: { tsUtc: t0 + 25 * 3600 },
 			actorId: adminId,
-			timeZone: zurich,
+			timeZone: berlin,
 			now: 2000,
 		});
 
@@ -125,13 +125,13 @@ describe("entries repository", () => {
 	});
 
 	it("rejects a stale revision", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		repo.update({
 			id: entry.id,
 			expectedRevision: 1,
 			patch: { note: "first" },
 			actorId: adminId,
-			timeZone: zurich,
+			timeZone: berlin,
 			now: 2000,
 		});
 
@@ -142,7 +142,7 @@ describe("entries repository", () => {
 				expectedRevision: 1,
 				patch: { note: "second" },
 				actorId: adminId,
-				timeZone: zurich,
+				timeZone: berlin,
 				now: 3000,
 			});
 		} catch (caught) {
@@ -158,13 +158,13 @@ describe("entries repository", () => {
 	});
 
 	it("keeps the revision when nothing changes", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		const unchanged = repo.update({
 			id: entry.id,
 			expectedRevision: 1,
 			patch: { note: null },
 			actorId: adminId,
-			timeZone: zurich,
+			timeZone: berlin,
 			now: 2000,
 		});
 
@@ -173,7 +173,7 @@ describe("entries repository", () => {
 	});
 
 	it("deletes a punch and keeps the audit trail", () => {
-		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: zurich, now: 1000 });
+		const { entry } = repo.insert({ userId, tsUtc: t0, timeZone: berlin, now: 1000 });
 		expect(repo.remove({ id: entry.id, actorId: adminId, reason: "duplicate", now: 2000 })).to.equal(true);
 
 		expect(repo.findById(entry.id)).to.equal(null);
@@ -188,12 +188,12 @@ describe("entries repository", () => {
 		const stored = repo.insert({
 			userId,
 			tsUtc: t0,
-			timeZone: zurich,
+			timeZone: berlin,
 			idempotencyKey: "offline-1",
 			syncState: "conflict",
 			now: 1000,
 		}).entry;
-		repo.insert({ userId, tsUtc: t0 + 3600, timeZone: zurich, now: 1000 });
+		repo.insert({ userId, tsUtc: t0 + 3600, timeZone: berlin, now: 1000 });
 
 		expect(repo.findByIdempotencyKey(userId, "offline-1")?.id).to.equal(stored.id);
 		expect(repo.findByIdempotencyKey(userId, "unknown")).to.equal(null);
@@ -203,7 +203,7 @@ describe("entries repository", () => {
 	});
 
 	it("moves a punch between synchronisation states", () => {
-		const stored = repo.insert({ userId, tsUtc: t0, timeZone: zurich, syncState: "conflict", now: 1000 }).entry;
+		const stored = repo.insert({ userId, tsUtc: t0, timeZone: berlin, syncState: "conflict", now: 1000 }).entry;
 
 		const synced = repo.setSyncState({
 			id: stored.id,
@@ -228,9 +228,9 @@ describe("entries repository", () => {
 	});
 
 	it("lists punches by date and range in chronological order", () => {
-		repo.insert({ userId, tsUtc: t0 + 10 * 3600, timeZone: zurich, now: 1000 });
-		repo.insert({ userId, tsUtc: t0 + 8 * 3600, timeZone: zurich, now: 1000 });
-		repo.insert({ userId, tsUtc: t0 + 30 * 3600, timeZone: zurich, now: 1000 }); // next day
+		repo.insert({ userId, tsUtc: t0 + 10 * 3600, timeZone: berlin, now: 1000 });
+		repo.insert({ userId, tsUtc: t0 + 8 * 3600, timeZone: berlin, now: 1000 });
+		repo.insert({ userId, tsUtc: t0 + 30 * 3600, timeZone: berlin, now: 1000 }); // next day
 
 		const day = repo.listByDate(userId, "2026-01-01");
 		expect(day.map(entry => entry.tsUtc)).to.deep.equal([t0 + 8 * 3600, t0 + 10 * 3600]);

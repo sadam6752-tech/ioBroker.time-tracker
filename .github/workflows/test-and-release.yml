@@ -26,6 +26,18 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            # The web app is a second npm project. Its dependencies have to be there before the lint run of
+            # the action below: the web app files are linted too (and without react types every JSX type is an
+            # error type). `npm ci` in the action only touches the root node_modules.
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "22.x"
+            - name: Install dependencies (adapter and web app)
+              run: |
+                  npm ci
+                  npm ci --prefix src-pwa
+
             - uses: ioBroker/testing-action-check@v2
               with:
                   node-version: "22.x"
@@ -46,6 +58,19 @@ jobs:
                 os: [ubuntu-latest, windows-latest, macos-latest]
 
         steps:
+            # The integration test packs `build/` **and** `www/` and then asks the running adapter for the web
+            # app, so the web app has to be built before the adapter action runs.
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+            - name: Install dependencies (adapter and web app)
+              run: |
+                  npm ci
+                  npm ci --prefix src-pwa
+            - name: Build the web app
+              run: npm run build:pwa
+
             - uses: ioBroker/testing-action-adapter@v1
               with:
                   node-version: ${{ matrix.node-version }}
@@ -76,7 +101,7 @@ jobs:
         steps:
             - uses: ioBroker/testing-action-deploy@v1
               with:
-                  node-version: "22.x"
+                  node-version: "24.x"
                   # Uncomment the following line if your adapter cannot be installed using 'npm ci'
                   # install-command: 'npm install'
                   build: true

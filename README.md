@@ -146,11 +146,14 @@ client could otherwise move itself into another rate limit bucket. Only the hop 
 with `x-forwarded-for: client, proxy` the rightmost entry counts, because the left part is client controlled.
 
 The sessions of the web app travel in an `httpOnly` cookie (`SameSite=Lax`, `Secure` behind HTTPS), so a script
-injected into the page cannot read them. State changing requests additionally need the `x-csrf-token` header,
-which `GET /api/auth/me` hands out for the own session. Integration clients keep using the `x-session-token`
+injected into the page cannot read them. The web app itself only keeps the CSRF token and the user in its
+`localStorage`; the session token never leaves the cookie. Sessions that were opened before that switch stored a
+token as well — they keep working and are moved over with the next login. State changing requests additionally
+need the `x-csrf-token` header, which `GET /api/auth/me` hands out for the own session (that is also how a browser
+that only holds the cookie learns it again after a reload). Integration clients keep using the `x-session-token`
 header from the login response; that path needs no CSRF token, because a foreign page cannot equip a request with
 a header of its own. Point the proxy at the whole adapter: the web app, `/api` and the WebSocket `/api/stream`
-live on the same port.
+live on the same port — the stream accepts the cookie too, so the browser needs no token in the URL.
 
 ## States (overview)
 

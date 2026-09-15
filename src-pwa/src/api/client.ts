@@ -64,8 +64,11 @@ export class ApiError extends Error {
 
 /** Stored session. */
 export interface StoredSession {
-	/** Session token */
-	token: string;
+	/**
+	 * Session token — only present for sessions that were created before the cookie switch (an older tab).
+	 * New sessions keep the credential in an `httpOnly` cookie, where no script inside the page can read it.
+	 */
+	token?: string;
 	/** CSRF token for writes */
 	csrfToken: string;
 	/** Expiry, UTC epoch seconds */
@@ -423,7 +426,8 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				return null;
 			}
 			const parsed = JSON.parse(raw) as StoredSession;
-			return parsed?.token ? parsed : null;
+			// a session without a token is fine: the credential itself lives in the httpOnly cookie
+			return parsed?.user ? parsed : null;
 		} catch {
 			return null;
 		}
@@ -472,7 +476,10 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			headers["content-type"] = "application/json";
 		}
 		if (!options.anonymous && cached) {
-			headers["x-session-token"] = cached.token;
+			if (cached.token) {
+				// only sessions from before the cookie switch still carry the token in storage
+				headers["x-session-token"] = cached.token;
+			}
 			headers["x-csrf-token"] = cached.csrfToken;
 		}
 
@@ -533,7 +540,10 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 	async function requestDownload(path: string, query: Record<string, string | number>): Promise<DownloadFile> {
 		const headers: Record<string, string> = {};
 		if (cached) {
-			headers["x-session-token"] = cached.token;
+			if (cached.token) {
+				// only sessions from before the cookie switch still carry the token in storage
+				headers["x-session-token"] = cached.token;
+			}
 			headers["x-csrf-token"] = cached.csrfToken;
 		}
 
@@ -569,7 +579,9 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			}
 			// the web app is served from the same origin as the API, so the page's host is the one to call
 			const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
-			return `${scheme}//${window.location.host}${API_PREFIX}/stream?token=${encodeURIComponent(cached.token)}`;
+			const base = `${scheme}//${window.location.host}${API_PREFIX}/stream`;
+			// a browser sends the session cookie with the handshake; only older sessions still need the token
+			return cached.token ? `${base}?token=${encodeURIComponent(cached.token)}` : base;
 		},
 
 		forget: () => writeSession(null),
@@ -604,7 +616,7 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				anonymous: true,
 			});
 			const session: StoredSession = {
-				token: result.token,
+				// the token itself stays in the httpOnly cookie the server just set — it is not written to storage
 				csrfToken: result.csrfToken,
 				expiresAt: result.expiresAt,
 				user: result.user,
@@ -624,7 +636,26 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			writeSession(null);
 		},
 
-		me: () => request("GET", "/auth/me"),
+		async me() {
+			const result = await request<{
+				user: SessionUser | null;
+				permissions: string[];
+				expiresAt?: number;
+				csrfToken?: string;
+			}>("GET", "/auth/me");
+
+			// A session that only exists as a cookie (a fresh tab, a restored cookie) is adopted here — together
+			// with the CSRF token the page needs for writes, which no script can read out of the cookie itself.
+			if (result.user) {
+				writeSession({
+					csrfToken: result.csrfToken ?? cached?.csrfToken ?? "",
+					expiresAt: result.expiresAt ?? cached?.expiresAt ?? 0,
+					user: result.user,
+					...(cached?.token ? { token: cached.token } : {}),
+				});
+			}
+			return result;
+		},
 
 		async changePassword(password: string): Promise<void> {
 			try {

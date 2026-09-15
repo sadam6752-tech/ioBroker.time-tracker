@@ -13,6 +13,7 @@ import type { IncomingMessage, Server } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import type { AuthService } from "../services/auth";
+import { parseCookies, SESSION_COOKIE } from "./cookies";
 import type { ApiEvent, EventBus } from "./events";
 
 /** Options of the stream endpoint. */
@@ -135,7 +136,11 @@ export function attachEventStream(options: EventStreamOptions): EventStream {
 			return;
 		}
 
-		const token = url.searchParams.get("token") ?? "";
+		// A browser cannot set headers on a handshake, but it does send cookies — so the session cookie counts as
+		// well and the live stream works without a token in the URL (specification 4.10). The query parameter stays
+		// for terminals and integration clients.
+		const cookieToken = parseCookies(request.headers.cookie)[SESSION_COOKIE] ?? "";
+		const token = url.searchParams.get("token") || cookieToken;
 		const result = options.auth.authenticate({ token, now: now() });
 		if (!result.ok) {
 			reject(socket, result.error === "permission_denied" ? 403 : 401, result.error);

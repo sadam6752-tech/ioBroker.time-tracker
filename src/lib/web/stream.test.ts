@@ -16,6 +16,7 @@ import { createAggregationService } from "../services/aggregation";
 import { createAuthService, hashPassword } from "../services/auth";
 import { createSyncService } from "../services/sync";
 import { createApi, type Api } from "./api";
+import { SESSION_COOKIE } from "./cookies";
 import { startWebServer, type WebServer } from "./server";
 const password = "Zeit-2026-klar";
 
@@ -75,10 +76,12 @@ describe("web event stream", () => {
 	 *
 	 * @param token - session token
 	 * @param path - path of the endpoint
+	 * @param cookie - optional session cookie a browser would send with the handshake
 	 * @returns the client
 	 */
-	async function connect(token: string, path = "/api/stream"): Promise<TestClient> {
-		const socket = new WebSocket(`ws://127.0.0.1:${server.port}${path}?token=${encodeURIComponent(token)}`);
+	async function connect(token: string, path = "/api/stream", cookie?: string): Promise<TestClient> {
+		const url = `ws://127.0.0.1:${server.port}${path}?token=${encodeURIComponent(token)}`;
+		const socket = cookie ? new WebSocket(url, { headers: { cookie } }) : new WebSocket(url);
 		const frames: Frame[] = [];
 		const waiters: { resolve: (frame: Frame) => void; timer: NodeJS.Timeout }[] = [];
 
@@ -288,5 +291,14 @@ describe("web event stream", () => {
 
 		await server.stream?.close();
 		expect(stoppedTimers).to.deep.equal([42]);
+	});
+
+	it("accepts the session cookie of a browser instead of the query token", async () => {
+		// a browser cannot set headers on a handshake, but it does send its cookies — so the live stream works
+		// without a token in the URL (specification 4.10)
+		const anna = await connect("", "/api/stream", `${SESSION_COOKIE}=${annaToken}`);
+		expect(anna.hello.type).to.equal("hello");
+		expect(anna.hello.atUtc).to.equal(1000);
+		anna.socket.close();
 	});
 });

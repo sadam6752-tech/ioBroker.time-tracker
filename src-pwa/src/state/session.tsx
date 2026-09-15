@@ -58,18 +58,16 @@ export function SessionProvider({ children }: { children: ReactNode }): React.JS
 
 	/** Verifies the stored session and reads the permissions. */
 	const refresh = useCallback(async (): Promise<void> => {
-		if (!api.session()) {
-			setSession(null);
-			setPermissions([]);
-			setChecking(false);
-			return;
-		}
 		try {
+			// The session may live in the httpOnly cookie although this browser has nothing stored (a fresh tab, a
+			// restored cookie), so the server is asked in any case — it is the only one who knows. The client keeps
+			// what the answer carries (the CSRF token included), which is how a cookie-only session is adopted.
 			const result = await api.me();
 			setPermissions(result.permissions ?? []);
 			if (result.user) {
 				applyLanguage(result.user);
-				setSession(current => (current ? { ...current, user: result.user as SessionUser } : current));
+				const adopted = api.session();
+				setSession(current => (current ? { ...current, user: result.user as SessionUser } : adopted));
 			}
 		} catch (error) {
 			if (error instanceof ApiError && (error.status === 401 || error.status === 0)) {

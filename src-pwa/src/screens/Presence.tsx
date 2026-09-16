@@ -34,6 +34,7 @@ import {
 } from "../api/client";
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
+import { Keypad } from "../components/Keypad";
 
 /** Where the device token of this device is remembered. */
 const STORAGE_KEY = "zeiterfassung.presence";
@@ -388,6 +389,11 @@ export function Presence(): React.JSX.Element {
 								helperText={t("presence.tapPin")}
 								autoFocus
 								fullWidth
+							/>
+							<Keypad
+								onDigit={digit => setPin(current => current + digit)}
+								onBackspace={() => setPin(current => current.slice(0, -1))}
+								disabled={busy}
 							/>
 							<Button
 								variant="contained"

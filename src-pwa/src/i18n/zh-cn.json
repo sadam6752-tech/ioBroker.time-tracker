@@ -204,5 +204,6 @@
 	"corrections.actor": "操作人",
 	"corrections.actionCreate": "已添加",
 	"corrections.actionUpdate": "已修改",
-	"corrections.actionDelete": "已删除"
+	"corrections.actionDelete": "已删除",
+	"keypad.backspace": "删除"
 }

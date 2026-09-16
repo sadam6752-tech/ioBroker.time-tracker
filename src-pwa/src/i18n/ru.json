@@ -204,5 +204,6 @@
 	"corrections.actor": "Кто",
 	"corrections.actionCreate": "Добавлено",
 	"corrections.actionUpdate": "Изменено",
-	"corrections.actionDelete": "Удалено"
+	"corrections.actionDelete": "Удалено",
+	"keypad.backspace": "Удалить"
 }

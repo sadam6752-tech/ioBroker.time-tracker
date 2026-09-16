@@ -30,6 +30,7 @@ import {
 } from "../api/client";
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
+import { Keypad } from "../components/Keypad";
 
 /** Where the device token of this kiosk is remembered. */
 const STORAGE_KEY = "zeiterfassung.terminal";
@@ -322,6 +323,11 @@ export function Terminal(): React.JSX.Element {
 							{t("punch.now")}
 						</Button>
 					</Stack>
+					{/* the card number is punched in on touch screens as well */}
+					<Keypad
+						onDigit={digit => setBadge(current => current + digit)}
+						onBackspace={() => setBadge(current => current.slice(0, -1))}
+					/>
 				</CardContent>
 			</Card>
 
@@ -379,6 +385,11 @@ export function Terminal(): React.JSX.Element {
 							{t("punch.now")}
 						</Button>
 					</Stack>
+					{/* the PIN is entered on the pad as well, so a kiosk without a keyboard works */}
+					<Keypad
+						onDigit={digit => setPin(current => current + digit)}
+						onBackspace={() => setPin(current => current.slice(0, -1))}
+					/>
 				</CardContent>
 			</Card>
 		</Box>

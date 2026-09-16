@@ -204,5 +204,6 @@
 	"corrections.actor": "Por",
 	"corrections.actionCreate": "Añadido",
 	"corrections.actionUpdate": "Modificado",
-	"corrections.actionDelete": "Eliminado"
+	"corrections.actionDelete": "Eliminado",
+	"keypad.backspace": "Borrar"
 }

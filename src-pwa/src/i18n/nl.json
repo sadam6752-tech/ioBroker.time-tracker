@@ -204,5 +204,6 @@
 	"corrections.actor": "Door",
 	"corrections.actionCreate": "Toegevoegd",
 	"corrections.actionUpdate": "Gewijzigd",
-	"corrections.actionDelete": "Verwijderd"
+	"corrections.actionDelete": "Verwijderd",
+	"keypad.backspace": "Wissen"
 }

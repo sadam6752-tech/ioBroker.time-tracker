@@ -204,5 +204,6 @@
 	"corrections.actor": "Da",
 	"corrections.actionCreate": "Aggiunto",
 	"corrections.actionUpdate": "Modificato",
-	"corrections.actionDelete": "Eliminato"
+	"corrections.actionDelete": "Eliminato",
+	"keypad.backspace": "Cancella"
 }

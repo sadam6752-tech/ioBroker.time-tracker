@@ -204,5 +204,6 @@
 	"corrections.actor": "Kto",
 	"corrections.actionCreate": "Dodano",
 	"corrections.actionUpdate": "Zmieniono",
-	"corrections.actionDelete": "Usunięto"
+	"corrections.actionDelete": "Usunięto",
+	"keypad.backspace": "Usuń"
 }

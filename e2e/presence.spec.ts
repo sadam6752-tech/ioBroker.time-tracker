@@ -114,9 +114,13 @@ test("shows who is present, uses the stored picture and the placeholder otherwis
 	const adminTile = page.getByRole("button", { name: /E2E Admin/ }).first();
 	await expect(adminTile.locator("img")).toHaveAttribute("src", /\/person\.png$/);
 
-	// tapping the tile asks for the PIN of that employee
+	// tapping the tile asks for the PIN of that employee — entered on the built-in keypad, because the screen
+	// has to work without a keyboard
 	await tile.click();
-	await page.getByLabel("PIN").fill("1234");
+	for (const digit of "1234") {
+		await page.getByRole("button", { name: digit, exact: true }).click();
+	}
+	await expect(page.getByLabel("PIN")).toHaveValue("1234");
 	await page.getByRole("button", { name: "Stempeln" }).click();
 
 	// the answer of the server carries the new state, so the tile switches to present

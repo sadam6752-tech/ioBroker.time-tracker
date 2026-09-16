@@ -173,3 +173,38 @@ Regeln, in dieser Reihenfolge wichtig:
 
 Die Daten der Dev-Instanz liegen unter `.dev-server/default/iobroker-data/zeiterfassung.0/` (Datenbank,
 `session-secret`, `backups/`) und werden nicht versioniert.
+
+## 8. Versionierung und Release
+
+Die Version des Adapters steht an **zwei** Stellen und muss immer gleich sein: `package.json` (`version`) und
+`io-package.json` (`common.version`). Die Prüfung dafür läuft in `npm run test:package` und zusätzlich über
+`npm run version:check`.
+
+Regeln:
+
+1. **Vor jedem Push** bekommt jede Änderung ihren Eintrag unter `### **WORK IN PROGRESS**` in `CHANGELOG.md`
+   (derselbe Text steht in der README-Sektion „Changelog"; das Release-Werkzeug hält beide synchron).
+   Die Version wird dabei **nicht** von Hand geändert.
+2. **Die Version wird nur beim Release hochgezogen**, und zwar mit dem Werkzeug:
+
+    ```powershell
+    npm run release patch --dry      # Probelauf: zeigt, was passieren würde
+    npm run release patch            # 0.0.1 -> 0.0.2: Version, Changelog, common.news, Commit, Tag v0.0.2, Push
+    npm run release minor            # bzw. major für einen Sprung
+    ```
+
+    Das Skript setzt beide Versionsfelder, benennt den Block „WORK IN PROGRESS" auf die neue Version um, legt einen
+    neuen Platzhalter an, schreibt `common.news` und ruft vor dem Commit `npm run build` (siehe
+    `.releaseconfig.json`). Der gepushte Tag `vX.Y.Z` löst in der CI den Deploy-Job aus, der das Paket über
+    **npm trusted publishing** veröffentlicht und das GitHub-Release anlegt.
+
+3. Nach dem Release die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
+   der Adapterchecker verlangt sie (Regel E510). `npm run check:i18n` meldet Lücken.
+4. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:
+
+    ```powershell
+    npm run hooks:install
+    ```
+
+    Er bricht den Push ab, wenn die Versionsfelder auseinanderlaufen, `CHANGELOG.md` fehlt oder der neueste
+    Abschnitt weder „WORK IN PROGRESS" noch die aktuelle Version ist. Bewusst übergehen: `git push --no-verify`.

@@ -182,15 +182,34 @@ Die Version des Adapters steht an **zwei** Stellen und muss immer gleich sein: `
 
 Regeln:
 
-1. **Vor jedem Push** bekommt jede Änderung ihren Eintrag unter `### **WORK IN PROGRESS**` in `CHANGELOG.md`
-   (derselbe Text steht in der README-Sektion „Changelog"; das Release-Werkzeug hält beide synchron).
+1. **Nichts wird ohne Freigabe gepusht oder veröffentlicht.** Vor einem `git push` und vor jedem Versionssprung
+   (`npm run release …`) wird der Maintainer gefragt und die Antwort abgewartet. Wer den Push sperren möchte,
+   schaltet die Freigabepflicht in seiner Arbeitskopie ein (lokale Einstellung, nicht versioniert):
+
+    ```powershell
+    git config zt.requirePushApproval true   # wirkt nur zusammen mit core.hooksPath = .githooks
+    npm run push:approve                     # zeigt die offenen Commits und gibt genau diesen Commit frei
+    git push                                 # jetzt erlaubt — der nächste Commit braucht wieder ein OK
+    ```
+
+    Ohne Freigabe bricht der Pre-Push-Hook ab; dauerhaft ausschalten mit
+    `git config zt.requirePushApproval false`.
+
+2. **Vor jedem Push** bekommt jede Änderung ihren Eintrag im Changelog des README (`## Changelog`, neuester
+   Abschnitt `### **WORK IN PROGRESS**`). Dieser Block darf **nicht leer** sein — das Release-Werkzeug lehnt das ab.
    Die Version wird dabei **nicht** von Hand geändert.
-2. **Die Version wird nur beim Release hochgezogen**, und zwar mit dem Werkzeug:
+3. **Der Changelog steht im README, nicht in einer eigenen Datei.** Das Release-Werkzeug liest `CHANGELOG.md` nur,
+   wenn es existiert, und würde den README-Abschnitt dann nicht mehr pflegen. Im README bleiben die letzten **fünf**
+   Versionen (`--numChangelogEntries`, Standard 5); ältere wandern nach `CHANGELOG_OLD.md`, sobald diese Datei
+   existiert. Dann muss im README ein Fußzeilen-Link auf `CHANGELOG_OLD.md` stehen bleiben (das Werkzeug verlangt
+   ihn).
+4. **Die Version wird nur beim Release hochgezogen**, und zwar mit dem Werkzeug:
 
     ```powershell
     npm run release patch --dry      # Probelauf: zeigt, was passieren würde
-    npm run release patch            # 0.0.1 -> 0.0.2: Version, Changelog, common.news, Commit, Tag v0.0.2, Push
-    npm run release minor            # bzw. major für einen Sprung
+    npm run release patch --noPush   # 0.0.1 -> 0.0.2: Version, Changelog, common.news, Commit und Tag (nur lokal)
+    npm run push:approve             # Freigabe fuer den Release-Commit
+    git push --follow-tags           # Commit und Tag pushen — der Tag loest den Deploy aus
     ```
 
     Das Skript setzt beide Versionsfelder, benennt den Block „WORK IN PROGRESS" auf die neue Version um, legt einen
@@ -198,13 +217,13 @@ Regeln:
     `.releaseconfig.json`). Der gepushte Tag `vX.Y.Z` löst in der CI den Deploy-Job aus, der das Paket über
     **npm trusted publishing** veröffentlicht und das GitHub-Release anlegt.
 
-3. Nach dem Release die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
+5. Nach dem Release die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
    der Adapterchecker verlangt sie (Regel E510). `npm run check:i18n` meldet Lücken.
-4. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:
+6. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:
 
     ```powershell
     npm run hooks:install
     ```
 
-    Er bricht den Push ab, wenn die Versionsfelder auseinanderlaufen, `CHANGELOG.md` fehlt oder der neueste
+    Er bricht den Push ab, wenn keine Freigabe für den Commit vorliegt, die Versionsfelder auseinanderlaufen, der README-Changelog fehlt oder sein neueste
     Abschnitt weder „WORK IN PROGRESS" noch die aktuelle Version ist. Bewusst übergehen: `git push --no-verify`.

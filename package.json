@@ -88,6 +88,7 @@
 		"translate": "translate-adapter",
 		"release": "release-script",
 		"version:check": "node tools/check-version.mjs",
+		"push:approve": "node tools/approve-push.mjs",
 		"hooks:install": "git config core.hooksPath .githooks",
 		"dev-server": "dev-server",
 		"load-smoke": "node tools/load-smoke.mjs",

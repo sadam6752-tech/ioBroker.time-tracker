@@ -1,15 +1,15 @@
 /**
- * Prüft die Versionierung des Repositories — die Regel aus `CONTRIBUTING.md`.
+ * Prüft die Versionierung des Repositories — die Regel aus `CONTRIBUTING.md`, Abschnitt 8.
  *
  * Der Adapter führt seine Version an zwei Stellen: `package.json` und `io-package.json` (`common.version`).
- * Veröffentlicht wird über einen Tag `vX.Y.Z`, den das Release-Werkzeug setzt; dabei wandert der Block
- * „WORK IN PROGRESS" aus `CHANGELOG.md` in die neue Version und der `common.news`-Eintrag entsteht.
+ * Veröffentlicht wird über einen Tag `vX.Y.Z`, den das Release-Werkzeug setzt; dabei wandert der Abschnitt
+ * „WORK IN PROGRESS" aus dem Changelog des `README.md` in die neue Version und der `common.news`-Eintrag entsteht.
  *
  * Damit vor einem Push nichts Inkonsistentes im Repository liegt, prüft dieses Skript:
  *
  * 1. beide Versionsfelder gleich sind,
- * 2. `CHANGELOG.md` entweder die aktuelle Version im neuesten Abschnitt nennt oder einen Abschnitt
- *    `WORK IN PROGRESS` hat (jede Änderung bekommt dort ihren Eintrag),
+ * 2. der Changelog im `README.md` (`## Changelog`) die aktuelle Version im neuesten Abschnitt nennt oder einen
+ *    Abschnitt `WORK IN PROGRESS` hat (jede Änderung bekommt dort ihren Eintrag),
  * 3. zu einer festen Version ein `common.news`-Eintrag existiert — der Adapterchecker verlangt ihn (Regel E510).
  *
  * Verwendung:
@@ -46,18 +46,28 @@ function readJson(file, problems) {
 }
 
 /**
- * Liest den neuesten Abschnitt einer Changelog-Datei.
+ * Liest den neuesten Abschnitt des Changelogs aus dem README.
  *
- * Überschriften haben die Form `### **WORK IN PROGRESS**` oder `### 1.2.3 (2026-09-16)`. Der Kopfkommentar der
- * Datei zählt nicht mit, sonst würde die Vorlage als Eintrag gelesen.
+ * Der Changelog steht unter `## Changelog`; sein neuester Abschnitt ist entweder `### **WORK IN PROGRESS**` oder
+ * `### 1.2.3 (2026-09-16)`. Kopfkommentare und andere Rubriken (etwa `### Branding`) zählen nicht mit, deshalb
+ * endet die Suche an der nächsten Überschrift der zweiten Ebene.
  *
- * @param {string} text Inhalt der Datei
+ * @param {string} text Inhalt des README
  * @returns {{raw: string, version: string, workInProgress: boolean}|null} Abschnitt oder `null`
  */
-function newestSection(text) {
-	const withoutComments = text.replace(/<!--[\s\S]*?-->/g, "");
-	for (const line of withoutComments.split(/\r?\n/)) {
-		const match = /^###\s+(.+?)\s*$/.exec(line);
+function changelogSection(text) {
+	const lines = text.replace(/<!--[\s\S]*?-->/g, "").split(/\r?\n/);
+	const start = lines.findIndex(line => /^##\s+changelog\s*$/i.test(line));
+	if (start < 0) {
+		return null;
+	}
+
+	for (let index = start + 1; index < lines.length; index++) {
+		if (/^##\s+\S/.test(lines[index])) {
+			// das nächste Kapitel: hier endet der Changelog
+			return null;
+		}
+		const match = /^###\s+(.+?)\s*$/.exec(lines[index]);
 		if (!match) {
 			continue;
 		}
@@ -96,20 +106,20 @@ export function checkVersioning(directory) {
 		problems.push(`die Versionen unterscheiden sich: package.json ${version}, io-package.json ${ioVersion}`);
 	}
 
-	const changelogFile = join(directory, "CHANGELOG.md");
-	if (!existsSync(changelogFile)) {
-		problems.push("CHANGELOG.md fehlt");
+	const readmeFile = join(directory, "README.md");
+	if (!existsSync(readmeFile)) {
+		problems.push("README.md fehlt");
 		return problems;
 	}
 
-	const section = newestSection(readFileSync(changelogFile, "utf8"));
+	const section = changelogSection(readFileSync(readmeFile, "utf8"));
 	if (!section) {
-		problems.push("CHANGELOG.md hat keinen Abschnitt für eine Version");
+		problems.push("README.md hat keinen Changelog-Abschnitt mit einer Version (`## Changelog`)");
 		return problems;
 	}
 	if (!section.workInProgress && section.version !== version) {
 		problems.push(
-			`CHANGELOG.md nennt im neuesten Abschnitt "${section.raw}", erwartet wird "WORK IN PROGRESS" oder ${version}`,
+			`der Changelog nennt im neuesten Abschnitt "${section.raw}", erwartet wird "WORK IN PROGRESS" oder ${version}`,
 		);
 	}
 	if (!section.workInProgress && !io.common.news?.[version]) {
@@ -137,7 +147,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 	}
 	console.error("");
 	console.error("Regel: jede Änderung bekommt vor dem Push einen Eintrag unter");
-	console.error("'### **WORK IN PROGRESS**' in CHANGELOG.md; die Version wird nur mit");
-	console.error("'npm run release <patch|minor|major>' hochgezogen.");
+	console.error("'### **WORK IN PROGRESS**' im README-Abschnitt '## Changelog'; die Version wird nur mit");
+	console.error("'npm run release <patch|minor|major>' und nach Freigabe hochgezogen.");
 	process.exit(1);
 }

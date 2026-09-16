@@ -1,10 +1,25 @@
 #!/bin/sh
 # Läuft vor jedem Push (einmalig aktivieren: npm run hooks:install).
-# Prüft die Versionierung: beide Versionsfelder gleich und CHANGELOG.md mit Eintrag
-# für die aktuelle Version oder unter "WORK IN PROGRESS" — siehe CONTRIBUTING.md, Abschnitt 8.
+#
+# 1. Freigabe: ist in dieser Arbeitskopie `git config zt.requirePushApproval true` gesetzt, muss für den
+#    aktuellen Commit eine Freigabe vorliegen (npm run push:approve) — Regel aus CONTRIBUTING.md, Abschnitt 8.
+# 2. Versionierung: beide Versionsfelder gleich und der Changelog im README mit Eintrag für die Version
+#    oder unter "WORK IN PROGRESS".
+
+if [ "$(git config --get zt.requirePushApproval)" = "true" ]; then
+	head=$(git rev-parse HEAD)
+	marker="$(git rev-parse --git-dir)/ZT_PUSH_APPROVED"
+	if [ ! -f "$marker" ] || [ "$(cat "$marker" 2>/dev/null)" != "$head" ]; then
+		echo "Push abgebrochen: für diesen Commit liegt keine Freigabe des Maintainers vor."
+		echo "  Freigabe erteilen:   npm run push:approve"
+		echo "  dauerhaft aus:       git config zt.requirePushApproval false"
+		exit 1
+	fi
+fi
+
 node tools/check-version.mjs || {
 	echo ""
-	echo "Push abgebrochen. Bitte in CHANGELOG.md unter '### **WORK IN PROGRESS**' eintragen"
+	echo "Push abgebrochen. Bitte im README unter '### **WORK IN PROGRESS**' eintragen"
 	echo "oder die Version mit 'npm run release <patch|minor|major>' hochziehen."
 	echo "(Wer den Hook bewusst übergehen will: git push --no-verify)"
 	exit 1

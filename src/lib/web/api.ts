@@ -2262,8 +2262,13 @@ export function createApi(deps: ApiDeps): Api {
 			const pin = optionalString(body, "pin");
 			const targetId = optionalNumber(body, "userId");
 
-			if (badge === null && (pin === null || targetId === null)) {
-				throw new ValidationError("a badge or a userId together with the PIN is required");
+			if (badge === null && targetId === null) {
+				throw new ValidationError("a badge or a userId is required");
+			}
+			// a device that demands the PIN authenticates with it; a device without that duty may punch for a
+			// selected employee right away (the administrator decided that this place is trusted)
+			if (badge === null && terminal.pinRequired && pin === null) {
+				throw new ValidationError("a userId together with the PIN is required");
 			}
 
 			const user = badge !== null ? users.findByRfidCard(badge) : users.findById(targetId ?? 0);
@@ -2280,7 +2285,8 @@ export function createApi(deps: ApiDeps): Api {
 			}
 
 			const pinMatches = pin !== null && user.pinHash !== null && verifyPassword(pin, user.pinHash);
-			if (terminal.pinRequired ? !pinMatches : !pinMatches && badge === null) {
+			// a wrong PIN is refused on every device; a missing one only where the PIN is demanded
+			if (terminal.pinRequired ? !pinMatches : pin !== null && !pinMatches) {
 				pinGuard.fail({ userId: user.id, now: now() });
 				throw problem(401, "invalid_credentials", "badge or PIN is not known");
 			}

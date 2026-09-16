@@ -1472,6 +1472,35 @@ describe("web api", () => {
 			).to.equal(401);
 		});
 
+		it("accepts a selected employee without a PIN when the device does not ask for one", async () => {
+			const { terminalSession } = await prepareTerminal({ pin: true, pinRequired: false });
+
+			// no PIN at all: the administrator decided that this place is trusted
+			const punched = await send("POST", "/terminal/punch", {
+				body: { terminalSession, userId: annaId, tsUtc: 1000 },
+			});
+			expect(punched.status).to.equal(201);
+
+			// a wrong PIN is refused everywhere — the counter protects the account
+			expect(
+				(
+					await send("POST", "/terminal/punch", {
+						body: { terminalSession, userId: annaId, pin: "0000" },
+					})
+				).status,
+			).to.equal(401);
+
+			// on a device that demands the PIN the same request without one is rejected as invalid
+			const guarded = await prepareTerminal({ pin: true, pinRequired: true });
+			expect(
+				(
+					await send("POST", "/terminal/punch", {
+						body: { terminalSession: guarded.terminalSession, userId: annaId },
+					})
+				).status,
+			).to.equal(400);
+		});
+
 		it("shows only the employees that are assigned to a terminal", async () => {
 			// a terminal for the workshop: only Anna works there
 			const created = await send("POST", "/terminals", {

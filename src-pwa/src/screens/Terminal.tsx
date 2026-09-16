@@ -384,28 +384,48 @@ export function Terminal(): React.JSX.Element {
 						spacing={2}
 						sx={{ mt: 2 }}
 					>
-						<TextField
-							label={t("terminal.pin")}
-							type="password"
-							value={pin}
-							onChange={event => setPin(event.target.value)}
-							helperText={t("admin.user.pinHint")}
-							fullWidth
-						/>
+						{/* a device without the PIN duty punches for the selected employee right away */}
+						{session.terminal.pinRequired ? (
+							<TextField
+								label={t("terminal.pin")}
+								type="password"
+								value={pin}
+								onChange={event => setPin(event.target.value)}
+								helperText={t("admin.user.pinHint")}
+								fullWidth
+							/>
+						) : (
+							<Typography
+								variant="body2"
+								color="text.secondary"
+								sx={{ alignSelf: "center" }}
+							>
+								{t("terminal.noPin")}
+							</Typography>
+						)}
 						<Button
 							variant="contained"
 							size="large"
-							disabled={!selected || pin.length === 0}
-							onClick={() => selected && void punch({ userId: selected.id, pin })}
+							disabled={!selected || (session.terminal.pinRequired && pin.length === 0)}
+							onClick={() =>
+								selected &&
+								void punch(
+									session.terminal.pinRequired
+										? { userId: selected.id, pin }
+										: { userId: selected.id },
+								)
+							}
 						>
 							{t("punch.now")}
 						</Button>
 					</Stack>
 					{/* the PIN is entered on the pad as well, so a kiosk without a keyboard works */}
-					<Keypad
-						onDigit={digit => setPin(current => current + digit)}
-						onBackspace={() => setPin(current => current.slice(0, -1))}
-					/>
+					{session.terminal.pinRequired && (
+						<Keypad
+							onDigit={digit => setPin(current => current + digit)}
+							onBackspace={() => setPin(current => current.slice(0, -1))}
+						/>
+					)}
 				</CardContent>
 			</Card>
 		</Box>

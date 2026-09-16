@@ -125,6 +125,7 @@
 	"terminal.deviceToken": "Токен устройства",
 	"terminal.connect": "Подключить",
 	"terminal.badge": "Пропуск",
+	"terminal.noPin": "На этом терминале PIN не нужен.",
 	"terminal.pin": "PIN-код",
 	"terminal.select": "Выберите имя",
 	"terminal.disabled": "Терминал отключён в настройках адаптера.",

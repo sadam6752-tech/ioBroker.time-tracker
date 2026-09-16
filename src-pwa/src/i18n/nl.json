@@ -125,6 +125,7 @@
 	"terminal.deviceToken": "Apparaattoken",
 	"terminal.connect": "Verbinden",
 	"terminal.badge": "Pas",
+	"terminal.noPin": "Op dit terminal is geen pincode nodig.",
 	"terminal.pin": "Pincode",
 	"terminal.select": "Kies uw naam",
 	"terminal.disabled": "De terminal is uitgeschakeld in de adapterinstellingen.",

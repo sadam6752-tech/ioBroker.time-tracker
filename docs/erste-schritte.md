@@ -57,7 +57,8 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
    Mit **Foto** hinterlegt man ein Bild des Mitarbeiters (PNG/JPEG/WEBP/GIF bis 256 KB). Es erscheint auf den
    Kacheln des Anwesenheits-Bildschirms und am Kiosk; ohne Bild zeigt die Oberfläche den Platzhalter.
 2. **Verwaltung → Terminals**: Terminal anlegen (PIN-Pflicht an), **Geräte-Token kopieren** und die angezeigte
-   Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4.
+   Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4. Ohne **PIN-Pflicht** stempelt
+   das Gerät ohne PIN: Ausweis scannen oder den Namen auswählen genügt. Eine falsche PIN wird trotzdem abgelehnt.
 3. **Verwaltung → Einstellungen**: `report_font_path` auf eine Unicode-`.ttf`/`.otf` setzen, wenn Ausweise in
    **ru**, **uk** oder **zh-cn** gedruckt werden sollen (sonst lehnt der Export mit `report_font_missing` ab).
 4. **Verwaltung → Zeitkorrektur**: die Stempel eines Mitarbeiters ansehen und geradeziehen — Mitarbeiter und Monat

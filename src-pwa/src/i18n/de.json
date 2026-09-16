@@ -125,6 +125,7 @@
 	"terminal.deviceToken": "Geräte-Token",
 	"terminal.connect": "Verbinden",
 	"terminal.badge": "Ausweis",
+	"terminal.noPin": "Auf diesem Terminal ist keine PIN nötig.",
 	"terminal.pin": "PIN",
 	"terminal.select": "Namen auswählen",
 	"terminal.disabled": "Das Terminal ist in den Adapter-Einstellungen ausgeschaltet.",

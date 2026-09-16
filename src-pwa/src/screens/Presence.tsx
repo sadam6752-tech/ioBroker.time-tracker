@@ -195,7 +195,9 @@ export function Presence(): React.JSX.Element {
 
 	/** Clocks the selected employee in or out. */
 	const submit = useCallback(async (): Promise<void> => {
-		if (!session || !token || !selected || pin.length === 0) {
+		// a device without the PIN duty does not need one at all
+		const pinRequired = session?.terminal.pinRequired === true;
+		if (!session || !token || !selected || (pinRequired && pin.length === 0)) {
 			return;
 		}
 		setBusy(true);
@@ -204,7 +206,12 @@ export function Presence(): React.JSX.Element {
 				deviceToken: token,
 				session,
 				call: current =>
-					api.terminalPunch({ terminalSession: current.terminalSession, userId: selected.id, pin }),
+					api.terminalPunch({
+						terminalSession: current.terminalSession,
+						userId: selected.id,
+						// never send an empty PIN: a present but wrong value would be refused
+						...(pin ? { pin } : {}),
+					}),
 				onRenewed: setSession,
 			});
 			setConfirmation(result);
@@ -392,29 +399,41 @@ export function Presence(): React.JSX.Element {
 							direction={{ xs: "column", sm: "row" }}
 							spacing={2}
 						>
-							<TextField
-								label={t("terminal.pin")}
-								type="password"
-								value={pin}
-								onChange={event => setPin(event.target.value)}
-								onKeyDown={event => {
-									if (event.key === "Enter") {
-										void submit();
-									}
-								}}
-								helperText={t("presence.tapPin")}
-								autoFocus
-								fullWidth
-							/>
-							<Keypad
-								onDigit={digit => setPin(current => current + digit)}
-								onBackspace={() => setPin(current => current.slice(0, -1))}
-								disabled={busy}
-							/>
+							{session?.terminal.pinRequired === false ? (
+								<Typography
+									variant="body2"
+									color="text.secondary"
+									sx={{ alignSelf: "center" }}
+								>
+									{t("terminal.noPin")}
+								</Typography>
+							) : (
+								<TextField
+									label={t("terminal.pin")}
+									type="password"
+									value={pin}
+									onChange={event => setPin(event.target.value)}
+									onKeyDown={event => {
+										if (event.key === "Enter") {
+											void submit();
+										}
+									}}
+									helperText={t("presence.tapPin")}
+									autoFocus
+									fullWidth
+								/>
+							)}
+							{session?.terminal.pinRequired === false ? null : (
+								<Keypad
+									onDigit={digit => setPin(current => current + digit)}
+									onBackspace={() => setPin(current => current.slice(0, -1))}
+									disabled={busy}
+								/>
+							)}
 							<Button
 								variant="contained"
 								size="large"
-								disabled={busy || pin.length === 0}
+								disabled={busy || (session?.terminal.pinRequired === true && pin.length === 0)}
 								onClick={() => void submit()}
 							>
 								{t("punch.now")}

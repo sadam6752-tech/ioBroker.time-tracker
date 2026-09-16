@@ -182,7 +182,11 @@ export interface ApiClient {
 		name: string;
 		location?: string;
 		pinRequired?: boolean;
+		/** Employees shown on the terminal; leave it out for “all employees” */
+		userIds?: number[];
 	}): Promise<{ terminal: AdminTerminal; deviceToken: string }>;
+	/** Replaces the employees of a terminal (an empty list means “all employees”) */
+	setTerminalUsers(id: number, userIds: number[]): Promise<AdminTerminal>;
 	/** Revokes a terminal, its device token stops working immediately */
 	revokeTerminal(id: number): Promise<void>;
 	/** Instance settings, keyed by their technical name */
@@ -304,6 +308,8 @@ export interface AdminTerminal {
 	lastSeenAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
+	/** Employees shown on this terminal; an empty list means “all employees” */
+	userIds: number[];
 }
 
 /** A public holiday (`GET /holidays`). */
@@ -760,6 +766,13 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async createTerminal(input) {
 			return request<{ terminal: AdminTerminal; deviceToken: string }>("POST", "/terminals", { body: input });
+		},
+
+		async setTerminalUsers(id, userIds): Promise<AdminTerminal> {
+			const result = await request<{ terminal: AdminTerminal }>("PUT", `/terminals/${id}/users`, {
+				body: { userIds },
+			});
+			return result.terminal;
 		},
 
 		async revokeTerminal(id: number): Promise<void> {

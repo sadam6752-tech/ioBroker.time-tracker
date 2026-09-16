@@ -222,6 +222,8 @@ export interface PublicTerminalPayload {
 	lastSeenAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
+	/** Employees shown on this terminal; an empty list means “all employees” */
+	userIds: number[];
 }
 
 /**
@@ -240,6 +242,7 @@ function publicTerminal(terminal: TerminalRecord): PublicTerminalPayload {
 		expiresAt: terminal.expiresAt,
 		lastSeenAt: terminal.lastSeenAt,
 		createdAt: terminal.createdAt,
+		userIds: terminal.userIds,
 	};
 }
 
@@ -377,6 +380,23 @@ function readRoleKeys(body: Record<string, unknown>): string[] | null {
 		throw new ValidationError("roleKeys must be an array of strings");
 	}
 	return (value as string[]).map(entry => entry.trim()).filter(entry => entry.length > 0);
+}
+
+/**
+ * Reads an optional list of user ids (the employees of a terminal).
+ *
+ * @param body - request body
+ * @returns the ids without duplicates, `null` when the field is missing
+ */
+function readUserIds(body: Record<string, unknown>): number[] | null {
+	const value = body.userIds;
+	if (value === undefined || value === null) {
+		return null;
+	}
+	if (!Array.isArray(value) || value.some(entry => !Number.isInteger(entry))) {
+		throw new ValidationError("userIds must be an array of whole numbers");
+	}
+	return [...new Set(value as number[])];
 }
 
 /** Fields of a work profile a client may change. */
@@ -2203,13 +2223,21 @@ export function createApi(deps: ApiDeps): Api {
 		"/terminal/users",
 		{ public: true, rateLimit: { name: "terminal-users", limit: 60, windowSeconds: 60 } },
 		context => {
-			requireTerminal(context);
-			// only what a badge/PIN selection needs — no mail address, no profile, no working times. Whether the
+			const terminal = requireTerminal(context);
+			// A terminal stands at one place: it shows the employees that were assigned to it. No assignment means
+			// every employee — that is how terminals worked before the assignment existed.
+			//
+			// Only what a badge/PIN selection needs — no mail address, no profile, no working times. Whether the
 			// employee is at the workplace right now is the one exception: the presence screen highlights it.
 			const timestamp = now();
 			const terminalSession = context.query("terminalSession") ?? "";
+			const candidates = users.list({ includeInactive: false });
+			const visible =
+				terminal.userIds.length === 0
+					? candidates
+					: candidates.filter(user => terminal.userIds.includes(user.id));
 			return json(200, {
-				users: users.list({ includeInactive: false }).map(user => ({
+				users: visible.map(user => ({
 					id: user.id,
 					displayName: user.displayName,
 					present: aggregation.day(user.id, localDate(timestamp, user.timezone))?.hasOpenEntry === true,
@@ -2318,6 +2346,7 @@ export function createApi(deps: ApiDeps): Api {
 			name: requireString(body, "name"),
 			location: optionalString(body, "location"),
 			pinRequired: optionalBoolean(body, "pinRequired") ?? undefined,
+			userIds: readUserIds(body) ?? undefined,
 			ttlDays: optionalNumber(body, "ttlDays"),
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
@@ -2330,6 +2359,30 @@ export function createApi(deps: ApiDeps): Api {
 			{ terminal: publicTerminal(created.terminal), deviceToken: created.deviceToken },
 			{ location: `/terminals/${created.terminal.id}` },
 		);
+	});
+
+	route("PUT", "/terminals/:id/users", { permission: "terminal.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		const body = context.jsonBody();
+		// an empty list means “all employees”, which is also how a terminal starts its life
+		const userIds = readUserIds(body) ?? [];
+		for (const userId of userIds) {
+			if (!users.findById(userId)) {
+				throw new ValidationError(`user ${userId} does not exist`);
+			}
+		}
+
+		const terminal = terminals.setUsers({
+			id,
+			userIds,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		return json(200, { terminal: publicTerminal(terminal) });
 	});
 
 	route("DELETE", "/terminals/:id", { permission: "terminal.manage", csrf: true }, context => {

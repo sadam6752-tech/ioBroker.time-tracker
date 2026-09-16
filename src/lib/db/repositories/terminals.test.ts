@@ -115,4 +115,31 @@ describe("terminals repository", () => {
 		expect(repo.revoke({ id: terminal.id, actorId: adminId })).to.equal(false);
 		expect(repo.revoke({ id: 999, actorId: adminId })).to.equal(false);
 	});
+
+	it("remembers the employees of a terminal", () => {
+		const annaId = users.create({ login: "anna", displayName: "Anna", roleKeys: ["employee"] }).id;
+		const { terminal } = repo.create({
+			name: "Werkstatt",
+			userIds: [adminId, annaId, annaId],
+			actorId: adminId,
+			now: 1000,
+		});
+
+		// duplicates are dropped, the order follows the ids
+		expect(terminal.userIds).to.deep.equal([adminId, annaId].sort((a, b) => a - b));
+
+		// a later selection replaces the list, an empty one means “all employees”
+		expect(
+			repo.setUsers({ id: terminal.id, userIds: [annaId], actorId: adminId, now: 2000 }).userIds,
+		).to.deep.equal([annaId]);
+		expect(repo.setUsers({ id: terminal.id, userIds: [], actorId: adminId, now: 3000 }).userIds).to.deep.equal([]);
+		expect(countAudit("terminal.users")).to.equal(2);
+
+		// the record and the list carry the assignment with them
+		expect(repo.findById(terminal.id)?.userIds).to.deep.equal([]);
+		expect(repo.list()[0]?.userIds).to.deep.equal([]);
+
+		// an unknown terminal is refused
+		expect(() => repo.setUsers({ id: 999, userIds: [], actorId: adminId })).to.throw(/not found/);
+	});
 });

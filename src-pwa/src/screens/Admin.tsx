@@ -466,9 +466,11 @@ function CreateTerminalDialog({
 	onCreated: (issued: { terminal: AdminTerminal; deviceToken: string }) => Promise<void>;
 }): React.JSX.Element {
 	const { t } = useTranslation();
+	const employees = useQuery({ queryKey: ["admin", "users", "active"], queryFn: () => api.users(false) });
 	const [name, setName] = useState("");
 	const [location, setLocation] = useState("");
 	const [pinRequired, setPinRequired] = useState(true);
+	const [chosen, setChosen] = useState<number[]>([]);
 
 	const create = useMutation({
 		mutationFn: () =>
@@ -476,6 +478,8 @@ function CreateTerminalDialog({
 				name: name.trim(),
 				...(location.trim() ? { location: location.trim() } : {}),
 				pinRequired,
+				// no selection means “all employees”, which is how terminals worked before
+				userIds: chosen,
 			}),
 		onSuccess: onCreated,
 	});
@@ -516,6 +520,18 @@ function CreateTerminalDialog({
 						/>
 						<Typography>{t("admin.terminal.pinRequired")}</Typography>
 					</Stack>
+					<Typography variant="subtitle2">{t("admin.terminal.users")}</Typography>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+					>
+						{t("admin.terminal.usersHint")}
+					</Typography>
+					<EmployeePicker
+						users={employees.data ?? []}
+						chosen={chosen}
+						onChange={setChosen}
+					/>
 					<ErrorAlert error={create.error} />
 				</Stack>
 			</DialogContent>
@@ -534,6 +550,118 @@ function CreateTerminalDialog({
 }
 
 /**
+ * Picks the employees of a terminal.
+ *
+ * @param props - employees, current selection and handler
+ * @param props.users - employees to choose from
+ * @param props.chosen - selected ids (an empty list means “all employees”)
+ * @param props.onChange - called with the new selection
+ * @returns the list of switches
+ */
+function EmployeePicker({
+	users,
+	chosen,
+	onChange,
+}: {
+	users: AdminUser[];
+	chosen: number[];
+	onChange: (ids: number[]) => void;
+}): React.JSX.Element {
+	return (
+		<Box sx={{ maxHeight: 240, overflowY: "auto" }}>
+			<Stack spacing={0.5}>
+				{users.map(user => (
+					<Stack
+						key={user.id}
+						direction="row"
+						spacing={1}
+						sx={{ alignItems: "center" }}
+					>
+						<Switch
+							checked={chosen.includes(user.id)}
+							inputProps={{ "aria-label": user.displayName }}
+							onChange={(_event, checked) =>
+								onChange(
+									checked ? [...new Set([...chosen, user.id])] : chosen.filter(id => id !== user.id),
+								)
+							}
+						/>
+						<Typography>{user.displayName}</Typography>
+					</Stack>
+				))}
+			</Stack>
+		</Box>
+	);
+}
+
+/**
+ * Dialog that assigns the employees of a terminal.
+ *
+ * @param props - terminal, close handler and save handler
+ * @param props.terminal - terminal to edit
+ * @param props.onClose - called when the dialog is closed
+ * @param props.onSaved - called after the selection was stored
+ * @returns the dialog
+ */
+function TerminalUsersDialog({
+	terminal,
+	onClose,
+	onSaved,
+}: {
+	terminal: AdminTerminal;
+	onClose: () => void;
+	onSaved: () => Promise<void>;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	const employees = useQuery({ queryKey: ["admin", "users", "active"], queryFn: () => api.users(false) });
+	const [chosen, setChosen] = useState<number[]>(terminal.userIds);
+
+	const save = useMutation({
+		mutationFn: () => api.setTerminalUsers(terminal.id, chosen),
+		onSuccess: onSaved,
+	});
+
+	return (
+		<Dialog
+			open
+			onClose={onClose}
+			fullWidth
+		>
+			<DialogTitle>{`${t("admin.terminal.users")} · ${terminal.name}`}</DialogTitle>
+			<DialogContent>
+				<Stack
+					spacing={1}
+					sx={{ mt: 1 }}
+				>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+					>
+						{t("admin.terminal.usersHint")}
+					</Typography>
+					<EmployeePicker
+						users={employees.data ?? []}
+						chosen={chosen}
+						onChange={setChosen}
+					/>
+					<ErrorAlert error={employees.error ?? save.error} />
+				</Stack>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onClose}>{t("common.cancel")}</Button>
+				<Button
+					variant="contained"
+					disabled={save.isPending}
+					onClick={() => save.mutate()}
+				>
+					{t("common.save")}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+/**
  * Kiosk terminals: create a device, show its token once and revoke it again.
  *
  * @param props - language of the display
@@ -544,8 +672,10 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 	const { t } = useTranslation();
 	const queryClient = useQueryClient();
 	const terminals = useQuery({ queryKey: ["admin", "terminals"], queryFn: () => api.terminals() });
+	const employees = useQuery({ queryKey: ["admin", "users", "active"], queryFn: () => api.users(false) });
 	const [creating, setCreating] = useState(false);
 	const [revoking, setRevoking] = useState<AdminTerminal | null>(null);
+	const [assigning, setAssigning] = useState<AdminTerminal | null>(null);
 	const [issued, setIssued] = useState<{ terminal: AdminTerminal; deviceToken: string } | null>(null);
 
 	const revoke = useMutation({
@@ -566,8 +696,16 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 		: "";
 
 	const stale = `${t("common.none")}`;
-	const detailsOf = (terminal: AdminTerminal): string =>
-		[terminal.location || stale, formatStamp(terminal.createdAt, language)].join(" · ");
+	const detailsOf = (terminal: AdminTerminal): string => {
+		const people =
+			terminal.userIds.length === 0
+				? t("admin.terminal.usersAll")
+				: (employees.data ?? [])
+						.filter(user => terminal.userIds.includes(user.id))
+						.map(user => user.displayName)
+						.join(", ") || t("admin.terminal.usersAll");
+		return [terminal.location || stale, formatStamp(terminal.createdAt, language), people].join(" · ");
+	};
 
 	return (
 		<>
@@ -637,13 +775,24 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 							divider
 							secondaryAction={
 								terminal.isActive ? (
-									<Button
-										size="small"
-										color="error"
-										onClick={() => setRevoking(terminal)}
+									<Stack
+										direction="row"
+										spacing={1}
 									>
-										{t("admin.terminal.revoke")}
-									</Button>
+										<Button
+											size="small"
+											onClick={() => setAssigning(terminal)}
+										>
+											{t("admin.terminal.users")}
+										</Button>
+										<Button
+											size="small"
+											color="error"
+											onClick={() => setRevoking(terminal)}
+										>
+											{t("admin.terminal.revoke")}
+										</Button>
+									</Stack>
 								) : undefined
 							}
 						>
@@ -687,6 +836,17 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 					)}
 				</List>
 			</Card>
+
+			{assigning && (
+				<TerminalUsersDialog
+					terminal={assigning}
+					onClose={() => setAssigning(null)}
+					onSaved={async () => {
+						setAssigning(null);
+						await queryClient.invalidateQueries({ queryKey: ["admin", "terminals"] });
+					}}
+				/>
+			)}
 
 			{creating && (
 				<CreateTerminalDialog

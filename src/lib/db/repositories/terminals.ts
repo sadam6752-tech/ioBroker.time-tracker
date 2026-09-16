@@ -32,6 +32,8 @@ export interface TerminalRecord {
 	sessionExpiresAt: number | null;
 	/** Instant of creation, UTC epoch seconds */
 	createdAt: number;
+	/** Employees shown on this terminal; an empty list means “all employees” */
+	userIds: number[];
 }
 
 /** Terminal storage operations. */
@@ -41,6 +43,8 @@ export interface TerminalsRepository {
 		name: string;
 		location?: string | null;
 		pinRequired?: boolean;
+		/** Employees shown on the terminal; leave it out for “all employees” */
+		userIds?: number[];
 		/** Days until the device token expires, `null` = never */
 		ttlDays?: number | null;
 		actorId: number;
@@ -62,6 +66,14 @@ export interface TerminalsRepository {
 	findBySession(terminalSession: string, now?: number): TerminalRecord | null;
 	/** Extends a session and records the heartbeat */
 	touch(input: { id: number; ttlMinutes: number; now?: number }): { expiresAt: number };
+	/** Replaces the employees of a terminal (an empty list means “all employees”) */
+	setUsers(input: {
+		id: number;
+		userIds: number[];
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): TerminalRecord;
 	/** Deactivates a terminal and ends its session */
 	revoke(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 }
@@ -101,12 +113,12 @@ const TERMINAL_COLUMNS = `id, name, location, pin_required, is_active, expires_a
 	session_expires_at, created_at`;
 
 /**
- * Maps a database row to a terminal record.
+ * Maps a database row to a terminal record (without its employees — they live in `terminal_users`).
  *
  * @param row - raw database row
  * @returns terminal record
  */
-function mapTerminalRow(row: TerminalRow): TerminalRecord {
+function mapTerminalRow(row: TerminalRow): Omit<TerminalRecord, "userIds"> {
 	return {
 		id: row.id,
 		name: row.name,
@@ -147,6 +159,24 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 	const deactivate = db.prepare(
 		"UPDATE kiosk_terminals SET is_active = 0, session_hash = NULL, session_expires_at = NULL WHERE id = ?",
 	);
+	const selectUsers = db.prepare(
+		"SELECT user_id AS userId FROM terminal_users WHERE terminal_id = ? ORDER BY user_id",
+	);
+	const deleteUsers = db.prepare("DELETE FROM terminal_users WHERE terminal_id = ?");
+	const insertUser = db.prepare(
+		"INSERT OR IGNORE INTO terminal_users (terminal_id, user_id, created_at) VALUES (?, ?, ?)",
+	);
+
+	/**
+	 * Attaches the employees of a terminal.
+	 *
+	 * @param record - terminal without its employees
+	 * @returns the terminal with its employees (an empty list means “all employees”)
+	 */
+	const withUsers = (record: Omit<TerminalRecord, "userIds">): TerminalRecord => ({
+		...record,
+		userIds: (selectUsers.all(record.id) as { userId: number }[]).map(row => row.userId),
+	});
 
 	/**
 	 * Reads a terminal.
@@ -156,7 +186,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 	 */
 	const read = (id: number): TerminalRecord | null => {
 		const row = selectById.get(id) as TerminalRow | undefined;
-		return row ? mapTerminalRow(row) : null;
+		return row ? withUsers(mapTerminalRow(row)) : null;
 	};
 
 	/**
@@ -166,7 +196,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 	 * @param now - instant
 	 * @returns true when the device is active and its token has not expired
 	 */
-	const usable = (record: TerminalRecord, now: number): boolean =>
+	const usable = (record: Omit<TerminalRecord, "userIds">, now: number): boolean =>
 		record.isActive && (record.expiresAt === null || record.expiresAt > now);
 
 	return {
@@ -174,6 +204,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 			name: string;
 			location?: string | null;
 			pinRequired?: boolean;
+			userIds?: number[];
 			ttlDays?: number | null;
 			actorId: number;
 			actorIp?: string | null;
@@ -190,6 +221,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			const deviceToken = newToken();
 			const expiresAt = ttlDays === null ? null : now + ttlDays * 86400;
+			const userIds = [...new Set(input.userIds ?? [])];
 
 			let terminalId = 0;
 			const run = db.transaction((): void => {
@@ -214,9 +246,14 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 						location: input.location ?? null,
 						pinRequired: input.pinRequired ?? true,
 						expiresAt,
+						userIds,
 					},
 					ip: input.actorIp ?? null,
 				});
+				// the employees of this terminal (none = all employees)
+				for (const userId of userIds) {
+					insertUser.run(terminalId, userId, now);
+				}
 			});
 			run();
 
@@ -229,7 +266,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 
 		list(options?: { includeInactive?: boolean }): TerminalRecord[] {
 			const rows = (options?.includeInactive === true ? selectAll : selectActive).all() as TerminalRow[];
-			return rows.map(mapTerminalRow);
+			return rows.map(row => withUsers(mapTerminalRow(row)));
 		},
 
 		findById: read,
@@ -240,7 +277,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 				return null;
 			}
 			const record = mapTerminalRow(row);
-			return usable(record, now ?? Math.floor(Date.now() / 1000)) ? record : null;
+			return usable(record, now ?? Math.floor(Date.now() / 1000)) ? withUsers(record) : null;
 		},
 
 		startSession(input: { id: number; ttlMinutes: number; now?: number }): {
@@ -269,7 +306,7 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 			if (!usable(record, at) || record.sessionExpiresAt === null || record.sessionExpiresAt <= at) {
 				return null;
 			}
-			return record;
+			return withUsers(record);
 		},
 
 		touch(input: { id: number; ttlMinutes: number; now?: number }): { expiresAt: number } {
@@ -277,6 +314,39 @@ export function createTerminalsRepository(db: Db): TerminalsRepository {
 			const expiresAt = now + input.ttlMinutes * 60;
 			updateHeartbeat.run(expiresAt, now, input.id);
 			return { expiresAt };
+		},
+
+		setUsers(input: {
+			id: number;
+			userIds: number[];
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): TerminalRecord {
+			const terminal = read(input.id);
+			if (!terminal) {
+				throw new NotFoundError(`terminal ${input.id} not found`);
+			}
+			const userIds = [...new Set(input.userIds)];
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				deleteUsers.run(input.id);
+				for (const userId of userIds) {
+					insertUser.run(input.id, userId, now);
+				}
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "terminal.users",
+					entity: "kiosk_terminal",
+					entityId: input.id,
+					detail: { name: terminal.name, userIds },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			return read(input.id) ?? terminal;
 		},
 
 		revoke(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean {

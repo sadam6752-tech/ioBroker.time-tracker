@@ -427,4 +427,20 @@ export const migrations: Migration[] = [
 			`);
 		},
 	},
+	{
+		version: 11,
+		name: "terminals: the employees of a terminal",
+		sql: `
+			-- A terminal stands at one place — an office, a workshop — and is meant for the employees that work
+			-- there. No row for a terminal means "all employees", so terminals that existed before keep working
+			-- exactly as they did.
+			CREATE TABLE terminal_users (
+				terminal_id INTEGER NOT NULL REFERENCES kiosk_terminals(id) ON DELETE CASCADE,
+				user_id     INTEGER NOT NULL REFERENCES users(id)           ON DELETE CASCADE,
+				created_at  INTEGER NOT NULL,
+				PRIMARY KEY (terminal_id, user_id)
+			);
+			CREATE INDEX idx_terminal_users_user ON terminal_users(user_id);
+		`,
+	},
 ];

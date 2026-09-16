@@ -1472,6 +1472,63 @@ describe("web api", () => {
 			).to.equal(401);
 		});
 
+		it("shows only the employees that are assigned to a terminal", async () => {
+			// a terminal for the workshop: only Anna works there
+			const created = await send("POST", "/terminals", {
+				body: { name: "Werkstatt", userIds: [annaId] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const workshop = bodyOf<{ terminal: { id: number; userIds: number[] }; deviceToken: string }>(created);
+			expect(workshop.terminal.userIds).to.deep.equal([annaId]);
+
+			const session = await send("POST", "/terminal/session", { body: { deviceToken: workshop.deviceToken } });
+			const terminalSession = bodyOf<{ terminalSession: string }>(session).terminalSession;
+			const listed = await send("GET", "/terminal/users", { query: { terminalSession } });
+			expect(bodyOf<{ users: { id: number }[] }>(listed).users.map(user => user.id)).to.deep.equal([annaId]);
+
+			// an empty list means “all employees” — and that is how a terminal starts its life
+			const open = await send("POST", "/terminals", {
+				body: { name: "Büro" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			const openSession = await send("POST", "/terminal/session", {
+				body: { deviceToken: bodyOf<{ deviceToken: string }>(open).deviceToken },
+			});
+			const everyone = await send("GET", "/terminal/users", {
+				query: { terminalSession: bodyOf<{ terminalSession: string }>(openSession).terminalSession },
+			});
+			expect(bodyOf<{ users: unknown[] }>(everyone).users.length).to.be.greaterThan(1);
+
+			// changing the assignment needs the right to manage terminals
+			const denied = await send("PUT", `/terminals/${workshop.terminal.id}/users`, {
+				body: { userIds: [] },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(denied.status).to.equal(403);
+
+			const changed = await send("PUT", `/terminals/${workshop.terminal.id}/users`, {
+				body: { userIds: [] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(changed.status).to.equal(200);
+			expect(bodyOf<{ terminal: { userIds: number[] } }>(changed).terminal.userIds).to.deep.equal([]);
+
+			// an employee that does not exist is refused
+			expect(
+				(
+					await send("PUT", `/terminals/${workshop.terminal.id}/users`, {
+						body: { userIds: [999999] },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+
+			// the same session of the workshop device now sees everybody as well
+			const after = await send("GET", "/terminal/users", { query: { terminalSession } });
+			expect(bodyOf<{ users: unknown[] }>(after).users.length).to.be.greaterThan(1);
+		});
+
 		it("refuses every terminal call when the kiosk is switched off", async () => {
 			const disabled = createApi({
 				db,

@@ -35,6 +35,7 @@ import {
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
 import { Keypad } from "../components/Keypad";
+import { useBranding } from "../state/branding";
 
 /** Where the device token of this device is remembered. */
 const STORAGE_KEY = "zeiterfassung.presence";
@@ -90,6 +91,7 @@ export function Presence(): React.JSX.Element {
 	const [timeZone, setTimeZone] = useState("UTC");
 	const [clock, setClock] = useState(Math.floor(Date.now() / 1000));
 	const offset = useRef(0);
+	const branding = useBranding();
 
 	/** Forgets the device token of this device, so the screen asks for a new one. */
 	const forgetToken = useCallback((): void => {
@@ -261,7 +263,21 @@ export function Presence(): React.JSX.Element {
 				alignItems="baseline"
 				sx={{ mb: 2 }}
 			>
-				<Typography variant="h5">{t("presence.title")}</Typography>
+				<Stack
+					direction="row"
+					spacing={1}
+					sx={{ alignItems: "center" }}
+				>
+					{branding.logoUrl && (
+						<Box
+							component="img"
+							src={branding.logoUrl}
+							alt=""
+							sx={{ height: 28, maxWidth: 120, objectFit: "contain" }}
+						/>
+					)}
+					<Typography variant="h5">{t("presence.title")}</Typography>
+				</Stack>
 				<Stack
 					direction="row"
 					spacing={1}

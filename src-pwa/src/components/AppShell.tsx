@@ -2,6 +2,7 @@
  * Frame of the web app: navigation, offline hint and sign out.
  */
 import AppBar from "@mui/material/AppBar";
+import { useBranding } from "../state/branding";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import BottomNavigation from "@mui/material/BottomNavigation";
@@ -68,6 +69,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+	const branding = useBranding();
 
 	const active = TABS.find(tab => tab.path === location.pathname)?.path ?? "/";
 
@@ -82,6 +84,14 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 					variant="dense"
 					sx={{ gap: 1 }}
 				>
+					{branding.logoUrl && (
+						<Box
+							component="img"
+							src={branding.logoUrl}
+							alt=""
+							sx={{ height: 28, maxWidth: 120, objectFit: "contain" }}
+						/>
+					)}
 					<Typography
 						variant="h6"
 						sx={{ flexGrow: 1 }}

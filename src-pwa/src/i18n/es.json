@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Añadido",
 	"corrections.actionUpdate": "Modificado",
 	"corrections.actionDelete": "Eliminado",
-	"keypad.backspace": "Borrar"
+	"keypad.backspace": "Borrar",
+	"admin.settings.branding": "Imagen corporativa",
+	"admin.settings.brandingHint": "Logotipo, fondo y color de acento de esta instalación. También se muestran en la pantalla de acceso y en los quioscos.",
+	"admin.settings.brandLogo": "Elegir logotipo",
+	"admin.settings.brandBackground": "Elegir fondo",
+	"admin.settings.brandColor": "Color de acento",
+	"admin.settings.brandColorHint": "Valor hexadecimal como #1a2b3c"
 }

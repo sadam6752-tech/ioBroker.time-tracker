@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Toegevoegd",
 	"corrections.actionUpdate": "Gewijzigd",
 	"corrections.actionDelete": "Verwijderd",
-	"keypad.backspace": "Wissen"
+	"keypad.backspace": "Wissen",
+	"admin.settings.branding": "Bedrijfshuisstijl",
+	"admin.settings.brandingHint": "Logo, achtergrond en accentkleur van deze installatie. Ze zijn ook te zien op het inlogscherm en de kiosken.",
+	"admin.settings.brandLogo": "Logo kiezen",
+	"admin.settings.brandBackground": "Achtergrond kiezen",
+	"admin.settings.brandColor": "Accentkleur",
+	"admin.settings.brandColorHint": "Hex-waarde zoals #1a2b3c"
 }

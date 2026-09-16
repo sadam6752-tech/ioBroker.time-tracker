@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorAlert } from "../components/feedback";
+import { useBranding } from "../state/branding";
 import { useSession } from "../state/session";
 
 /**
@@ -23,6 +24,7 @@ import { useSession } from "../state/session";
 export function Login(): React.JSX.Element {
 	const { t } = useTranslation();
 	const { signIn } = useSession();
+	const branding = useBranding();
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<unknown>(null);
@@ -50,6 +52,14 @@ export function Login(): React.JSX.Element {
 		<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", p: 2 }}>
 			<Card sx={{ width: "100%", maxWidth: 420 }}>
 				<CardContent>
+					{branding.logoUrl && (
+						<Box
+							component="img"
+							src={branding.logoUrl}
+							alt=""
+							sx={{ display: "block", maxHeight: 64, maxWidth: "100%", mb: 2 }}
+						/>
+					)}
 					<Typography
 						variant="h5"
 						component="h1"

@@ -1066,6 +1066,87 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Reads the chosen picture as a data URL.
+ *
+ * @param event - change event of the file input
+ * @param onChange - called with the data URL
+ */
+function readImageFile(event: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void): void {
+	const file = event.target.files?.[0];
+	if (!file) {
+		return;
+	}
+	const reader = new FileReader();
+	reader.onload = () => onChange(typeof reader.result === "string" ? reader.result : "");
+	reader.readAsDataURL(file);
+	event.target.value = "";
+}
+
+/**
+ * Picks a picture of the branding (logo or background).
+ *
+ * @param props - label, current value and handlers
+ * @param props.label - text of the button
+ * @param props.value - current data URL, empty when nothing is set
+ * @param props.onChange - called with the new data URL; an empty string removes the picture
+ * @param props.disabled - true without the right to change settings
+ * @returns the field
+ */
+function BrandImageField({
+	label,
+	value,
+	onChange,
+	disabled,
+}: {
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+	disabled: boolean;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+
+	return (
+		<Stack
+			direction={{ xs: "column", sm: "row" }}
+			spacing={2}
+			sx={{ alignItems: { sm: "center" } }}
+		>
+			<Button
+				variant="outlined"
+				component="label"
+				disabled={disabled}
+				sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
+			>
+				{label}
+				<input
+					hidden
+					type="file"
+					accept="image/png,image/jpeg,image/webp,image/gif"
+					onChange={event => readImageFile(event, onChange)}
+				/>
+			</Button>
+			{value !== "" && (
+				<>
+					<Box
+						component="img"
+						src={value}
+						alt=""
+						sx={{ height: 40, maxWidth: 160, objectFit: "contain", border: 1, borderColor: "divider" }}
+					/>
+					<Button
+						color="inherit"
+						disabled={disabled}
+						onClick={() => onChange("")}
+					>
+						{t("admin.user.photoRemove")}
+					</Button>
+				</>
+			)}
+		</Stack>
+	);
+}
+
+/**
  * Instance settings: the font for the PDF statements and a technical editor for the rest.
  *
  * @returns the settings tab
@@ -1083,6 +1164,8 @@ function SettingsTab(): React.JSX.Element {
 		onSuccess: async () => {
 			setDraft({});
 			await queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+			// logo, background and colour are painted by the app shell and shown by the kiosk screens
+			await queryClient.invalidateQueries({ queryKey: ["branding"] });
 		},
 	});
 
@@ -1114,6 +1197,64 @@ function SettingsTab(): React.JSX.Element {
 
 			<Card sx={{ mb: 2 }}>
 				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.settings.branding")}
+					</Typography>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						gutterBottom
+					>
+						{t("admin.settings.brandingHint")}
+					</Typography>
+					<Stack spacing={2}>
+						<BrandImageField
+							label={t("admin.settings.brandLogo")}
+							value={draft.brand_logo ?? values.brand_logo ?? ""}
+							onChange={value => change("brand_logo", value)}
+							disabled={!mayEdit}
+						/>
+						<BrandImageField
+							label={t("admin.settings.brandBackground")}
+							value={draft.brand_background ?? values.brand_background ?? ""}
+							onChange={value => change("brand_background", value)}
+							disabled={!mayEdit}
+						/>
+						<Stack
+							direction="row"
+							spacing={2}
+							sx={{ alignItems: "center" }}
+						>
+							<TextField
+								label={t("admin.settings.brandColor")}
+								helperText={t("admin.settings.brandColorHint")}
+								value={draft.brand_color ?? values.brand_color ?? ""}
+								onChange={event => change("brand_color", event.target.value)}
+								disabled={!mayEdit}
+								sx={{ maxWidth: 260 }}
+							/>
+							{(draft.brand_color ?? values.brand_color ?? "") !== "" && (
+								<Box
+									sx={{
+										width: 32,
+										height: 32,
+										borderRadius: 1,
+										border: 1,
+										borderColor: "divider",
+										bgcolor: draft.brand_color ?? values.brand_color ?? "transparent",
+									}}
+								/>
+							)}
+						</Stack>
+					</Stack>
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
 					<TextField
 						label={t("admin.settings.fontPath")}
 						helperText={t("admin.settings.fontPathHint")}
@@ -1135,6 +1276,7 @@ function SettingsTab(): React.JSX.Element {
 					</Typography>
 					<Stack spacing={2}>
 						{Object.keys(values)
+							.filter(key => !key.startsWith("brand_"))
 							.sort()
 							.map(key => (
 								<TextField

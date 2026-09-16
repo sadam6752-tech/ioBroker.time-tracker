@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Dodano",
 	"corrections.actionUpdate": "Zmieniono",
 	"corrections.actionDelete": "Usunięto",
-	"keypad.backspace": "Usuń"
+	"keypad.backspace": "Usuń",
+	"admin.settings.branding": "Wizerunek firmy",
+	"admin.settings.brandingHint": "Logo, tło i kolor akcentu tej instalacji. Są one również widoczne na ekranie logowania i w kioskach.",
+	"admin.settings.brandLogo": "Wybierz logo",
+	"admin.settings.brandBackground": "Wybierz tło",
+	"admin.settings.brandColor": "Kolor akcentu",
+	"admin.settings.brandColorHint": "Wartość szesnastkowa, np. #1a2b3c"
 }

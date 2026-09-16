@@ -14,6 +14,7 @@ import type {
 	AbsenceType,
 	AdminUser,
 	BackupFile,
+	Branding,
 	Conflict,
 	CreateUserInput,
 	DayRange,
@@ -186,6 +187,8 @@ export interface ApiClient {
 	revokeTerminal(id: number): Promise<void>;
 	/** Instance settings, keyed by their technical name */
 	settings(): Promise<Record<string, string>>;
+	/** Branding of the installation (logo, background, accent colour) – readable without a session */
+	branding(): Promise<Branding>;
 	/** Changes instance settings (only editable keys are accepted) */
 	updateSettings(
 		patch: Record<string, string>,
@@ -766,6 +769,10 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async settings(): Promise<Record<string, string>> {
 			const result = await request<{ settings: Record<string, string> }>("GET", "/settings");
 			return result.settings ?? {};
+		},
+
+		async branding(): Promise<Branding> {
+			return request<Branding>("GET", "/branding", { anonymous: true });
 		},
 
 		async updateSettings(patch) {

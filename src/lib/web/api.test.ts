@@ -1947,4 +1947,79 @@ describe("web api", () => {
 			expect((await send("GET", "/entries/999/audit", { headers: headers(adminToken) })).status).to.equal(404);
 		});
 	});
+
+	describe("branding", () => {
+		/** A 1×1 pixel PNG, small enough for any limit. */
+		const png =
+			"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==";
+
+		it("is readable without a session and empty at first", async () => {
+			const answer = await send("GET", "/branding");
+
+			expect(answer.status).to.equal(200);
+			expect(bodyOf(answer)).to.deep.equal({ color: null, logoUrl: null, backgroundUrl: null });
+			// nothing is configured yet, so both pictures are missing
+			expect((await send("GET", "/branding/logo")).status).to.equal(404);
+			expect((await send("GET", "/branding/background")).status).to.equal(404);
+		});
+
+		it("takes a logo and a colour and hands them out", async () => {
+			// an employee may not change settings at all
+			const denied = await send("PUT", "/settings", {
+				body: { brand_color: "#1a2b3c" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(denied.status).to.equal(403);
+
+			const saved = await send("PUT", "/settings", {
+				body: { brand_logo: png, brand_color: "#1a2b3c" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(saved.status).to.equal(200);
+
+			const state = bodyOf<{ color: string | null; logoUrl: string | null; backgroundUrl: string | null }>(
+				await send("GET", "/branding"),
+			);
+			expect(state.color).to.equal("#1a2b3c");
+			expect(state.backgroundUrl).to.equal(null);
+			expect(state.logoUrl).to.match(/^\/api\/branding\/logo\?v=[0-9a-f]{12}$/);
+
+			// the picture itself is served with a content type and may be cached (the router knows the path
+			// below `/api`, and the version travels as a query parameter)
+			const version = /v=([0-9a-f]{12})/.exec(state.logoUrl ?? "")?.[1] ?? "";
+			const image = await send("GET", "/branding/logo", { query: { v: version } });
+			expect(image.status).to.equal(200);
+			expect(image.headers["content-type"]).to.contain("image/png");
+			expect(image.headers["cache-control"]).to.contain("max-age");
+
+			// the pictures stay out of the settings payload (they are large), the colour is in it
+			const settings = bodyOf<{ settings: Record<string, string> }>(
+				await send("GET", "/settings", { headers: headers(adminToken) }),
+			);
+			expect(settings.settings).to.not.have.property("brand_logo");
+			expect(settings.settings.brand_color).to.equal("#1a2b3c");
+		});
+
+		it("refuses a colour that is not a hex value and a broken picture", async () => {
+			const badColor = await send("PUT", "/settings", {
+				body: { brand_color: "red" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(badColor.status).to.equal(400);
+
+			const badPicture = await send("PUT", "/settings", {
+				body: { brand_logo: "data:image/bmp;base64,Qk1vY2s=" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(badPicture.status).to.equal(400);
+
+			// clearing is allowed
+			const cleared = await send("PUT", "/settings", {
+				body: { brand_color: "", brand_logo: "" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(cleared.status).to.equal(200);
+			expect(bodyOf(await send("GET", "/branding")).logoUrl).to.equal(null);
+		});
+	});
 });

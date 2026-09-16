@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Добавлено",
 	"corrections.actionUpdate": "Изменено",
 	"corrections.actionDelete": "Удалено",
-	"keypad.backspace": "Удалить"
+	"keypad.backspace": "Удалить",
+	"admin.settings.branding": "Брендинг компании",
+	"admin.settings.brandingHint": "Логотип, фон и акцентный цвет этой установки. Они также показываются на экране входа и на киосках.",
+	"admin.settings.brandLogo": "Выбрать логотип",
+	"admin.settings.brandBackground": "Выбрать фон",
+	"admin.settings.brandColor": "Акцентный цвет",
+	"admin.settings.brandColorHint": "Значение в формате Hex, например #1a2b3c"
 }

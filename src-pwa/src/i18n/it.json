@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Aggiunto",
 	"corrections.actionUpdate": "Modificato",
 	"corrections.actionDelete": "Eliminato",
-	"keypad.backspace": "Cancella"
+	"keypad.backspace": "Cancella",
+	"admin.settings.branding": "Immagine aziendale",
+	"admin.settings.brandingHint": "Logo, sfondo e colore principale di questa installazione. Sono mostrati anche nella schermata di accesso e nei chioschi.",
+	"admin.settings.brandLogo": "Scegli il logo",
+	"admin.settings.brandBackground": "Scegli lo sfondo",
+	"admin.settings.brandColor": "Colore principale",
+	"admin.settings.brandColorHint": "Valore esadecimale come #1a2b3c"
 }

@@ -30,6 +30,7 @@ import {
 } from "../api/client";
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
+import { useBranding } from "../state/branding";
 import { Keypad } from "../components/Keypad";
 
 /** Where the device token of this kiosk is remembered. */
@@ -83,6 +84,7 @@ export function Terminal(): React.JSX.Element {
 	const [timeZone, setTimeZone] = useState("UTC");
 	const [clock, setClock] = useState(Math.floor(Date.now() / 1000));
 	const offset = useRef(0);
+	const branding = useBranding();
 
 	/** Forgets the device token of this device. */
 	const forgetToken = useCallback((): void => {
@@ -290,7 +292,21 @@ export function Terminal(): React.JSX.Element {
 				alignItems="baseline"
 				sx={{ mb: 2 }}
 			>
-				<Typography variant="h5">{session.terminal.name}</Typography>
+				<Stack
+					direction="row"
+					spacing={1}
+					sx={{ alignItems: "center", minWidth: 0 }}
+				>
+					{branding.logoUrl && (
+						<Box
+							component="img"
+							src={branding.logoUrl}
+							alt=""
+							sx={{ height: 28, maxWidth: 120, objectFit: "contain" }}
+						/>
+					)}
+					<Typography variant="h5">{session.terminal.name}</Typography>
+				</Stack>
 				<Typography variant="h5">{formatTime(clock, timeZone, i18n.language)}</Typography>
 			</Stack>
 

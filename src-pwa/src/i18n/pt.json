@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Adicionado",
 	"corrections.actionUpdate": "Alterado",
 	"corrections.actionDelete": "Excluído",
-	"keypad.backspace": "Apagar"
+	"keypad.backspace": "Apagar",
+	"admin.settings.branding": "Marca da empresa",
+	"admin.settings.brandingHint": "Logotipo, fundo e cor de destaque desta instalação. Também aparecem no ecrã de entrada e nos quiosques.",
+	"admin.settings.brandLogo": "Escolher logotipo",
+	"admin.settings.brandBackground": "Escolher fundo",
+	"admin.settings.brandColor": "Cor de destaque",
+	"admin.settings.brandColorHint": "Valor hexadecimal como #1a2b3c"
 }

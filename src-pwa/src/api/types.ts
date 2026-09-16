@@ -62,6 +62,16 @@ export interface Entry {
 	syncState: string;
 }
 
+/** Branding of the installation, as `GET /branding` returns it. */
+export interface Branding {
+	/** Accent colour (`#rrggbb`), `null` when none is configured */
+	color: string | null;
+	/** Address of the company logo, `null` when none is stored */
+	logoUrl: string | null;
+	/** Address of the background picture, `null` when none is stored */
+	backgroundUrl: string | null;
+}
+
 /** One change of a punch, as `GET /entries/:id/audit` reports it. */
 export interface EntryAuditRow {
 	/** Id of the audit row */

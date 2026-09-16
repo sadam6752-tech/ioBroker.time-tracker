@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Nachgetragen",
 	"corrections.actionUpdate": "Geändert",
 	"corrections.actionDelete": "Gelöscht",
-	"keypad.backspace": "Löschen"
+	"keypad.backspace": "Löschen",
+	"admin.settings.branding": "Firmen-Branding",
+	"admin.settings.brandingHint": "Logo, Hintergrund und Akzentfarbe dieser Installation. Anmeldebildschirm und Kiosk zeigen sie ebenfalls.",
+	"admin.settings.brandLogo": "Logo wählen",
+	"admin.settings.brandBackground": "Hintergrund wählen",
+	"admin.settings.brandColor": "Akzentfarbe",
+	"admin.settings.brandColorHint": "Hex-Wert wie #1a2b3c, leer für die Vorgabe"
 }

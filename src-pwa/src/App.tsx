@@ -25,6 +25,7 @@ import { Sync } from "./screens/Sync";
 import { TagScan } from "./screens/TagScan";
 import { Terminal } from "./screens/Terminal";
 import { SessionProvider, useSession } from "./state/session";
+import { BrandingProvider, backgroundStyle, useBranding } from "./state/branding";
 import { SyncProvider } from "./offline/useSync";
 import { theme } from "./theme";
 
@@ -162,6 +163,21 @@ function Root(): React.JSX.Element {
 }
 
 /**
+ * Paints the background of the installation and holds the application.
+ *
+ * @returns the application on the branded background
+ */
+function Shell(): React.JSX.Element {
+	const branding = useBranding();
+
+	return (
+		<Box sx={{ minHeight: "100vh", ...backgroundStyle(branding) }}>
+			<Root />
+		</Box>
+	);
+}
+
+/**
  * Root component of the web app.
  *
  * @returns the application
@@ -174,7 +190,9 @@ export function App(): React.JSX.Element {
 				<SessionProvider>
 					<SyncProvider>
 						<BrowserRouter>
-							<Root />
+							<BrandingProvider>
+								<Shell />
+							</BrandingProvider>
 						</BrowserRouter>
 					</SyncProvider>
 				</SessionProvider>

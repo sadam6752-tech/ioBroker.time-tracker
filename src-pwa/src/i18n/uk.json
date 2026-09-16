@@ -205,5 +205,11 @@
 	"corrections.actionCreate": "Додано",
 	"corrections.actionUpdate": "Змінено",
 	"corrections.actionDelete": "Видалено",
-	"keypad.backspace": "Видалити"
+	"keypad.backspace": "Видалити",
+	"admin.settings.branding": "Брендинг компанії",
+	"admin.settings.brandingHint": "Логотип, фон та акцентний колір цієї інсталяції. Також показуються на екрані входу та кіосках.",
+	"admin.settings.brandLogo": "Вибрати логотип",
+	"admin.settings.brandBackground": "Вибрати фон",
+	"admin.settings.brandColor": "Акцентний колір",
+	"admin.settings.brandColorHint": "Значення у форматі Hex, наприклад #1a2b3c"
 }

@@ -14,6 +14,14 @@ export const AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif
 /** Largest accepted picture (bytes of the decoded image). */
 export const MAX_AVATAR_BYTES = 256 * 1024;
 
+/**
+ * Largest accepted logo or background of the installation.
+ *
+ * A branding picture sits in a settings row instead of a user account and is delivered by its own route, so it may
+ * be a little larger than the picture of an employee.
+ */
+export const MAX_BRANDING_BYTES = 512 * 1024;
+
 /** A checked picture. */
 export interface AvatarImage {
 	/** Content type of the image */
@@ -31,9 +39,10 @@ const DATA_URL = /^data:([a-z]+\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)$/i;
  * Checks a data URL that should become the picture of an employee.
  *
  * @param value - value as the administration sent it
+ * @param maxBytes - largest accepted size of the decoded image (default: the picture of an employee)
  * @returns the checked image, or `null` when the value is not a usable picture
  */
-export function parseAvatarDataUrl(value: string): AvatarImage | null {
+export function parseAvatarDataUrl(value: string, maxBytes: number = MAX_AVATAR_BYTES): AvatarImage | null {
 	const match = DATA_URL.exec(value.trim());
 	if (!match) {
 		return null;
@@ -48,7 +57,7 @@ export function parseAvatarDataUrl(value: string): AvatarImage | null {
 	const base64 = match[2].replace(/[\r\n]/g, "");
 	const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
 	const bytes = Math.floor((base64.length * 3) / 4) - padding;
-	if (bytes <= 0 || bytes > MAX_AVATAR_BYTES) {
+	if (bytes <= 0 || bytes > maxBytes) {
 		return null;
 	}
 

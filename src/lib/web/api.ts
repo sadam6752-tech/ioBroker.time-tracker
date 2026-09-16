@@ -14,6 +14,8 @@
  *  - reads recalculate the requested period, so a report is always up to date.
  */
 
+import { createHash } from "node:crypto";
+
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
@@ -40,7 +42,7 @@ import type { BackupService } from "../services/backup";
 import { NotFoundError, ValidationError, type FieldIssue } from "../errors";
 import { SETTING_DEFAULTS } from "../db/seed";
 import { roundToStep } from "../domain/punch";
-import { MAX_AVATAR_BYTES, parseAvatarDataUrl, readAvatar } from "../domain/avatar";
+import { MAX_AVATAR_BYTES, MAX_BRANDING_BYTES, parseAvatarDataUrl, readAvatar } from "../domain/avatar";
 import { reportLabels } from "../reports/labels";
 import { buildMonthReport } from "../reports/xls";
 import { buildMonthStatement } from "../reports/pdf";
@@ -253,6 +255,9 @@ function editableSettings(): string[] {
 	return [...Object.keys(SETTING_DEFAULTS), ...JSON_SETTINGS];
 }
 
+/** Settings that a read leaves out: they are large pictures and are delivered by their own routes. */
+const HIDDEN_SETTING_KEYS = ["brand_logo", "brand_background"];
+
 /**
  * Removes settings that look like secrets from a read.
  *
@@ -264,6 +269,9 @@ function readableSettings(all: Record<string, string>): Record<string, string> {
 	for (const [key, value] of Object.entries(all)) {
 		const lower = key.toLowerCase();
 		if (SECRET_SETTING_KEYS.some(marker => lower.includes(marker))) {
+			continue;
+		}
+		if (HIDDEN_SETTING_KEYS.includes(key)) {
 			continue;
 		}
 		result[key] = value;
@@ -1354,6 +1362,26 @@ export function createApi(deps: ApiDeps): Api {
 			if (!editableSettings().includes(key)) {
 				throw new ValidationError(`setting "${key}" cannot be changed through the API`);
 			}
+			// the branding pictures and the accent colour have rules of their own: a picture (data URL) and a hex
+			// colour — and they are the only settings that a public route hands out
+			if (key === "brand_logo" || key === "brand_background") {
+				const raw = typeof value === "string" ? value.trim() : "";
+				if (raw !== "" && !parseAvatarDataUrl(raw, MAX_BRANDING_BYTES)) {
+					throw new ValidationError(
+						`setting "${key}" must be a data URL of a png, jpeg, webp or gif of up to ${MAX_BRANDING_BYTES} bytes`,
+					);
+				}
+				changes[key] = raw;
+				continue;
+			}
+			if (key === "brand_color") {
+				const raw = typeof value === "string" ? value.trim() : "";
+				if (raw !== "" && !/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(raw)) {
+					throw new ValidationError('setting "brand_color" must be a hex colour like "#1a2b3c"');
+				}
+				changes[key] = raw;
+				continue;
+			}
 			if (!isSettingValue(value, JSON_SETTINGS.includes(key))) {
 				throw new ValidationError(`setting "${key}" has an unsupported value`);
 			}
@@ -1367,6 +1395,61 @@ export function createApi(deps: ApiDeps): Api {
 			settings.set(key, value, context.auth?.user.id ?? null, now());
 		}
 		return json(200, { settings: changes });
+	});
+
+	// branding: logo, background and accent colour of the installation.
+	//
+	// The values are public on purpose — the sign in screen, the kiosk terminal and the presence screen show them
+	// before anybody is signed in. Written they are through the settings route above, delivered here as a small
+	// JSON plus two image routes, so a browser can cache the pictures.
+
+	/**
+	 * Short fingerprint of a stored branding picture.
+	 *
+	 * It goes into the image URLs, so a browser picks up a new logo right away while the old picture stays cached
+	 * until then.
+	 *
+	 * @param value - stored data URL
+	 * @returns twelve hex characters
+	 */
+	const brandingVersion = (value: string): string => createHash("sha256").update(value).digest("hex").slice(0, 12);
+
+	/**
+	 * Reads the branding.
+	 *
+	 * @returns colour and the addresses of the two pictures, `null` when nothing is configured
+	 */
+	const brandingState = (): { color: string | null; logoUrl: string | null; backgroundUrl: string | null } => {
+		const color = (settings.get("brand_color") ?? "").trim();
+		const logo = (settings.get("brand_logo") ?? "").trim();
+		const background = (settings.get("brand_background") ?? "").trim();
+		return {
+			color: color === "" ? null : color,
+			logoUrl: logo === "" ? null : `/api/branding/logo?v=${brandingVersion(logo)}`,
+			backgroundUrl: background === "" ? null : `/api/branding/background?v=${brandingVersion(background)}`,
+		};
+	};
+
+	route("GET", "/branding", { public: true }, () => json(200, brandingState()));
+
+	route("GET", "/branding/logo", { public: true }, () => {
+		const image = readAvatar(settings.get("brand_logo"));
+		if (!image) {
+			throw new NotFoundError("no logo is configured");
+		}
+		return binary(200, Buffer.from(image.base64, "base64"), image.contentType, {
+			"cache-control": "public, max-age=86400",
+		});
+	});
+
+	route("GET", "/branding/background", { public: true }, () => {
+		const image = readAvatar(settings.get("brand_background"));
+		if (!image) {
+			throw new NotFoundError("no background is configured");
+		}
+		return binary(200, Buffer.from(image.base64, "base64"), image.contentType, {
+			"cache-control": "public, max-age=86400",
+		});
 	});
 
 	route("GET", "/version", { public: true }, () =>

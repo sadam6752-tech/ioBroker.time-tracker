@@ -1,48 +1,23 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.4",
+		"version": "0.0.5",
+		"nogit": true,
 		"news": {
+			"0.0.5": {
+				"en": "The four settings of the first administrator are now translated in all 11 languages",
+				"de": "Die vier Einstellungen des ersten Administrators sind jetzt in allen 11 Sprachen übersetzt",
+				"ru": "Четыре настройки первого администратора теперь переведены на все 11 языков",
+				"pt": "As quatro definições do primeiro administrador estão agora traduzidas nos 11 idiomas",
+				"nl": "De vier instellingen van de eerste beheerder zijn nu in alle 11 talen vertaald",
+				"fr": "Les quatre paramètres du premier administrateur sont désormais traduits dans les 11 langues",
+				"it": "Le quattro impostazioni del primo amministratore sono ora tradotte in tutte le 11 lingue",
+				"es": "Los cuatro ajustes del primer administrador ahora están traducidos en los 11 idiomas",
+				"pl": "Cztery ustawienia pierwszego administratora są teraz przetłumaczone na wszystkie 11 języków",
+				"uk": "Чотири налаштування першого адміністратора тепер перекладено всіма 11 мовами",
+				"zh-cn": "第一个管理员的四项设置现已翻译成全部 11 种语言"
+			},
 			"0.0.4": {
-				"en": "First release: punching via the PWA or a kiosk terminal (badge, PIN, PIN duty per device, employees per device), absences, corrections, monthly reports (PDF/XLS), statistics, RFID/NFC, roles and permissions, branding, 11 languages",
-				"de": "Erste Veröffentlichung: Stempeln über die PWA oder ein Kiosk-Terminal (Ausweis, PIN, PIN-Pflicht je Gerät, Mitarbeiter je Gerät), Abwesenheiten, Zeitkorrekturen, Monatsberichte (PDF/XLS), Statistik, RFID/NFC, Rollen und Rechte, Branding, 11 Sprachen",
-				"ru": "Первый выпуск: отметка через PWA или киоск-терминал (карта, PIN, PIN на устройство, сотрудники на устройство), отсутствия, корректировки, месячные отчёты (PDF/XLS), статистика, RFID/NFC, роли и права, брендирование, 11 языков",
-				"pt": "Primeira versão: marcação através da PWA ou de um terminal de quiosque (cartão, PIN, PIN por dispositivo, funcionários por dispositivo), ausências, correções, relatórios mensais (PDF/XLS), estatísticas, RFID/NFC, funções e permissões, branding, 11 idiomas",
-				"nl": "Eerste uitgave: stempelen via de PWA of een kioskterminal (badge, pincode, pincode per apparaat, medewerkers per apparaat), afwezigheden, correcties, maandrapporten (PDF/XLS), statistieken, RFID/NFC, rollen en rechten, branding, 11 talen",
-				"fr": "Première version : pointage via la PWA ou une borne (badge, code PIN, code PIN par appareil, employés par appareil), absences, corrections, rapports mensuels (PDF/XLS), statistiques, RFID/NFC, rôles et droits, branding, 11 langues",
-				"it": "Prima versione: timbratura tramite la PWA o un terminale (badge, PIN, PIN per dispositivo, dipendenti per dispositivo), assenze, correzioni, rapporti mensili (PDF/XLS), statistiche, RFID/NFC, ruoli e permessi, branding, 11 lingue",
-				"es": "Primera versión: fichaje mediante la PWA o un terminal (tarjeta, PIN, PIN por dispositivo, empleados por dispositivo), ausencias, correcciones, informes mensuales (PDF/XLS), estadísticas, RFID/NFC, roles y permisos, branding, 11 idiomas",
-				"pl": "Pierwsze wydanie: rejestracja przez PWA lub terminal (karta, PIN, PIN na urządzenie, pracownicy na urządzenie), nieobecności, korekty, raporty miesięczne (PDF/XLS), statystyki, RFID/NFC, role i uprawnienia, branding, 11 języków",
-				"uk": "Перший випуск: відмітка через PWA або кіоск-термінал (картка, PIN, PIN на пристрій, співробітники на пристрій), відсутності, коригування, місячні звіти (PDF/XLS), статистика, RFID/NFC, ролі та права, брендування, 11 мов",
-				"zh-cn": "首次发布：通过 PWA 或终端打卡（证件、PIN、按设备设置 PIN、按设备分配员工）、缺勤、更正、月度报表（PDF/XLS）、统计、RFID/NFC、角色与权限、品牌、11 种语言"
-			},
-			"0.0.3": {
-				"en": "Fix: the integration tests read the version from package.json, so a version bump cannot break them",
-				"de": "Fehler behoben: Die Integrationstests lesen die Version aus package.json — ein Versionssprung kann sie nicht mehr brechen",
-				"ru": "Исправлено: интеграционные тесты читают версию из package.json — повышение версии их больше не ломает",
-				"pt": "Corrigido: os testes de integração leem a versão de package.json — subir a versão já não os quebra",
-				"nl": "Opgelost: de integratietests lezen de versie uit package.json — een versiesprong breekt ze niet meer",
-				"fr": "Corrigé : les tests d'intégration lisent la version dans package.json — une montée de version ne les casse plus",
-				"it": "Corretto: i test di integrazione leggono la versione da package.json — un salto di versione non li rompe più",
-				"es": "Corregido: las pruebas de integración leen la versión de package.json — subir la versión ya no las rompe",
-				"pl": "Poprawka: testy integracyjne czytają wersję z package.json — podniesienie wersji ich nie psuje",
-				"uk": "Виправлено: інтеграційні тести читають версію з package.json — підвищення версії їх більше не ламає",
-				"zh-cn": "修复：集成测试从 package.json 读取版本，提升版本不会再使其失败"
-			},
-			"0.0.2": {
-				"en": "First release: punching via the PWA or a kiosk terminal (badge, PIN, PIN duty per device, employees per device), absences, corrections, monthly reports (PDF/XLS), statistics, RFID/NFC, roles and permissions, branding, 11 languages",
-				"de": "Erste Veröffentlichung: Stempeln über die PWA oder ein Kiosk-Terminal (Ausweis, PIN, PIN-Pflicht je Gerät, Mitarbeiter je Gerät), Abwesenheiten, Zeitkorrekturen, Monatsberichte (PDF/XLS), Statistik, RFID/NFC, Rollen und Rechte, Branding, 11 Sprachen",
-				"ru": "Первый выпуск: отметка через PWA или киоск-терминал (карта, PIN, PIN на устройство, сотрудники на устройство), отсутствия, корректировки, месячные отчёты (PDF/XLS), статистика, RFID/NFC, роли и права, брендирование, 11 языков",
-				"pt": "Primeira versão: marcação através da PWA ou de um terminal de quiosque (cartão, PIN, PIN por dispositivo, funcionários por dispositivo), ausências, correções, relatórios mensais (PDF/XLS), estatísticas, RFID/NFC, funções e permissões, branding, 11 idiomas",
-				"nl": "Eerste uitgave: stempelen via de PWA of een kioskterminal (badge, pincode, pincode per apparaat, medewerkers per apparaat), afwezigheden, correcties, maandrapporten (PDF/XLS), statistieken, RFID/NFC, rollen en rechten, branding, 11 talen",
-				"fr": "Première version : pointage via la PWA ou une borne (badge, code PIN, code PIN par appareil, employés par appareil), absences, corrections, rapports mensuels (PDF/XLS), statistiques, RFID/NFC, rôles et droits, branding, 11 langues",
-				"it": "Prima versione: timbratura tramite la PWA o un terminale (badge, PIN, PIN per dispositivo, dipendenti per dispositivo), assenze, correzioni, rapporti mensili (PDF/XLS), statistiche, RFID/NFC, ruoli e permessi, branding, 11 lingue",
-				"es": "Primera versión: fichaje mediante la PWA o un terminal (tarjeta, PIN, PIN por dispositivo, empleados por dispositivo), ausencias, correcciones, informes mensuales (PDF/XLS), estadísticas, RFID/NFC, roles y permisos, branding, 11 idiomas",
-				"pl": "Pierwsze wydanie: rejestracja przez PWA lub terminal (karta, PIN, PIN na urządzenie, pracownicy na urządzenie), nieobecności, korekty, raporty miesięczne (PDF/XLS), statystyki, RFID/NFC, role i uprawnienia, branding, 11 języków",
-				"uk": "Перший випуск: відмітка через PWA або кіоск-термінал (картка, PIN, PIN на пристрій, співробітники на пристрій), відсутності, коригування, місячні звіти (PDF/XLS), статистика, RFID/NFC, ролі та права, брендування, 11 мов",
-				"zh-cn": "首次发布：通过 PWA 或终端打卡（证件、PIN、按设备设置 PIN、按设备分配员工）、缺勤、更正、月度报表（PDF/XLS）、统计、RFID/NFC、角色与权限、品牌、11 种语言"
-			},
-			"0.0.1": {
 				"en": "First release: punching via the PWA or a kiosk terminal (badge, PIN, PIN duty per device, employees per device), absences, corrections, monthly reports (PDF/XLS), statistics, RFID/NFC, roles and permissions, branding, 11 languages",
 				"de": "Erste Veröffentlichung: Stempeln über die PWA oder ein Kiosk-Terminal (Ausweis, PIN, PIN-Pflicht je Gerät, Mitarbeiter je Gerät), Abwesenheiten, Zeitkorrekturen, Monatsberichte (PDF/XLS), Statistik, RFID/NFC, Rollen und Rechte, Branding, 11 Sprachen",
 				"ru": "Первый выпуск: отметка через PWA или киоск-терминал (карта, PIN, PIN на устройство, сотрудники на устройство), отсутствия, корректировки, месячные отчёты (PDF/XLS), статистика, RFID/NFC, роли и права, брендирование, 11 языков",

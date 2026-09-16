@@ -3,8 +3,9 @@ updates:
     - package-ecosystem: npm
       directory: "/"
       schedule:
-          interval: monthly
-          time: "00:05"
+          # random cron instead of a fixed monthly slot, so not every adapter hits npm at the same time
+          interval: cron
+          cron: "17 3 * * 2"
           timezone: Europe/Berlin
       open-pull-requests-limit: 15
       # wait a week before an update is proposed (supply chain risk)
@@ -22,8 +23,8 @@ updates:
     - package-ecosystem: npm
       directory: "/src-pwa"
       schedule:
-          interval: monthly
-          time: "00:05"
+          interval: cron
+          cron: "32 3 * * 3"
           timezone: Europe/Berlin
       open-pull-requests-limit: 15
       cooldown:
@@ -34,8 +35,8 @@ updates:
     - package-ecosystem: github-actions
       directory: "/"
       schedule:
-          interval: monthly
-          time: "00:05"
+          interval: cron
+          cron: "48 3 * * 4"
           timezone: Europe/Berlin
       open-pull-requests-limit: 15
       assignees:

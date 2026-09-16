@@ -5,6 +5,6 @@
 		"manual-review"
 	],
 	"exec": {
-		"before_commit": "npm run build"
+		"before_commit": "npm run build && npm run build:pwa"
 	}
 }

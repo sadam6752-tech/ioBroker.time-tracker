@@ -106,7 +106,8 @@ werden in der Oberfläche angelegt:
 
 - **Mitarbeiter:** Verwaltung → Benutzer (Login, Name, Passwort, Rolle, optional Foto, Badge-PIN)
 - **Vergangene Zeiten:** Verwaltung → **Zeitkorrektur** — dort lassen sich Stempel ändern, löschen und nachtragen,
-  auch ganze vergangene Tage (Datum, Kommen, Gehen).
+  auch ganze vergangene Tage (Datum, Kommen, Gehen). Die **Begründung** (Feld über der Liste bzw. im Dialog) landet
+  im Protokoll des Adapters (Audit-Log) und macht jede Korrektur nachvollziehbar.
 
 ## 7. Wenn etwas klemmt
 

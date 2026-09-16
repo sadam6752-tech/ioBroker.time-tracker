@@ -1872,12 +1872,18 @@ describe("web api", () => {
 			).to.equal(403);
 
 			const asAdmin = await send("POST", "/entries", {
-				body: { tsUtc: 3600 },
+				body: { tsUtc: 3600, reason: "vergessen" },
 				headers: headers(adminToken, adminCsrf),
 				query: { userId: String(annaId) },
 			});
 			expect(asAdmin.status).to.equal(201);
 			expect(bodyOf<{ entry: { source: string } }>(asAdmin).entry.source).to.equal("admin");
+
+			// the reason of the correction is part of the audit trail of that punch
+			const audit = db
+				.prepare("SELECT reason FROM time_entry_audit WHERE entry_id = ? AND action = 'create'")
+				.get(bodyOf<{ entry: { id: number } }>(asAdmin).entry.id) as { reason: string | null };
+			expect(audit.reason).to.equal("vergessen");
 
 			// an instant is mandatory, an unknown employee is a 404
 			expect(

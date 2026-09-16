@@ -126,6 +126,8 @@ interface AddState {
 	to: string;
 	/** Note */
 	note: string;
+	/** Reason for the audit trail, prefilled from the field above */
+	reason: string;
 }
 
 /**
@@ -176,7 +178,8 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 				return;
 			}
 			const note = input.note.trim() || null;
-			const audit = reason.trim() || null;
+			// the reason of the dialog wins, the field of the toolbar is the fallback
+			const audit = input.reason.trim() || reason.trim() || null;
 			await api.createEntry({
 				userId: employee,
 				tsUtc: localToUtc(input.date, input.from, timeZone),
@@ -267,7 +270,9 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 							variant="contained"
 							disabled={employee === null}
 							sx={{ ml: { sm: "auto" } }}
-							onClick={() => setAdding({ date: range.from, from: "08:00", to: "17:00", note: "" })}
+							onClick={() =>
+								setAdding({ date: range.from, from: "08:00", to: "17:00", note: "", reason })
+							}
 						>
 							{t("corrections.add")}
 						</Button>
@@ -447,6 +452,15 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 								label={t("corrections.note")}
 								value={adding.note}
 								onChange={event => setAdding({ ...adding, note: event.target.value })}
+								fullWidth
+							/>
+							{/* the reason is what makes the correction traceable later on: it can be typed here as
+							    well, prefilled with what stands in the field above */}
+							<TextField
+								label={t("corrections.reason")}
+								helperText={t("corrections.reasonHint")}
+								value={adding.reason}
+								onChange={event => setAdding({ ...adding, reason: event.target.value })}
 								fullWidth
 							/>
 						</Stack>

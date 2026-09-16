@@ -93,6 +93,7 @@ test("an administrator adds a forgotten day and finds it in the correction list"
 	await page.getByLabel("Kommen").fill("06:00");
 	await page.getByLabel("Gehen").fill("14:00");
 	await page.getByLabel("Notiz").fill("Nachgetragen über den Dialog");
+	await page.getByLabel("Begründung").last().fill("über den Dialog nachgetragen");
 	await page.getByRole("button", { name: "Speichern" }).click();
 
 	await expect(page.getByText("Nachgetragen über den Dialog").first()).toBeVisible();

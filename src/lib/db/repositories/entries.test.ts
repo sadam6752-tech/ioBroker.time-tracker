@@ -61,6 +61,24 @@ describe("entries repository", () => {
 		expect(audit[0].revision).to.equal(1);
 		expect(audit[0].actorId).to.equal(userId);
 		expect(audit[0].atUtc).to.equal(1000);
+		// a normal punch carries no reason, only a correction does
+		expect(audit[0].reason).to.equal(null);
+	});
+
+	it("keeps the reason of an administrative correction on creation", () => {
+		const { entry } = repo.insert({
+			userId,
+			tsUtc: t0,
+			timeZone: berlin,
+			source: "admin",
+			reason: "forgot to clock in",
+			actorId: adminId,
+			now: 1000,
+		});
+		const audit = readTimeEntryAudit(db, entry.id);
+
+		expect(audit[0].reason).to.equal("forgot to clock in");
+		expect(audit[0].actorId).to.equal(adminId);
 	});
 
 	it("returns the existing punch for a repeated idempotency key", () => {

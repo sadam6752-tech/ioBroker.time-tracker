@@ -66,6 +66,8 @@ export interface CreateEntryInput {
 	syncState?: EntrySyncState;
 	/** Free-form note */
 	note?: string | null;
+	/** Reason of an administrative correction (audit trail) */
+	reason?: string | null;
 	/** Actor creating the punch (for administrative creation) */
 	actorId?: number | null;
 	/** Actor IP address */
@@ -300,6 +302,7 @@ export function createEntriesRepository(db: Db): EntriesRepository {
 					},
 					newTsUtc: record.tsUtc,
 					revision: 1,
+					reason: input.reason ?? null,
 					actorId: input.actorId ?? record.userId,
 					actorIp: input.actorIp ?? null,
 					atUtc: now,

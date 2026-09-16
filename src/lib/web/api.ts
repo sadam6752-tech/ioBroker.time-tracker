@@ -1111,6 +1111,7 @@ export function createApi(deps: ApiDeps): Api {
 			direction: optionalDirection(body),
 			idempotencyKey: optionalString(body, "idempotencyKey"),
 			note: optionalString(body, "note"),
+			reason: optionalString(body, "reason"),
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: timestamp,

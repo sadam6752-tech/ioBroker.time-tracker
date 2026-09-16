@@ -14,7 +14,6 @@ import type { AggregationService } from "../services/aggregation";
 import type { ClosingService } from "../services/closing";
 import type { BackupService } from "../services/backup";
 import { ValidationError } from "../errors";
-import type { LegacyImportOptions, LegacyImportReport } from "../legacy/import";
 import { buildDayPunches, nextDirection, roundToStep, type PunchEntry } from "../domain/punch";
 import { localDate as resolveLocalDate } from "../util/time";
 import { COMMAND_IDS } from "./states";
@@ -35,8 +34,6 @@ export interface CommandDeps {
 	closing: Pick<ClosingService, "closeMonth">;
 	/** Backup service (button `commands.backup`), optional */
 	backup?: Pick<BackupService, "create">;
-	/** Legacy import (state `commands.import`), optional */
-	runImport?: (options: LegacyImportOptions) => LegacyImportReport;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
 }
@@ -49,8 +46,6 @@ export interface CommandResult {
 	message: string;
 	/** Local dates that were recalculated */
 	recalculated: string[];
-	/** JSON of the import report, only set by `commands.import` (`info.lastImport`) */
-	lastImport?: string;
 }
 
 /** A period taken from a command value. */
@@ -204,66 +199,5 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
 		};
 	}
 
-	if (id === COMMAND_IDS.legacyImport) {
-		return runImportCommand(deps, value);
-	}
-
 	throw new ValidationError(`unknown command state ${id}`);
-}
-
-/**
- * Runs `commands.import`.
- *
- * The state value is JSON: `{ "baseDir": "…", "mode": "dry-run" | "commit", "resetImport": true,
- * "timezone": "Europe/Berlin" }`. `mode` defaults to `dry-run`, so a value that only names the folder is
- * always safe.
- *
- * `import_runs.actor_id` and the audit rows reference `users`, so a state driven import is attributed to the
- * first administrator of the instance — the REST API attributes it to the signed in administrator.
- *
- * @param deps - data sources
- * @param value - value written to `commands.import`
- * @returns result of the command
- */
-function runImportCommand(deps: CommandDeps, value: ioBroker.StateValue): CommandResult {
-	if (!deps.runImport) {
-		throw new ValidationError("this instance has no legacy import");
-	}
-
-	let parsed: { baseDir?: unknown; mode?: unknown; resetImport?: unknown; timezone?: unknown };
-	try {
-		parsed = JSON.parse(String(value ?? "")) as typeof parsed;
-	} catch {
-		throw new ValidationError(
-			'commands.import expects JSON like {"baseDir":"/path/to/SMALL-Time","mode":"dry-run"}',
-		);
-	}
-	// `baseDir` may stay empty: the adapter then uses the configured "Legacy data directory"
-	const baseDir = typeof parsed.baseDir === "string" ? parsed.baseDir.trim() : "";
-
-	const actor = deps.users.list().find(user => deps.users.roles(user.id).includes("admin"));
-	if (!actor) {
-		throw new ValidationError("the legacy import is attributed to an administrator — none exists yet");
-	}
-
-	const options: LegacyImportOptions = {
-		baseDir,
-		mode: parsed.mode === "commit" ? "commit" : "dry-run",
-		actorId: actor.id,
-		resetImport: parsed.resetImport === true,
-	};
-	if (typeof parsed.timezone === "string" && parsed.timezone !== "") {
-		options.timezone = parsed.timezone;
-	}
-
-	const report = deps.runImport(options);
-	return {
-		ok: true,
-		message:
-			`legacy import ${report.mode} finished with ${report.status}: ${report.stats.usersCreated} user(s) created, ` +
-			`${report.stats.entries} punch(es), ${report.stats.absences} absence(s), ` +
-			`${report.stats.goldenDeviations} golden deviation(s), ${report.warnings.length} warning(s)`,
-		recalculated: [],
-		lastImport: JSON.stringify(report),
-	};
 }

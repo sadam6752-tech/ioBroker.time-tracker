@@ -7,9 +7,6 @@
  *
  * Every login, failed attempt, lockout and logout is audited. Failed attempts are counted per login name and
  * lock the account for a while (process-local, which is what a single adapter instance needs).
- *
- * The legacy SHA-1 hash of the old system is a migration aid: it is accepted **once**, is replaced by a real
- * password hash during that first login and is deleted right afterwards (specification 2.9.1).
  */
 
 import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
@@ -237,35 +234,6 @@ export function hashPassword(password: string, options: PasswordHashOptions = {}
 }
 
 /**
- * SHA-1 of `admin`, the password the old system shipped as default (specification 2.9.1).
- *
- * The hash printed in the specification (`7110eda4…`) belongs to another password — `d033e22a…` is the real
- * SHA-1 of `admin`, so the comparison uses that.
- */
-export const LEGACY_DEFAULT_PASSWORD_SHA1 = "d033e22ae348aeb5660fc2140aec35850c4da997";
-
-/**
- * Checks a plain password against the unsalted SHA-1 hash of the old system.
- *
- * The comparison is constant time and case insensitive, because legacy files are not consistent about the case.
- *
- * @param password - plain password from the login form
- * @param legacySha1 - stored legacy hash, `null` or empty when there is none
- * @returns true when the password matches
- */
-export function legacyPasswordMatches(password: string, legacySha1: string | null | undefined): boolean {
-	const expected = (legacySha1 ?? "").trim().toLowerCase();
-	if (!expected || !password) {
-		return false;
-	}
-	const actual = createHash("sha1").update(password, "utf8").digest("hex");
-	if (actual.length !== expected.length) {
-		return false;
-	}
-	return timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
-}
-
-/**
  * Verifies a password against a stored hash.
  *
  * Malformed or unsupported hashes (e.g. an empty column for imported users) never match.
@@ -437,32 +405,16 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			if (!user.isActive) {
 				return registerFailure("inactive_user", user.id);
 			}
-			// An imported account has no `password_hash`: the password of the old system is verified against the
-			// legacy SHA-1 and migrated on the first successful login (2.9.1).
-			const migratesLegacyHash = !user.passwordHash && legacyPasswordMatches(input.password, user.legacySha1);
-			if (!migratesLegacyHash) {
-				if (!user.passwordHash) {
-					return registerFailure("no_password", user.id);
-				}
-				if (!verifyPassword(input.password, user.passwordHash)) {
-					return registerFailure("wrong_password", user.id);
-				}
+			if (!user.passwordHash) {
+				return registerFailure("no_password", user.id);
+			}
+			if (!verifyPassword(input.password, user.passwordHash)) {
+				return registerFailure("wrong_password", user.id);
 			}
 
 			failures.delete(key);
 
-			// the migration clears `legacy_sha1`, so the old hash is spent; only the legacy default password
-			// still has to be replaced after the login
-			const authenticated = migratesLegacyHash
-				? users.migrateLegacyPassword({
-						userId: user.id,
-						passwordHash: hashPassword(input.password),
-						mustChangePw: user.legacySha1?.trim().toLowerCase() === LEGACY_DEFAULT_PASSWORD_SHA1,
-						actorId: user.id,
-						actorIp: input.ip ?? null,
-						now,
-					})
-				: user;
+			const authenticated = user;
 
 			const token = randomBytes(32).toString("base64url");
 			const sessionId = hashToken(token);

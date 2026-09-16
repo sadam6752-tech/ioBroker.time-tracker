@@ -99,13 +99,14 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des
   Adapterverzeichnisses kopieren, Instanz starten.
 
-## 6. Altdaten importieren (T18)
+## 6. Hinweis zu Altdaten
 
-1. **Verwaltung → Import**: Altdaten-Verzeichnis eintragen (nur lesend!), Modus **Probelauf**, starten. Der
-   Bericht zeigt Zähler und Warnungen — es wird **nichts** geschrieben.
-2. Erst wenn der Bericht plausibel ist, auf **Import** umschalten und starten. Der Lauf landet in
-   `import_runs` und in `info.lastImport`; die Monatswerte müssen `Timetable/<Jahr>` auf ±0,01 h treffen.
-3. Wiederholung derselben Daten nur mit **„Bereits importierten Datenbestand wiederholen"** (Idempotenz-Test).
+Der Adapter liest **keine** Daten eines anderen Zeiterfassungssystems ein. Mitarbeiter, Stempel und Abwesenheiten
+werden in der Oberfläche angelegt:
+
+- **Mitarbeiter:** Verwaltung → Benutzer (Login, Name, Passwort, Rolle, optional Foto, Badge-PIN)
+- **Vergangene Zeiten:** Verwaltung → **Zeitkorrektur** — dort lassen sich Stempel ändern, löschen und nachtragen,
+  auch ganze vergangene Tage (Datum, Kommen, Gehen).
 
 ## 7. Wenn etwas klemmt
 

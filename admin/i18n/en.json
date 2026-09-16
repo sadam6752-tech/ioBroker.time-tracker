@@ -18,7 +18,6 @@
 	"Round quick punches to minutes (0 = off)": "Round quick punches to minutes (0 = off)",
 	"Calculate absences only until today": "Calculate absences only until today",
 	"Subtract working time from absences": "Subtract working time from absences",
-	"Legacy data directory for import (read-only)": "Legacy data directory for import (read-only)",
 	"Keep database backups for days": "Keep database backups for days",
 	"127.0.0.1 = only this machine": "127.0.0.1 = only this machine",
 	"Trust the reverse proxy (X-Forwarded-*)": "Trust the reverse proxy (X-Forwarded-*)",

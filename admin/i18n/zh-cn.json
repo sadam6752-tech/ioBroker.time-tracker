@@ -10,7 +10,6 @@
 	"Holiday country": "度假国家",
 	"Instance time zone": "实例时区",
 	"Keep database backups for days": "保留数据库备份数天",
-	"Legacy data directory for import (read-only)": "用于导入的旧数据目录（只读）",
 	"Migration and backup": "迁移与备份",
 	"Port": "港口",
 	"Round quick punches to minutes (0 = off)": "将快速出拳舍入为分钟（0 = 关闭）",

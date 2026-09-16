@@ -59,7 +59,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 	employee: ["time.punch", "time.edit_own", "absence.request", "report.view_own"],
 };
 
-/** Absence types of the legacy system (`absenz.txt`): code, name, factor, reduces vacation. */
+/** Default absence types of the time tracking: code, name, factor, reduces vacation. */
 export const ABSENCE_TYPES: { code: string; name: string; factor: number; reduceVacation: boolean }[] = [
 	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true },
 	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false },

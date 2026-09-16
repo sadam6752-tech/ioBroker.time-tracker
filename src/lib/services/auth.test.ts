@@ -5,14 +5,7 @@ import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
-import {
-	checkPasswordPolicy,
-	createAuthService,
-	hashPassword,
-	LEGACY_DEFAULT_PASSWORD_SHA1,
-	verifyPassword,
-	type AuthService,
-} from "./auth";
+import { checkPasswordPolicy, createAuthService, hashPassword, verifyPassword, type AuthService } from "./auth";
 
 const SECRET = "unit-test-secret";
 
@@ -168,52 +161,6 @@ describe("auth service", () => {
 				error: "invalid_credentials",
 			});
 			expect(lastDetail("auth.login_failed").reason).to.equal("inactive_user");
-		});
-
-		it("migrates the password of the old system on the first login", () => {
-			// `5baa61e4…` is sha1("password") — the hash the old system stored for that password
-			const legacyId = users.create({
-				login: "legacy",
-				displayName: "Legacy",
-				legacySha1: "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
-				mustChangePw: true,
-			}).id;
-
-			// a wrong password is refused, the account has no usable hash yet
-			const rejected = service.login({ login: "legacy", password: "falsch-1234", now: 2000 });
-			expect(rejected).to.deep.equal({ ok: false, error: "invalid_credentials" });
-			expect(lastDetail("auth.login_failed").reason).to.equal("no_password");
-			expect(service.sessions(legacyId, 2000)).to.deep.equal([]);
-
-			// the password of the old system opens the account, and it is hashed with the current scheme
-			const result = service.login({ login: "legacy", password: "password", now: 2000 });
-			expect(result.ok).to.equal(true);
-
-			const migrated = users.findById(legacyId);
-			expect(migrated?.legacySha1).to.equal(null);
-			expect(migrated?.passwordHash).to.not.equal("");
-			expect(verifyPassword("password", migrated?.passwordHash ?? "")).to.equal(true);
-			// the password was chosen by the user, so no change is forced any more
-			expect(migrated?.mustChangePw).to.equal(false);
-			expect(lastDetail("user.legacy_password_migrated").mustChangePw).to.equal(false);
-
-			// the account keeps working with the same password (now verified against the modern hash)
-			expect(service.login({ login: "legacy", password: "password", now: 2100 }).ok).to.equal(true);
-		});
-
-		it("keeps the forced password change for the legacy default password", () => {
-			const id = users.create({
-				login: "altadmin",
-				displayName: "Alt-Admin",
-				legacySha1: LEGACY_DEFAULT_PASSWORD_SHA1,
-				mustChangePw: true,
-			}).id;
-
-			const result = service.login({ login: "altadmin", password: "admin", now: 2000 });
-
-			expect(result.ok).to.equal(true);
-			expect(users.findById(id)?.mustChangePw).to.equal(true);
-			expect(result.ok && result.user.mustChangePw).to.equal(true);
 		});
 
 		it("locks a login after repeated failures and releases it after the window", () => {

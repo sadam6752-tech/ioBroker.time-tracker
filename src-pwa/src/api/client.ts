@@ -184,10 +184,9 @@ export interface ApiClient {
 	/** Instance settings, keyed by their technical name */
 	settings(): Promise<Record<string, string>>;
 	/** Changes instance settings (only editable keys are accepted) */
-	updateSettings(patch: Record<string, string>): Promise<Record<string, string>>;
-	/** The last legacy import runs */
-	importRuns(): Promise<ImportRunRecord[]>;
-	/** Public holidays of a year, optionally limited to a region */
+	updateSettings(
+		patch: Record<string, string>,
+	): Promise<Record<string, string>>; /** Public holidays of a year, optionally limited to a region */
 	holidays(year: number, region?: string): Promise<HolidayRecord[]>;
 	/** Adds a public holiday */
 	createHoliday(input: { date: string; name: string; region?: string }): Promise<HolidayRecord>;
@@ -206,15 +205,7 @@ export interface ApiClient {
 	/** Figures of a date range, per employee and in total */
 	statistics(from: string, to: string, userId?: number): Promise<StatisticsResult>;
 	/** Redeems a scanned badge link (public, no session needed) */
-	scanTag(token: string): Promise<ScanResult>;
-	/** Starts a legacy import run */
-	runImport(input: {
-		baseDir?: string;
-		mode: "dry-run" | "commit";
-		resetImport?: boolean;
-		timezone?: string;
-	}): Promise<ImportReport>;
-	/** Known database backups and the retention */
+	scanTag(token: string): Promise<ScanResult>; /** Known database backups and the retention */
 	backups(): Promise<{ retentionDays: number; backups: BackupFile[] }>;
 	/** Takes a database backup */
 	createBackup(): Promise<{ backup: BackupFile; removed: string[] }>;
@@ -307,50 +298,6 @@ export interface AdminTerminal {
 	lastSeenAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
-}
-
-/** A legacy import run as the administration sees it (`GET /import/runs`). */
-export interface ImportRunRecord {
-	/** Primary key of the `import_runs` row */
-	id: number;
-	/** Source system, e.g. `smalltime` */
-	source: string;
-	/** Folder that was read */
-	sourcePath: string | null;
-	/** Instant the run started, UTC epoch seconds */
-	startedAt: number;
-	/** Instant the run finished, `null` while it is running */
-	finishedAt: number | null;
-	/** `dry-run` or `commit` */
-	mode: string;
-	/** `ok`, `mismatch` or `failed` */
-	status: string;
-	/** Time zone the legacy punches were interpreted in */
-	timezoneAssumed: string | null;
-	/** Counters as stored JSON text */
-	stats: string | null;
-	/** Warnings as stored JSON text */
-	warnings: string | null;
-	/** Employee that started the run */
-	actorId: number | null;
-}
-
-/** The report of a legacy import run (`POST /import/run`). */
-export interface ImportReport {
-	/** Id of the `import_runs` row */
-	runId: number;
-	/** Mode the run was started with */
-	mode: string;
-	/** Outcome of the run */
-	status: string;
-	/** Installation folder that was read */
-	baseDir: string;
-	/** Time zone the punches were interpreted in */
-	timezoneAssumed: string;
-	/** Counters of the run */
-	stats: Record<string, number>;
-	/** Remarks, including the ones of the parsers */
-	warnings: string[];
 }
 
 /** A public holiday (`GET /holidays`). */
@@ -816,19 +763,6 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async updateSettings(patch) {
 			const result = await request<{ settings: Record<string, string> }>("PUT", "/settings", { body: patch });
 			return result.settings ?? {};
-		},
-
-		async importRuns(): Promise<ImportRunRecord[]> {
-			const result = await request<{ runs: ImportRunRecord[] }>("GET", "/import/runs");
-			return result.runs ?? [];
-		},
-
-		async runImport(input) {
-			// the route answers with the report itself; an envelope is unwrapped just in case
-			const result = await request<ImportReport & { report?: ImportReport }>("POST", "/import/run", {
-				body: input,
-			});
-			return result.report ?? result;
 		},
 
 		async holidays(year: number, region?: string): Promise<HolidayRecord[]> {

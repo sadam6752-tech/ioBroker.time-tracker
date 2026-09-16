@@ -10,7 +10,6 @@
 	"Holiday country": "Wakacyjny kraj",
 	"Instance time zone": "Strefa czasowa instancji",
 	"Keep database backups for days": "Przechowuj kopie zapasowe bazy danych przez kilka dni",
-	"Legacy data directory for import (read-only)": "Starszy katalog danych do zaimportowania (tylko do odczytu)",
 	"Migration and backup": "Migracja i kopia zapasowa",
 	"Port": "Port",
 	"Round quick punches to minutes (0 = off)": "Zaokrąglij szybkie uderzenia do minut (0 = wyłączone)",

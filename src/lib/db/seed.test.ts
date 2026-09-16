@@ -60,7 +60,7 @@ describe("seeds", () => {
 		expect(manager).to.not.include("backup.run");
 	});
 
-	it("imports the legacy absence types", () => {
+	it("creates the default absence types", () => {
 		seed(db, { holidayYears: [2026] });
 		const rows = db
 			.prepare("SELECT code, factor, reduce_vacation FROM absence_types WHERE user_id IS NULL ORDER BY code")

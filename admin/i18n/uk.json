@@ -10,7 +10,6 @@
 	"Holiday country": "Святкова країна",
 	"Instance time zone": "Часовий пояс екземпляра",
 	"Keep database backups for days": "Зберігайте резервні копії бази даних протягом кількох днів",
-	"Legacy data directory for import (read-only)": "Застарілий каталог даних для імпорту (лише читання)",
 	"Migration and backup": "Міграція та резервне копіювання",
 	"Port": "Порт",
 	"Round quick punches to minutes (0 = off)": "Округліть швидкі удари до хвилин (0 = вимкнено)",

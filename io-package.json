@@ -110,7 +110,6 @@
 		"absenceCalcUntilToday": true,
 		"absenceDeductWorktime": false,
 		"backupRetentionDays": 30,
-		"legacyDataDir": "",
 		"adminLogin": "admin",
 		"adminPassword": "",
 		"kioskEnabled": false,

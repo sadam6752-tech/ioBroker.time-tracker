@@ -19,8 +19,6 @@ export interface UserRecord {
 	login: string;
 	/** Hash of the password (never leaves the server) */
 	passwordHash: string;
-	/** SHA-1 hash of the legacy system (migration only) */
-	legacySha1: string | null;
 	/** Name shown in the UI */
 	displayName: string;
 	/** E-mail address */
@@ -74,7 +72,6 @@ export interface WorkProfileRecord extends WorkProfile {
 	/** Country specific holiday flags (JSON), `null` = instance default */
 	holidayFlags: string | null;
 	/** Traceability of an imported profile */
-	legacySource: string | null;
 }
 
 /** Input for creating a user. */
@@ -85,8 +82,6 @@ export interface CreateUserInput {
 	displayName: string;
 	/** Password hash (already hashed by the caller) */
 	passwordHash?: string;
-	/** SHA-1 hash of the legacy system (migration only, never a login credential) */
-	legacySha1?: string | null;
 	/** E-mail address */
 	email?: string | null;
 	/** Preferred language, default `de-DE` */
@@ -190,26 +185,6 @@ export interface UsersRepository {
 		/** Instant of the change, defaults to now */
 		now?: number;
 	}): void;
-	/**
-	 * Replaces the legacy SHA-1 hash of an account with a real password hash (specification 2.9.1).
-	 *
-	 * `legacy_sha1` is cleared in the same statement, so the old hash can never be used again. Neither the
-	 * old nor the new hash reaches the audit trail.
-	 */
-	migrateLegacyPassword(input: {
-		/** Id of the migrated account */
-		userId: number;
-		/** New hash, created with the current scheme by the caller */
-		passwordHash: string;
-		/** True while the user still has to set a new password */
-		mustChangePw: boolean;
-		/** Who performs the migration */
-		actorId: number;
-		/** Client IP address of the actor */
-		actorIp?: string | null;
-		/** Instant of the migration, defaults to now */
-		now?: number;
-	}): UserRecord;
 	/** All users, optionally including the deactivated ones */
 	list(options?: { includeInactive?: boolean }): UserRecord[];
 	/** Changes a user and audits the changed fields */
@@ -248,7 +223,6 @@ interface UserRow {
 	id: number;
 	login: string;
 	password_hash: string;
-	legacy_sha1: string | null;
 	display_name: string;
 	email: string | null;
 	rfid_card: string | null;
@@ -276,7 +250,6 @@ interface WorkProfileRow {
 	vacation_per_year: number;
 	overtime_model: OvertimeModel;
 	holiday_flags: string | null;
-	legacy_source: string | null;
 }
 
 /**
@@ -290,7 +263,6 @@ export function mapUserRow(row: UserRow): UserRecord {
 		id: row.id,
 		login: row.login,
 		passwordHash: row.password_hash,
-		legacySha1: row.legacy_sha1,
 		displayName: row.display_name,
 		email: row.email,
 		rfidCard: row.rfid_card,
@@ -326,15 +298,14 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 		vacationPerYear: row.vacation_per_year,
 		overtimeModel: row.overtime_model,
 		holidayFlags: row.holiday_flags,
-		legacySource: row.legacy_source,
 	};
 }
 
-const USER_COLUMNS = `id, login, password_hash, legacy_sha1, display_name, email, rfid_card, is_active,
+const USER_COLUMNS = `id, login, password_hash, display_name, email, rfid_card, is_active,
 \tmust_change_pw, locale, timezone, pin_hash, avatar, created_at, updated_at, last_login_at`;
 
 const PROFILE_COLUMNS = `user_id, percent, weekly_hours, workdays, start_date, end_date, overtime_carryover,
-\tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags, legacy_source`;
+\tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags`;
 
 /** Field names of a user that are compared for the audit trail (the password is reported separately). */
 const AUDITED_USER_FIELDS: (keyof UserRecord)[] = [
@@ -376,19 +347,15 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectByRfid = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE rfid_card = ? COLLATE NOCASE LIMIT 1`);
 	const setPinHash = db.prepare("UPDATE users SET pin_hash = ?, updated_at = ? WHERE id = ?");
 	const setAvatarData = db.prepare("UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?");
-	// the legacy hash is cleared in the same statement, so it cannot be replayed afterwards
-	const migrateLegacyHash = db.prepare(
-		"UPDATE users SET password_hash = ?, legacy_sha1 = NULL, must_change_pw = ?, updated_at = ? WHERE id = ?",
-	);
 	const selectAll = db.prepare(`SELECT ${USER_COLUMNS} FROM users ORDER BY display_name COLLATE NOCASE, id`);
 	const selectActive = db.prepare(
 		`SELECT ${USER_COLUMNS} FROM users WHERE is_active = 1 ORDER BY display_name COLLATE NOCASE, id`,
 	);
 	const insertUser = db.prepare(
 		`INSERT INTO users
-		 (login, password_hash, legacy_sha1, display_name, email, rfid_card, is_active, must_change_pw,
+		 (login, password_hash, display_name, email, rfid_card, is_active, must_change_pw,
 		  locale, timezone, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	);
 	const updateUser = db.prepare(
 		`UPDATE users SET display_name = ?, email = ?, locale = ?, timezone = ?, rfid_card = ?,
@@ -400,7 +367,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectProfile = db.prepare(`SELECT ${PROFILE_COLUMNS} FROM work_profiles WHERE user_id = ?`);
 	const upsertProfile = db.prepare(
 		`INSERT INTO work_profiles (${PROFILE_COLUMNS})
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(user_id) DO UPDATE SET
 		     percent = excluded.percent,
 		     weekly_hours = excluded.weekly_hours,
@@ -412,8 +379,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 		     vacation_carryover = excluded.vacation_carryover,
 		     vacation_per_year = excluded.vacation_per_year,
 		     overtime_model = excluded.overtime_model,
-		     holiday_flags = excluded.holiday_flags,
-		     legacy_source = excluded.legacy_source`,
+		     holiday_flags = excluded.holiday_flags`,
 	);
 	const selectRoles = db.prepare(
 		`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? ORDER BY r.key`,
@@ -463,7 +429,6 @@ export function createUsersRepository(db: Db): UsersRepository {
 		vacationPerYear: 0,
 		overtimeModel: "monthly",
 		holidayFlags: null,
-		legacySource: null,
 	});
 
 	const resolveRoleIds = (roleKeys: string[]): number[] =>
@@ -502,7 +467,6 @@ export function createUsersRepository(db: Db): UsersRepository {
 				const result = insertUser.run(
 					login,
 					input.passwordHash ?? "",
-					input.legacySha1 ?? null,
 					input.displayName,
 					input.email ?? null,
 					input.rfidCard ?? null,
@@ -600,40 +564,6 @@ export function createUsersRepository(db: Db): UsersRepository {
 				});
 			});
 			run();
-		},
-
-		migrateLegacyPassword(input: {
-			userId: number;
-			passwordHash: string;
-			mustChangePw: boolean;
-			actorId: number;
-			actorIp?: string | null;
-			now?: number;
-		}): UserRecord {
-			if (!read(input.userId)) {
-				throw new NotFoundError(`user ${input.userId} not found`);
-			}
-			const now = input.now ?? Math.floor(Date.now() / 1000);
-			const run = db.transaction((): void => {
-				migrateLegacyHash.run(input.passwordHash, input.mustChangePw ? 1 : 0, now, input.userId);
-				writeAuditLog(db, {
-					atUtc: now,
-					actorId: input.actorId,
-					action: "user.legacy_password_migrated",
-					entity: "user",
-					entityId: input.userId,
-					// the hashes themselves never reach the audit trail
-					detail: { mustChangePw: input.mustChangePw },
-					ip: input.actorIp ?? null,
-				});
-			});
-			run();
-
-			const updated = read(input.userId);
-			if (!updated) {
-				throw new NotFoundError(`user ${input.userId} not found`);
-			}
-			return updated;
 		},
 
 		list(options?: { includeInactive?: boolean }): UserRecord[] {
@@ -808,7 +738,6 @@ export function createUsersRepository(db: Db): UsersRepository {
 					next.vacationPerYear,
 					next.overtimeModel,
 					next.holidayFlags,
-					next.legacySource,
 				);
 
 				writeAuditLog(db, {

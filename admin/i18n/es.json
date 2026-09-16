@@ -10,7 +10,6 @@
 	"Holiday country": "País de vacaciones",
 	"Instance time zone": "Zona horaria de la instancia",
 	"Keep database backups for days": "Mantenga copias de seguridad de la base de datos durante días",
-	"Legacy data directory for import (read-only)": "Directorio de datos heredados para importación (solo lectura)",
 	"Migration and backup": "Migración y copia de seguridad",
 	"Port": "Puerto",
 	"Round quick punches to minutes (0 = off)": "Redondear golpes rápidos a minutos (0 = desactivado)",

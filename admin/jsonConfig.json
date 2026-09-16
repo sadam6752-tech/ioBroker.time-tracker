@@ -214,16 +214,6 @@
 					"lg": 3,
 					"xl": 3
 				},
-				"legacyDataDir": {
-					"type": "text",
-					"label": "Legacy data directory for import (read-only)",
-					"newLine": true,
-					"xs": 12,
-					"sm": 12,
-					"md": 8,
-					"lg": 6,
-					"xl": 6
-				},
 				"backupRetentionDays": {
 					"type": "number",
 					"label": "Keep database backups for days",

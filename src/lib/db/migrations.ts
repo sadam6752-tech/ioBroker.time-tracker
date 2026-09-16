@@ -367,4 +367,15 @@ export const migrations: Migration[] = [
 		name: "users: picture of the employee",
 		sql: `ALTER TABLE users ADD COLUMN avatar TEXT;`,
 	},
+	{
+		version: 10,
+		name: "drops the columns of the removed data import",
+		sql: `
+			-- The adapter does not read data of another time tracking system any more, so the two columns that
+			-- existed for it are dropped. A fresh database creates them with migration 1 and loses them right here;
+			-- an existing installation is cleaned up the same way.
+			ALTER TABLE users         DROP COLUMN legacy_sha1;
+			ALTER TABLE work_profiles DROP COLUMN legacy_source;
+		`,
+	},
 ];

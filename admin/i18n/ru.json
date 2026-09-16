@@ -10,7 +10,6 @@
 	"Holiday country": "Страна отдыха",
 	"Instance time zone": "Часовой пояс экземпляра",
 	"Keep database backups for days": "Храните резервные копии базы данных в течение нескольких дней",
-	"Legacy data directory for import (read-only)": "Каталог устаревших данных для импорта (только для чтения)",
 	"Migration and backup": "Миграция и резервное копирование",
 	"Port": "Порт",
 	"Round quick punches to minutes (0 = off)": "Округлить быстрые удары до минут (0 = выкл.)",

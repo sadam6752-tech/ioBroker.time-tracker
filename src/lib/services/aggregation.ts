@@ -238,7 +238,6 @@ function defaultProfile(userId: number): WorkProfileRecord {
 		vacationPerYear: 0,
 		overtimeModel: "monthly",
 		holidayFlags: null,
-		legacySource: null,
 	};
 }
 

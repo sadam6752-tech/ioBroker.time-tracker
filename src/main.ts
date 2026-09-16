@@ -30,7 +30,6 @@ import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
 import { handleCommand } from "./lib/adapter/commands";
-import { runLegacyImport, type LegacyImportOptions, type LegacyImportReport } from "./lib/legacy/import";
 import { createApi } from "./lib/web/api";
 import type { EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
@@ -61,11 +60,6 @@ interface AdapterServices {
 
 class Zeiterfassung extends utils.Adapter {
 	private db: Db | null = null;
-	/**
-	 * Entrance to the legacy import, shared by the command state and the REST API. It runs the import and
-	 * publishes the report as `info.lastImport`, so both ways of starting a run are documented the same way.
-	 */
-	private runImport: ((options: LegacyImportOptions) => LegacyImportReport) | undefined;
 	private webServer: WebServer | null = null;
 	private services: AdapterServices | null = null;
 	/** Bus of the API; `null` until the API is created */
@@ -336,28 +330,9 @@ class Zeiterfassung extends utils.Adapter {
 			trustProxy: this.config.trustProxy === true,
 			hmacSecret: this.config.hmacSecret,
 			version: this.version,
-			runImport: this.runImport,
 		});
 
 		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup };
-		// both entrance points (the `commands.import` state and `POST /api/import/run`) share this: it runs the
-		// import and publishes the report as `info.lastImport`
-		this.runImport = options => {
-			// the configured directory is the default, so `commands.import` and the API may omit `baseDir`
-			const configured = (this.config.legacyDataDir ?? "").trim();
-			const baseDir = (options.baseDir || configured).trim();
-			if (!baseDir) {
-				throw new Error(
-					'no legacy directory: pass "baseDir" or set "Legacy data directory" in the instance settings',
-				);
-			}
-			const report = runLegacyImport(
-				{ db, users, entries, absences, rules, settings, payouts, aggregation },
-				{ ...options, baseDir },
-			);
-			void this.setState("info.lastImport", JSON.stringify(report), true);
-			return report;
-		};
 		this.events = api.events;
 		this.log.debug(`API routes: ${api.routes().length}`);
 
@@ -562,9 +537,6 @@ class Zeiterfassung extends utils.Adapter {
 					aggregation: services.aggregation,
 					closing: services.closing,
 					backup: services.backup,
-					// the importer is wired in `startApi` (it needs every repository), so the handler stays free
-					// of the database layout
-					runImport: this.runImport,
 				},
 				id,
 				value,
@@ -586,10 +558,6 @@ class Zeiterfassung extends utils.Adapter {
 				if (newest) {
 					await this.announceBackup(newest.name, newest.createdAt);
 				}
-			}
-			// the report of the run is published for dashboards and scripts (5.1 `info.lastImport`)
-			if (id === COMMAND_IDS.legacyImport && result.lastImport) {
-				await this.setState("info.lastImport", result.lastImport, true);
 			}
 		} catch (error) {
 			this.log.warn(`command ${id} failed: ${(error as Error).message}`);

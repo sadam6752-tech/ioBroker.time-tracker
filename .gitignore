@@ -4,10 +4,10 @@
 !.github/
 
 # ============================================================
-# Legacy-Referenz (SMALL-Time, AGPL-3.0) – NIEMALS ins Repository
+# Referenzmaterial Dritter – NIEMALS ins Repository
 # ============================================================
-SmallTime-master/
-../SmallTime-master/
+*-master/
+../*-master/
 *.zip
 
 # ============================================================

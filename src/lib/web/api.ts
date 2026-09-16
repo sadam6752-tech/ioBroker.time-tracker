@@ -45,11 +45,10 @@ import { buildMonthReport } from "../reports/xls";
 import { buildMonthStatement } from "../reports/pdf";
 import { reportFileName, type ReportInput } from "../reports/types";
 import { dateRange, isValidTimeZone, localDate } from "../util/time";
-import type { LegacyImportOptions, LegacyImportReport } from "../legacy/import";
 import { clearCookie, parseCookies, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { createPinGuard } from "./pin-guard";
-import { HttpProblem, problem, toProblem } from "./problem";
+import { problem, toProblem } from "./problem";
 import {
 	createRouter,
 	json,
@@ -102,8 +101,6 @@ export interface ApiDeps {
 	settings: SettingsRepository;
 	/** Backup service; without it the backup endpoints are not registered */
 	backup?: BackupService;
-	/** Legacy import (SMALL-Time); without it the import endpoints are not registered */
-	runImport?: (options: LegacyImportOptions) => LegacyImportReport;
 	/** Live event bus; a private one is created when it is not given */
 	events?: EventBus;
 	/** Instant source, defaults to the system clock */
@@ -2564,100 +2561,6 @@ export function createApi(deps: ApiDeps): Api {
 				});
 				emit({ type: "backup.create", userId: null, data: { backup: created.backup.name } });
 				return json(201, { backup: created.backup, removed: created.removed });
-			},
-		);
-	}
-
-	// legacy import (administration): a dry-run counts and validates, a commit writes (specification 2.9.10)
-
-	if (deps.runImport) {
-		const runImport = deps.runImport;
-
-		route("GET", "/import/runs", { permission: "import.run" }, () =>
-			json(200, {
-				runs: deps.db
-					.prepare(
-						`SELECT id, source, source_path AS sourcePath, started_at AS startedAt,
-						        finished_at AS finishedAt, mode, status, timezone_assumed AS timezoneAssumed,
-						        stats, warnings, actor_id AS actorId
-						 FROM import_runs ORDER BY id DESC LIMIT 20`,
-					)
-					.all(),
-			}),
-		);
-
-		route(
-			"POST",
-			"/import/run",
-			{ permission: "import.run", csrf: true, rateLimit: { name: "import", limit: 5, windowSeconds: 60 } },
-			context => {
-				const actor = context.auth;
-				if (!actor) {
-					throw problem(401, "no_session", "request rejected (no_session)");
-				}
-
-				const body = context.jsonBody();
-				// `baseDir` may be omitted: the adapter then uses the configured "Legacy data directory"
-				const baseDir = optionalString(body, "baseDir") ?? "";
-				const mode = body.mode === "commit" ? "commit" : "dry-run";
-				const resetImport = body.resetImport === true;
-				const timezone = optionalString(body, "timezone");
-
-				// the importer refuses a database that already holds time data; answering with a conflict is
-				// clearer than letting the generic mapping turn it into an internal error
-				if (mode === "commit" && !resetImport) {
-					const counts = deps.db
-						.prepare(
-							`SELECT (SELECT COUNT(*) FROM time_entries) AS entries,
-							        (SELECT COUNT(*) FROM absences)     AS absences,
-							        (SELECT COUNT(*) FROM payouts)      AS payouts`,
-						)
-						.get() as { entries: number; absences: number; payouts: number };
-					if (counts.entries > 0 || counts.absences > 0 || counts.payouts > 0) {
-						throw problem(
-							409,
-							"conflict",
-							`the database already holds ${counts.entries} entry(ies), ${counts.absences} absence(s) and ` +
-								`${counts.payouts} payout(s) — pass resetImport or use mode "dry-run"`,
-						);
-					}
-				}
-
-				const options: LegacyImportOptions = {
-					baseDir,
-					mode,
-					actorId: actor.user.id,
-					resetImport,
-				};
-				if (timezone) {
-					options.timezone = timezone;
-				}
-
-				let report: LegacyImportReport;
-				try {
-					report = runImport(options);
-				} catch (error) {
-					// the importer only fails on input and state problems (missing folder, unreadable files)
-					throw problem(400, "bad_request", (error as Error).message);
-				}
-
-				if (report.status === "mismatch") {
-					// the recomputed values do not reproduce the legacy ones, so the import is not accepted (2.9.5)
-					throw new HttpProblem(
-						409,
-						"import_mismatch",
-						`${report.deviations.length} month(s) do not reproduce the legacy values — the import is not accepted`,
-						undefined,
-						report.deviations.map(deviation => ({
-							path: `${deviation.login} ${deviation.year}-${String(deviation.month).padStart(2, "0")}`,
-							message:
-								`balance ${deviation.actualBalanceMin} min instead of ${deviation.expectedBalanceMin} min, ` +
-								`target ${deviation.actualTargetMin} min instead of ${deviation.expectedTargetMin} min`,
-						})),
-					);
-				}
-
-				return json(200, report);
 			},
 		);
 	}

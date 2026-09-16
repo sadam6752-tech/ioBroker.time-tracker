@@ -101,6 +101,9 @@ test("shows who is present, uses the stored picture and the placeholder otherwis
 
 	await page.goto(`/presence?token=${encodeURIComponent(deviceToken)}`);
 
+	// the header shows the time, the same way the kiosk terminal does
+	await expect(page.getByRole("heading", { level: 5 }).filter({ hasText: /^\d{1,2}:\d{2}/ })).toBeVisible();
+
 	// the tiles come from the terminal API: every employee with the state of the day
 	const tile = page.getByRole("button", { name: /Anna Muster/ }).first();
 	await expect(tile).toBeVisible();

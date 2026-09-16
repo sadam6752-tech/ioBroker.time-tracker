@@ -10,7 +10,7 @@
  * server; the screen only shows what the API answered.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -25,7 +25,13 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
-import { api, type TerminalPunchResult, type TerminalSessionResult, type TerminalUser } from "../api/client";
+import {
+	api,
+	formatTime,
+	type TerminalPunchResult,
+	type TerminalSessionResult,
+	type TerminalUser,
+} from "../api/client";
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
 
@@ -69,7 +75,7 @@ function readToken(): string | null {
  * @returns the presence screen
  */
 export function Presence(): React.JSX.Element {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [token, setToken] = useState<string | null>(() => readToken());
 	const [tokenInput, setTokenInput] = useState("");
 	const [session, setSession] = useState<TerminalSessionResult | null>(null);
@@ -80,6 +86,9 @@ export function Presence(): React.JSX.Element {
 	const [problem, setProblem] = useState<unknown>(null);
 	const [enabled, setEnabled] = useState<boolean | null>(null);
 	const [busy, setBusy] = useState(false);
+	const [timeZone, setTimeZone] = useState("UTC");
+	const [clock, setClock] = useState(Math.floor(Date.now() / 1000));
+	const offset = useRef(0);
 
 	/** Forgets the device token of this device, so the screen asks for a new one. */
 	const forgetToken = useCallback((): void => {
@@ -96,10 +105,18 @@ export function Presence(): React.JSX.Element {
 			try {
 				const status = await api.terminalStatus();
 				setEnabled(status.enabled);
+				setTimeZone(status.timezone);
+				offset.current = status.serverTime - Math.floor(Date.now() / 1000);
 			} catch (error) {
 				setProblem(error);
 			}
 		})();
+	}, []);
+
+	// the clock follows the server, not the device — the same way the kiosk terminal does it
+	useEffect(() => {
+		const timer = window.setInterval(() => setClock(Math.floor(Date.now() / 1000) + offset.current), 1000);
+		return () => window.clearInterval(timer);
 	}, []);
 
 	useEffect(() => {
@@ -249,6 +266,7 @@ export function Presence(): React.JSX.Element {
 					spacing={1}
 					alignItems="center"
 				>
+					<Typography variant="h5">{formatTime(clock, timeZone, i18n.language)}</Typography>
 					<Typography variant="body1">{session?.terminal.name ?? ""}</Typography>
 					<IconButton
 						size="small"

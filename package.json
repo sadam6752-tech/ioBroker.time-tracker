@@ -82,7 +82,7 @@
 		"test:integration": "mocha test/integration --exit",
 		"test": "npm run test:ts && npm run test:package",
 		"check": "tsc --noEmit && npm --prefix src-pwa run check",
-		"coverage": "nyc npm run test:ts",
+		"coverage": "nyc mocha --config test/mocharc.coverage.json src/**/*.test.ts",
 		"lint": "eslint -c eslint.config.mjs .",
 		"lint:pwa": "eslint -c eslint.config.mjs src-pwa/src",
 		"translate": "translate-adapter",
@@ -110,11 +110,13 @@
 			".ts"
 		],
 		"require": [
-			"ts-node/register"
+			"ts-node/register/transpile-only"
 		],
 		"reporter": [
 			"text-summary",
-			"html"
+			"text",
+			"html",
+			"lcov"
 		],
 		"sourceMap": true,
 		"instrument": true

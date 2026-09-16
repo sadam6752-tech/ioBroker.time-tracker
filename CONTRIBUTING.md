@@ -60,7 +60,10 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
   im Code (Ausnahme: fachliche Begriffe, die bewusst so dokumentiert sind, z. B. `vorholzeit_per_year`).
 - **Adapter-Tests:** `@iobroker/testing` — `tests.packageFiles` (prüft `package.json`/`io-package.json`) und
   `tests.integration` gegen einen js-controller; die mitgelieferten Unit-Mocks sind deprecated.
-- **Eigene Logik:** Vitest für Berechnung und Zeitzonen-Fälle, Playwright für E2E der PWA;
+- **Eigene Logik:** Mocha mit ts-node und chai für Berechnungs- und Zeitzonen-Fälle (`test/mocharc.custom.json`),
+  Playwright für E2E der PWA, `npm run coverage` (`nyc`) für die Abdeckung — der Coverage-Lauf verzichtet bewusst auf
+  die Typprüfung (`test/mocharc.coverage.json`), weil typprüfendes ts-node unter `nyc` an den Adapter-Typen scheitert;
+  `npm run check` bleibt das Typgate;
   Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
 - **Web-App (`src-pwa/`):** eigenes Projekt mit eigenem `package.json`/`tsconfig.json` (React 18, MUI 5, Vite).
   Ablauf: `npm run install:pwa` → `npm run build:pwa` (Typprüfung + Build nach `www/`) → `npm run lint:pwa`;

@@ -155,8 +155,8 @@ kiosk screens. The pictures are kept with the settings but delivered through the
 
 A picture straight from a phone is scaled down in the browser (longest edge 2560 px, JPEG in several quality steps)
 until it fits the 512 KiB the API accepts; the field reports the resulting size. The twelve preset colours are all
-light tones that keep the dark text readable — with a very dark background picture the text is the one thing that
-can become hard to read, so a light picture or a light background colour next to it is the safe choice.
+light tones that keep the dark text readable, and every background picture gets a light veil (75 % white) — so the
+dark text of the app stays readable on a dark photo as well.
 
 ### Reverse proxy and HTTPS
 
@@ -269,6 +269,7 @@ docs/         operator and translator guide
 | `npm run test:ts`          | Unit tests for the adapter sources                                          |
 | `npm run test:package`     | Validate `package.json` / `io-package.json`                                 |
 | `npm run test:integration` | Adapter startup against a real js-controller (packs `build/` and `www/`)    |
+| `npm run coverage`         | Unit tests plus a coverage report (text and `coverage/`, HTML and LCOV)      |
 | `npm run translate`        | Keep the 11 translation files in sync                                       |
 | `npm run check:i18n`       | Verify that all 11 languages are complete                                   |
 | `npm run check:adapter`    | Local pre-check of the ioBroker adapter rules (see `docs/adapter-check.md`) |
@@ -288,14 +289,14 @@ npm run build
 
 ### Still open
 
-- **Acceptance on real data:** the golden comparison against a full year of real punches (needs the `Data`
-  directory of the predecessor system) and the sign-off of the layouts and of the PDF rendering for `ru`, `uk` and
-  `zh-cn` (they need a Unicode font through `report_font_path`).
-- **Publication:** npm package (the CI workflow publishes through npm trusted publishing), entry in
-  `ioBroker.repositories` and the run of the official adapter checker.
+- **Acceptance run on real hardware:** the sign-off of the layouts and of the PDF rendering for `ru`, `uk` and
+  `zh-cn` (they need a Unicode font through `report_font_path`). The **legacy import** of the predecessor system is
+  not part of the scope — the record of that decision is [`docs/entscheidungen.md`](docs/entscheidungen.md) (German).
+- **Publication:** the package is on npm (`0.0.5`, published by the CI through npm trusted publishing with a
+  provenance attestation) and the official adapter checker reports exactly **one** error: the missing npm owner
+  entry for `bluefox`. Open after that: the entry in `ioBroker.repositories`.
 - **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with a phone); the language
-  files of the web app are machine translated and wait for a review by native speakers; a very dark background
-  picture can make the light text of the app hard to read.
+  files of the web app are machine translated and wait for a review by native speakers.
 
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
 flags must follow the official role rules; secrets only via `encryptedNative`/`protectedNative`.
@@ -303,6 +304,12 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) internal: `npm run coverage` reports figures again (the coverage runner used a type checking compiler,
+  which failed on the adapter types) — the runner now works without type checking, because `npm run check` and the
+  tests cover the types
+- (Alex) internal: the README and the acceptance plan describe the current state again, and the dropped legacy
+  import of the predecessor system is recorded as a decision (`docs/entscheidungen.md`)
 
 ### 0.0.5 (2026-09-16)
 

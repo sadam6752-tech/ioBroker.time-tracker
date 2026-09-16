@@ -1,0 +1,11 @@
+{
+	"require": [
+		"test/mocha.setup.js",
+		"ts-node/register/transpile-only",
+		"source-map-support/register"
+	],
+	"watch-files": [
+		"src/**/*.test.ts"
+	],
+	"timeout": 30000
+}

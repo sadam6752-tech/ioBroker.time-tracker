@@ -199,5 +199,10 @@
 	"corrections.direction": "Dirección",
 	"corrections.note": "Nota",
 	"corrections.empty": "Sin fichajes en este mes",
-	"corrections.byAdmin": "añadido por la administración"
+	"corrections.byAdmin": "añadido por la administración",
+	"corrections.history": "Historial",
+	"corrections.actor": "Por",
+	"corrections.actionCreate": "Añadido",
+	"corrections.actionUpdate": "Modificado",
+	"corrections.actionDelete": "Eliminado"
 }

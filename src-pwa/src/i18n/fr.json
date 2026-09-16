@@ -199,5 +199,10 @@
 	"corrections.direction": "Sens",
 	"corrections.note": "Remarque",
 	"corrections.empty": "Aucun pointage ce mois-ci",
-	"corrections.byAdmin": "ajouté par l’administration"
+	"corrections.byAdmin": "ajouté par l’administration",
+	"corrections.history": "Historique",
+	"corrections.actor": "Par",
+	"corrections.actionCreate": "Ajouté",
+	"corrections.actionUpdate": "Modifié",
+	"corrections.actionDelete": "Supprimé"
 }

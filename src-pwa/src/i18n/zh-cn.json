@@ -199,5 +199,10 @@
 	"corrections.direction": "方向",
 	"corrections.note": "备注",
 	"corrections.empty": "本月没有打卡",
-	"corrections.byAdmin": "由管理员添加"
+	"corrections.byAdmin": "由管理员添加",
+	"corrections.history": "历史记录",
+	"corrections.actor": "操作人",
+	"corrections.actionCreate": "已添加",
+	"corrections.actionUpdate": "已修改",
+	"corrections.actionDelete": "已删除"
 }

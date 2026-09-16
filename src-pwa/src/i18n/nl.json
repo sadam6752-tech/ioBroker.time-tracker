@@ -199,5 +199,10 @@
 	"corrections.direction": "Richting",
 	"corrections.note": "Notitie",
 	"corrections.empty": "Geen stempels in deze maand",
-	"corrections.byAdmin": "toegevoegd door de administratie"
+	"corrections.byAdmin": "toegevoegd door de administratie",
+	"corrections.history": "Geschiedenis",
+	"corrections.actor": "Door",
+	"corrections.actionCreate": "Toegevoegd",
+	"corrections.actionUpdate": "Gewijzigd",
+	"corrections.actionDelete": "Verwijderd"
 }

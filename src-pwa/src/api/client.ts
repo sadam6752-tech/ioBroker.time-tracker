@@ -18,6 +18,7 @@ import type {
 	CreateUserInput,
 	DayRange,
 	Entry,
+	EntryAuditRow,
 	LoginResult,
 	MonthAggregate,
 	Payout,
@@ -136,6 +137,8 @@ export interface ApiClient {
 	): Promise<{ entry: Entry; day: PunchResult["day"] }>;
 	/** Removes a punch */
 	deleteEntry(id: number, reason?: string | null): Promise<void>;
+	/** Audit trail of a punch (newest change first) */
+	entryAudit(id: number): Promise<EntryAuditRow[]>;
 	/** Absences of a year */
 	absences(year: number): Promise<Absence[]>;
 	/** Absence types the caller may use */
@@ -687,6 +690,11 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async deleteEntry(id, reason): Promise<void> {
 			await request("DELETE", `/entries/${id}`, { body: { reason } });
+		},
+
+		async entryAudit(id): Promise<EntryAuditRow[]> {
+			const result = await request<{ audit: EntryAuditRow[] }>("GET", `/entries/${id}/audit`);
+			return result.audit ?? [];
 		},
 
 		async absences(year): Promise<Absence[]> {

@@ -199,5 +199,10 @@
 	"corrections.direction": "Направление",
 	"corrections.note": "Заметка",
 	"corrections.empty": "В этом месяце отметок нет",
-	"corrections.byAdmin": "добавлено администрацией"
+	"corrections.byAdmin": "добавлено администрацией",
+	"corrections.history": "История",
+	"corrections.actor": "Кто",
+	"corrections.actionCreate": "Добавлено",
+	"corrections.actionUpdate": "Изменено",
+	"corrections.actionDelete": "Удалено"
 }

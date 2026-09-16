@@ -16,6 +16,7 @@
 
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
+import { readTimeEntryAudit } from "../db/repositories/audit";
 import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
@@ -1444,6 +1445,20 @@ export function createApi(deps: ApiDeps): Api {
 			data: { entryId: existing.id, localDate: existing.localDate },
 		});
 		return noContent();
+	});
+
+	route("GET", "/entries/:id/audit", { permission: "audit.view" }, context => {
+		const entryId = numberParam(context, "id");
+		if (!entries.findById(entryId)) {
+			throw new NotFoundError(`entry ${entryId} not found`);
+		}
+		// the trail names the people who changed the punch, so it needs the audit permission
+		return json(200, {
+			audit: readTimeEntryAudit(deps.db, entryId).map(row => ({
+				...row,
+				actorName: users.findById(row.actorId)?.displayName ?? null,
+			})),
+		});
 	});
 
 	// users, roles and work profiles

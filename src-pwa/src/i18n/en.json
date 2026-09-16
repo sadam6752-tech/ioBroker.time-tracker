@@ -199,5 +199,10 @@
 	"corrections.direction": "Direction",
 	"corrections.note": "Note",
 	"corrections.empty": "No punches in this month",
-	"corrections.byAdmin": "added by the administration"
+	"corrections.byAdmin": "added by the administration",
+	"corrections.history": "History",
+	"corrections.actor": "By",
+	"corrections.actionCreate": "Added",
+	"corrections.actionUpdate": "Changed",
+	"corrections.actionDelete": "Deleted"
 }

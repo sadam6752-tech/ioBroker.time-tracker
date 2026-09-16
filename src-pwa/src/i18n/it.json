@@ -199,5 +199,10 @@
 	"corrections.direction": "Direzione",
 	"corrections.note": "Nota",
 	"corrections.empty": "Nessuna timbratura in questo mese",
-	"corrections.byAdmin": "aggiunto dall’amministrazione"
+	"corrections.byAdmin": "aggiunto dall’amministrazione",
+	"corrections.history": "Cronologia",
+	"corrections.actor": "Da",
+	"corrections.actionCreate": "Aggiunto",
+	"corrections.actionUpdate": "Modificato",
+	"corrections.actionDelete": "Eliminato"
 }

@@ -1921,5 +1921,30 @@ describe("web api", () => {
 			expect(removed.status).to.equal(204);
 			expect(entries.findById(entryId)).to.equal(null);
 		});
+
+		it("shows the audit trail of a punch to an administrator", async () => {
+			const created = await send("POST", "/entries", {
+				body: { tsUtc: 3600, reason: "vergessen" },
+				headers: headers(adminToken, adminCsrf),
+				query: { userId: String(annaId) },
+			});
+			const entryId = bodyOf<{ entry: { id: number } }>(created).entry.id;
+
+			// an employee has no `audit.view`
+			expect((await send("GET", `/entries/${entryId}/audit`, { headers: headers(annaToken) })).status).to.equal(
+				403,
+			);
+
+			const trail = await send("GET", `/entries/${entryId}/audit`, { headers: headers(adminToken) });
+			expect(trail.status).to.equal(200);
+			const rows = bodyOf<{ audit: { action: string; reason: string | null; actorName: string | null }[] }>(
+				trail,
+			).audit;
+			expect(rows).to.have.lengthOf(1);
+			expect(rows[0]).to.deep.include({ action: "create", reason: "vergessen", actorName: "Admin" });
+
+			// an unknown punch is a 404
+			expect((await send("GET", "/entries/999/audit", { headers: headers(adminToken) })).status).to.equal(404);
+		});
 	});
 });

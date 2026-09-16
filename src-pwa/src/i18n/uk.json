@@ -199,5 +199,10 @@
 	"corrections.direction": "Напрямок",
 	"corrections.note": "Нотатка",
 	"corrections.empty": "У цьому місяці відміток немає",
-	"corrections.byAdmin": "додано адміністрацією"
+	"corrections.byAdmin": "додано адміністрацією",
+	"corrections.history": "Історія",
+	"corrections.actor": "Хто",
+	"corrections.actionCreate": "Додано",
+	"corrections.actionUpdate": "Змінено",
+	"corrections.actionDelete": "Видалено"
 }

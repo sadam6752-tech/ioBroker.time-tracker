@@ -199,5 +199,10 @@
 	"corrections.direction": "Direção",
 	"corrections.note": "Nota",
 	"corrections.empty": "Sem marcações neste mês",
-	"corrections.byAdmin": "adicionado pela administração"
+	"corrections.byAdmin": "adicionado pela administração",
+	"corrections.history": "Histórico",
+	"corrections.actor": "Por",
+	"corrections.actionCreate": "Adicionado",
+	"corrections.actionUpdate": "Alterado",
+	"corrections.actionDelete": "Excluído"
 }

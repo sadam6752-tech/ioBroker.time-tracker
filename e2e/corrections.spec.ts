@@ -98,4 +98,12 @@ test("an administrator adds a forgotten day and finds it in the correction list"
 
 	await expect(page.getByText("Nachgetragen über den Dialog").first()).toBeVisible();
 	await expect(page.getByText(/nicht akzeptiert/)).toHaveCount(0);
+
+	// the history of that punch shows who corrected it and why: the typed reason really reaches the audit trail
+	// (both punches of the added day carry the same note, so the first one is used)
+	const row = page.getByRole("listitem").filter({ hasText: "Nachgetragen über den Dialog" }).first();
+	await row.getByLabel("Verlauf").click();
+	await expect(page.getByText(/über den Dialog nachgetragen/).last()).toBeVisible();
+	await expect(page.getByText(/Nachgetragen · /).last()).toBeVisible();
+	await page.getByRole("button", { name: "Schließen" }).click();
 });

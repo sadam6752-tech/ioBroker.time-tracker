@@ -62,6 +62,26 @@ export interface Entry {
 	syncState: string;
 }
 
+/** One change of a punch, as `GET /entries/:id/audit` reports it. */
+export interface EntryAuditRow {
+	/** Id of the audit row */
+	id: number;
+	/** Kind of change: `create`, `update` or `delete` */
+	action: string;
+	/** Changed fields with their old and new value, `null` when nothing was compared */
+	changes: Record<string, { old: unknown; new: unknown }> | null;
+	/** Revision after the change */
+	revision: number | null;
+	/** Why the change was made (corrections carry one, normal punches do not) */
+	reason: string | null;
+	/** Who made the change (`0` means the adapter itself) */
+	actorId: number;
+	/** Shown name of that actor, `null` when it is no longer known */
+	actorName: string | null;
+	/** Instant of the change, UTC epoch seconds */
+	atUtc: number;
+}
+
 /** Result of a punch. */
 export interface PunchResult {
 	entry: Entry;

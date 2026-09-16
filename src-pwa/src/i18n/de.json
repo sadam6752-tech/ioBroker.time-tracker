@@ -199,5 +199,10 @@
 	"corrections.direction": "Richtung",
 	"corrections.note": "Notiz",
 	"corrections.empty": "Keine Stempel in diesem Monat",
-	"corrections.byAdmin": "durch die Verwaltung nachgetragen"
+	"corrections.byAdmin": "durch die Verwaltung nachgetragen",
+	"corrections.history": "Verlauf",
+	"corrections.actor": "Von",
+	"corrections.actionCreate": "Nachgetragen",
+	"corrections.actionUpdate": "Geändert",
+	"corrections.actionDelete": "Gelöscht"
 }

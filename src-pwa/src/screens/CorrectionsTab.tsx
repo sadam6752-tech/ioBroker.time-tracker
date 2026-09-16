@@ -29,6 +29,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import HistoryIcon from "@mui/icons-material/History";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api, formatTime } from "../api/client";
@@ -130,6 +131,13 @@ interface AddState {
 	reason: string;
 }
 
+/** Translation key of one action of the audit trail. */
+const ACTION_KEYS: Record<string, string> = {
+	create: "corrections.actionCreate",
+	update: "corrections.actionUpdate",
+	delete: "corrections.actionDelete",
+};
+
 /**
  * Shows the time corrections.
  *
@@ -145,6 +153,7 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 	const [reason, setReason] = useState("");
 	const [editing, setEditing] = useState<EditState | null>(null);
 	const [adding, setAdding] = useState<AddState | null>(null);
+	const [historyId, setHistoryId] = useState<number | null>(null);
 
 	const users = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users(true) });
 	const employee = userId ?? users.data?.[0]?.id ?? null;
@@ -156,6 +165,12 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 		queryKey: ["admin", "corrections", employee, range.from, range.to],
 		queryFn: () => api.entries(range.from, range.to, employee ?? undefined),
 		enabled: employee !== null,
+	});
+	// the trail of the punch whose “history” was opened
+	const trail = useQuery({
+		queryKey: ["admin", "entry-audit", historyId],
+		queryFn: () => api.entryAudit(historyId ?? 0),
+		enabled: historyId !== null,
 	});
 
 	/** Reloads the punches after a change. */
@@ -300,6 +315,14 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 									direction="row"
 									spacing={0.5}
 								>
+									<IconButton
+										size="small"
+										title={t("corrections.history")}
+										aria-label={t("corrections.history")}
+										onClick={() => setHistoryId(entry.id)}
+									>
+										<HistoryIcon fontSize="small" />
+									</IconButton>
 									<IconButton
 										size="small"
 										title={t("corrections.editTitle")}
@@ -477,6 +500,44 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 						>
 							{t("common.save")}
 						</Button>
+					</DialogActions>
+				</Dialog>
+			)}
+
+			{historyId !== null && (
+				<Dialog
+					open
+					onClose={() => setHistoryId(null)}
+				>
+					<DialogTitle>{t("corrections.history")}</DialogTitle>
+					<DialogContent>
+						<ErrorAlert error={trail.error} />
+						{trail.isLoading ? (
+							<Loading />
+						) : (
+							<List dense>
+								{(trail.data ?? []).map(row => (
+									<ListItem key={row.id}>
+										<ListItemText
+											primary={`${t(ACTION_KEYS[row.action] ?? row.action)} · ${formatPunch(
+												row.atUtc,
+												timeZone,
+												language,
+											)}`}
+											secondary={[
+												row.actorName ? `${t("corrections.actor")}: ${row.actorName}` : null,
+												row.reason ? `${t("corrections.reason")}: ${row.reason}` : null,
+											]
+												.filter(Boolean)
+												.join(" · ")}
+										/>
+									</ListItem>
+								))}
+							</List>
+						)}
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={() => setHistoryId(null)}>{t("common.close")}</Button>
 					</DialogActions>
 				</Dialog>
 			)}

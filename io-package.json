@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.2",
+		"version": "0.0.3",
 		"news": {
+			"0.0.3": {
+				"en": "Fix: the integration tests read the version from package.json, so a version bump cannot break them",
+				"de": "Fehler behoben: Die Integrationstests lesen die Version aus package.json — ein Versionssprung kann sie nicht mehr brechen",
+				"ru": "Исправлено: интеграционные тесты читают версию из package.json — повышение версии их больше не ломает",
+				"pt": "Corrigido: os testes de integração leem a versão de package.json — subir a versão já não os quebra",
+				"nl": "Opgelost: de integratietests lezen de versie uit package.json — een versiesprong breekt ze niet meer",
+				"fr": "Corrigé : les tests d'intégration lisent la version dans package.json — une montée de version ne les casse plus",
+				"it": "Corretto: i test di integrazione leggono la versione da package.json — un salto di versione non li rompe più",
+				"es": "Corregido: las pruebas de integración leen la versión de package.json — subir la versión ya no las rompe",
+				"pl": "Poprawka: testy integracyjne czytają wersję z package.json — podniesienie wersji ich nie psuje",
+				"uk": "Виправлено: інтеграційні тести читають версію з package.json — підвищення версії їх більше не ламає",
+				"zh-cn": "修复：集成测试从 package.json 读取版本，提升版本不会再使其失败"
+			},
 			"0.0.2": {
 				"en": "First release: punching via the PWA or a kiosk terminal (badge, PIN, PIN duty per device, employees per device), absences, corrections, monthly reports (PDF/XLS), statistics, RFID/NFC, roles and permissions, branding, 11 languages",
 				"de": "Erste Veröffentlichung: Stempeln über die PWA oder ein Kiosk-Terminal (Ausweis, PIN, PIN-Pflicht je Gerät, Mitarbeiter je Gerät), Abwesenheiten, Zeitkorrekturen, Monatsberichte (PDF/XLS), Statistik, RFID/NFC, Rollen und Rechte, Branding, 11 Sprachen",

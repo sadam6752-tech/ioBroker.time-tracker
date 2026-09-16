@@ -107,19 +107,10 @@ function writeChangelog(file, version, date) {
 		throw new Error("README.md hat keinen Abschnitt '### **WORK IN PROGRESS**'");
 	}
 
-	// die Einträge bleiben stehen und wandern mit der Überschrift in die neue Version
+	// die Einträge bleiben stehen und wandern mit der Überschrift in die neue Version;
+	// der leere Platzhalter oben ist der einzige, den die nächste Version braucht
 	lines[wip] = `### ${version} (${date})`;
-	lines.splice(
-		start + 1,
-		0,
-		"",
-		"<!--",
-		"\tPlatzhalter für die nächste Version (am Zeilenanfang):",
-		"\t### **WORK IN PROGRESS**",
-		"-->",
-		"",
-		"### **WORK IN PROGRESS**",
-	);
+	lines.splice(start + 1, 0, "", "### **WORK IN PROGRESS**");
 
 	writeFileSync(file, lines.join(eol), "utf8");
 	return `Changelog im ${file}`;

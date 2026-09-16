@@ -309,6 +309,10 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.3 (2026-09-16)
+
+- (Alex) fix: the integration tests read the version from `package.json`, so a version bump cannot break them
+
 ### 0.0.2 (2026-09-16)
 
 - (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), i18n checks

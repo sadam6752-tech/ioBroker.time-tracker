@@ -16,7 +16,8 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 
 **Zulässig**
 
-  (`users.txt`, `userdaten.txt` Idx 0–17, `Timetable/<Jahr>.<Monat>`, `A<Jahr>`, `absenz.txt`).
+(`users.txt`, `userdaten.txt` Idx 0–17, `Timetable/<Jahr>.<Monat>`, `A<Jahr>`, `absenz.txt`).
+
 - Berechnungsregeln, Verhalten und Rundungsregeln (dokumentiert in der internen Spezifikation).
 - Kurze technische Bezeichner in der Dokumentation zur Nachvollziehbarkeit.
 
@@ -96,17 +97,17 @@ Spezifikation.
 
 ## 6. Was veröffentlicht wird
 
-| Dokument                            | Ort                                                 | Veröffentlicht                        |
-| ----------------------------------- | --------------------------------------------------- | ------------------------------------- |
-| Adapter-Beschreibung                | `README.md` (später zusätzlich `adapter/README.md`) | ja                                    |
-| Lizenz                              | `LICENSE`                                           | ja                                    |
-| Mitwirkungsregeln (Clean Room)      | `CONTRIBUTING.md`                                   | ja                                    |
-| Herkunft                            | Abschnitt „Provenance" in `README.md`               | ja                                    |
-| Quellcode                           | `src/`, `src-pwa/`, `src-shared/`, `tools/`         | ja                                    |
-| Sprachdateien (11 Sprachen)         | `admin/i18n/`, `src-pwa/src/i18n/`                  | ja (Übersetzungen willkommen)         |
-| Übersetzer-Doku                     | `docs/i18n.md`                                      | ja                                    |
-| Interne Spezifikation               | außerhalb dieses Repositories                       | **nein**                              |
-| Fremde Projekte, Archive, Datenkopien | außerhalb dieses Repositories                       | **nein**                              |
+| Dokument                              | Ort                                                 | Veröffentlicht                |
+| ------------------------------------- | --------------------------------------------------- | ----------------------------- |
+| Adapter-Beschreibung                  | `README.md` (später zusätzlich `adapter/README.md`) | ja                            |
+| Lizenz                                | `LICENSE`                                           | ja                            |
+| Mitwirkungsregeln (Clean Room)        | `CONTRIBUTING.md`                                   | ja                            |
+| Herkunft                              | Abschnitt „Provenance" in `README.md`               | ja                            |
+| Quellcode                             | `src/`, `src-pwa/`, `src-shared/`, `tools/`         | ja                            |
+| Sprachdateien (11 Sprachen)           | `admin/i18n/`, `src-pwa/src/i18n/`                  | ja (Übersetzungen willkommen) |
+| Übersetzer-Doku                       | `docs/i18n.md`                                      | ja                            |
+| Interne Spezifikation                 | außerhalb dieses Repositories                       | **nein**                      |
+| Fremde Projekte, Archive, Datenkopien | außerhalb dieses Repositories                       | **nein**                      |
 
 Regeln dazu:
 
@@ -116,3 +117,46 @@ Regeln dazu:
   `README.md`; interne Modul-READMEs beschreiben die Vorgaben in eigenen Worten.
 - Der Herkunftsnachweis wird außerhalb dieses Repositories geführt und nennt die Grundlage der Umsetzung
   sowie die Feststellung „kein fremder Quellcode übernommen".
+
+## 7. Lokaler Dev-Server (ioBroker dev-server)
+
+Die Entwicklungsinstanz liegt in `.dev-server/`: Admin auf `http://127.0.0.1:8081`, der Adapter mit der
+Weboberfläche auf `http://127.0.0.1:8082`. Gestartet wird sie mit
+
+```powershell
+npm run dev-server watch
+```
+
+Der Dev-Server baut den Adapter, installiert ihn in die Dev-Instanz (`npm pack` + `npm install`) und startet ihn
+selbst; bei jeder Quelländerung startet er ihn nach rund zwei Sekunden neu.
+
+Regeln, in dieser Reihenfolge wichtig:
+
+1. **Die Instanz bleibt im Controller deaktiviert.** Der Dev-Server startet den Adapter selbst, der Controller darf
+   ihn nicht zusätzlich starten — sonst läuft jede Controller-seitige Startanfrage in `ADAPTER_ALREADY_RUNNING`
+   (Code 7) und wiederholt sich im 30-Sekunden-Takt. Prüfen und setzen (aus `.dev-server/default`):
+
+    ```powershell
+    node node_modules/iobroker.js-controller/iobroker.js list instances
+    node node_modules/iobroker.js-controller/iobroker.js object set system.adapter.zeiterfassung.0 common.enabled=false
+    ```
+
+    Im Log steht dann `Do not restart adapter system.adapter.zeiterfassung.0 because disabled or deleted`, und der
+    Adapter läuft weiter, weil der Dev-Server ihn hält.
+
+2. **Den Adapter nie in `ioBroker.admin` starten oder neu starten**, solange `dev-server watch` läuft — ein Start
+   aus der Oberfläche aktiviert die Instanz wieder und erzeugt genau die Schleife aus Regel 1. Die Doku des
+   Dev-Servers weist ausdrücklich darauf hin. Einen Neustart erzwingt man, indem man eine Quelldatei speichert
+   (der Watcher übernimmt) oder die ganze Kette neu startet.
+3. Wer den Adapter bewusst **aus der Admin-Oberfläche** starten will, nutzt `npm run dev-server run`: dann läuft er
+   nicht vom Dev-Server, sondern vom Controller. Codeänderungen brauchen dort `npm run build` und, bei gestopptem
+   Dev-Server, `npm run dev-server upload`.
+4. **Nur ein Dev-Server gleichzeitig** und **kein zusätzliches `npm run build`** daneben: der Dev-Server baut
+   selbst, parallele Builds führen zu Race-Conditions und Folge-Restarts.
+5. Hängt die Instanz doch in der Schleife, alle Prozesse beenden, deren Kommandozeilentext das Repository oder
+   `.dev-server` nennt, und `npm run dev-server watch` neu starten.
+6. Die Playwright-Suite (`npm run e2e`) startet einen eigenen Server auf Port `8099` mit In-Memory-Datenbank
+   und lässt den Dev-Server unberührt; sie lädt den Adapter aus `build/`, weshalb vorher `npm run build` nötig ist.
+
+Die Daten der Dev-Instanz liegen unter `.dev-server/default/iobroker-data/zeiterfassung.0/` (Datenbank,
+`session-secret`, `backups/`) und werden nicht versioniert.

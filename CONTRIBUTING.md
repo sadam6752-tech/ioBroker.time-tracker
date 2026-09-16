@@ -225,6 +225,11 @@ Regeln:
     Changelog und `common.news` und taggt in einem Zug (siehe `.releaseconfig.json`, dort laeuft vorher
     `npm run build`).
 
+    **Beide Bauausgaben gehören ins Paket.** Der Deploy-Job baut vor dem Veröffentlichen `build/` **und** `www/`
+    (eigener `build-command`, weil `build/` und `www/` nicht im Repository liegen); `npm run check:package` —
+    über `prepack` automatisch vor `npm pack` und `npm publish` — lässt den Release scheitern, wenn eine davon
+    fehlt. Die Veröffentlichungen bis 0.0.6 enthielten kein `www/` und antworteten auf `/` mit `404 not_found`.
+
 6. Nach jedem Versionssprung die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
    der Adapterchecker verlangt sie (Regel E510). `npm run check:i18n` meldet Lücken.
 7. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:

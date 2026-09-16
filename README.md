@@ -45,17 +45,18 @@ Everything in this table is implemented unless it is marked as open. The remaini
 
 ## Installation
 
-Not published yet: the adapter is neither on npm nor in the official repository list. To run the current
-state, build it locally (see [Development](#development)) and start it with the dev server:
+The adapter is published on npm and is installed from there:
+
+```bash
+iobroker install iobroker.zeiterfassung
+```
+
+An installation **from Git** (`iobroker url https://github.com/sadam6752-tech/ioBroker.zeiterfassung`) does **not**
+work on its own: the web app in `www/` is generated and therefore not part of the repository. Either install the
+package from npm or build it once inside the adapter directory:
 
 ```bash
 npm ci && npm run install:pwa && npm run build:pwa && npm run build
-```
-
-Once released:
-
-```bash
-iobroker add zeiterfassung
 ```
 
 ## Configuration
@@ -304,6 +305,12 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) fix: the published package contains the web app again — `www/` is generated and was missing from every
+  release up to 0.0.6, so `http://<host>:<port>/` answered `404 not_found`; the release job now builds the web app,
+  and `prepack` refuses to publish a package without `build/` or `www/`
+- (Alex) internal: the installation section of the README describes the way that works (npm) and why an
+  installation from Git needs a build of its own
 
 ### 0.0.6 (2026-09-16)
 

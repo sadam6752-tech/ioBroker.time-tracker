@@ -88,6 +88,8 @@
 		"translate": "translate-adapter",
 		"release": "release-script",
 		"version:check": "node tools/check-version.mjs",
+		"check:package": "node tools/check-package.mjs",
+		"prepack": "node tools/check-package.mjs",
 		"version:bump": "node tools/bump-version.mjs",
 		"push:approve": "node tools/approve-push.mjs",
 		"hooks:install": "git config core.hooksPath .githooks",

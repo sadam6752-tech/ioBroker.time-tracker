@@ -97,4 +97,7 @@ jobs:
                   # Uncomment the following line if your adapter cannot be installed using 'npm ci'
                   # install-command: 'npm install'
                   build: true
+                  # `npm run build` compiles the adapter only; the web app is a project of its own. Releases up to
+                  # 0.0.6 shipped without `www/`, so the web interface answered 404 — both steps belong here.
+                  build-command: "npm run build && npm ci --prefix src-pwa && npm run build:pwa"
                   github-token: ${{ secrets.GITHUB_TOKEN }}

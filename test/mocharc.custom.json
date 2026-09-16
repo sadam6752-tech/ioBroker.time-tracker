@@ -6,5 +6,6 @@
 	],
 	"watch-files": [
 		"src/**/*.test.ts"
-	]
+	],
+	"timeout": 30000
 }

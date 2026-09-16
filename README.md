@@ -302,12 +302,16 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+
 <!--
 	Platzhalter für die nächste Version (am Zeilenanfang):
 	### **WORK IN PROGRESS**
 -->
 
-### **WORK IN PROGRESS**
+### 0.0.4 (2026-09-16)
+
+- (Alex) fix: the unit tests get a generous timeout (30 s), so cleaning up temporary directories cannot fail them on a slow runner
 
 ### 0.0.3 (2026-09-16)
 

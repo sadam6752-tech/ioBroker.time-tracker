@@ -1,7 +1,7 @@
 /**
  * Break rules (graduated pauses).
  *
- * A break is deducted **per punch pair**, not once per day (legacy behaviour): every complete pair is
+ * A break is deducted **per punch pair**, not once per day: every complete pair is
  * checked against the graduated rules, so a day with several pairs can trigger several deductions.
  */
 

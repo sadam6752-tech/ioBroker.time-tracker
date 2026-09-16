@@ -118,7 +118,7 @@ export function daysInMonth(year: number, month: number): number {
 	return DateTime.fromObject({ year, month }, { zone: UTC }).daysInMonth ?? 30;
 }
 
-/** Result of converting a legacy local wall-clock timestamp. */
+/** Result of converting a local wall-clock timestamp. */
 export interface WallTimeConversion {
 	/** UTC epoch seconds */
 	tsUtc: number;
@@ -129,14 +129,14 @@ export interface WallTimeConversion {
 }
 
 /**
- * Converts a legacy local wall-clock timestamp (seconds since epoch *interpreted as local time*,
- * the format used by the old system) to UTC epoch seconds.
+ * Converts a local wall-clock timestamp (seconds since epoch *interpreted as local time*) to UTC epoch
+ * seconds.
  *
  * During daylight saving transitions wall times can be ambiguous or non-existent; the caller has to
- * report those cases as warnings instead of guessing (see the import specification).
+ * report those cases as warnings instead of guessing.
  *
  * @param localSeconds - seconds since epoch in the local frame
- * @param timeZone - IANA time zone of the legacy system
+ * @param timeZone - IANA time zone of the timestamp
  * @returns UTC instant plus ambiguity flags
  */
 export function wallTimeToUtc(localSeconds: number, timeZone: string): WallTimeConversion {
@@ -179,10 +179,10 @@ export function wallTimeToUtc(localSeconds: number, timeZone: string): WallTimeC
 }
 
 /**
- * Converts an instant into the legacy local wall-clock timestamp (inverse of `wallTimeToUtc`).
+ * Converts an instant into the local wall-clock timestamp (inverse of `wallTimeToUtc`).
  *
  * @param tsUtc - UTC epoch seconds
- * @param timeZone - IANA time zone of the legacy system
+ * @param timeZone - IANA time zone of the timestamp
  * @returns seconds since epoch in the local frame
  */
 export function utcToWallTime(tsUtc: number, timeZone: string): number {

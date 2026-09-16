@@ -39,7 +39,7 @@ describe("time helpers", () => {
 	});
 
 	describe("localDate / localDateTime", () => {
-		it("resolves the legacy start date to local midnight", () => {
+		it("resolves the start date to local midnight", () => {
 			// 1767222000 = 2025-12-31T23:00:00Z = 2026-01-01T00:00+01:00 in Berlin
 			expect(localDate(1767222000, berlin)).to.equal("2026-01-01");
 			expect(localDateTime(1767222000, berlin).minutes).to.equal(0);
@@ -89,7 +89,7 @@ describe("time helpers", () => {
 		});
 	});
 
-	describe("wallTimeToUtc (legacy import)", () => {
+	describe("wallTimeToUtc", () => {
 		it("converts unambiguous wall times", () => {
 			// 15 June 2026, 12:00 local (CEST, +2) = 10:00 UTC
 			const result = wallTimeToUtc(wallSeconds(2026, 6, 15, 12), berlin);

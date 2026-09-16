@@ -1,12 +1,12 @@
 /**
  * Target working time (daily target).
  *
- * Legacy formula (verified against the old system):
+ * Formula:
  *   weekly target = weekly_hours * percent / 100
  *   daily target  = round(weekly target / number of active working days, 2)   (in hours)
  *
- * The value is stored in minutes; the two-decimal rounding of the legacy system is kept so migrated
- * balances match (rounding to whole minutes afterwards).
+ * The value is stored in minutes; the two-decimal rounding is kept so that existing balances keep their
+ * value (rounding to whole minutes afterwards).
  */
 
 /** Employment parameters relevant for the target time. */

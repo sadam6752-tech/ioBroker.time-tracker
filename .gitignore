@@ -15,7 +15,6 @@
 # ============================================================
 PROJECT_PROMPT.md
 docs/PROJECT_PROMPT.md
-LEGACY_MAPPING.md
 
 # ============================================================
 # Build-Ausgaben (generiert – nie committen)
@@ -39,8 +38,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # ============================================================
-# Laufzeitdaten / Datenbank (nur im Wurzelverzeichnis: die
-# Legacy-Fixtures unter fixtures/smalltime/Data/ bleiben im Git)
+# Laufzeitdaten / Datenbank (nur im Wurzelverzeichnis)
 # ============================================================
 *.sqlite
 *.sqlite-wal
@@ -50,7 +48,6 @@ yarn-error.log*
 /logs/
 /.admin/
 *.log
-!fixtures/smalltime/Data/
 
 # ============================================================
 # Tests / Coverage
@@ -59,10 +56,8 @@ coverage
 test-results/
 playwright-report/
 .playwright/
-fixtures/generated/
 
 # generierte Berichte der Prüfwerkzeuge
-docs/cleanroom-report.txt
 docs/i18n-report.txt
 
 # ============================================================

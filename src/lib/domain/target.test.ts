@@ -33,10 +33,10 @@ describe("target time", () => {
 		expect(weeklyTargetMinutes({ ...fullTime, percent: 80 })).to.equal(2040); // 34 h
 	});
 
-	it("computes the daily target like the legacy system", () => {
+	it("computes the daily target", () => {
 		expect(dailyTargetMinutes(fullTime)).to.equal(510); // 8.5 h
 		expect(dailyTargetMinutes({ ...fullTime, percent: 80 })).to.equal(408); // 6.8 h
-		// 42.5 h over 6 days = 7.0833… → rounded to 7.08 h (legacy two decimal rounding)
+		// 42.5 h over 6 days = 7.0833… → rounded to 7.08 h (two decimal rounding)
 		expect(dailyTargetMinutes({ ...fullTime, workdays: "0;1;1;1;1;1;1" })).to.equal(425);
 	});
 

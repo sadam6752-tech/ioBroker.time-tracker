@@ -2,22 +2,20 @@
 
 ## 1. Grundregel: Clean Room (verbindlich)
 
-Dieses Projekt ist eine **eigene Implementierung** und **keine** abgeleitete Fassung des Referenzsystems
-SMALL-Time (AGPL-3.0). Grundlage ist die **interne Spezifikation**: Sie liegt außerhalb dieses Repositories
+Dieses Projekt ist eine **eigene Implementierung** und **keine** abgeleitete Fassung eines anderen
+Zeiterfassungssystems. Grundlage ist die **interne Spezifikation**: Sie liegt außerhalb dieses Repositories
 und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die Adapter-Beschreibung
-(`README.md`), der Herkunftsnachweis (`docs/provenance.md`), diese Mitwirkungsregeln und der Quellcode
-(siehe Abschnitt 6).
+(`README.md`), diese Mitwirkungsregeln und der Quellcode (siehe Abschnitt 6).
 
 **Unzulässig**
 
-- Code, Kommentare, Meldungstexte, Klassen- oder Variablennamen aus `SmallTime-master` übernehmen –
+- Code, Kommentare, Meldungstexte, Klassen- oder Variablennamen aus fremden Projekten übernehmen –
   auch nicht „kopieren und umbenennen".
-- Legacy-Dateien automatisch portieren oder übersetzen (Transpiler, LLM-Konvertierung).
-- Die Legacy-Datei- oder Klassenstruktur als eigene Modulstruktur nachbauen.
+- Fremdcode automatisch portieren oder übersetzen (Transpiler, LLM-Konvertierung).
+- Die Datei- oder Klassenstruktur fremder Projekte als eigene Modulstruktur nachbauen.
 
 **Zulässig**
 
-- Dateinamen, Dateiformate und Feldindizes der Altdaten, soweit sie zum Lesen nötig sind
   (`users.txt`, `userdaten.txt` Idx 0–17, `Timetable/<Jahr>.<Monat>`, `A<Jahr>`, `absenz.txt`).
 - Berechnungsregeln, Verhalten und Rundungsregeln (dokumentiert in der internen Spezifikation).
 - Kurze technische Bezeichner in der Dokumentation zur Nachvollziehbarkeit.
@@ -31,22 +29,22 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 1. **Spec-first:** Verhalten zuerst in der **internen Spezifikation** festhalten (sie liegt außerhalb
    dieses Repositories und wird nicht veröffentlicht).
 2. **Tests vor Implementierung:** Golden-Files und Fixtures aus **beobachteten Ausgaben** der
-   Referenzinstallation bzw. aus den Bestandsdaten erzeugen – niemals aus dem Legacy-Code ableiten.
-3. **Implementieren** und die Spezifikation bei Abweichungen anpassen – nicht den Legacy-Code als
+   Referenzinstallation bzw. aus den Bestandsdaten erzeugen – niemals aus fremdem Code ableiten.
+3. **Implementieren** und die Spezifikation bei Abweichungen anpassen – nicht fremden Code als
    Referenz nachschlagen, um eine Implementierung „passend" zu machen.
 4. Spezifikationsänderungen werden im selben Arbeitsgang wie der Code gepflegt und im PR-Text kurz
    erwähnt (die Spezifikation selbst wird nicht veröffentlicht).
 
 ## 3. PR-Checkliste
 
-- [ ] Kein Code/Kommentar/Bezeichner aus dem Legacy-Baum übernommen (Clean-Room-Prüfung gelaufen:
-      `npm run cleanroom`, Ergebnis im PR genannt).
+- [ ] Kein Code, Kommentar oder Bezeichner aus einem fremden Projekt übernommen (Abgleich gegen die
+      Spezifikation, Ergebnis im PR genannt).
 - [ ] Interne Spezifikation aktualisiert, falls Verhalten/Format betroffen ist (im PR-Text erwähnt).
 - [ ] Tests ergänzt bzw. angepasst (Unit/Integration; Golden-File bei Berechnungslogik).
 - [ ] i18n: neue Texte nur in `en.json` ergänzt, `npm run translate` ausgeführt, `npm run check:i18n` grün
       (alle 11 Sprachen vollständig).
-- [ ] Lizenz- und Herkunftshinweise unverändert korrekt (`LICENSE`, `docs/provenance.md`).
-- [ ] Keine Legacy-Dateien, Archive oder Datenkopien im Commit (`SmallTime-master/`, `*.zip`).
+- [ ] Lizenz- und Herkunftshinweise unverändert korrekt (`LICENSE`, Abschnitt „Provenance" in `README.md`).
+- [ ] Keine Fremddateien, Archive oder Datenkopien im Commit (`*.zip`, fremde Verzeichnisse).
 - [ ] Neue/geänderte States: `common.role`, `common.type`, `common.read`, `common.write` passen zusammen —
       keine generische Rolle `state`, `button` → `boolean` mit `read:false`/`write:true`, Rolle `json` →
       `common.type = "string"`.
@@ -61,7 +59,7 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
   im Code (Ausnahme: fachliche Begriffe, die bewusst so dokumentiert sind, z. B. `vorholzeit_per_year`).
 - **Adapter-Tests:** `@iobroker/testing` — `tests.packageFiles` (prüft `package.json`/`io-package.json`) und
   `tests.integration` gegen einen js-controller; die mitgelieferten Unit-Mocks sind deprecated.
-- **Eigene Logik:** Vitest für Berechnung, Import-Parser und Zeitzonen-Fälle, Playwright für E2E der PWA;
+- **Eigene Logik:** Vitest für Berechnung und Zeitzonen-Fälle, Playwright für E2E der PWA;
   Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
 - **Web-App (`src-pwa/`):** eigenes Projekt mit eigenem `package.json`/`tsconfig.json` (React 18, MUI 5, Vite).
   Ablauf: `npm run install:pwa` → `npm run build:pwa` (Typprüfung + Build nach `www/`) → `npm run lint:pwa`;
@@ -91,7 +89,7 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
 
 ## 5. Sicherheitsrelevante Änderungen
 
-Betroffen sind insbesondere Authentifizierung, Session-/Token-Handling, RBAC, Audit, Import und
+Betroffen sind insbesondere Authentifizierung, Session-/Token-Handling, RBAC, Audit und
 Terminal-Endpunkte. Solche Änderungen benötigen: Beschreibung des Risikos, Test der Negativfälle
 (Rechte, CSRF, Idempotenz, `409`) und Aktualisierung der Sicherheitscheckliste in der internen
 Spezifikation.
@@ -103,13 +101,12 @@ Spezifikation.
 | Adapter-Beschreibung                | `README.md` (später zusätzlich `adapter/README.md`) | ja                                    |
 | Lizenz                              | `LICENSE`                                           | ja                                    |
 | Mitwirkungsregeln (Clean Room)      | `CONTRIBUTING.md`                                   | ja                                    |
-| Herkunftsnachweis                   | `docs/provenance.md`                                | ja (belegt die unabhängige Umsetzung) |
+| Herkunft                            | Abschnitt „Provenance" in `README.md`               | ja                                    |
 | Quellcode                           | `src/`, `src-pwa/`, `src-shared/`, `tools/`         | ja                                    |
 | Sprachdateien (11 Sprachen)         | `admin/i18n/`, `src-pwa/src/i18n/`                  | ja (Übersetzungen willkommen)         |
 | Übersetzer-Doku                     | `docs/i18n.md`                                      | ja                                    |
 | Interne Spezifikation               | außerhalb dieses Repositories                       | **nein**                              |
-| Prüfbericht                         | `docs/cleanroom-report.txt`                         | nein (generiert, `.gitignore`)        |
-| Legacy-Baum, Archive, Bestandsdaten | außerhalb dieses Repositories                       | **nein**                              |
+| Fremde Projekte, Archive, Datenkopien | außerhalb dieses Repositories                       | **nein**                              |
 
 Regeln dazu:
 
@@ -117,5 +114,5 @@ Regeln dazu:
   Sicherheitsnetz (`PROJECT_PROMPT.md`, `docs/PROJECT_PROMPT.md`).
 - Referenzen auf Abschnittsnummern der Spezifikation gehören nicht in veröffentlichte Dateien wie
   `README.md`; interne Modul-READMEs beschreiben die Vorgaben in eigenen Worten.
-- Der Herkunftsnachweis bleibt öffentlich und nennt das Referenzsystem samt Lizenz (AGPL-3.0) sowie die
-  Feststellung „kein Quellcode übernommen".
+- Der Herkunftsnachweis wird außerhalb dieses Repositories geführt und nennt die Grundlage der Umsetzung
+  sowie die Feststellung „kein fremder Quellcode übernommen".

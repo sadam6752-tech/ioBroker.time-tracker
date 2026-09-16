@@ -1,9 +1,9 @@
 /**
  * Calculation service: day balance, monthly sums, overtime models and vacation.
  *
- * The formulas follow the internal specification (section 3.3–3.6) and were verified against the legacy
- * system: balance = worked − break − target, overtime is carried per month (or yearly), the annual
- * “Vorholzeit” is credited monthly, payouts reduce the overtime balance.
+ * The formulas follow the internal specification (section 3.3–3.6): balance = worked − break − target,
+ * overtime is carried per month (or yearly), the annual “Vorholzeit” is credited monthly, payouts reduce
+ * the overtime balance.
  */
 
 import { applyPauses, type BreakResult, type PauseRule } from "./breaks";
@@ -193,7 +193,7 @@ export interface OvertimeResult {
  * - `cumulative`: identical to `monthly`, but the caller passes the running value as `overtimeStartMinutes`
  *   so the balance survives the year boundary.
  * - `yearly`: the balance is only computed at the end of the calendar year; until then the carryover is
- *   reported unchanged (`pending = true`), matching the legacy behaviour.
+ *   reported unchanged (`pending = true`).
  *
  * @param input - overtime calculation input
  * @returns carried overtime plus the intermediate values

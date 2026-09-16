@@ -19,8 +19,7 @@ Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user,
 > **Status: work in progress.** The adapter is implemented and tested: database with migrations, domain logic
 > (time pairs, breaks, target time, overtime models, vacation, holidays), REST API with roles and permissions,
 > web app (PWA) incl. offline queue, badge/PIN terminal, RFID scan, monthly reports (PDF/XLS), live events and
-> backups with a tested restore. Still missing before the first release: the migration of existing SMALL-Time
-> data, the acceptance tests and the publication itself. The package is therefore **not installable from npm**
+> backups with a tested restore. Still missing before the first release: the acceptance tests and the publication itself. The package is therefore **not installable from npm**
 > yet and there are no stable states.
 
 ## Features
@@ -37,13 +36,11 @@ Everything in this table is implemented unless it is marked as open. The remaini
 | Reports             | Monthly PDF timesheet, XLS export, statistics, payouts/compensation                                                                                                                               |
 | ioBroker            | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations                                                                                 |
 | Data                | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states                                                                                                        |
-| Migration           | Import of existing **SMALL-Time** data (dry-run report plus golden-file verification) – **still open**                                                                                            |
 
 ## Requirements
 
 - ioBroker with js-controller >= 6.0.11 and **Node.js >= 22** (required by the bundled SQLite driver `better-sqlite3`)
 - HTTPS for the web app (required for PWA/service worker); a reverse proxy with Let's Encrypt is recommended
-- Optional for migration: an existing SMALL-Time `Data` directory (read-only copy)
 
 ## Installation
 
@@ -80,8 +77,7 @@ The adapter is configured in the instance settings:
 | Days users may edit on their own    | Retroactive editing window for employees                  |
 | Round quick punches to minutes      | Quick-time rounding (0 = off)                             |
 | Calculate absences only until today | Future absences are not deducted from the target time     |
-| Subtract working time from absences | Legacy behaviour – may convert vacation into overtime     |
-| Legacy data directory for import    | Read-only source directory of the old system              |
+| Subtract working time from absences | May convert vacation into overtime                         |
 | Keep database backups for days      | Retention of `VACUUM INTO` backups                        |
 
 Instance settings (editable through `PUT /api/settings`, permission `settings.edit`) complement the
@@ -187,48 +183,13 @@ yet, **one administrator account**, because otherwise nobody could log in:
 | `Start password of the first administrator` | password of that account; empty = a random password is written to the adapter log once |
 
 The account is created with `must_change_pw`, so the start password opens the door exactly once and the web
-app asks for a new password right after the login. Accounts imported from the old system work the same way:
-their legacy SHA-1 is verified **once**, replaced by a modern hash during that login and deleted immediately
-afterwards.
+app asks for a new password right after the login. Accounts created later in the admin area start the same way.
 
 The instance settings of the ioBroker admin are applied on every start and **win over the values stored in the
 database** — holiday country, time zone (also the time zone of new accounts), default language for new users,
 edit window, quick rounding, session lifetime, backup retention and the absence switches. `PUT /api/settings`
 stays for the keys the admin UI does not offer; an empty field never wipes a stored value. The adapter also
 publishes `info.version`, `info.schemaVersion`, `info.dbSizeBytes` and `info.lastError`.
-
-## Legacy import (SMALL-Time)
-
-An existing installation can take its data over from the old PHP system (**SMALL-Time v0.9.205**). The import
-reads the `Data` directory read-only and is started with the `commands.import` state:
-
-```json
-{ "baseDir": "/opt/smalltime", "mode": "dry-run" }
-```
-
-| Value | Meaning |
-| --- | --- |
-| `baseDir` | installation folder (containing `Data` and `include`) or the `Data` folder itself |
-| `mode` | `dry-run` (default) counts and checks everything without writing, `commit` writes |
-| `resetImport` | `true` allows a commit into a database that already holds entries, absences or payouts |
-| `timezone` | time zone the legacy punch instants are read in, default `Europe/Berlin` |
-
-What the import takes over:
-
-- users, roles, work profiles, surcharge windows and badge codes from `Data/users.txt`, `Data/group.txt` and
-  `Data/<user>/userdaten.txt` (group 1 becomes `admin`, everyone else `employee`)
-- punch instants from `Data/<user>/Timetable/<year>.<month>`; the idempotency key `import:<user>:<epoch>` keeps
-  a second run a no-op
-- absences from `Timetable/A<year>` and payouts from `Timetable/auszahlungen`
-- absence types of `absenz.txt`, the break rules of `include/Settings/pausen.txt` and the settings of
-  `include/Settings/settings.txt` that the new system still uses
-- after the import **all** aggregates are computed from the imported raw data — the legacy monthly values are
-  never taken over, they only serve as a **golden reference**: a month that deviates by more than ±0.01 h makes
-  the run end with `mismatch`
-
-Every run is documented in the `import_runs` table (mode, status, counters, warnings, deviations), the last
-report is published in `info.lastImport`. Folders that are deliberately not migrated (`Rapport/`,
-`Dokumente/`, `img/`) are only counted in the report.
 
 ## Languages
 
@@ -266,8 +227,7 @@ src-pwa/      Progressive Web App (Vite + React + MUI) – built into www/
 src-shared/   types and validation shared by adapter and web app
 admin/        jsonConfig configuration and translations (11 languages)
 test/         package and integration tests (@iobroker/testing)
-tools/        clean-room and i18n verification scripts
-docs/         provenance record and translator guide
+docs/         operator and translator guide
 ```
 
 | Script                     | Description                                                                 |
@@ -286,7 +246,6 @@ docs/         provenance record and translator guide
 | `npm run translate`        | Keep the 11 translation files in sync                                       |
 | `npm run check:i18n`       | Verify that all 11 languages are complete                                   |
 | `npm run check:adapter`    | Local pre-check of the ioBroker adapter rules (see `docs/adapter-check.md`) |
-| `npm run cleanroom`        | Verify that no source was copied from the legacy project                    |
 | `npm run release`          | Create a release (version, changelog, tag)                                  |
 | `dev-server watch`         | Run and debug the adapter locally                                           |
 
@@ -303,7 +262,6 @@ npm run build
 
 ### Still open
 
-- **Migration** of existing SMALL-Time data (specification 2.9): parsers, re-hashing of legacy passwords,
   dry-run report and the golden comparison against `Timetable/<year>` — requires a real `Data` directory.
 - **Acceptance:** end-to-end tests (Playwright), load smoke test, documented security verification, review of
   the layouts in all 11 languages and PDF rendering for `ru`, `uk` and `zh-cn` with a Unicode font.
@@ -312,26 +270,23 @@ npm run build
   area, and the nine web app language files that still contain English texts (structure is complete).
 
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
-implementation; no code, comments or identifiers from the legacy project; state roles, types and access
 flags must follow the official role rules; secrets only via `encryptedNative`/`protectedNative`.
 
 ## Changelog
 
 ### **WORK IN PROGRESS**
 
-- (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin
-  configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), clean-room and i18n checks
+- (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), i18n checks
 
 ### 0.0.1
 
 - initial release (not published yet)
 
-## Provenance / acknowledgement
+## Provenance
 
-This project is an independent reimplementation. Behavior, calculation rules and data formats were
-determined from a running SMALL-Time installation (SmallTime v0.9.205, © IT-Master, AGPL-3.0) so that
-existing data can be reused. **No source code** was taken from that project. Details and the verification
-record: [`docs/provenance.md`](docs/provenance.md).
+This project is an independent implementation of the time tracking described in the internal specification.
+Behaviour, calculation rules and data formats follow that specification; **no source code** was taken from any
+other project. The verification record is kept outside this repository.
 
 ## German summary
 

@@ -3,8 +3,8 @@
  *
  * Geprüft werden Anmeldung, Pflicht-Passwortwechsel, Anlegen eines Mitarbeiters samt Badge-PIN, Stempeln,
  * Tages-/Monatsauswertung, der Monatsbericht als XLS und PDF sowie eine Sicherung. Nicht enthalten sind die
- * Schritte, die eine Einstellung in der Instanz voraussetzen: Kiosk-Terminal (`kioskEnabled`), Ausweis-Links
- * (HMAC-Secret) und der Altdaten-Import (echte Daten). Diese prüft der Testplan von Hand.
+ * Schritte, die eine Einstellung in der Instanz voraussetzen: Kiosk-Terminal (`kioskEnabled`) und
+ * Ausweis-Links (HMAC-Secret). Diese prüft der Testplan von Hand.
  *
  * Achtung: es entstehen **echte** Daten (Mitarbeiter `pruefung`, PIN, Stempel). Daher nur gegen eine Testinstanz
  * laufen lassen.
@@ -325,7 +325,7 @@ async function main() {
 		throw new Error(`${failed.length} Schritt(e) fehlgeschlagen`);
 	}
 	console.log(
-		"OK: Erststart-Strecke ohne Fehler. Kiosk-Terminal, Ausweis-Link mit Secret und Altdaten-Import prüft der Testplan von Hand.",
+		"OK: Erststart-Strecke ohne Fehler. Kiosk-Terminal und Ausweis-Link mit Secret prüft der Testplan von Hand.",
 	);
 }
 

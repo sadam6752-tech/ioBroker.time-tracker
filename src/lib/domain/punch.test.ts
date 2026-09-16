@@ -157,7 +157,7 @@ describe("employment window", () => {
 describe("quick rounding", () => {
 	it("rounds to the nearest step", () => {
 		// nearest multiple wins: 7:57 is closer to 7:55, 7:59 is closer to 8:00
-		// (the legacy manual example “7.57 to 8.02 → 8:00” is imprecise by one minute)
+		// (the manual “7.57 to 8.02 → 8:00” example is imprecise by one minute)
 		expect(utcToWallTime(roundToStep(at(7, 57), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 7, 55));
 		expect(utcToWallTime(roundToStep(at(7, 59), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));
 		expect(utcToWallTime(roundToStep(at(8, 2), 5, berlin), berlin)).to.equal(wall(2026, 1, 1, 8, 0));

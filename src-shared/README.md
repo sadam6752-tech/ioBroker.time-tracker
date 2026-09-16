@@ -12,7 +12,7 @@ Hier liegen die Artefakte, die Adapter und PWA gemeinsam nutzen:
 
 - Keine Server-Abhängigkeiten (kein `@iobroker/*`, kein SQLite) und keine Browser-Abhängigkeiten.
 - Keine Geschäftslogik, die nur serverseitig entschieden werden darf (Rechte, Sitzungen, Salden-Wahrheit).
-- Clean Room: kein Code/keine Bezeichner aus dem Legacy-Baum (siehe [`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
+- Clean Room: kein Code/keine Bezeichner aus anderen Projekten (siehe [`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
 Verbindliche Feldnamen und Formate stehen in der internen Spezifikation, die außerhalb dieses
 Repositories liegt und nicht veröffentlicht wird.

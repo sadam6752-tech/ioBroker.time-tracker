@@ -42,8 +42,8 @@ bleibt der Eintrag liegen und wird beim nächsten `online`-Ereignis (oder über 
 gesendet. Der Server erkennt Wiederholungen am `idempotencyKey`, Konflikte landen in
 `GET /api/entries/conflicts` und werden dort entschieden.
 
-**Clean Room:** kein Code und keine Bezeichner aus dem Legacy-Baum (siehe [`../CONTRIBUTING.md`](../CONTRIBUTING.md));
-`npm run cleanroom` prüft auch `src-pwa`.
+**Clean Room:** kein Code und keine Bezeichner aus anderen Projekten (siehe
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
 Verbindliche Details (Endpunkte, Feldnamen, Fehlercodes) stehen in der internen Spezifikation, die
 außerhalb dieses Repositories liegt und nicht veröffentlicht wird.

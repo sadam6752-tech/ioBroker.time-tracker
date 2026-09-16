@@ -1,7 +1,7 @@
 # Abnahme- und Testplan (erste reale Tests)
 
 Dieses Dokument ist die Arbeitsanleitung für die **ersten Tests auf einer echten ioBroker-Installation**.
-Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T18 mit Erwartung und die Abnahmekriterien.
+Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T17 mit Erwartung und die Abnahmekriterien.
 Für die Installation bis zum ersten Stempel gibt es `docs/erste-schritte.md`; die Schritte dort entsprechen der
 Vorbereitung unten.
 Die öffentliche `README.md` bleibt englisch (Vorgabe des Adapter-Checkers) — dieses Betriebsdokument ist
@@ -13,7 +13,6 @@ Nachweisen, dass der Adapter im produktiven Betrieb das tut, was die Spezifikati
 verlangt: stempeln (online, offline, Terminal), rechnen (Soll, Pausen, Saldo, Ferien, Feiertage),
 berichten (Excel, PDF), Rechte serverseitig durchsetzen, sichern und wiederherstellen.
 
-**Nicht** Teil dieser Runde: der Import von Altdaten (Phase 9) — dafür gibt es Abschnitt 8.
 
 ## 2. Testumgebung
 
@@ -90,12 +89,7 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 | T15 | Sprachen | Oberfläche auf `de`, dann `ru`, dann `zh-cn`; Berichte in derselben Sprache | keine abgeschnittenen Texte, Datum/Zahlen lokal formatiert, Bericht in der Sprache des Nutzers |
 | T16 | PWA-Installation | Adapter-URL über **HTTPS** öffnen, „Zum Startbildschirm hinzufügen", App starten, neu bauen und neu laden | App läuft im eigenen Fenster, Icon ist das Logo, Update ohne hängenden Alt-Cache |
 | T17 | Last (Stichprobe) | `npm run load-smoke -- --login <Benutzer> --password '<Passwort>'` (Standard: 5 Stempel parallel; `--count 10 --base http://…` möglich, Passwort alternativ in `ZT_PASSWORD`) | keine Fehler, alle 5 Stempel vorhanden, Antwortzeiten im Sekundenbereich — das Skript prüft beides selbst und endet nur dann mit Code 0 |
-| T18 | Legacy-Import | Kommando `commands.import` setzen: (a) `{"baseDir":"…/smalltime","mode":"dry-run"}`, (b) danach mit `"mode":"commit"`, (c) denselben Commit ein zweites Mal (mit `"resetImport":true`), (d) Report in `info.lastImport` und in `import_runs` prüfen | (a) Bericht mit Zählern und Warnungen, aber **keine** neuen Zeilen in `time_entries`/`absences`/`payouts`; (b) Import erfolgreich, `status` nicht `mismatch`, Monatswerte reproduzieren `Timetable/<Jahr>` auf ±0,01 h; (c) keine zusätzlichen Zeilen (Idempotenz); (d) `info.lastImport` enthält den Bericht, `import_runs` je Lauf eine Zeile mit Modus, Status, Zählern und Warnungen |
 
-Ein Hinweis zu T18: Der Import wird gegen das synthetische Fixture (`fixtures/smalltime`) geprüft. Für die Abnahme
-am realen Bestand ist eine Kopie des produktiven `Data`-Verzeichnisses nötig (Abschnitt 2.9.11) — erst damit sind
-die heute offenen Feldbedeutungen (Zeitzone der Stempel, Felder 2/4 der Monatsdatei, Feld 1 in `A<Jahr>`)
-verbindlich zu bestätigen.
 
 ## 6. Abnahmekriterien
 
@@ -130,7 +124,6 @@ verbindlich zu bestätigen.
 
 | Lücke | Auswirkung beim Test |
 | --- | --- |
-| **Import der Altdaten** (Phase 9) | Implementiert (`commands.import` bzw. `POST /api/import/run`, Dry-Run → Commit → Idempotenz). Für den verbindlichen Golden-Abgleich braucht T18 eine **echte Kopie des `Data`-Verzeichnisses** des Altsystems; mit dem synthetischen Fixture ist er nur eingeschränkt aussagekräftig. |
 | Adminbereich-Ausbau | Nur noch die **NFC-Bedienung** fehlt in der PWA; Rollenwechsel pro Zeile, Einstellungen, Tags und Feiertage sind seit der letzten Runde vorhanden. Statistik und Ausweise sind über die API erreichbar. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |
 | Keine E2E-Tests (Playwright) | **Seit der letzten Runde vorhanden** (`npm run e2e`, `e2e/server.mjs` startet die echte API + gebaute PWA). Drei sitzungsgebundene Fälle sind noch `fixme`, weil nach dem Login ein Render-Fehler der PWA offen ist (React #130, in `PROJECT_PROMPT.md` dokumentiert) — T1–T13 laufen deshalb weiterhin manuell. |

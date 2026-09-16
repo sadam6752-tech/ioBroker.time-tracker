@@ -369,13 +369,34 @@ export const migrations: Migration[] = [
 	},
 	{
 		version: 10,
-		name: "drops the columns of the removed data import",
+		name: "drops the leftovers of the removed data import",
 		sql: `
-			-- The adapter does not read data of another time tracking system any more, so the two columns that
-			-- existed for it are dropped. A fresh database creates them with migration 1 and loses them right here;
-			-- an existing installation is cleaned up the same way.
+			-- The adapter does not read data of another time tracking system any more, so the columns that
+			-- existed for it are dropped. A fresh database creates them with migration 1 and loses them right
+			-- here; an existing installation is cleaned up the same way.
 			ALTER TABLE users         DROP COLUMN legacy_sha1;
 			ALTER TABLE work_profiles DROP COLUMN legacy_source;
+			-- rfid_tags carried the printed card number of that system as a second identifier. SQLite cannot
+			-- drop a column that a CHECK constraint mentions, so the table is rebuilt without it. Existing rows
+			-- keep their id, their uid and their token hash; the id is copied explicitly so that no stored
+			-- reference can dangle.
+			CREATE TABLE rfid_tags_new (
+				id           INTEGER PRIMARY KEY AUTOINCREMENT,
+				uid          TEXT,
+				token_hash   TEXT    NOT NULL,
+				user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+				label        TEXT,
+				is_active    INTEGER NOT NULL DEFAULT 1,
+				expires_at   INTEGER,
+				last_used_at INTEGER,
+				created_at   INTEGER NOT NULL
+			);
+			INSERT INTO rfid_tags_new (id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at)
+				SELECT id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at
+				FROM rfid_tags;
+			DROP TABLE rfid_tags;
+			ALTER TABLE rfid_tags_new RENAME TO rfid_tags;
+			CREATE UNIQUE INDEX idx_rfid_uid ON rfid_tags(uid) WHERE uid IS NOT NULL;
 		`,
 	},
 ];

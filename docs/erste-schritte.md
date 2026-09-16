@@ -41,7 +41,7 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
 3. Zeitzone (`Europe/Berlin`), Standardsprache und Feiertagsland kontrollieren.
 4. **Startpasswort des Erst-Administrators** setzen — oder leer lassen: dann wird ein Zufallspasswort **einmalig
    ins Log** geschrieben (`info.lastError` bleibt leer, wenn nichts schiefging).
-5. Optional: **Enable kiosk terminal**, **Legacy data directory for import**, Aufbewahrung der Backups.
+5. Optional: **Enable kiosk terminal** und die Aufbewahrung der Backups.
 6. Bei Betrieb hinter einem Proxy: **Trust the reverse proxy** einschalten (sonst werden `X-Forwarded-*`
    ignoriert).
 
@@ -83,8 +83,8 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
 
   Erwartet: `Ergebnis: <alle>/<alle> Schritte erfüllt` und `OK: Erststart-Strecke ohne Fehler.` (Code 0). Das Skript
   legt den Mitarbeiter `pruefung` samt Stempeln und PIN an — für saubere Daten danach in der Verwaltung löschen.
-  Was es bewusst auslässt (weil es eine Einstellung oder echte Daten braucht), sagt es am Ende selbst: Kiosk-
-  Terminal, Ausweis-Link und Altdaten-Import prüft der Testplan von Hand.
+  Was es bewusst auslässt (weil es eine Einstellung braucht), sagt es am Ende selbst: Kiosk-Terminal und
+  Ausweis-Link prüft der Testplan von Hand.
 - **Anwesenheit aus ioBroker steuern:** jeder Mitarbeiter hat den schreibbaren State
   `zeiterfassung.0.users.<id>.present` (Rolle `switch`). `true` stempelt ein (bezahlte Arbeitszeit läuft), `false`
   stempelt aus — gedacht für einen Fingerabdruck-Reader, eine RFID-Brücke, ein Dashboard oder ein Skript. Der
@@ -99,7 +99,7 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des
   Adapterverzeichnisses kopieren, Instanz starten.
 
-## 6. Hinweis zu Altdaten
+## 6. Keine Datenübernahme
 
 Der Adapter liest **keine** Daten eines anderen Zeiterfassungssystems ein. Mitarbeiter, Stempel und Abwesenheiten
 werden in der Oberfläche angelegt:
@@ -116,8 +116,7 @@ werden in der Oberfläche angelegt:
 | PWA lässt sich nicht installieren | HTTPS nötig (Reverse Proxy), Service-Worker-Scope im Log prüfen |
 | Bericht fehlt/leer in `ru`/`uk`/`zh-cn` | `report_font_path` setzen (Verwaltung → Einstellungen) |
 | Kiosk nimmt keine PIN | Zustand `info.lastError`, Kontosperre nach 5 Fehlversuchen (15 Minuten) |
-| Import bricht ab | Bericht in `info.lastImport` und Zeile in `import_runs` lesen |
 | Alles unklar | `npm run test:ts`, `npm run test:package`, `npm run test:integration` lokal ausführen |
 
-Die Abnahmekriterien und das Protokollblatt stehen in `docs/testplan.md` (T1–T18); der jeweilige Stand der
+Die Abnahmekriterien und das Protokollblatt stehen in `docs/testplan.md` (T1–T17); der jeweilige Stand der
 Restarbeiten in `PROJECT_PROMPT.md`.

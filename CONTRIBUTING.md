@@ -145,12 +145,19 @@ Regeln, in dieser Reihenfolge wichtig:
     Adapter läuft weiter, weil der Dev-Server ihn hält.
 
 2. **Den Adapter nie in `ioBroker.admin` starten oder neu starten**, solange `dev-server watch` läuft — ein Start
-   aus der Oberfläche aktiviert die Instanz wieder und erzeugt genau die Schleife aus Regel 1. Die Doku des
-   Dev-Servers weist ausdrücklich darauf hin. Einen Neustart erzwingt man, indem man eine Quelldatei speichert
-   (der Watcher übernimmt) oder die ganze Kette neu startet.
-3. Wer den Adapter bewusst **aus der Admin-Oberfläche** starten will, nutzt `npm run dev-server run`: dann läuft er
-   nicht vom Dev-Server, sondern vom Controller. Codeänderungen brauchen dort `npm run build` und, bei gestopptem
-   Dev-Server, `npm run dev-server upload`.
+   aus der Oberfläche aktiviert die Instanz wieder und erzeugt genau die Schleife aus Regel 1. Im Log sieht das so
+   aus: `"system.adapter.zeiterfassung.0" enabled` → `started with pid …` → `terminated with code 7
+(ADAPTER_ALREADY_RUNNING)` → `Restart adapter … because enabled`, alle 30 Sekunden. Die Doku des Dev-Servers
+   weist ausdrücklich darauf hin. Einen Neustart erzwingt man, indem man eine Quelldatei speichert (der Watcher
+   übernimmt) oder die ganze Kette neu startet.
+3. Wer den Adapter **aus der Admin-Oberfläche** starten und stoppen können will, wählt einen der beiden Modi — dann
+   hält nur eine Seite den Adapter und ein Start/Stopp in der Oberfläche ist unproblematisch:
+    - `npm run dev-server run` — der Dev-Server startet den Adapter nicht, der Controller hält ihn. Hot-Reload gibt
+      es nur für die Admin-Oberfläche; Codeänderungen brauchen `npm run build` und (bei gestopptem Dev-Server)
+      `npm run dev-server upload`.
+    - `npm run dev-server watch --noStart` — der Dev-Server baut und synchronisiert weiterhin automatisch, startet
+      den Adapter aber nicht. Die Instanz bleibt aktiviert (`common.enabled=true`) und wird vom Controller
+      gestartet; nach einer Codeänderung den Adapter in der Admin-Oberfläche neu starten.
 4. **Nur ein Dev-Server gleichzeitig** und **kein zusätzliches `npm run build`** daneben: der Dev-Server baut
    selbst, parallele Builds führen zu Race-Conditions und Folge-Restarts.
 5. Hängt die Instanz doch in der Schleife, alle Prozesse beenden, deren Kommandozeilentext das Repository oder

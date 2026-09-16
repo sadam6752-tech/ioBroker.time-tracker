@@ -305,22 +305,21 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.6 (2026-09-16)
+
+- (Alex) fix: the buttons of a list row — employees, terminals, holidays, badges, absences and the correction list —
+  no longer cover the names on a phone, and an absence names its type again (the API hands the code out with the
+  record)
 - (Alex) internal: `npm run coverage` reports figures again (the coverage runner used a type checking compiler,
-  which failed on the adapter types) — the runner now works without type checking, because `npm run check` and the
-  tests cover the types
-- (Alex) internal: the README and the acceptance plan describe the current state again, and the dropped legacy
-  import of the predecessor system is recorded as a decision (`docs/entscheidungen.md`)
+  which failed on the adapter types; `npm run check` stays the gate for the types)
 - (Alex) internal: the unit tests cover the negative cases of the API (invalid instants, flags, whole minutes and
   punch directions, settings that cannot be changed, the picture route without a session, a foreign and a missing
   absence, a broken employee id in a payout query, tag links without a secret) and the failure paths of the backup
   service, the HTTP server and the event stream — 434 to 450 unit tests, branch coverage 80.9 to 83.3 %
 - (Alex) internal: the browser tests cover the forced password change of a start password, the month view, the PDF
-  statement as a download and an absence request — 12 to 17 cases
-- (Alex) fix: the actions of a list row (employees, terminals, holidays, badges, absences, the correction list) no
-  longer cover the names — they stay beside the text and move below it on a phone; one browser test measures the
-  geometry of every row
-- (Alex) fix: an absence in the list names its type again — the API hands the code out with the record, before the
-  row read “undefined”
+  statement as a download, an absence request and the geometry of every list row — 12 to 17 cases
+- (Alex) internal: the README and the acceptance plan describe the current state again, and the dropped legacy
+  import of the predecessor system is recorded as a decision (`docs/entscheidungen.md`)
 
 ### 0.0.5 (2026-09-16)
 

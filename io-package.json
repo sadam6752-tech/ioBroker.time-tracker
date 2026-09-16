@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.5",
+		"version": "0.0.6",
 		"nogit": true,
 		"news": {
+			"0.0.6": {
+				"en": "fix: the buttons of a list row (employees, terminals, holidays, badges, absences and the correction list) no longer cover the names on a phone, and an absence names its type again",
+				"de": "fix: die Schaltflächen einer Listenzeile (Mitarbeiter, Terminals, Feiertage, Ausweise, Abwesenheiten und Zeitkorrektur) verdecken auf dem Handy keine Namen mehr, und eine Abwesenheit nennt ihren Typ wieder",
+				"ru": "fix: кнопки в строке списка (сотрудники, терминалы, праздники, пропуска, отсутствия и коррекция времени) больше не закрывают имена на телефоне, а отсутствие снова называет свой тип",
+				"uk": "fix: кнопки в рядку списку (працівники, термінали, свята, перепустки, відсутності та коригування часу) більше не закривають імена на телефоні, а відсутність знову називає свій тип",
+				"pl": "fix: przyciski w wierszu listy (pracownicy, terminale, święta, identyfikatory, nieobecności i korekta czasu) nie zasłaniają już nazwisk na telefonie, a nieobecność ponownie podaje swój typ",
+				"fr": "fix: les boutons d'une ligne de liste (employés, terminaux, jours fériés, badges, absences et correction des temps) ne recouvrent plus les noms sur un téléphone, et une absence indique à nouveau son type",
+				"it": "fix: i pulsanti di una riga di elenco (dipendenti, terminali, giorni festivi, badge, assenze e correzione dei tempi) non coprono più i nomi sullo smartphone, e un'assenza indica di nuovo il suo tipo",
+				"es": "fix: los botones de una fila de la lista (empleados, terminales, festivos, credenciales, ausencias y corrección de tiempos) ya no tapan los nombres en el móvil, y una ausencia vuelve a indicar su tipo",
+				"pt": "fix: os botões de uma linha da lista (funcionários, terminais, feriados, crachás, ausências e correção de tempos) já não tapam os nomes no telemóvel, e uma ausência volta a indicar o seu tipo",
+				"nl": "fix: de knoppen van een lijstregel (medewerkers, terminals, feestdagen, pasjes, afwezigheden en tijdcorrectie) bedekken op een telefoon geen namen meer, en een afwezigheid noemt weer zijn type",
+				"zh-cn": "fix: 列表行中的按钮（员工、终端、节假日、证卡、缺勤和时间更正）不再遮挡手机上的姓名，缺勤会再次显示其类型"
+			},
 			"0.0.5": {
 				"en": "The four settings of the first administrator are now translated in all 11 languages",
 				"de": "Die vier Einstellungen des ersten Administrators sind jetzt in allen 11 Sprachen übersetzt",
@@ -57,8 +70,18 @@
 			"uk": "Відстеження часу (прихід/вихід) для ioBroker із веб-додатком, терміналом бейджів і звітами",
 			"zh-cn": "通过网络应用程序、徽章终端和报告对 ioBroker 进行时间跟踪（上下班打卡）"
 		},
-		"authors": ["Alex <sadam6752@gmail.com>"],
-		"keywords": ["time tracking", "zeiterfassung", "clock in", "attendance", "working time", "pwa", "rfid"],
+		"authors": [
+			"Alex <sadam6752@gmail.com>"
+		],
+		"keywords": [
+			"time tracking",
+			"zeiterfassung",
+			"clock in",
+			"attendance",
+			"working time",
+			"pwa",
+			"rfid"
+		],
 		"licenseInformation": {
 			"type": "free",
 			"license": "MIT"
@@ -89,8 +112,16 @@
 			}
 		]
 	},
-	"protectedNative": ["sessionSecret", "hmacSecret", "adminPassword"],
-	"encryptedNative": ["sessionSecret", "hmacSecret", "adminPassword"],
+	"protectedNative": [
+		"sessionSecret",
+		"hmacSecret",
+		"adminPassword"
+	],
+	"encryptedNative": [
+		"sessionSecret",
+		"hmacSecret",
+		"adminPassword"
+	],
 	"native": {
 		"port": 8082,
 		"bind": "127.0.0.1",

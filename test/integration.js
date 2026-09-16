@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+const net = require("node:net");
 const path = require("path");
 const { expect } = require("chai");
 const { tests } = require("@iobroker/testing");
@@ -18,6 +19,25 @@ const reactionTimeout = 20000;
  */
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Finds a port nothing is listening on.
+ *
+ * The adapter binds the port from its own configuration; its default may be taken by a development instance that
+ * runs next to the tests, so a free port is asked from the operating system instead of expecting the default one.
+ *
+ * @returns {Promise<number>} free port
+ */
+function freePort() {
+	return new Promise((resolve, reject) => {
+		const probe = net.createServer();
+		probe.once("error", reject);
+		probe.listen(0, "127.0.0.1", () => {
+			const { port } = probe.address();
+			probe.close(() => resolve(port));
+		});
+	});
 }
 
 // Run integration tests - See https://github.com/ioBroker/testing for a detailed explanation and further options
@@ -71,6 +91,8 @@ tests.integration(path.join(__dirname, ".."), {
 			before(async function () {
 				this.timeout(testTimeout);
 				harness = getHarness();
+				// a free port, so a running development instance of the adapter cannot block the tests
+				await harness.changeAdapterConfig("zeiterfassung", { native: { port: await freePort() } });
 				// wait for info.connection so database and API are ready
 				await harness.startAdapterAndWait(true);
 			});
@@ -177,7 +199,9 @@ tests.integration(path.join(__dirname, ".."), {
 				const status = await Promise.race([
 					new Promise((resolve, reject) => {
 						socket.on("unexpected-response", (_request, response) => resolve(response.statusCode));
-						socket.on("open", () => reject(new Error("the stream accepted a connection without a session")));
+						socket.on("open", () =>
+							reject(new Error("the stream accepted a connection without a session")),
+						);
 						socket.on("error", error => reject(error));
 					}),
 					new Promise((_resolve, reject) => {

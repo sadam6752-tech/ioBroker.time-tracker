@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.6",
+		"version": "0.0.7",
 		"nogit": true,
 		"news": {
+			"0.0.7": {
+				"en": "fix: the published package contains the web app again - releases up to 0.0.6 shipped without `www/`, so the web interface answered 404",
+				"de": "fix: das veröffentlichte Paket enthält die Web-App wieder - die Releases bis 0.0.6 wurden ohne `www/` ausgeliefert, deshalb antwortete die Web-Oberfläche mit 404",
+				"ru": "fix: опубликованный пакет снова содержит веб-приложение - версии до 0.0.6 поставлялись без `www/`, поэтому веб-интерфейс отвечал 404",
+				"uk": "fix: опублікований пакет знову містить веб-застосунок - версії до 0.0.6 постачалися без `www/`, тому веб-інтерфейс відповідав 404",
+				"pl": "fix: opublikowany pakiet ponownie zawiera aplikację webową - wersje do 0.0.6 były dostarczane bez `www/`, dlatego interfejs odpowiadał 404",
+				"fr": "fix: le paquet publié contient à nouveau l'application web - les versions jusqu'à 0.0.6 étaient livrées sans `www/`, l'interface répondait donc 404",
+				"it": "fix: il pacchetto pubblicato contiene di nuovo l'app web - le versioni fino alla 0.0.6 erano distribuite senza `www/`, perciò l'interfaccia rispondeva 404",
+				"es": "fix: el paquete publicado vuelve a incluir la aplicación web - las versiones hasta la 0.0.6 se entregaban sin `www/`, por eso la interfaz respondía 404",
+				"pt": "fix: o pacote publicado volta a incluir a aplicação web - as versões até à 0.0.6 eram entregues sem `www/`, por isso a interface respondia 404",
+				"nl": "fix: het gepubliceerde pakket bevat de webapp weer - de versies tot 0.0.6 werden zonder `www/` geleverd, waardoor de webinterface 404 antwoordde",
+				"zh-cn": "fix: 发布包重新包含 Web 应用 - 0.0.6 及更早版本未包含 `www/`，因此 Web 界面返回 404"
+			},
 			"0.0.6": {
 				"en": "fix: the buttons of a list row (employees, terminals, holidays, badges, absences and the correction list) no longer cover the names on a phone, and an absence names its type again",
 				"de": "fix: die Schaltflächen einer Listenzeile (Mitarbeiter, Terminals, Feiertage, Ausweise, Abwesenheiten und Zeitkorrektur) verdecken auf dem Handy keine Namen mehr, und eine Abwesenheit nennt ihren Typ wieder",

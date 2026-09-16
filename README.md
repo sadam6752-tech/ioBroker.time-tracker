@@ -306,6 +306,8 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.7 (2026-09-16)
+
 - (Alex) fix: the published package contains the web app again — `www/` is generated and was missing from every
   release up to 0.0.6, so `http://<host>:<port>/` answered `404 not_found`; the release job now builds the web app,
   and `prepack` refuses to publish a package without `build/` or `www/`

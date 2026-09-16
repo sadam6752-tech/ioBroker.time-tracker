@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "Файл базы данных (пустой = каталог данных адаптера)",
 	"Days users may edit on their own": "Дни, когда пользователи могут редактировать самостоятельно",
 	"Default language for new users": "Язык по умолчанию для новых пользователей",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "пусто = адаптер один раз создаёт значение и сохраняет его рядом с базой данных, чтобы сессии переживали перезапуск",
 	"Enable kiosk terminal": "Включить киоск-терминал",
 	"General": "Общий",
 	"Holiday country": "Страна отдыха",

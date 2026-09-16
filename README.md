@@ -72,7 +72,7 @@ The adapter is configured in the instance settings:
 | Database file                       | Optional path; empty = adapter data directory             |
 | Enable kiosk terminal               | Switches the shared badge/PIN terminal on                 |
 | Trust the reverse proxy             | Use `X-Forwarded-*` of a proxy (client address, HTTPS)    |
-| Session secret                      | Secret for session cookies/tokens (**encrypted at rest**) |
+| Session secret                      | Secret for CSRF tokens (**encrypted at rest**; empty = generated once and stored next to the database) |
 | Badge link secret (HMAC)            | Secret for signed badge/NFC links (**encrypted at rest**) |
 | Session lifetime in minutes         | Session TTL                                               |
 | Days users may edit on their own    | Retroactive editing window for employees                  |

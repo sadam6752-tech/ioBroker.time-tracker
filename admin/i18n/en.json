@@ -8,6 +8,7 @@
 	"Bind address": "Bind address",
 	"Instance time zone": "Instance time zone",
 	"Default language for new users": "Default language for new users",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "empty = the adapter generates one once and stores it next to the database, so sessions survive restarts",
 	"Holiday country": "Holiday country",
 	"Database file (empty = adapter data directory)": "Database file (empty = adapter data directory)",
 	"Enable kiosk terminal": "Enable kiosk terminal",

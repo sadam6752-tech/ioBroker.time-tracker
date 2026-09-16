@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "数据库文件（空=适配器数据目录）",
 	"Days users may edit on their own": "用户可以自行编辑的天数",
 	"Default language for new users": "新用户的默认语言",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "留空 = 适配器会生成一次并保存在数据库旁边，这样会话在重启后仍然有效",
 	"Enable kiosk terminal": "启用自助服务终端",
 	"General": "一般的",
 	"Holiday country": "度假国家",

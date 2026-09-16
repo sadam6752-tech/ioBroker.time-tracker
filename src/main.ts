@@ -24,6 +24,7 @@ import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
 import { createAggregationService, type AggregationService } from "./lib/services/aggregation";
 import { createAuthService, hashPassword } from "./lib/services/auth";
+import { SECRET_FILE_NAME, resolveSessionSecret } from "./lib/services/sessionSecret";
 import { createClosingService, type ClosingService } from "./lib/services/closing";
 import { createBackupService, type BackupService } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
@@ -250,19 +251,31 @@ class Zeiterfassung extends utils.Adapter {
 	}
 
 	/**
-	 * Secret used to sign CSRF tokens. A generated secret only lives for this run, so the administrator is
-	 * asked to configure one.
+	 * Secret used to sign CSRF tokens. A value from the instance settings wins; without one the adapter generates a
+	 * secret on the first start and stores it next to the database, so a restart keeps the CSRF tokens of clients
+	 * that are already open valid.
 	 */
 	private sessionSecret(): string {
-		const configured = (this.config.sessionSecret ?? "").trim();
-		if (configured) {
-			return configured;
+		const resolved = resolveSessionSecret({
+			configured: this.config.sessionSecret,
+			file: path.join(path.dirname(this.databaseFile()), SECRET_FILE_NAME),
+		});
+
+		if (resolved.source === "configured") {
+			this.log.debug("session secret taken from the instance settings");
+		} else if (resolved.source === "stored") {
+			this.log.debug(`session secret taken from ${resolved.file}`);
+		} else if (resolved.file) {
+			this.log.info(
+				`no session secret configured - generated one and stored it at ${resolved.file}, so sessions and CSRF tokens survive restarts`,
+			);
+		} else {
+			this.log.warn(
+				`no session secret configured and it could not be stored (${resolved.error ?? "unknown"}) - a temporary one is used, so all sessions end with the next restart`,
+			);
 		}
 
-		this.log.warn(
-			"no session secret configured - a temporary one is used, so all sessions end with the next restart",
-		);
-		return randomBytes(32).toString("base64url");
+		return resolved.secret;
 	}
 
 	/**

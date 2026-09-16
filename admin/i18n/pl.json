@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "Plik bazy danych (pusty = katalog danych adaptera)",
 	"Days users may edit on their own": "Dni, które użytkownicy mogą edytować samodzielnie",
 	"Default language for new users": "Domyślny język dla nowych użytkowników",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "puste = adapter wygeneruje raz wartość i zapisze ją obok bazy danych, aby sesje przetrwały restarty",
 	"Enable kiosk terminal": "Włącz terminal kiosku",
 	"General": "Ogólny",
 	"Holiday country": "Wakacyjny kraj",

@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "Arquivo de banco de dados (vazio = diretório de dados do adaptador)",
 	"Days users may edit on their own": "Dias em que os usuários podem editar por conta própria",
 	"Default language for new users": "Idioma padrão para novos usuários",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "vazio = o adaptador gera um uma vez e guarda-o junto à base de dados, para que as sessões sobrevivam aos reinícios",
 	"Enable kiosk terminal": "Habilitar terminal de quiosque",
 	"General": "Em geral",
 	"Holiday country": "País de férias",

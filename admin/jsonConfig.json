@@ -102,6 +102,7 @@
 				"sessionSecret": {
 					"type": "password",
 					"label": "Session secret",
+					"help": "empty = the adapter generates one once and stores it next to the database, so sessions survive restarts",
 					"newLine": true,
 					"xs": 12,
 					"sm": 12,

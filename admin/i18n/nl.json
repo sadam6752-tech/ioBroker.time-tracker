@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "Databasebestand (leeg = adaptergegevensmap)",
 	"Days users may edit on their own": "Dagen waarop gebruikers zelf kunnen bewerken",
 	"Default language for new users": "Standaardtaal voor nieuwe gebruikers",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "leeg = de adapter genereert er eenmalig een en bewaart het naast de database, zodat sessies herstarts overleven",
 	"Enable kiosk terminal": "Schakel kioskterminal in",
 	"General": "Algemeen",
 	"Holiday country": "Vakantie land",

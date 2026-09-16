@@ -5,6 +5,7 @@
 	"Database file (empty = adapter data directory)": "Fichier de base de données (vide = répertoire de données de l'adaptateur)",
 	"Days users may edit on their own": "Jours pendant lesquels les utilisateurs peuvent modifier eux-mêmes",
 	"Default language for new users": "Langue par défaut pour les nouveaux utilisateurs",
+	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "vide = l'adaptateur en génère un une fois et le stocke à côté de la base de données, pour que les sessions survivent aux redémarrages",
 	"Enable kiosk terminal": "Activer le terminal kiosque",
 	"General": "Général",
 	"Holiday country": "Pays de vacances",

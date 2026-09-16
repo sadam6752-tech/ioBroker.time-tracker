@@ -36,7 +36,9 @@ und `API routes: …`; der Zustand `zeiterfassung.0.info.connection` ist `true`.
 In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backup*):
 
 1. **Session secret** und **Badge link secret (HMAC)** setzen (beide werden verschlüsselt gespeichert; ohne
-   HMAC-Secret sind signierte Badge-Links abgeschaltet).
+   HMAC-Secret sind signierte Badge-Links abgeschaltet). Bleibt das **Session secret** leer, erzeugt der Adapter
+   beim ersten Start eines und legt es als Datei `session-secret` neben der Datenbank ab — damit überleben Sitzungen
+   und CSRF-Tokens einen Neustart. Ein Eintrag im Feld hat immer Vorrang und erlaubt dir die bewusste Rotation.
 2. Port/Bind prüfen (`127.0.0.1` = nur lokal, `0.0.0.0` = LAN — bewusst opt-in).
 3. Zeitzone (`Europe/Berlin`), Standardsprache und Feiertagsland kontrollieren.
 4. **Startpasswort des Erst-Administrators** setzen — oder leer lassen: dann wird ein Zufallspasswort **einmalig

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Läuft vor jedem Push (einmalig aktivieren: npm run hooks:install).
+# Prüft die Versionierung: beide Versionsfelder gleich und CHANGELOG.md mit Eintrag
+# für die aktuelle Version oder unter "WORK IN PROGRESS" — siehe CONTRIBUTING.md, Abschnitt 8.
+node tools/check-version.mjs || {
+	echo ""
+	echo "Push abgebrochen. Bitte in CHANGELOG.md unter '### **WORK IN PROGRESS**' eintragen"
+	echo "oder die Version mit 'npm run release <patch|minor|major>' hochziehen."
+	echo "(Wer den Hook bewusst übergehen will: git push --no-verify)"
+	exit 1
+}

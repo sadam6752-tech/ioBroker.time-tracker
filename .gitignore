@@ -1,7 +1,8 @@
-# No dot-directories except github/vscode
+# No dot-directories except github/vscode/githooks
 .*/
 !.vscode/
 !.github/
+!.githooks/
 
 # ============================================================
 # Referenzmaterial Dritter – NIEMALS ins Repository

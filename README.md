@@ -33,7 +33,7 @@ Everything in this table is implemented unless it is marked as open. The remaini
 | Users & rights      | Multi-user with roles (admin/manager/employee) and a full permission catalogue – all decisions server-side                                                                                        |
 | Working time        | Target time from weekly hours / employment level / working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
 | Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts                                                                                                    |
-| Corrections         | Administration fixes punches (change, delete, add a single punch or a whole day); every change carries a reason, and the history of a punch (who changed it and why) is shown in the app                                                    |
+| Corrections         | Administration fixes punches (change, delete, add a single punch or a whole day); every change carries a reason, and the history of a punch (who changed it and why) is shown in the app          |
 | Reports             | Monthly PDF timesheet, XLS export, statistics, payouts/compensation                                                                                                                               |
 | ioBroker            | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations                                                                                 |
 | Data                | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states                                                                                                        |
@@ -62,24 +62,24 @@ iobroker add zeiterfassung
 
 The adapter is configured in the instance settings:
 
-| Setting                             | Meaning                                                   |
-| ----------------------------------- | --------------------------------------------------------- |
-| Port                                | Port of the built-in HTTP server (web app, API, terminal) |
-| Bind address                        | Interface to listen on (`0.0.0.0` = all)                  |
-| Instance time zone                  | Fallback time zone (IANA name), e.g. `Europe/Berlin`      |
-| Default language for new users      | One of the 11 supported languages                         |
-| Holiday country                     | Country used to generate public holidays                  |
-| Database file                       | Optional path; empty = adapter data directory             |
-| Enable kiosk terminal               | Switches the shared badge/PIN terminal on                 |
-| Trust the reverse proxy             | Use `X-Forwarded-*` of a proxy (client address, HTTPS)    |
+| Setting                             | Meaning                                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Port                                | Port of the built-in HTTP server (web app, API, terminal)                                              |
+| Bind address                        | Interface to listen on (`0.0.0.0` = all)                                                               |
+| Instance time zone                  | Fallback time zone (IANA name), e.g. `Europe/Berlin`                                                   |
+| Default language for new users      | One of the 11 supported languages                                                                      |
+| Holiday country                     | Country used to generate public holidays                                                               |
+| Database file                       | Optional path; empty = adapter data directory                                                          |
+| Enable kiosk terminal               | Switches the shared badge/PIN terminal on                                                              |
+| Trust the reverse proxy             | Use `X-Forwarded-*` of a proxy (client address, HTTPS)                                                 |
 | Session secret                      | Secret for CSRF tokens (**encrypted at rest**; empty = generated once and stored next to the database) |
-| Badge link secret (HMAC)            | Secret for signed badge/NFC links (**encrypted at rest**) |
-| Session lifetime in minutes         | Session TTL                                               |
-| Days users may edit on their own    | Retroactive editing window for employees                  |
-| Round quick punches to minutes      | Quick-time rounding (0 = off)                             |
-| Calculate absences only until today | Future absences are not deducted from the target time     |
-| Subtract working time from absences | May convert vacation into overtime                         |
-| Keep database backups for days      | Retention of `VACUUM INTO` backups                        |
+| Badge link secret (HMAC)            | Secret for signed badge/NFC links (**encrypted at rest**)                                              |
+| Session lifetime in minutes         | Session TTL                                                                                            |
+| Days users may edit on their own    | Retroactive editing window for employees                                                               |
+| Round quick punches to minutes      | Quick-time rounding (0 = off)                                                                          |
+| Calculate absences only until today | Future absences are not deducted from the target time                                                  |
+| Subtract working time from absences | May convert vacation into overtime                                                                     |
+| Keep database backups for days      | Retention of `VACUUM INTO` backups                                                                     |
 
 Instance settings (editable through `PUT /api/settings`, permission `settings.edit`) complement the
 configuration; `report_font_path` is one of them: the path of a `.ttf`/`.otf` file used for PDF statements.
@@ -133,6 +133,31 @@ kiosk is switched off the screen says so and nothing else happens; a revoked tok
 form. For the name/PIN path an employee needs a badge PIN (`POST /api/users/:id/pin`, 4–8 digits), for scanning an
 RFID card id (`rfidCard`).
 
+A device stands for one place, so it can be limited to the people that work there: the administration offers the
+employees of the device when it is created and later through the **Employees** button of its row
+(`POST /api/terminals` with `userIds`, `PUT /api/terminals/:id/users`). A device without an assignment shows
+everybody, so the behaviour of an existing installation does not change.
+
+**Employees need their PIN** is a switch per device. With it switched on a badge **and** the personal PIN are
+required; with it switched off the badge alone is enough and a name picked from the list punches right away. A
+wrong PIN is refused on both kinds of device, and the lock after too many wrong attempts stays active.
+
+The same device serves two screens: `/terminal` is the classic kiosk described above, `/presence` shows the
+employees as tiles with their picture and the state of the day — the screen for “who is at the workplace right
+now”. Both keep the device token in the browser of the tablet.
+
+### Branding
+
+The installation can carry its own look: the administration (**Administration → Settings → Company branding**) takes
+a **logo**, a **background picture** and an accent colour and applies them to the login screen, the header and the
+kiosk screens. The pictures are kept with the settings but delivered through their own cacheable routes
+(`GET /api/branding/logo`, `GET /api/branding/background`), so the payload of the settings API stays small.
+
+A picture straight from a phone is scaled down in the browser (longest edge 2560 px, JPEG in several quality steps)
+until it fits the 512 KiB the API accepts; the field reports the resulting size. The twelve preset colours are all
+light tones that keep the dark text readable — with a very dark background picture the text is the one thing that
+can become hard to read, so a light picture or a light background colour next to it is the safe choice.
+
 ### Reverse proxy and HTTPS
 
 HTTPS is required for the service worker (PWA installation), so put nginx or caddy in front of the adapter and
@@ -178,9 +203,9 @@ Punch records themselves are **not** mirrored into states – they live in the S
 The first start creates the database, the roles, the settings — and, when the instance has no administrator
 yet, **one administrator account**, because otherwise nobody could log in:
 
-| Setting | Meaning |
-| --- | --- |
-| `Login of the first administrator` | login of that account, default `admin` |
+| Setting                                     | Meaning                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Login of the first administrator`          | login of that account, default `admin`                                                 |
 | `Start password of the first administrator` | password of that account; empty = a random password is written to the adapter log once |
 
 The account is created with `must_change_pw`, so the start password opens the door exactly once and the web
@@ -263,12 +288,14 @@ npm run build
 
 ### Still open
 
-  dry-run report and the golden comparison against `Timetable/<year>` — requires a real `Data` directory.
-- **Acceptance:** end-to-end tests (Playwright), load smoke test, documented security verification, review of
-  the layouts in all 11 languages and PDF rendering for `ru`, `uk` and `zh-cn` with a Unicode font.
-- **Publication:** npm package, entry in `ioBroker.repositories`, official adapter checker, first release.
-- **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with the phone); the nine
-  web app language files are machine translated and wait for a review by a native speaker.
+- **Acceptance on real data:** the golden comparison against a full year of real punches (needs the `Data`
+  directory of the predecessor system) and the sign-off of the layouts and of the PDF rendering for `ru`, `uk` and
+  `zh-cn` (they need a Unicode font through `report_font_path`).
+- **Publication:** npm package (the CI workflow publishes through npm trusted publishing), entry in
+  `ioBroker.repositories` and the run of the official adapter checker.
+- **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with a phone); the language
+  files of the web app are machine translated and wait for a review by native speakers; a very dark background
+  picture can make the light text of the app hard to read.
 
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
 flags must follow the official role rules; secrets only via `encryptedNative`/`protectedNative`.
@@ -278,6 +305,10 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ### **WORK IN PROGRESS**
 
 - (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), i18n checks
+- (Alex) kiosk terminals: employees per device, optional PIN duty per device, on-screen keypad, presence screen with pictures
+- (Alex) branding: company logo, background picture and accent colour for the web app and the kiosk (scaled down in the browser, delivered through cacheable routes)
+- (Alex) session secret: generated once and stored next to the database when the instance settings do not define one
+- (Alex) fixes from the first field test: large picture uploads (body limit), terminals without PIN duty, integration tests on a free port
 
 ### 0.0.1
 

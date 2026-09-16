@@ -164,9 +164,12 @@ Regeln, in dieser Reihenfolge wichtig:
 4. **Nur ein Dev-Server gleichzeitig** und **kein zusätzliches `npm run build`** daneben: der Dev-Server baut
    selbst, parallele Builds führen zu Race-Conditions und Folge-Restarts.
 5. Hängt die Instanz doch in der Schleife, alle Prozesse beenden, deren Kommandozeilentext das Repository oder
-   `.dev-server` nennt, und `npm run dev-server watch` neu starten.
+   `.dev-server` nennt, und `npm run dev-server watch --noStart` neu starten.
 6. Die Playwright-Suite (`npm run e2e`) startet einen eigenen Server auf Port `8099` mit In-Memory-Datenbank
    und lässt den Dev-Server unberührt; sie lädt den Adapter aus `build/`, weshalb vorher `npm run build` nötig ist.
+7. Für den Aufruf `--no-browser-sync` mitgeben: BrowserSync ist schon beim Start einmal an einem Race mit dem noch
+   startenden Admin gescheitert (`ECONNREFUSED 127.0.0.1:20426`) und hat den Dev-Server mitgerissen. Der Preis ist
+   nur, dass Änderungen an der ioBroker-Admin-Oberfläche nicht mehr automatisch nachgeladen werden.
 
 Die Daten der Dev-Instanz liegen unter `.dev-server/default/iobroker-data/zeiterfassung.0/` (Datenbank,
 `session-secret`, `backups/`) und werden nicht versioniert.

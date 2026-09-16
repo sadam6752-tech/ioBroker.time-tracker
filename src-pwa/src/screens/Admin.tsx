@@ -132,12 +132,12 @@ function CreateUserDialog({
 						onChange={event => setForm(current => ({ ...current, roleKeys: [event.target.value] }))}
 					>
 						{(roles.data ?? []).map(role => (
-							<option
+							<MenuItem
 								key={role.key}
 								value={role.key}
 							>
 								{role.name}
-							</option>
+							</MenuItem>
 						))}
 					</TextField>
 				</Stack>

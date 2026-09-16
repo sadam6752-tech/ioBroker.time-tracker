@@ -195,31 +195,36 @@ Regeln:
     Ohne Freigabe bricht der Pre-Push-Hook ab; dauerhaft ausschalten mit
     `git config zt.requirePushApproval false`.
 
-2. **Vor jedem Push** bekommt jede Änderung ihren Eintrag im Changelog des README (`## Changelog`, neuester
+2. **Vor jedem Push hebt `npm run version:bump -- patch` die Version an** (oder `minor`/`major`). Das Werkzeug setzt
+   beide Versionsfelder, benennt den Block „WORK IN PROGRESS" im README auf die neue Version um, legt einen frischen
+   Platzhalter an und ergänzt `common.news` für die neue Version. Danach die News übersetzen (`npm run translate` oder
+   von Hand) und `npm run version:check`, `npm run check:i18n` sowie die Tests laufen lassen. Die Argumente gehören
+   hinter `--`, sonst verschluckt npm sie (`npm run version:bump -- patch --dry` zeigt den Ablauf ohne zu schreiben).
+
+3. **Jede Änderung bekommt vor dem Push ihren Eintrag** im Changelog des README (`## Changelog`, neuester
    Abschnitt `### **WORK IN PROGRESS**`). Dieser Block darf **nicht leer** sein — das Release-Werkzeug lehnt das ab.
    Die Version wird dabei **nicht** von Hand geändert.
-3. **Der Changelog steht im README, nicht in einer eigenen Datei.** Das Release-Werkzeug liest `CHANGELOG.md` nur,
+4. **Der Changelog steht im README, nicht in einer eigenen Datei.** Das Release-Werkzeug liest `CHANGELOG.md` nur,
    wenn es existiert, und würde den README-Abschnitt dann nicht mehr pflegen. Im README bleiben die letzten **fünf**
    Versionen (`--numChangelogEntries`, Standard 5); ältere wandern nach `CHANGELOG_OLD.md`, sobald diese Datei
    existiert. Dann muss im README ein Fußzeilen-Link auf `CHANGELOG_OLD.md` stehen bleiben (das Werkzeug verlangt
    ihn).
-4. **Die Version wird nur beim Release hochgezogen**, und zwar mit dem Werkzeug:
+5. **Veröffentlicht wird über einen Tag.** Der Tag markiert die Version, die in der CI gebaut und über
+   **npm trusted publishing** veröffentlicht wird (ohne diese Freigabe in npm scheitert der Deploy-Job):
 
     ```powershell
-    npm run release patch --dry      # Probelauf: zeigt, was passieren würde
-    npm run release patch --noPush   # 0.0.1 -> 0.0.2: Version, Changelog, common.news, Commit und Tag (nur lokal)
-    npm run push:approve             # Freigabe fuer den Release-Commit
-    git push --follow-tags           # Commit und Tag pushen — der Tag loest den Deploy aus
+    git tag v0.0.2                   # die freigegebene Version markieren
+    npm run push:approve             # Freigabe fuer den Tag-Push
+    git push --follow-tags           # Tag pushen — die CI veroeffentlicht das Paket
     ```
 
-    Das Skript setzt beide Versionsfelder, benennt den Block „WORK IN PROGRESS" auf die neue Version um, legt einen
-    neuen Platzhalter an, schreibt `common.news` und ruft vor dem Commit `npm run build` (siehe
-    `.releaseconfig.json`). Der gepushte Tag `vX.Y.Z` löst in der CI den Deploy-Job aus, der das Paket über
-    **npm trusted publishing** veröffentlicht und das GitHub-Release anlegt.
+    `npm run release <patch|minor|major>` bleibt als Alternative verfuegbar: es hebt die Version an, schreibt
+    Changelog und `common.news` und taggt in einem Zug (siehe `.releaseconfig.json`, dort laeuft vorher
+    `npm run build`).
 
-5. Nach dem Release die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
+6. Nach jedem Versionssprung die `common.news`-Texte in allen 11 Sprachen prüfen bzw. `npm run translate` laufen lassen —
    der Adapterchecker verlangt sie (Regel E510). `npm run check:i18n` meldet Lücken.
-6. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:
+7. **Der Pre-Push-Hook** prüft Punkt 1 und 2 automatisch. Einmalig je Arbeitskopie aktivieren:
 
     ```powershell
     npm run hooks:install

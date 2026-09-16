@@ -1,6 +1,6 @@
 {
 	"name": "iobroker.zeiterfassung",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"author": {
 		"name": "Alex",
@@ -88,6 +88,7 @@
 		"translate": "translate-adapter",
 		"release": "release-script",
 		"version:check": "node tools/check-version.mjs",
+		"version:bump": "node tools/bump-version.mjs",
 		"push:approve": "node tools/approve-push.mjs",
 		"hooks:install": "git config core.hooksPath .githooks",
 		"dev-server": "dev-server",

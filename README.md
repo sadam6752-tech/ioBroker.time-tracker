@@ -302,7 +302,14 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ## Changelog
 
+<!--
+	Platzhalter für die nächste Version (am Zeilenanfang):
+	### **WORK IN PROGRESS**
+-->
+
 ### **WORK IN PROGRESS**
+
+### 0.0.2 (2026-09-16)
 
 - (Alex) project scaffolding: adapter skeleton (TypeScript + jsonConfig), 11-language metadata, admin configuration fields, CI workflow (@iobroker/testing, Node 22/24/26), i18n checks
 - (Alex) kiosk terminals: employees per device, optional PIN duty per device, on-screen keypad, presence screen with pictures

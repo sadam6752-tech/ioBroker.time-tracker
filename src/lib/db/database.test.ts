@@ -1,7 +1,7 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
 import { currentSchemaVersion, migrate, openAndMigrate, openDatabase, type Db } from "./database";
-import { migrations } from "./migrations";
+import { hasColumn, migrations } from "./migrations";
 
 function insertUser(db: Db, login = "tester"): number {
 	const now = Math.floor(Date.now() / 1000);
@@ -71,6 +71,70 @@ describe("database", () => {
 		]) {
 			expect(names, `table ${table} should exist`).to.include(table);
 		}
+	});
+
+	it("keeps the leftovers of the removed data import out of a fresh schema", () => {
+		// the columns existed for the importer of another system; a database created today never gets them
+		for (const [table, column] of [
+			["users", "legacy_sha1"],
+			["work_profiles", "legacy_source"],
+			["rfid_tags", "legacy_code"],
+		] as const) {
+			expect(hasColumn(db, table, column), `${table}.${column} should not exist`).to.equal(false);
+		}
+
+		const indexes = (
+			db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all() as { name: string }[]
+		).map(row => row.name);
+		expect(indexes).to.not.include("idx_rfid_legacy");
+	});
+
+	it("removes the leftovers from a database that still carries them", () => {
+		// an older installation: the columns of the removed import plus the old layout of `rfid_tags`
+		db.exec("ALTER TABLE users ADD COLUMN legacy_sha1 TEXT");
+		db.exec("ALTER TABLE work_profiles ADD COLUMN legacy_source TEXT");
+		db.exec(`
+			DROP TABLE rfid_tags;
+			CREATE TABLE rfid_tags (
+				id           INTEGER PRIMARY KEY AUTOINCREMENT,
+				uid          TEXT,
+				token_hash   TEXT    NOT NULL,
+				legacy_code  TEXT,
+				user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+				label        TEXT,
+				is_active    INTEGER NOT NULL DEFAULT 1,
+				expires_at   INTEGER,
+				last_used_at INTEGER,
+				created_at   INTEGER NOT NULL,
+				CHECK (uid IS NOT NULL OR legacy_code IS NOT NULL)
+			);
+			CREATE UNIQUE INDEX idx_rfid_uid    ON rfid_tags(uid)         WHERE uid IS NOT NULL;
+			CREATE UNIQUE INDEX idx_rfid_legacy ON rfid_tags(legacy_code) WHERE legacy_code IS NOT NULL;
+			INSERT INTO rfid_tags (uid, token_hash, legacy_code, created_at) VALUES ('tag-1', 'hash-1', 'K-42', 1000);
+		`);
+
+		const cleanup = migrations.find(migration => migration.version === 10);
+		if (!cleanup?.run) {
+			throw new Error("migration 10 should be a JavaScript step");
+		}
+		cleanup.run(db);
+
+		expect(hasColumn(db, "users", "legacy_sha1")).to.equal(false);
+		expect(hasColumn(db, "work_profiles", "legacy_source")).to.equal(false);
+		expect(hasColumn(db, "rfid_tags", "legacy_code")).to.equal(false);
+
+		// the tag itself survives with its id and its identifiers
+		expect(db.prepare("SELECT id, uid, token_hash FROM rfid_tags").get()).to.deep.equal({
+			id: 1,
+			uid: "tag-1",
+			token_hash: "hash-1",
+		});
+
+		const indexes = (
+			db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all() as { name: string }[]
+		).map(row => row.name);
+		expect(indexes).to.include("idx_rfid_uid");
+		expect(indexes).to.not.include("idx_rfid_legacy");
 	});
 
 	it("enforces foreign keys", () => {
@@ -163,7 +227,10 @@ describe("database", () => {
 		const old = openDatabase(":memory:");
 		try {
 			for (const migration of migrations.filter(entry => entry.version <= 7)) {
-				old.exec(migration.sql);
+				if (migration.sql) {
+					old.exec(migration.sql);
+				}
+				migration.run?.(old);
 			}
 			old.exec(
 				`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at INTEGER NOT NULL)`,

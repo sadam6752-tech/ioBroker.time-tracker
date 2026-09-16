@@ -4,11 +4,17 @@
  * The schema follows the internal specification (section 2). Rules:
  *  - Times are stored as UTC epoch seconds (INTEGER); durations as whole minutes.
  *  - Local date/time fields (`ts_local`, `local_date`) are derived caches of `ts_utc` + user time zone.
- *  - Every migration is append-only: never change an existing migration, add a new one.
+ *  - Migrations are never *reinterpreted*: a released migration keeps its effect for databases that already
+ *    ran it, and every schema change comes as a new migration. Definitions that only freshly created
+ *    databases ever see may be tidied up afterwards, as long as fresh and upgraded installations end up with
+ *    the same schema (see migration 10, which cleans up behind migrations 1, 2 and 5).
  */
 
+import type { Db } from "./database";
+
 /**
- * A single, append-only schema migration.
+ * A single schema migration: either plain SQL or a JavaScript step for changes that SQL cannot express
+ * (e.g. “drop this column, but only when it is still there”).
  */
 export interface Migration {
 	/** Monotonically increasing version number, applied in ascending order */
@@ -16,7 +22,25 @@ export interface Migration {
 	/** Short description, stored in `schema_migrations` for traceability */
 	name: string;
 	/** SQL statements (may contain several statements separated by semicolons) */
-	sql: string;
+	sql?: string;
+	/** JavaScript steps, run inside the same transaction as `sql` */
+	run?: (db: Db) => void;
+}
+
+/**
+ * Checks whether a table has a column.
+ *
+ * Migrations that clean up after older versions use this to stay safe for both kinds of database: one that was
+ * created by an older version and one that was created by the current one (which never creates the column).
+ *
+ * @param db - open database handle
+ * @param table - table name
+ * @param column - column name
+ * @returns true when the column exists
+ */
+export function hasColumn(db: Db, table: string, column: string): boolean {
+	const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+	return rows.some(row => row.name === column);
 }
 
 export const migrations: Migration[] = [
@@ -28,7 +52,6 @@ export const migrations: Migration[] = [
 				id              INTEGER PRIMARY KEY AUTOINCREMENT,
 				login           TEXT    NOT NULL UNIQUE,
 				password_hash   TEXT    NOT NULL DEFAULT '',
-				legacy_sha1     TEXT,
 				display_name    TEXT    NOT NULL,
 				email           TEXT,
 				rfid_card       TEXT,
@@ -77,8 +100,7 @@ export const migrations: Migration[] = [
 				vacation_per_year    REAL    NOT NULL DEFAULT 0,
 				overtime_model       TEXT    NOT NULL DEFAULT 'monthly'
 				                     CHECK (overtime_model IN ('cumulative','yearly','monthly')),
-				holiday_flags        TEXT,
-				legacy_source        TEXT
+				holiday_flags        TEXT
 			);
 
 			CREATE TABLE shift_rules (
@@ -312,17 +334,14 @@ export const migrations: Migration[] = [
 				id           INTEGER PRIMARY KEY AUTOINCREMENT,
 				uid          TEXT,
 				token_hash   TEXT    NOT NULL,
-				legacy_code  TEXT,
 				user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
 				label        TEXT,
 				is_active    INTEGER NOT NULL DEFAULT 1,
 				expires_at   INTEGER,
 				last_used_at INTEGER,
-				created_at   INTEGER NOT NULL,
-				CHECK (uid IS NOT NULL OR legacy_code IS NOT NULL)
+				created_at   INTEGER NOT NULL
 			);
-			CREATE UNIQUE INDEX idx_rfid_uid    ON rfid_tags(uid)         WHERE uid IS NOT NULL;
-			CREATE UNIQUE INDEX idx_rfid_legacy ON rfid_tags(legacy_code) WHERE legacy_code IS NOT NULL;
+			CREATE UNIQUE INDEX idx_rfid_uid ON rfid_tags(uid) WHERE uid IS NOT NULL;
 
 			CREATE TABLE kiosk_terminals (
 				id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -370,33 +389,42 @@ export const migrations: Migration[] = [
 	{
 		version: 10,
 		name: "drops the leftovers of the removed data import",
-		sql: `
-			-- The adapter does not read data of another time tracking system any more, so the columns that
-			-- existed for it are dropped. A fresh database creates them with migration 1 and loses them right
-			-- here; an existing installation is cleaned up the same way.
-			ALTER TABLE users         DROP COLUMN legacy_sha1;
-			ALTER TABLE work_profiles DROP COLUMN legacy_source;
-			-- rfid_tags carried the printed card number of that system as a second identifier. SQLite cannot
-			-- drop a column that a CHECK constraint mentions, so the table is rebuilt without it. Existing rows
-			-- keep their id, their uid and their token hash; the id is copied explicitly so that no stored
-			-- reference can dangle.
-			CREATE TABLE rfid_tags_new (
-				id           INTEGER PRIMARY KEY AUTOINCREMENT,
-				uid          TEXT,
-				token_hash   TEXT    NOT NULL,
-				user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
-				label        TEXT,
-				is_active    INTEGER NOT NULL DEFAULT 1,
-				expires_at   INTEGER,
-				last_used_at INTEGER,
-				created_at   INTEGER NOT NULL
-			);
-			INSERT INTO rfid_tags_new (id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at)
-				SELECT id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at
-				FROM rfid_tags;
-			DROP TABLE rfid_tags;
-			ALTER TABLE rfid_tags_new RENAME TO rfid_tags;
-			CREATE UNIQUE INDEX idx_rfid_uid ON rfid_tags(uid) WHERE uid IS NOT NULL;
-		`,
+		run: (db: Db): void => {
+			// The adapter does not read data of another time tracking system any more, so the columns that existed
+			// for it are dropped. Fresh databases never create them (migrations 1, 2 and 5 are clean), so every
+			// step asks first: an upgraded database loses the columns, a fresh one has nothing to do.
+			if (hasColumn(db, "users", "legacy_sha1")) {
+				db.exec("ALTER TABLE users DROP COLUMN legacy_sha1");
+			}
+			if (hasColumn(db, "work_profiles", "legacy_source")) {
+				db.exec("ALTER TABLE work_profiles DROP COLUMN legacy_source");
+			}
+
+			// rfid_tags carried the printed card number of that system as a second identifier. SQLite cannot drop
+			// a column that a CHECK constraint mentions, so the table is rebuilt without it; existing rows keep
+			// their id, their uid and their token hash, and the unique index on the uid is recreated.
+			if (!hasColumn(db, "rfid_tags", "legacy_code")) {
+				return;
+			}
+			db.exec(`
+				CREATE TABLE rfid_tags_new (
+					id           INTEGER PRIMARY KEY AUTOINCREMENT,
+					uid          TEXT,
+					token_hash   TEXT    NOT NULL,
+					user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+					label        TEXT,
+					is_active    INTEGER NOT NULL DEFAULT 1,
+					expires_at   INTEGER,
+					last_used_at INTEGER,
+					created_at   INTEGER NOT NULL
+				);
+				INSERT INTO rfid_tags_new (id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at)
+					SELECT id, uid, token_hash, user_id, label, is_active, expires_at, last_used_at, created_at
+					FROM rfid_tags;
+				DROP TABLE rfid_tags;
+				ALTER TABLE rfid_tags_new RENAME TO rfid_tags;
+				CREATE UNIQUE INDEX idx_rfid_uid ON rfid_tags(uid) WHERE uid IS NOT NULL;
+			`);
+		},
 	},
 ];

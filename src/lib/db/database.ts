@@ -61,7 +61,11 @@ export function migrate(db: Db, log?: (message: string) => void): number {
 
 	for (const migration of pending) {
 		const applyOne = db.transaction((m: Migration): void => {
-			db.exec(m.sql);
+			// a migration brings either SQL text or JavaScript steps (or both)
+			if (m.sql) {
+				db.exec(m.sql);
+			}
+			m.run?.(db);
 			db.prepare("INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)").run(
 				m.version,
 				m.name,

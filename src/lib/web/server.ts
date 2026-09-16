@@ -13,7 +13,7 @@
 import * as http from "node:http";
 import type { AddressInfo } from "node:net";
 import { HttpProblem, PROBLEM_CONTENT_TYPE } from "./problem";
-import type { HttpRequest, Router } from "./router";
+import { DEFAULT_MAX_BODY_BYTES, type HttpRequest, type Router } from "./router";
 import type { StaticHandler } from "./static";
 import { attachEventStream, type EventStream, type EventStreamOptions } from "./stream";
 
@@ -41,7 +41,7 @@ export interface WebServerOptions {
 	staticFiles?: StaticHandler;
 	/** Live event stream (`/api/stream`); without it the endpoint does not exist */
 	stream?: Omit<EventStreamOptions, "server">;
-	/** Maximum body size in bytes (default 256 KiB) */
+	/** Maximum body size in bytes (default 2 MiB) */
 	maxBodyBytes?: number;
 	/** Logger */
 	log?: ServerLogger;
@@ -118,7 +118,7 @@ function parseQuery(requestUrl: string): Record<string, string | string[]> {
  * @returns the running server
  */
 export async function startWebServer(options: WebServerOptions): Promise<WebServer> {
-	const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
+	const maxBodyBytes = options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
 	const bind = options.bind?.trim() || "127.0.0.1";
 	const apiPrefix = normalizePrefix(options.apiPrefix ?? "/api");
 

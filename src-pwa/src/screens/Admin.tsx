@@ -22,6 +22,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import { BRAND_PRESET_COLORS } from "../state/branding";
+import { AVATAR_MAX_BYTES, BRANDING_MAX_BYTES, prepareImage, type ImageProblem } from "../components/image-file";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Tab from "@mui/material/Tab";
@@ -378,33 +379,12 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 							height={96}
 							style={{ objectFit: "cover", borderRadius: 8 }}
 						/>
-						<Button
-							variant="outlined"
-							component="label"
-						>
-							{t("admin.user.photoChoose")}
-							<input
-								hidden
-								type="file"
-								accept="image/png,image/jpeg,image/webp,image/gif"
-								onChange={event => {
-									const file = event.target.files?.[0];
-									if (!file) {
-										return;
-									}
-									const reader = new FileReader();
-									reader.onload = () =>
-										setPhoto(typeof reader.result === "string" ? reader.result : null);
-									reader.readAsDataURL(file);
-								}}
-							/>
-						</Button>
-						<Typography
-							variant="body2"
-							color="text.secondary"
-						>
-							{t("admin.user.photoHint")}
-						</Typography>
+						<PictureField
+							label={t("admin.user.photoChoose")}
+							maxBytes={AVATAR_MAX_BYTES}
+							hint={t("admin.user.photoHint")}
+							onChange={value => setPhoto(value)}
+						/>
 					</Stack>
 				</DialogContent>
 				<DialogActions>
@@ -1227,28 +1207,115 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
- * Reads the chosen picture as a data URL.
+ * Text key of a picture problem.
  *
- * @param event - change event of the file input
- * @param onChange - called with the data URL
+ * @param problem - reason reported by `prepareImage`
+ * @returns text key
  */
-function readImageFile(event: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void): void {
-	const file = event.target.files?.[0];
-	if (!file) {
-		return;
+function imageProblemText(problem: ImageProblem): string {
+	if (problem === "type") {
+		return "admin.brand.imageType";
 	}
-	const reader = new FileReader();
-	reader.onload = () => onChange(typeof reader.result === "string" ? reader.result : "");
-	reader.readAsDataURL(file);
-	event.target.value = "";
+	return problem === "tooLarge" ? "admin.brand.imageTooLarge" : "admin.brand.imageUnreadable";
+}
+
+/**
+ * Button that picks a picture and prepares it for the server.
+ *
+ * A picture straight from a phone is far bigger than the API accepts, so `prepareImage` scales it down and this
+ * field reports what happened.
+ *
+ * @param props - label, limit and handlers
+ * @param props.label - text of the button
+ * @param props.maxBytes - limit of the data URL (the same value the server checks)
+ * @param props.hint - optional text under the button
+ * @param props.onChange - called with the prepared data URL
+ * @param props.disabled - true without the right to change the value
+ * @returns the field
+ */
+function PictureField({
+	label,
+	maxBytes,
+	hint,
+	onChange,
+	disabled,
+}: {
+	label: string;
+	maxBytes: number;
+	hint?: string;
+	onChange: (value: string) => void;
+	disabled?: boolean;
+}): React.JSX.Element {
+	const { t, i18n } = useTranslation();
+	const [problem, setProblem] = useState<ImageProblem | null>(null);
+	const [resized, setResized] = useState("");
+
+	return (
+		<Stack spacing={1}>
+			<Button
+				variant="outlined"
+				component="label"
+				disabled={disabled === true}
+				sx={{ alignSelf: "flex-start" }}
+			>
+				{label}
+				<input
+					hidden
+					type="file"
+					accept="image/png,image/jpeg,image/webp,image/gif"
+					onChange={event => {
+						const file = event.target.files?.[0];
+						event.target.value = "";
+						if (!file) {
+							return;
+						}
+						setProblem(null);
+						setResized("");
+						void prepareImage(file, maxBytes).then(result => {
+							if (!result.ok) {
+								setProblem(result.problem);
+								return;
+							}
+							onChange(result.image.dataUrl);
+							if (result.image.resized) {
+								setResized(
+									t("admin.brand.imageResized", {
+										size: formatSize(result.image.bytes, i18n.language),
+									}),
+								);
+							}
+						});
+					}}
+				/>
+			</Button>
+			{hint && (
+				<Typography
+					variant="body2"
+					color="text.secondary"
+				>
+					{hint}
+				</Typography>
+			)}
+			{resized && (
+				<Typography
+					variant="body2"
+					color="text.secondary"
+				>
+					{resized}
+				</Typography>
+			)}
+			{problem && <Alert severity="warning">{t(imageProblemText(problem))}</Alert>}
+		</Stack>
+	);
 }
 
 /**
  * Picks a picture of the branding (logo or background).
  *
- * @param props - label, current value and handlers
+ * @param props - label, current value, limit and handlers
  * @param props.label - text of the button
  * @param props.value - current data URL, empty when nothing is set
+ * @param props.maxBytes - limit of the data URL (the same value the server checks)
  * @param props.onChange - called with the new data URL; an empty string removes the picture
  * @param props.disabled - true without the right to change settings
  * @returns the field
@@ -1256,11 +1323,13 @@ function readImageFile(event: React.ChangeEvent<HTMLInputElement>, onChange: (va
 function BrandImageField({
 	label,
 	value,
+	maxBytes,
 	onChange,
 	disabled,
 }: {
 	label: string;
 	value: string;
+	maxBytes: number;
 	onChange: (value: string) => void;
 	disabled: boolean;
 }): React.JSX.Element {
@@ -1272,20 +1341,12 @@ function BrandImageField({
 			spacing={2}
 			sx={{ alignItems: { sm: "center" } }}
 		>
-			<Button
-				variant="outlined"
-				component="label"
+			<PictureField
+				label={label}
+				maxBytes={maxBytes}
+				onChange={onChange}
 				disabled={disabled}
-				sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
-			>
-				{label}
-				<input
-					hidden
-					type="file"
-					accept="image/png,image/jpeg,image/webp,image/gif"
-					onChange={event => readImageFile(event, onChange)}
-				/>
-			</Button>
+			/>
 			{value !== "" && (
 				<>
 					<Box
@@ -1375,12 +1436,14 @@ function SettingsTab(): React.JSX.Element {
 						<BrandImageField
 							label={t("admin.settings.brandLogo")}
 							value={draft.brand_logo ?? values.brand_logo ?? ""}
+							maxBytes={BRANDING_MAX_BYTES}
 							onChange={value => change("brand_logo", value)}
 							disabled={!mayEdit}
 						/>
 						<BrandImageField
 							label={t("admin.settings.brandBackground")}
 							value={draft.brand_background ?? values.brand_background ?? ""}
+							maxBytes={BRANDING_MAX_BYTES}
 							onChange={value => change("brand_background", value)}
 							disabled={!mayEdit}
 						/>

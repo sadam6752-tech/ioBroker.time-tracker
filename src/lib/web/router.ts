@@ -99,7 +99,7 @@ export interface RouteDefinition {
 export interface RouterOptions {
 	/** Authentication service used for the session check */
 	auth: AuthService;
-	/** Maximum body size in bytes (default 256 KiB) */
+	/** Maximum body size in bytes (default 2 MiB) */
 	maxBodyBytes?: number;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
@@ -320,6 +320,15 @@ function forwardedProto(headerValue: HeaderReader): string {
 }
 
 /**
+ * Default limit of a request body.
+ *
+ * It has to be roomier than the biggest value a client may store: a branding picture is a data URL of up to
+ * `MAX_BRANDING_BYTES` (512 KiB), and base64 makes it about a third bigger. Everything else the API accepts
+ * (a punch, a patch, a report request) is a few kilobytes.
+ */
+export const DEFAULT_MAX_BODY_BYTES = 2 * 1024 * 1024;
+
+/**
  * Creates the router.
  *
  * @param options - authentication service and limits
@@ -327,7 +336,7 @@ function forwardedProto(headerValue: HeaderReader): string {
  */
 export function createRouter(options: RouterOptions): Router {
 	const routes: CompiledRoute[] = [];
-	const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
+	const maxBodyBytes = options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
 	const now = options.now ?? (() => Math.floor(Date.now() / 1000));
 	// the counters live in the router, so the limits belong to the API instance that registered them
 	const limiter = createRateLimiter();

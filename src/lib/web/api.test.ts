@@ -2107,5 +2107,26 @@ describe("web api", () => {
 			expect(cleared.status).to.equal(200);
 			expect(bodyOf(await send("GET", "/branding")).logoUrl).to.equal(null);
 		});
+
+		it("accepts a background of the documented size and explains one that is too big", async () => {
+			// 400 KiB of base64 are about 300 KiB of picture: above the old body limit (256 KiB), well below
+			// MAX_BRANDING_BYTES (512 KiB)
+			const large = `data:image/png;base64,${"A".repeat(400 * 1024)}`;
+			const saved = await send("PUT", "/settings", {
+				body: { brand_background: large },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(saved.status, "a picture of the documented size has to fit through the body limit").to.equal(200);
+
+			// 800 KiB of base64 decode to about 600 KiB of picture: the answer names the limit instead of failing
+			// on the body size
+			const tooBig = `data:image/png;base64,${"A".repeat(800 * 1024)}`;
+			const refused = await send("PUT", "/settings", {
+				body: { brand_background: tooBig },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(refused.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(refused).detail).to.contain("524288");
+		});
 	});
 });

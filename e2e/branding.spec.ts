@@ -79,4 +79,22 @@ test("shows the logo, the background and the accent colour of the installation",
 		),
 	);
 	expect(colored, "the accent colour should be painted").toBe(true);
+
+	// the settings offer a row of suggested colours: one click stores the colour and paints it
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Einstellungen" }).click();
+	await page.getByLabel("#e8f1e9").click();
+	await page.getByRole("button", { name: "Speichern" }).click();
+
+	const stored = await request.get("/api/branding");
+	expect((await stored.json()).color).toBe("#e8f1e9");
+	await expect
+		.poll(async () =>
+			page.evaluate(() =>
+				[...document.querySelectorAll("div")].some(
+					node => getComputedStyle(node).backgroundColor === "rgb(232, 241, 233)",
+				),
+			),
+		)
+		.toBe(true);
 });

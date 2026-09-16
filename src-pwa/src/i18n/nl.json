@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Verwijderd",
 	"keypad.backspace": "Wissen",
 	"admin.settings.branding": "Bedrijfshuisstijl",
-	"admin.settings.brandingHint": "Logo, achtergrond en accentkleur van deze installatie. Ze zijn ook te zien op het inlogscherm en de kiosken.",
+	"admin.settings.brandingHint": "Logo, achtergrondafbeelding en achtergrondkleur van deze installatie.",
 	"admin.settings.brandLogo": "Logo kiezen",
 	"admin.settings.brandBackground": "Achtergrond kiezen",
-	"admin.settings.brandColor": "Accentkleur",
-	"admin.settings.brandColorHint": "Hex-waarde zoals #1a2b3c"
+	"admin.settings.brandColor": "Achtergrondkleur",
+	"admin.settings.brandColorHint": "Hex-waarde zoals #1a2b3c",
+	"admin.settings.brandColorPresets": "Voorgestelde kleuren",
+	"admin.settings.brandColorDefault": "Standaard"
 }

@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Deleted",
 	"keypad.backspace": "Backspace",
 	"admin.settings.branding": "Company branding",
-	"admin.settings.brandingHint": "Logo, background and accent colour of this installation. The sign in screen and the kiosk screens show them as well.",
+	"admin.settings.brandingHint": "Logo, background picture and background colour of this installation. The sign in screen and the kiosk screens show them as well.",
 	"admin.settings.brandLogo": "Choose logo",
 	"admin.settings.brandBackground": "Choose background",
-	"admin.settings.brandColor": "Accent colour",
-	"admin.settings.brandColorHint": "Hex value like #1a2b3c, empty for the default"
+	"admin.settings.brandColor": "Background colour",
+	"admin.settings.brandColorHint": "Hex value like #1a2b3c, empty for the default",
+	"admin.settings.brandColorPresets": "Suggested colours",
+	"admin.settings.brandColorDefault": "Default"
 }

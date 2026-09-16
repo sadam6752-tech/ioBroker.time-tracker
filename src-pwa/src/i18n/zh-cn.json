@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "已删除",
 	"keypad.backspace": "删除",
 	"admin.settings.branding": "公司品牌",
-	"admin.settings.brandingHint": "本安装的标志、背景和主题色，登录页和自助终端也会显示。",
+	"admin.settings.brandingHint": "本安装的标志、背景图片和背景颜色。",
 	"admin.settings.brandLogo": "选择标志",
 	"admin.settings.brandBackground": "选择背景",
-	"admin.settings.brandColor": "主题色",
-	"admin.settings.brandColorHint": "十六进制值，例如 #1a2b3c"
+	"admin.settings.brandColor": "背景颜色",
+	"admin.settings.brandColorHint": "十六进制值，例如 #1a2b3c",
+	"admin.settings.brandColorPresets": "建议颜色",
+	"admin.settings.brandColorDefault": "默认"
 }

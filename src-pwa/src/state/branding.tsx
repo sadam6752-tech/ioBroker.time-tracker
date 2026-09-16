@@ -14,6 +14,27 @@ import type { Branding } from "../api/types";
 /** Branding that is used when nothing is configured. */
 const NONE: Branding = { color: null, logoUrl: null, backgroundUrl: null };
 
+/**
+ * Background colours that the settings offer as suggestions.
+ *
+ * They are deliberately light: the app paints dark text on them, and the white cards of the screens have to stay
+ * readable. Any other colour can be typed as a hex value — the field is right next to the suggestions.
+ */
+export const BRAND_PRESET_COLORS = [
+	"#ffffff",
+	"#f5f7fa",
+	"#eef2f7",
+	"#e3f1f5",
+	"#e8f1e9",
+	"#eef1e4",
+	"#eae6f7",
+	"#f3ecf7",
+	"#f7f0f5",
+	"#fdf3e3",
+	"#f6ece3",
+	"#fdecea",
+] as const;
+
 /** Context that carries the branding. */
 const BrandingContext = createContext<Branding>(NONE);
 

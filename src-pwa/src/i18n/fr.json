@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Supprimé",
 	"keypad.backspace": "Effacer",
 	"admin.settings.branding": "Identité visuelle",
-	"admin.settings.brandingHint": "Logo, arrière-plan et couleur d'accent de cette installation. Ils apparaissent aussi sur l'écran de connexion et les bornes.",
+	"admin.settings.brandingHint": "Logo, image d'arrière-plan et couleur d'arrière-plan de cette installation.",
 	"admin.settings.brandLogo": "Choisir le logo",
 	"admin.settings.brandBackground": "Choisir l'arrière-plan",
-	"admin.settings.brandColor": "Couleur d'accent",
-	"admin.settings.brandColorHint": "Valeur hexadécimale comme #1a2b3c"
+	"admin.settings.brandColor": "Couleur d'arrière-plan",
+	"admin.settings.brandColorHint": "Valeur hexadécimale comme #1a2b3c",
+	"admin.settings.brandColorPresets": "Couleurs proposées",
+	"admin.settings.brandColorDefault": "Par défaut"
 }

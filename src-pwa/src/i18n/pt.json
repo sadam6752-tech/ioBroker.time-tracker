@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Excluído",
 	"keypad.backspace": "Apagar",
 	"admin.settings.branding": "Marca da empresa",
-	"admin.settings.brandingHint": "Logotipo, fundo e cor de destaque desta instalação. Também aparecem no ecrã de entrada e nos quiosques.",
+	"admin.settings.brandingHint": "Logotipo, imagem de fundo e cor de fundo desta instalação.",
 	"admin.settings.brandLogo": "Escolher logotipo",
 	"admin.settings.brandBackground": "Escolher fundo",
-	"admin.settings.brandColor": "Cor de destaque",
-	"admin.settings.brandColorHint": "Valor hexadecimal como #1a2b3c"
+	"admin.settings.brandColor": "Cor do fundo",
+	"admin.settings.brandColorHint": "Valor hexadecimal como #1a2b3c",
+	"admin.settings.brandColorPresets": "Cores sugeridas",
+	"admin.settings.brandColorDefault": "Padrão"
 }

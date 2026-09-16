@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Eliminato",
 	"keypad.backspace": "Cancella",
 	"admin.settings.branding": "Immagine aziendale",
-	"admin.settings.brandingHint": "Logo, sfondo e colore principale di questa installazione. Sono mostrati anche nella schermata di accesso e nei chioschi.",
+	"admin.settings.brandingHint": "Logo, immagine di sfondo e colore di sfondo di questa installazione.",
 	"admin.settings.brandLogo": "Scegli il logo",
 	"admin.settings.brandBackground": "Scegli lo sfondo",
-	"admin.settings.brandColor": "Colore principale",
-	"admin.settings.brandColorHint": "Valore esadecimale come #1a2b3c"
+	"admin.settings.brandColor": "Colore di sfondo",
+	"admin.settings.brandColorHint": "Valore esadecimale come #1a2b3c",
+	"admin.settings.brandColorPresets": "Colori suggeriti",
+	"admin.settings.brandColorDefault": "Predefinito"
 }

@@ -207,9 +207,11 @@
 	"corrections.actionDelete": "Usunięto",
 	"keypad.backspace": "Usuń",
 	"admin.settings.branding": "Wizerunek firmy",
-	"admin.settings.brandingHint": "Logo, tło i kolor akcentu tej instalacji. Są one również widoczne na ekranie logowania i w kioskach.",
+	"admin.settings.brandingHint": "Logo, obraz tła i kolor tła tej instalacji.",
 	"admin.settings.brandLogo": "Wybierz logo",
 	"admin.settings.brandBackground": "Wybierz tło",
-	"admin.settings.brandColor": "Kolor akcentu",
-	"admin.settings.brandColorHint": "Wartość szesnastkowa, np. #1a2b3c"
+	"admin.settings.brandColor": "Kolor tła",
+	"admin.settings.brandColorHint": "Wartość szesnastkowa, np. #1a2b3c",
+	"admin.settings.brandColorPresets": "Sugerowane kolory",
+	"admin.settings.brandColorDefault": "Domyślny"
 }

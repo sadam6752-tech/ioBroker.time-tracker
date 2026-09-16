@@ -21,6 +21,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import { BRAND_PRESET_COLORS } from "../state/branding";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Tab from "@mui/material/Tab";
@@ -1248,6 +1249,50 @@ function SettingsTab(): React.JSX.Element {
 									}}
 								/>
 							)}
+						</Stack>
+						{/* the suggestions save typing: one click sets the colour, the field above stays for anything else */}
+						<Stack spacing={1}>
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.settings.brandColorPresets")}
+							</Typography>
+							<Stack
+								direction="row"
+								sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}
+							>
+								{BRAND_PRESET_COLORS.map(color => (
+									<Button
+										key={color}
+										aria-label={color}
+										title={color}
+										disabled={!mayEdit}
+										onClick={() => change("brand_color", color)}
+										sx={{
+											minWidth: 40,
+											width: 40,
+											height: 40,
+											p: 0,
+											borderRadius: 1,
+											border: 2,
+											borderColor:
+												(draft.brand_color ?? values.brand_color ?? "").toLowerCase() === color
+													? "primary.main"
+													: "divider",
+											bgcolor: color,
+											"&:hover": { bgcolor: color },
+										}}
+									/>
+								))}
+								<Button
+									color="inherit"
+									disabled={!mayEdit}
+									onClick={() => change("brand_color", "")}
+								>
+									{t("admin.settings.brandColorDefault")}
+								</Button>
+							</Stack>
 						</Stack>
 					</Stack>
 				</CardContent>

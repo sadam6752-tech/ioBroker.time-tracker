@@ -315,7 +315,12 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
   absence, a broken employee id in a payout query, tag links without a secret) and the failure paths of the backup
   service, the HTTP server and the event stream — 434 to 450 unit tests, branch coverage 80.9 to 83.3 %
 - (Alex) internal: the browser tests cover the forced password change of a start password, the month view, the PDF
-  statement as a download and an absence request — 12 to 16 cases
+  statement as a download and an absence request — 12 to 17 cases
+- (Alex) fix: the actions of a list row (employees, terminals, holidays, badges, absences, the correction list) no
+  longer cover the names — they stay beside the text and move below it on a phone; one browser test measures the
+  geometry of every row
+- (Alex) fix: an absence in the list names its type again — the API hands the code out with the record, before the
+  row read “undefined”
 
 ### 0.0.5 (2026-09-16)
 

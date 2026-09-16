@@ -110,6 +110,11 @@ export interface ApiDeps {
 	now?: () => number;
 	/** Version reported by `GET /version` */
 	version?: string;
+	/**
+	 * Allowed login attempts per minute and address. The browser tests sign in once per case, so their harness
+	 * raises the shipped limit of 20.
+	 */
+	loginRateLimit?: number;
 }
 
 /** Media type of the Excel export. */
@@ -746,7 +751,11 @@ export function createApi(deps: ApiDeps): Api {
 	route(
 		"POST",
 		"/auth/login",
-		{ public: true, csrf: false, rateLimit: { name: "login", limit: 20, windowSeconds: 60 } },
+		{
+			public: true,
+			csrf: false,
+			rateLimit: { name: "login", limit: deps.loginRateLimit ?? 20, windowSeconds: 60 },
+		},
 		context => {
 			const body = context.jsonBody();
 			const result = auth.login({
@@ -1166,11 +1175,28 @@ export function createApi(deps: ApiDeps): Api {
 
 	// absences
 
+	/**
+	 * Adds the code and the name of the type to an absence.
+	 *
+	 * The stored record only knows the id of its type, while a client shows the code (specification 4: `Absence`).
+	 *
+	 * @param absence - stored absence
+	 * @returns the absence as the API hands it out
+	 */
+	const publicAbsence = (
+		absence: AbsenceRecord,
+	): AbsenceRecord & { typeCode: string | null; typeName: string | null } => {
+		const type = absences.findType(absence.typeId);
+		return { ...absence, typeCode: type?.code ?? null, typeName: type?.name ?? null };
+	};
+
 	route("GET", "/absences", { permission: "report.view_own" }, context => {
 		const requested = context.query("userId") ? Number(context.query("userId")) : null;
 		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
 		const year = context.query("year") ? Number(context.query("year")) : undefined;
-		return json(200, { absences: absences.listByUser(userId, year === undefined ? {} : { year }) });
+		return json(200, {
+			absences: absences.listByUser(userId, year === undefined ? {} : { year }).map(publicAbsence),
+		});
 	});
 
 	route("POST", "/absences", { permission: "absence.request", csrf: true }, context => {
@@ -1200,7 +1226,7 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		emit({ type: "absence.change", userId, data: { absenceId: created.id, action: "created" } });
-		return json(201, { absence: created }, { location: `/absences/${created.id}` });
+		return json(201, { absence: publicAbsence(created) }, { location: `/absences/${created.id}` });
 	});
 
 	route("POST", "/absences/:id/status", { permission: "absence.approve", csrf: true }, context => {
@@ -1220,7 +1246,7 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "status" } });
-		return json(200, { absence: updated });
+		return json(200, { absence: publicAbsence(updated) });
 	});
 
 	/**
@@ -1289,7 +1315,7 @@ export function createApi(deps: ApiDeps): Api {
 			: (absences.findById(absence.id) ?? absence);
 
 		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "updated" } });
-		return json(200, { absence: updated });
+		return json(200, { absence: publicAbsence(updated) });
 	});
 
 	route("DELETE", "/absences/:id", { permission: "absence.request", csrf: true }, context => {

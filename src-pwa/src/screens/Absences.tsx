@@ -9,8 +9,6 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -22,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatDate } from "../api/client";
 import { AppShell } from "../components/AppShell";
+import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
 import { hasPermission, useSession } from "../state/session";
 
@@ -109,26 +108,22 @@ export function Absences(): React.JSX.Element {
 				<Card sx={{ mb: 3 }}>
 					<List dense>
 						{(list.data ?? []).map(absence => (
-							<ListItem
+							<ActionRow
 								key={absence.id}
-								secondaryAction={
-									<Typography
-										variant="body2"
-										color="text.secondary"
-									>
-										{absence.status}
-									</Typography>
-								}
+								primary={`${absence.typeCode}: ${formatDate(absence.dateFrom, i18n.language)}${
+									absence.dateTo && absence.dateTo !== absence.dateFrom
+										? ` – ${formatDate(absence.dateTo, i18n.language)}`
+										: ""
+								}`}
+								secondary={`${t("absences.portion")}: ${absence.dayPortion}`}
 							>
-								<ListItemText
-									primary={`${absence.typeCode}: ${formatDate(absence.dateFrom, i18n.language)}${
-										absence.dateTo && absence.dateTo !== absence.dateFrom
-											? ` – ${formatDate(absence.dateTo, i18n.language)}`
-											: ""
-									}`}
-									secondary={`${t("absences.portion")}: ${absence.dayPortion}`}
-								/>
-							</ListItem>
+								<Typography
+									variant="body2"
+									color="text.secondary"
+								>
+									{absence.status}
+								</Typography>
+							</ActionRow>
 						))}
 					</List>
 					{(list.data ?? []).length === 0 && (

@@ -36,6 +36,7 @@ import { api, formatTime } from "../api/client";
 import type { Entry } from "../api/types";
 import { ErrorAlert, Loading } from "../components/feedback";
 import { monthRange } from "./Month";
+import { ActionRow } from "../components/ActionRow";
 
 /**
  * Offset of a time zone at an instant, in seconds (local wall clock minus UTC).
@@ -308,63 +309,59 @@ export function CorrectionsTab({ language }: { language: string }): React.JSX.El
 			<Card>
 				<List dense>
 					{(entries.data ?? []).map(entry => (
-						<ListItem
+						<ActionRow
 							key={entry.id}
-							secondaryAction={
-								<Stack
-									direction="row"
-									spacing={0.5}
-								>
-									<IconButton
-										size="small"
-										title={t("corrections.history")}
-										aria-label={t("corrections.history")}
-										onClick={() => setHistoryId(entry.id)}
-									>
-										<HistoryIcon fontSize="small" />
-									</IconButton>
-									<IconButton
-										size="small"
-										title={t("corrections.editTitle")}
-										aria-label={t("corrections.editTitle")}
-										onClick={() => {
-											const localDate = entry.localDate;
-											const time = formatTime(entry.tsUtc, timeZone, "de-DE");
-											setEditing({
-												entry,
-												date: localDate,
-												time,
-												direction: entry.direction,
-												note: entry.note ?? "",
-											});
-										}}
-									>
-										<EditIcon fontSize="small" />
-									</IconButton>
-									<IconButton
-										size="small"
-										title={t("corrections.remove")}
-										aria-label={t("corrections.remove")}
-										onClick={() => remove.mutate(entry)}
-									>
-										<DeleteIcon fontSize="small" />
-									</IconButton>
-								</Stack>
-							}
+							primary={`${formatPunch(entry.tsUtc, timeZone, language)} · ${t(
+								entry.direction === "in" ? "punch.in" : "punch.out",
+							)}`}
+							secondary={[
+								// the source says where a punch came from; `admin` marks a correction
+								entry.source === "admin" ? t("corrections.byAdmin") : entry.source,
+								entry.note,
+							]
+								.filter(Boolean)
+								.join(" · ")}
 						>
-							<ListItemText
-								primary={`${formatPunch(entry.tsUtc, timeZone, language)} · ${t(
-									entry.direction === "in" ? "punch.in" : "punch.out",
-								)}`}
-								secondary={[
-									// the source says where a punch came from; `admin` marks a correction
-									entry.source === "admin" ? t("corrections.byAdmin") : entry.source,
-									entry.note,
-								]
-									.filter(Boolean)
-									.join(" · ")}
-							/>
-						</ListItem>
+							<Stack
+								direction="row"
+								spacing={0.5}
+							>
+								<IconButton
+									size="small"
+									title={t("corrections.history")}
+									aria-label={t("corrections.history")}
+									onClick={() => setHistoryId(entry.id)}
+								>
+									<HistoryIcon fontSize="small" />
+								</IconButton>
+								<IconButton
+									size="small"
+									title={t("corrections.editTitle")}
+									aria-label={t("corrections.editTitle")}
+									onClick={() => {
+										const localDate = entry.localDate;
+										const time = formatTime(entry.tsUtc, timeZone, "de-DE");
+										setEditing({
+											entry,
+											date: localDate,
+											time,
+											direction: entry.direction,
+											note: entry.note ?? "",
+										});
+									}}
+								>
+									<EditIcon fontSize="small" />
+								</IconButton>
+								<IconButton
+									size="small"
+									title={t("corrections.remove")}
+									aria-label={t("corrections.remove")}
+									onClick={() => remove.mutate(entry)}
+								>
+									<DeleteIcon fontSize="small" />
+								</IconButton>
+							</Stack>
+						</ActionRow>
 					))}
 					{(entries.data ?? []).length === 0 && (
 						<ListItem>

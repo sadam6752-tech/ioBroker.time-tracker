@@ -87,6 +87,8 @@ const api = createApi({
 	sync,
 	settings,
 	kioskEnabled: true,
+	// the suite signs in once per case, which is more often than the shipped limit of 20 attempts per minute
+	loginRateLimit: 200,
 	// a terminal session lives seconds in the tests, so the specs also cover a screen that has to renew itself
 	terminalSessionMinutes: 0.1,
 	hmacSecret: "e2e-hmac-secret",

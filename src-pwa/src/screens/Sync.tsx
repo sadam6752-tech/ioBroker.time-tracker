@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatTime } from "../api/client";
 import { AppShell } from "../components/AppShell";
+import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert } from "../components/feedback";
 import { useSync } from "../offline/useSync";
 import { hasPermission, useSession } from "../state/session";
@@ -123,47 +124,38 @@ export function Sync(): React.JSX.Element {
 							) : (
 								<List dense>
 									{(conflicts.data ?? []).map(conflict => (
-										<ListItem
+										<ActionRow
 											key={conflict.id}
-											secondaryAction={
-												<Stack
-													direction="row"
-													spacing={1}
-												>
-													<Button
-														size="small"
-														onClick={() =>
-															resolve.mutate({
-																entryId: conflict.entryId ?? conflict.id,
-																action: "accept",
-															})
-														}
-													>
-														{t("sync.accept")}
-													</Button>
-													<Button
-														size="small"
-														color="warning"
-														onClick={() =>
-															resolve.mutate({
-																entryId: conflict.entryId ?? conflict.id,
-																action: "dismiss",
-															})
-														}
-													>
-														{t("sync.dismiss")}
-													</Button>
-												</Stack>
-											}
+											primary={t("sync.conflictOf", {
+												date: conflict.localDate,
+												time: formatTime(conflict.tsUtc, timeZone, i18n.language),
+											})}
+											secondary={conflict.note ?? undefined}
 										>
-											<ListItemText
-												primary={t("sync.conflictOf", {
-													date: conflict.localDate,
-													time: formatTime(conflict.tsUtc, timeZone, i18n.language),
-												})}
-												secondary={conflict.note ?? undefined}
-											/>
-										</ListItem>
+											<Button
+												size="small"
+												onClick={() =>
+													resolve.mutate({
+														entryId: conflict.entryId ?? conflict.id,
+														action: "accept",
+													})
+												}
+											>
+												{t("sync.accept")}
+											</Button>
+											<Button
+												size="small"
+												color="warning"
+												onClick={() =>
+													resolve.mutate({
+														entryId: conflict.entryId ?? conflict.id,
+														action: "dismiss",
+													})
+												}
+											>
+												{t("sync.dismiss")}
+											</Button>
+										</ActionRow>
 									))}
 								</List>
 							)}

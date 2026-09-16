@@ -40,6 +40,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatDate, type AdminTerminal } from "../api/client";
 import type { AdminUser, CreateUserInput } from "../api/types";
 import { AppShell } from "../components/AppShell";
+import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
 import { hasPermission, useSession } from "../state/session";
 
@@ -248,81 +249,71 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 			<Card>
 				<List dense>
 					{(users.data ?? []).map(user => (
-						<ListItem
+						<ActionRow
 							key={user.id}
-							secondaryAction={
+							primary={`${user.displayName} (${user.login})`}
+							secondary={
 								<Stack
 									direction="row"
-									spacing={1}
-									alignItems="center"
+									spacing={0.5}
+									sx={{ mt: 0.5 }}
 								>
-									{mayEdit && (
-										<>
-											<Button
-												size="small"
-												startIcon={<KeyIcon />}
-												onClick={() => {
-													setPinUser(user);
-													setPin("");
-												}}
-											>
-												{t("admin.user.pin")}
-											</Button>
-											<Button
-												size="small"
-												onClick={() => {
-													setPhotoUser(user);
-													setPhoto(null);
-												}}
-											>
-												{t("admin.user.photo")}
-											</Button>
-											{mayManageRoles && (
-												<Button
-													size="small"
-													onClick={() => setRolesUser(user)}
-												>
-													{t("admin.user.roles")}
-												</Button>
-											)}
-											<Switch
-												checked={user.isActive}
-												title={t(user.isActive ? "admin.user.active" : "admin.user.inactive")}
-												onChange={() =>
-													change.mutate({ id: user.id, patch: { isActive: !user.isActive } })
-												}
-											/>
-										</>
+									{user.roles.map(role => (
+										<Chip
+											key={role}
+											size="small"
+											label={role}
+										/>
+									))}
+									{!user.isActive && (
+										<Chip
+											size="small"
+											color="default"
+											label={t("admin.user.inactive")}
+										/>
 									)}
 								</Stack>
 							}
 						>
-							<ListItemText
-								primary={`${user.displayName} (${user.login})`}
-								secondary={
-									<Stack
-										direction="row"
-										spacing={0.5}
-										sx={{ mt: 0.5 }}
+							{mayEdit && (
+								<>
+									<Button
+										size="small"
+										startIcon={<KeyIcon />}
+										onClick={() => {
+											setPinUser(user);
+											setPin("");
+										}}
 									>
-										{user.roles.map(role => (
-											<Chip
-												key={role}
-												size="small"
-												label={role}
-											/>
-										))}
-										{!user.isActive && (
-											<Chip
-												size="small"
-												color="default"
-												label={t("admin.user.inactive")}
-											/>
-										)}
-									</Stack>
-								}
-							/>
-						</ListItem>
+										{t("admin.user.pin")}
+									</Button>
+									<Button
+										size="small"
+										onClick={() => {
+											setPhotoUser(user);
+											setPhoto(null);
+										}}
+									>
+										{t("admin.user.photo")}
+									</Button>
+									{mayManageRoles && (
+										<Button
+											size="small"
+											onClick={() => setRolesUser(user)}
+										>
+											{t("admin.user.roles")}
+										</Button>
+									)}
+									<Switch
+										checked={user.isActive}
+										title={t(user.isActive ? "admin.user.active" : "admin.user.inactive")}
+										onChange={() =>
+											change.mutate({ id: user.id, patch: { isActive: !user.isActive } })
+										}
+									/>
+								</>
+							)}
+						</ActionRow>
 					))}
 					{(users.data ?? []).length === 0 && (
 						<ListItem>
@@ -750,59 +741,51 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 			<Card>
 				<List dense>
 					{(terminals.data ?? []).map(terminal => (
-						<ListItem
+						<ActionRow
 							key={terminal.id}
-							divider
-							secondaryAction={
-								terminal.isActive ? (
-									<Stack
-										direction="row"
-										spacing={1}
-									>
-										<Button
+							primary={
+								<Stack
+									direction="row"
+									spacing={1}
+									alignItems="center"
+									sx={{ flexWrap: "wrap", gap: 1 }}
+								>
+									<Typography>{terminal.name}</Typography>
+									{terminal.pinRequired && (
+										<Chip
 											size="small"
-											onClick={() => setAssigning(terminal)}
-										>
-											{t("admin.terminal.users")}
-										</Button>
-										<Button
+											label={t("admin.terminal.pinRequired")}
+										/>
+									)}
+									{!terminal.isActive && (
+										<Chip
 											size="small"
-											color="error"
-											onClick={() => setRevoking(terminal)}
-										>
-											{t("admin.terminal.revoke")}
-										</Button>
-									</Stack>
-								) : undefined
+											variant="outlined"
+											label={t("admin.terminal.revoked")}
+										/>
+									)}
+								</Stack>
 							}
+							secondary={detailsOf(terminal)}
 						>
-							<ListItemText
-								primary={
-									<Stack
-										direction="row"
-										spacing={1}
-										alignItems="center"
-										sx={{ flexWrap: "wrap", gap: 1 }}
+							{terminal.isActive && (
+								<>
+									<Button
+										size="small"
+										onClick={() => setAssigning(terminal)}
 									>
-										<Typography>{terminal.name}</Typography>
-										{terminal.pinRequired && (
-											<Chip
-												size="small"
-												label={t("admin.terminal.pinRequired")}
-											/>
-										)}
-										{!terminal.isActive && (
-											<Chip
-												size="small"
-												variant="outlined"
-												label={t("admin.terminal.revoked")}
-											/>
-										)}
-									</Stack>
-								}
-								secondary={detailsOf(terminal)}
-							/>
-						</ListItem>
+										{t("admin.terminal.users")}
+									</Button>
+									<Button
+										size="small"
+										color="error"
+										onClick={() => setRevoking(terminal)}
+									>
+										{t("admin.terminal.revoke")}
+									</Button>
+								</>
+							)}
+						</ActionRow>
 					))}
 					{terminals.isLoading && (
 						<ListItem>
@@ -1033,24 +1016,19 @@ function HolidaysTab({ language }: { language: string }): React.JSX.Element {
 			<Card>
 				<List dense>
 					{(holidays.data ?? []).map(holiday => (
-						<ListItem
+						<ActionRow
 							key={holiday.id}
-							divider
-							secondaryAction={
-								<Button
-									size="small"
-									color="error"
-									onClick={() => remove.mutate(holiday.id)}
-								>
-									{t("admin.tag.delete")}
-								</Button>
-							}
+							primary={`${formatDate(holiday.date, language)} · ${holiday.name}`}
+							secondary={holiday.region ?? t("common.none")}
 						>
-							<ListItemText
-								primary={`${formatDate(holiday.date, language)} · ${holiday.name}`}
-								secondary={holiday.region ?? t("common.none")}
-							/>
-						</ListItem>
+							<Button
+								size="small"
+								color="error"
+								onClick={() => remove.mutate(holiday.id)}
+							>
+								{t("admin.tag.delete")}
+							</Button>
+						</ActionRow>
 					))}
 					{!holidays.isLoading && (holidays.data ?? []).length === 0 && (
 						<ListItem>
@@ -1175,24 +1153,19 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 					{(tags.data ?? []).map(tag => {
 						const until = tag.expiresAt ? formatStamp(tag.expiresAt, language) : t("common.none");
 						return (
-							<ListItem
+							<ActionRow
 								key={tag.id}
-								divider
-								secondaryAction={
-									<Button
-										size="small"
-										color="error"
-										onClick={() => remove.mutate(tag.id)}
-									>
-										{t("admin.tag.delete")}
-									</Button>
-								}
+								primary={`${tag.label ?? tag.uid ?? `#${tag.id}`} · ${nameOf(tag.userId)}`}
+								secondary={`${tag.uid ?? t("common.none")} · ${until}`}
 							>
-								<ListItemText
-									primary={`${tag.label ?? tag.uid ?? `#${tag.id}`} · ${nameOf(tag.userId)}`}
-									secondary={`${tag.uid ?? t("common.none")} · ${until}`}
-								/>
-							</ListItem>
+								<Button
+									size="small"
+									color="error"
+									onClick={() => remove.mutate(tag.id)}
+								>
+									{t("admin.tag.delete")}
+								</Button>
+							</ActionRow>
 						);
 					})}
 					{!tags.isLoading && (tags.data ?? []).length === 0 && (

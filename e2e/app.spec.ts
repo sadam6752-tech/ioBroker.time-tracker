@@ -144,6 +144,11 @@ test("requests an absence in the form and finds it in the year", async ({ page, 
 	await page.locator('form button[type="submit"]').click();
 	await expect(page.getByText("Abwesenheit beantragt.")).toBeVisible();
 
+	// the row names the type: the payload carries the code of the type, not only its id (it used to read
+	// "undefined" here because the record of the API only knew the id)
+	const code = chosen.split(" ")[0];
+	await expect(page.getByText(new RegExp(`^${code}: `))).toBeVisible();
+
 	// the API stored it for the employee the administrator requested it for
 	const login = await request.post("/api/auth/login", { data: admin });
 	expect(login.status()).toBe(200);

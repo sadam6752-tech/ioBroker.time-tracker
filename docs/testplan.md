@@ -126,7 +126,7 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 | --- | --- |
 | Adminbereich-Ausbau | Nur noch die **NFC-Bedienung** fehlt in der PWA; Rollenwechsel pro Zeile, Einstellungen, Tags und Feiertage sind seit der letzten Runde vorhanden. Statistik und Ausweise sind über die API erreichbar. |
 | 9 Sprachen maschinell übersetzt | Kernbegriffe (Stempeln, PIN) sind von Hand korrigiert; Fachjargon beim Test notieren. |
-| Keine E2E-Tests (Playwright) | **Vorhanden** (`npm run e2e`, `e2e/server.mjs` startet die echte API + gebaute PWA): **16 Tests, alle grün** (Login, Sitzung über Cookie, Statistik, Kiosk- und Anwesenheits-Token, Ausweis-Link, Branding, Zeitkorrektur, Anwesenheits-Kacheln, Benutzer und Terminal, dazu seit der letzten Runde: **erzwungener Passwortwechsel beim Startpasswort**, **Monatsansicht**, **PDF-Nachweis als Download** und **Abwesenheits-Antrag**). Der frühere Render-Fehler nach dem Login (React #130) ist behoben — die Symbole kommen über den Alias in `vite.config.ts` als echtes ES-Modul an — es gibt **keine** zurückgestellten Fälle mehr. T1–T13 bleiben Handarbeit, weil sie Rechte, Offline-Betrieb und echte Geräte prüfen. |
+| Keine E2E-Tests (Playwright) | **Vorhanden** (`npm run e2e`, `e2e/server.mjs` startet die echte API + gebaute PWA): **17 Tests, alle grün** (Login, Sitzung über Cookie, Statistik, Kiosk- und Anwesenheits-Token, Ausweis-Link, Branding, Zeitkorrektur, Anwesenheits-Kacheln, Benutzer und Terminal, dazu seit der letzten Runde: **erzwungener Passwortwechsel beim Startpasswort**, **Monatsansicht**, **PDF-Nachweis als Download**, **Abwesenheits-Antrag** und eine **Layout-Messung** (auf 360 px Breite darf keine Zeile ihre Aktionen über den Text legen)). Der frühere Render-Fehler nach dem Login (React #130) ist behoben — die Symbole kommen über den Alias in `vite.config.ts` als echtes ES-Modul an — es gibt **keine** zurückgestellten Fälle mehr. T1–T13 bleiben Handarbeit, weil sie Rechte, Offline-Betrieb und echte Geräte prüfen. |
 | PDF-Schriften (`ru`, `uk`, `zh-cn`) | Braucht eine Unicode-Schriftdatei über `report_font_path`; ohne sie kommt eine klare Fehlermeldung. |
 
 ## 9. Rückfall-Szenario
@@ -151,6 +151,14 @@ alten Dateien aus dem Precache ausliefern.
 
 > **Wichtig:** Erst den Exit-Code des Builds prüfen, dann das Testergebnis lesen. Ein abgebrochener Build (z. B.
 > unbenutzter Import) hinterlässt `www/` unverändert — die Tests laufen dann still gegen den **alten** Stand.
+
+> **Ein Lauf gilt für genau einen Server.** `playwright.config.ts` übernimmt einen laufenden E2E-Server
+> (`reuseExistingServer`), und dieser Server hält seine Datenbank **im Speicher**: ein zweiter Lauf trifft den
+> Zustand des ersten. Dann verwirft der Doppelscan-Schutz Stempel innerhalb von 30 Sekunden, und die Prüfung des
+> Startpassworts scheitert, weil es bereits geändert wurde. Vor einem erneuten Lauf den Server auf Port `8099`
+> beenden oder frisch starten; ein hart abgebrochener Lauf hinterlässt sonst einen Zombie-Server, an dem die
+> nächste Runde mit `ERR_CONNECTION_REFUSED` scheitert (auch die Prüfung „Aktionen liegen nicht auf dem Text“
+> in `e2e/layout.spec.ts` sieht dann einen anderen Datenbestand als erwartet).
 
 **Web-App gegen den laufenden Adapter entwickeln** (schnelle Rückmeldung, React im Entwicklungsmodus mit lesbaren
 Fehlern):

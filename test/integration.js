@@ -11,6 +11,9 @@ const { tests } = require("@iobroker/testing");
 const testTimeout = 60000;
 const reactionTimeout = 20000;
 
+// The version comes from package.json: a version bump must not break the tests.
+const expectedVersion = require("../package.json").version;
+
 /**
  * Waits a moment before the next try
  *
@@ -147,7 +150,7 @@ tests.integration(path.join(__dirname, ".."), {
 					expect(object, id).to.not.equal(null);
 				}
 				const version = await harness.states.getState("zeiterfassung.0.info.version");
-				expect(version?.val).to.equal("0.0.1");
+				expect(version?.val).to.equal(expectedVersion);
 				const schema = await harness.states.getState("zeiterfassung.0.info.schemaVersion");
 				expect(Number(schema?.val)).to.be.greaterThan(0);
 				const size = await harness.states.getState("zeiterfassung.0.info.dbSizeBytes");

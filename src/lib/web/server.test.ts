@@ -18,7 +18,7 @@ import { createUsersRepository } from "../db/repositories/users";
 import { createAggregationService } from "../services/aggregation";
 import { createAuthService, hashPassword } from "../services/auth";
 import { createSyncService } from "../services/sync";
-import { createApi } from "./api";
+import { createApi, type Api } from "./api";
 import { startWebServer, type WebServer } from "./server";
 import { createStaticHandler } from "./static";
 
@@ -230,5 +230,95 @@ describe("web server", () => {
 
 		// a second close call must not throw either
 		await server.close();
+	});
+});
+
+describe("web server without a web interface", () => {
+	let db: Db;
+
+	/**
+	 * Builds an API on the in-memory database of the test.
+	 *
+	 * @returns the API
+	 */
+	function createTestApi(): Api {
+		const users = createUsersRepository(db);
+		const entries = createEntriesRepository(db);
+		const absences = createAbsencesRepository(db);
+		const holidays = createHolidaysRepository(db);
+		const rules = createRulesRepository(db);
+		const payouts = createPayoutsRepository(db);
+		const terminals = createTerminalsRepository(db);
+		const rfid = createRfidRepository(db);
+		const settings = createSettingsRepository(db);
+		const auth = createAuthService({ db, users, settings, secret: "server-bare-test-secret" });
+		const aggregation = createAggregationService({ db, users, entries, absences, holidays, rules, settings });
+		const sync = createSyncService({ db, entries, users, aggregation });
+		return createApi({
+			db,
+			auth,
+			users,
+			entries,
+			absences,
+			holidays,
+			rules,
+			payouts,
+			terminals,
+			rfid,
+			aggregation,
+			sync,
+			settings,
+			now: () => 1000,
+		});
+	}
+
+	beforeEach(() => {
+		db = openAndMigrate(":memory:");
+		seed(db, { holidayYears: [2026] });
+	});
+
+	afterEach(() => {
+		db.close();
+	});
+
+	it("answers a request outside the API with a problem when no web interface is served", async () => {
+		// an instance without `www/` still serves the API, and everything else becomes a problem document
+		const bare = await startWebServer({ router: createTestApi().router, port: 0, bind: "127.0.0.1" });
+		try {
+			// a repeated query parameter arrives as a list
+			expect((await fetch(`${bare.url}/api/health?a=1&a=2`)).status).to.equal(200);
+
+			const missing = await fetch(`${bare.url}/irgendwas`);
+			expect(missing.status).to.equal(404);
+			expect(missing.headers.get("content-type")).to.equal("application/problem+json; charset=utf-8");
+			expect(await missing.json()).to.deep.include({ status: 404, code: "not_found" });
+		} finally {
+			await bare.close();
+		}
+	});
+
+	it("reports a broken transport as 500, logs it and names the loopback address", async () => {
+		const logs: string[] = [];
+		const broken = await startWebServer({
+			router: createTestApi().router,
+			port: 0,
+			bind: "0.0.0.0",
+			// a web interface whose files cannot be read: the transport fails before a response is written
+			staticFiles: () => {
+				throw new Error("kaputt");
+			},
+			log: { info: message => logs.push(message), warn: () => {}, error: message => logs.push(message) },
+		});
+		try {
+			// a wildcard bind is reached through the loopback address, and that is the address a client is told
+			expect(broken.url).to.equal(`http://127.0.0.1:${broken.port}`);
+			expect(logs[0]).to.contain("web interface is served from disk");
+			expect(logs[0]).to.not.contain("live events");
+
+			expect((await fetch(`${broken.url}/`)).status).to.equal(500);
+			expect(logs.some(message => message.includes("request failed: kaputt"))).to.equal(true);
+		} finally {
+			await broken.close();
+		}
 	});
 });

@@ -160,4 +160,39 @@ describe("backup service", () => {
 		};
 		expect(audit.count).to.equal(1);
 	});
+
+	it("ignores files that are not backups", () => {
+		// without a directory there is nothing to report
+		expect(service.list()).to.deep.equal([]);
+
+		fs.mkdirSync(backupDir, { recursive: true });
+		fs.writeFileSync(path.join(backupDir, "zeiterfassung-halb-fertig.sqlite.part"), "abgebrochen");
+		fs.writeFileSync(path.join(backupDir, "zeiterfassung-kein-datum.sqlite"), "kein Datum");
+		expect(service.list()).to.deep.equal([]);
+	});
+
+	it("refuses to restore an in-memory database", () => {
+		const backup = service.create().backup;
+		// an in-memory database has no file to overwrite, so a restore cannot land anywhere
+		const memory = openAndMigrate(":memory:");
+		const memoryService = createBackupService({ db: memory, dir: backupDir, now: () => clock });
+		memory.close();
+
+		expect(() => memoryService.restore(backup.file)).to.throw(/in-memory database cannot be restored/);
+	});
+
+	it("restores into a missing database file without keeping a copy", () => {
+		addEmployeeWithPunch("anna");
+		const backup = service.create().backup;
+		const expectedUsers = users.list().length;
+
+		db.close();
+		fs.rmSync(dbFile, { force: true });
+		const result = service.restore(backup.file);
+		// nothing was there to keep
+		expect(result.previous).to.equal(null);
+
+		open();
+		expect(users.list().length).to.equal(expectedUsers);
+	});
 });

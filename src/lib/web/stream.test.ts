@@ -67,6 +67,8 @@ describe("web event stream", () => {
 	/** Intervals the stream asked the caller for, and the timers it stopped again. */
 	let startedIntervals: number[];
 	let stoppedTimers: unknown[];
+	/** Callback the stream handed to the injected `setInterval`, so a test can fire the keep-alive ping. */
+	let pingHandler: (() => void) | null;
 
 	/**
 	 * Connects a client, buffers its frames and consumes the greeting.
@@ -174,6 +176,7 @@ describe("web event stream", () => {
 	beforeEach(async () => {
 		startedIntervals = [];
 		stoppedTimers = [];
+		pingHandler = null;
 		db = openAndMigrate(":memory:");
 		seed(db, { holidayYears: [2026] });
 		const users = createUsersRepository(db);
@@ -220,7 +223,8 @@ describe("web event stream", () => {
 				now: () => 1000,
 				// the adapter hands in its own timer functions; here stubs record what the stream does with them
 				timers: {
-					setInterval: (_handler, milliseconds) => {
+					setInterval: (handler, milliseconds) => {
+						pingHandler = handler;
 						startedIntervals.push(milliseconds);
 						return 42;
 					},
@@ -262,6 +266,34 @@ describe("web event stream", () => {
 		await anna.silence();
 		anna.socket.close();
 		admin.socket.close();
+	});
+
+	it("refuses an upgrade on another path", async () => {
+		// the API owns `/api/stream`; every other upgrade belongs to nobody and is answered with 404
+		const socket = new WebSocket(
+			`ws://127.0.0.1:${server.port}/falscher-pfad?token=${encodeURIComponent(annaToken)}`,
+		);
+		const status = await new Promise<number>((resolve, reject) => {
+			socket.on("unexpected-response", (_request, response) => resolve(response.statusCode ?? 0));
+			socket.on("open", () => reject(new Error("the connection was accepted")));
+			socket.on("error", () => reject(new Error("the connection failed before the response")));
+		});
+		expect(status).to.equal(404);
+	});
+
+	it("pings the connected clients with the timer of the adapter", async () => {
+		const anna = await connect(annaToken);
+		expect(startedIntervals).to.have.lengthOf(1);
+		expect(pingHandler).to.be.a("function");
+
+		const ping = new Promise<void>(resolve => anna.socket.on("ping", () => resolve()));
+		pingHandler?.();
+		await ping;
+
+		// a closed client is gone from the list, so the following ping has nobody to talk to
+		anna.socket.close();
+		await sleep(50);
+		pingHandler?.();
 	});
 
 	it("rejects a connection with an unknown token", async () => {

@@ -62,6 +62,9 @@ const admin = users.create({ login: "admin", displayName: "E2E Admin", roleKeys:
 const anna = users.create({ login: "anna", displayName: "Anna Muster", roleKeys: ["employee"] });
 auth.setPassword({ userId: admin.id, password: adminPassword, mustChangePw: false, actorId: admin.id, now: now() });
 auth.setPassword({ userId: anna.id, password: adminPassword, mustChangePw: false, actorId: admin.id, now: now() });
+// an account that still carries its start password: the web app has to ask for a new one before anything else
+const fresh = users.create({ login: "start", displayName: "Neue Kraft", roleKeys: ["employee"] });
+auth.setPassword({ userId: fresh.id, password: adminPassword, mustChangePw: true, actorId: admin.id, now: now() });
 users.setPin({
 	userId: anna.id,
 	pinHash: require(join(repo, "build/lib/services/auth.js")).hashPassword("1234"),

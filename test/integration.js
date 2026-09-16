@@ -5,11 +5,12 @@ const { expect } = require("chai");
 const { tests } = require("@iobroker/testing");
 
 // The CI runners - the Windows ones in particular - are slow and heavily loaded, so a fixed delay is
-// never long enough there. The tests below poll for the expected result instead. These two values
-// only decide how patient a single hook or test is: `testTimeout` is mocha's limit for it,
-// `reactionTimeout` is how long it waits for the adapter to react before giving up with a diagnosis.
-const testTimeout = 60000;
-const reactionTimeout = 20000;
+// never long enough there. The tests below poll for the expected result instead. These two values only decide
+// how patient a single hook or test is: `testTimeout` is mocha's limit for it, `reactionTimeout` is how long it
+// waits for the adapter to react before giving up with a diagnosis. Both are generous, because a runner that is
+// busy with other jobs may need minutes for a start that takes seconds locally.
+const testTimeout = 180000;
+const reactionTimeout = 90000;
 
 // The version comes from package.json: a version bump must not break the tests.
 const expectedVersion = require("../package.json").version;

@@ -121,7 +121,7 @@
 	"sync.permission": "Non ti è consentito risolvere i conflitti.",
 	"sync.resolved": "Conflitto risolto.",
 	"sync.title": "Sincronizzazione",
-	"terminal.title": "Terminal",
+	"terminal.title": "Terminale",
 	"terminal.deviceToken": "Token del dispositivo",
 	"terminal.connect": "Connetti",
 	"terminal.badge": "Badge",

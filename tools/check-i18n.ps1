@@ -6,6 +6,8 @@
     Prüft:
       * alle Sprachdateien vorhanden (Adapter: adapter/admin/i18n/<lang>.json, PWA: pwa/src/i18n/<lang>.json)
       * identische Schlüsselmengen gegenüber der Basis (en)
+      * keine Texte, die noch genauso lauten wie das englische Original (Ausnahmen: siehe $AllowedIdentical)
+      * jeder im PWA-Code benutzte Textschlüssel existiert in en.json (Tippfehler fallen sofort auf)
       * io-package.json enthält alle Sprachschlüssel in common.titleLang, common.desc und common.news
     Noch nicht vorhandene Komponenten (z. B. vor Phase 1) werden übersprungen und gemeldet.
 
@@ -82,6 +84,17 @@ if (-not (Test-Path -LiteralPath $RepoPath)) {
 $root = (Resolve-Path -LiteralPath $RepoPath).Path
 
 $baseLanguage = 'en'
+
+<# Texte, die in jeder Sprache gleich lauten dürfen: Marken, Abkürzungen, Symbole, Formatvorlagen und
+   Begriffe, die in der jeweiligen Sprache tatsächlich so heißen. Alles andere, was wie das englische
+   Original lautet, gilt als nicht übersetzt und wird als Befund gemeldet. #>
+$AllowedIdentical = @(
+    'Excel', 'PDF', 'PIN', '–', '{{date}} · {{time}}',
+    'Terminal', 'Terminals', 'Menu', 'Status', 'Login', 'Name', 'Label', 'Type', 'Badge',
+    'Badges (RFID/NFC)', 'Note', 'Date', 'Photo', 'Administration', 'Synchronisation',
+    'Absence', 'Absences', 'Password', 'Roles', 'open', 'Port', 'General', 'Region (optional)'
+)
+
 $issues = [System.Collections.Generic.List[string]]::new()
 $notes  = [System.Collections.Generic.List[string]]::new()
 $checkedSomething = $false
@@ -114,7 +127,8 @@ foreach ($component in $components) {
         continue
     }
 
-    $baseKeys = Get-FlattenedKeys -Node (Get-JsonObject -Path $baseFile)
+    $baseObject = Get-JsonObject -Path $baseFile
+    $baseKeys   = Get-FlattenedKeys -Node $baseObject
     $checkedSomething = $true
     [void]$notes.Add("$($component.Name): Basis $baseLanguage.json mit $($baseKeys.Count) Schlüssel(n)")
 
@@ -127,7 +141,8 @@ foreach ($component in $components) {
             continue
         }
 
-        $keys    = Get-FlattenedKeys -Node (Get-JsonObject -Path $file)
+        $languageObject = Get-JsonObject -Path $file
+        $keys    = Get-FlattenedKeys -Node $languageObject
         $missing = @($baseKeys | Where-Object { $keys -notcontains $_ })
         $extra   = @($keys | Where-Object { $baseKeys -notcontains $_ })
 
@@ -137,6 +152,58 @@ foreach ($component in $components) {
         if ($extra.Count -gt 0) {
             [void]$issues.Add("$($component.Name) [$language]: $($extra.Count) zusätzliche(r) Schlüssel – z. B. $((@($extra | Select-Object -First 5)) -join ', ')")
         }
+
+        # Texte, die noch genauso lauten wie das englische Original
+        $english = @(
+            $baseKeys | Where-Object {
+                $null -ne $languageObject -and $languageObject.Contains($_) -and
+                $languageObject[$_] -is [string] -and $languageObject[$_] -eq $baseObject[$_] -and
+                $baseObject[$_] -match '[A-Za-z]' -and $AllowedIdentical -notcontains $baseObject[$_]
+            }
+        )
+        if ($english.Count -gt 0) {
+            [void]$issues.Add("$($component.Name) [$language]: $($english.Count) Text(e) noch wie Englisch – z. B. $((@($english | Select-Object -First 5)) -join ', ')")
+        }
+    }
+}
+
+# --- benutzte Texte mit fehlendem Schlüssel -----------------------------------
+$pwaSource = [System.IO.Path]::Combine($root, 'src-pwa', 'src')
+$pwaBase   = [System.IO.Path]::Combine($pwaSource, 'i18n', "$baseLanguage.json")
+
+if ((Test-Path -LiteralPath $pwaSource) -and (Test-Path -LiteralPath $pwaBase)) {
+    $pwaKeys = Get-FlattenedKeys -Node (Get-JsonObject -Path $pwaBase)
+    $usedKeys = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($file in (Get-ChildItem -LiteralPath $pwaSource -Recurse -File | Where-Object { $_.Extension -in '.ts', '.tsx' })) {
+        $text = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8
+        foreach ($match in [regex]::Matches($text, '(?<![A-Za-z])t\(\s*"([^"]+)"')) {
+            [void]$usedKeys.Add($match.Groups[1].Value)
+        }
+        # `t(`prefix.${value}`)` – ein Sternchen steht für den dynamischen Teil
+        foreach ($match in [regex]::Matches($text, 't\(`([^`$]+)\$\{')) {
+            [void]$usedKeys.Add("$($match.Groups[1].Value)*")
+        }
+    }
+
+    $usedKeys = @($usedKeys | Sort-Object -Unique)
+    $unknown  = @(
+        $usedKeys | Where-Object {
+            if ($_.EndsWith('*')) {
+                $prefix = $_.Substring(0, $_.Length - 1)
+                -not (@($pwaKeys | Where-Object { $_.StartsWith($prefix) }).Count -gt 0)
+            }
+            else {
+                $pwaKeys -notcontains $_
+            }
+        }
+    )
+
+    if ($unknown.Count -gt 0) {
+        [void]$issues.Add("PWA-Code: benutzte Textschlüssel fehlen in $baseLanguage.json – $($unknown -join ', ')")
+    }
+    else {
+        [void]$notes.Add("PWA-Code: $($usedKeys.Count) benutzte Textschlüssel, alle in $baseLanguage.json vorhanden")
     }
 }
 

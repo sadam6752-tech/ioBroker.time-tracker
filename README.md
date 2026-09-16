@@ -267,8 +267,8 @@ npm run build
 - **Acceptance:** end-to-end tests (Playwright), load smoke test, documented security verification, review of
   the layouts in all 11 languages and PDF rendering for `ru`, `uk` and `zh-cn` with a Unicode font.
 - **Publication:** npm package, entry in `ioBroker.repositories`, official adapter checker, first release.
-- **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with the phone) and the
-  nine web app language files that still contain English texts (structure is complete).
+- **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with the phone); the nine
+  web app language files are machine translated and wait for a review by a native speaker.
 
 Working rules (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): specification first, then tests, then
 flags must follow the official role rules; secrets only via `encryptedNative`/`protectedNative`.

@@ -22,21 +22,35 @@ function sleep(ms) {
 }
 
 /**
- * Finds a port nothing is listening on.
+ * Finds a port the adapter can bind.
  *
- * The adapter binds the port from its own configuration; its default may be taken by a development instance that
- * runs next to the tests, so a free port is asked from the operating system instead of expecting the default one.
+ * The adapter takes the port from its own configuration; its default (8082) may be taken by a development instance
+ * that runs next to the tests. Ports between 18082 and 18182 are probed: they are outside the range the operating
+ * system hands out for short lived connections, so no other process can take the port in the moment between the
+ * probe and the start of the adapter (which a port from `listen(0)` could be).
  *
  * @returns {Promise<number>} free port
  */
-function freePort() {
-	return new Promise((resolve, reject) => {
+async function freePort() {
+	for (let port = 18082; port <= 18182; port++) {
+		if (await isPortFree(port)) {
+			return port;
+		}
+	}
+	throw new Error("no free port between 18082 and 18182");
+}
+
+/**
+ * Checks whether nothing listens on a port.
+ *
+ * @param {number} port port to check
+ * @returns {Promise<boolean>} true when the port is free
+ */
+function isPortFree(port) {
+	return new Promise(resolve => {
 		const probe = net.createServer();
-		probe.once("error", reject);
-		probe.listen(0, "127.0.0.1", () => {
-			const { port } = probe.address();
-			probe.close(() => resolve(port));
-		});
+		probe.once("error", () => resolve(false));
+		probe.listen(port, "127.0.0.1", () => probe.close(() => resolve(true)));
 	});
 }
 
@@ -91,7 +105,7 @@ tests.integration(path.join(__dirname, ".."), {
 			before(async function () {
 				this.timeout(testTimeout);
 				harness = getHarness();
-				// a free port, so a running development instance of the adapter cannot block the tests
+				// a port of our own, so a running development instance of the adapter cannot block the tests
 				await harness.changeAdapterConfig("zeiterfassung", { native: { port: await freePort() } });
 				// wait for info.connection so database and API are ready
 				await harness.startAdapterAndWait(true);
@@ -100,13 +114,17 @@ tests.integration(path.join(__dirname, ".."), {
 			/**
 			 * Reads the port the API listens on from the adapter log.
 			 *
+			 * The harness may have started the adapter once before this suite configured its own port, so the
+			 * **newest** line counts: it belongs to the instance that this suite started.
+			 *
 			 * @returns {number} port of the API
 			 */
 			function apiPort() {
-				const line = harness
+				const lines = harness
 					.getLogs()
 					.map(log => log.message)
-					.find(message => /API listening on http:\/\/127\.0\.0\.1:\d+/.test(message));
+					.filter(message => /API listening on http:\/\/127\.0\.0\.1:\d+/.test(message));
+				const line = lines[lines.length - 1];
 				expect(line, "port of the API in the adapter log").to.be.a("string");
 				return Number(/API listening on http:\/\/127\.0\.0\.1:(\d+)/.exec(String(line))?.[1]);
 			}

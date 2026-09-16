@@ -156,8 +156,11 @@ Regeln, in dieser Reihenfolge wichtig:
       es nur für die Admin-Oberfläche; Codeänderungen brauchen `npm run build` und (bei gestopptem Dev-Server)
       `npm run dev-server upload`.
     - `npm run dev-server watch --noStart` — der Dev-Server baut und synchronisiert weiterhin automatisch, startet
-      den Adapter aber nicht. Die Instanz bleibt aktiviert (`common.enabled=true`) und wird vom Controller
-      gestartet; nach einer Codeänderung den Adapter in der Admin-Oberfläche neu starten.
+      den Adapter aber nicht. Er deaktiviert die Instanz bei jedem eigenen Start (`adapter.common.enabled = false`,
+      im Log `Stop <adapter>.0`), deshalb den Adapter danach **einmal** starten — in der Admin-Oberfläche oder mit
+      `node .dev-server/default/node_modules/iobroker.js-controller/iobroker.js start zeiterfassung.0`.
+      Danach hält der Controller ihn; Start, Stopp und Neustart in der Oberfläche sind unproblematisch. Nach einer
+      Codeänderung den Adapter dort neu starten, damit die synchronisierte Fassung geladen wird.
 4. **Nur ein Dev-Server gleichzeitig** und **kein zusätzliches `npm run build`** daneben: der Dev-Server baut
    selbst, parallele Builds führen zu Race-Conditions und Folge-Restarts.
 5. Hängt die Instanz doch in der Schleife, alle Prozesse beenden, deren Kommandozeilentext das Repository oder

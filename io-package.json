@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.9",
+		"version": "0.0.10",
 		"nogit": true,
 		"news": {
+			"0.0.10": {
+				"en": "backups are usable from the browser: download a backup with one click and restore one from the list for the next start of the adapter - the previous database is kept next to it",
+				"de": "Sicherungen sind jetzt im Browser nutzbar: eine Sicherung mit einem Klick herunterladen und eine aus der Liste für den nächsten Start des Adapters einspielen - die bisherige Datenbank bleibt daneben erhalten",
+				"ru": "резервными копиями теперь можно управлять в браузере: скачать копию одним нажатием и восстановить выбранную при следующем запуске адаптера - текущая база данных сохранится рядом",
+				"uk": "резервними копіями тепер можна керувати у браузері: завантажити копію одним натисканням і відновити вибрану під час наступного запуску адаптера - поточна база даних залишиться поруч",
+				"pt": "as cópias de segurança agora são utilizáveis no navegador: descarregar uma cópia com um clique e restaurar uma da lista no próximo arranque do adaptador - a base de dados atual fica ao lado",
+				"nl": "back-ups zijn nu in de browser te gebruiken: met één klik downloaden en een uit de lijst terugzetten bij de volgende start van de adapter - de huidige database blijft ernaast bewaard",
+				"fr": "les sauvegardes sont désormais utilisables dans le navigateur : télécharger une sauvegarde en un clic et en restaurer une de la liste au prochain démarrage de l'adaptateur - la base de données actuelle est conservée à côté",
+				"it": "i backup ora si usano dal browser: scaricare un backup con un clic e ripristinarne uno della lista al prossimo avvio dell'adattatore - il database attuale resta accanto",
+				"es": "las copias de seguridad ya se usan desde el navegador: descargar una con un clic y restaurar una de la lista en el próximo arranque del adaptador - la base de datos actual se conserva al lado",
+				"pl": "kopie zapasowe są teraz dostępne w przeglądarce: pobierz kopię jednym kliknięciem i przywróć wybraną przy następnym uruchomieniu adaptera - obecna baza danych pozostaje obok",
+				"zh-cn": "备份现在可在浏览器中使用：一键下载备份，并在适配器下次启动时恢复列表中的备份 - 当前数据库会保留在旁边"
+			},
 			"0.0.9": {
 				"en": "fix: the PDF statement keeps its layout - the column headings no longer break, the two signature lines are level and the footer no longer starts a second page; Polish now asks for a Unicode font instead of showing nonsense",
 				"de": "fix: der PDF-Nachweis behält sein Layout - die Spaltenüberschriften brechen nicht mehr um, die beiden Unterschriftszeilen liegen auf einer Höhe und die Fußzeile erzeugt keine zweite Seite mehr; Polnisch verlangt jetzt eine Unicode-Schrift statt Kauderwelsch zu zeigen",

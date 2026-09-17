@@ -315,6 +315,8 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.12 (2026-09-17)
+
 - (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the
   paid part in brackets as soon as there is one) and every day row lists its pause beside worked and target time
 

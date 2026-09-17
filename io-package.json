@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.11",
+		"version": "0.0.12",
 		"nogit": true,
 		"news": {
+			"0.0.12": {
+				"en": "the month view of the web app shows the pause as well: the total of the month carries “Pause” (the paid part in brackets) and every day row its own pause",
+				"de": "die Monatsansicht der Web-App zeigt jetzt auch die Pause: die Monatssumme trägt „Pause“ (bezahlte Anteile in Klammern) und jede Tageszeile ihre eigene Pause",
+				"ru": "в месячном обзоре веб-приложения теперь виден и перерыв: в итоге месяца есть «Перерыв» (оплачиваемая часть в скобках), а в каждой строке дня — свой перерыв",
+				"pt": "a vista mensal da aplicação web passa a mostrar também a pausa: o total do mês traz «Pausa» (a parte paga entre parênteses) e cada linha do dia a sua pausa",
+				"nl": "de maandweergave van de webapp toont nu ook de pauze: het maandtotaal toont “Pauze” (het betaalde deel tussen haakjes) en elke dagregel zijn eigen pauze",
+				"fr": "la vue du mois de l'application web affiche désormais aussi la pause : le total du mois porte « Pause » (la part payée entre parenthèses) et chaque ligne de jour sa propre pause",
+				"it": "la vista mensile dell'app web mostra ora anche la pausa: il totale del mese riporta «Pausa» (la parte pagata tra parentesi) e ogni riga del giorno la sua pausa",
+				"es": "la vista mensual de la aplicación muestra ahora también la pausa: el total del mes lleva «Pausa» (la parte pagada entre paréntesis) y cada fila del día su propia pausa",
+				"pl": "widok miesiąca w aplikacji internetowej pokazuje teraz także przerwę: suma miesiąca zawiera „Przerwa” (płatna część w nawiasach), a każdy wiersz dnia swoją przerwę",
+				"uk": "у місячному огляді веб-застосунку тепер видно й перерву: у підсумку місяця є «Перерва» (оплачувана частина в дужках), а в кожному рядку дня — своя перерва",
+				"zh-cn": "网页应用中的月度视图现在也会显示休息：月度合计中带有“休息”（括号内为带薪部分），每天的行程行也有各自的休息"
+			},
 			"0.0.11": {
 				"en": "backups can be uploaded again (the way back after a lost data directory) and deleted one by one - a punched break is measured now and shows up in the “Pause” column of the statement, while a day without a punched break keeps its graduated deduction, never both - paid break minutes per employee, an editor for the graduated break rules and the new “of which paid” column in the statement - and the totals row of the PDF statement no longer cuts off values",
 				"de": "Sicherungen lassen sich wieder hochladen (der Weg zurück nach einem verlorenen Datenverzeichnis) und einzeln löschen - eine gestempelte Pause wird jetzt gemessen und steht in der Spalte „Pause“ des Stundennachweises, an Tagen ohne Stempelpause gilt weiter die Pausenstaffel, nie beides - bezahlte Pausenminuten pro Mitarbeiter, ein Editor für die Pausenstaffel und die neue Spalte „davon bezahlt“ im Nachweis - und die Summenzeile des PDF-Nachweises schneidet keine Werte mehr ab",

@@ -31,8 +31,12 @@ keinen Probelauf und keine Import-Berichte.
 - Der Abnahmepunkt „Altdaten dry-run-fähig importierbar" der internen Spezifikation ist damit **bewusst offen**; der
   Abnahmelauf in `docs/testplan.md` prüft nur noch das Verhalten des Adapters selbst.
 
-**Begründung:** _— vom Maintainer nachzutragen (ein bis zwei Sätze: Umfang, Clean-Room-Risiko der Feldzuordnung,
-kein Bedarf bei einem Neustart ohne Bestandsübernahme) —_
+**Begründung:** Ein Importer hätte die Bedeutung jeder einzelnen Spalte der Bestandsdaten festlegen müssen; ohne
+eine echte Datenkopie der Referenzinstallation wäre diese Zuordnung nur geraten — und die Regeln in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md), Abschnitt 1, verbieten es, sie aus fremdem Programmcode oder dessen
+Oberfläche abzuleiten. Gebraucht wurde er nicht: der Adapter startet mit leeren Stammdaten, die Administration
+legt Benutzer, Arbeitsprofile und Abwesenheiten selbst an. Der Rückbau entfernte 65 Dateien und 3861 Zeilen; der
+frühere Stand bleibt über die Historie (`184414c`) erreichbar.
 
 **Falls der Import zurückkommen soll:** Der vollständige Stand liegt in der Git-Historie
 (`git show 184414c^:src/lib/legacy/import.ts`). Nötig wären: Testdaten unter `fixtures/smalltime/**` (aus einer

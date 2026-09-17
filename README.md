@@ -19,8 +19,8 @@ Time tracking (**clock-in/clock-out**) for ioBroker – self-hosted, multi-user,
 > **Status: work in progress.** The adapter is implemented and tested: database with migrations, domain logic
 > (time pairs, breaks, target time, overtime models, vacation, holidays), REST API with roles and permissions,
 > web app (PWA) incl. offline queue, badge/PIN terminal, RFID scan, monthly reports (PDF/XLS), live events and
-> backups with a tested restore. Still missing before the first release: the acceptance tests and the publication itself. The package is therefore **not installable from npm**
-> yet and there are no stable states.
+> backups with a tested restore. The package is published on npm by the CI (with a provenance attestation) and is
+> installed from there — see [Installation](#installation) and, for what is still open, [Still open](#still-open).
 
 ## Features
 
@@ -293,9 +293,9 @@ npm run build
 - **Acceptance run on real hardware:** the sign-off of the layouts and of the PDF rendering for `ru`, `uk` and
   `zh-cn` (they need a Unicode font through `report_font_path`). The **legacy import** of the predecessor system is
   not part of the scope — the record of that decision is [`docs/entscheidungen.md`](docs/entscheidungen.md) (German).
-- **Publication:** the package is on npm (`0.0.5`, published by the CI through npm trusted publishing with a
-  provenance attestation) and the official adapter checker reports exactly **one** error: the missing npm owner
-  entry for `bluefox`. Open after that: the entry in `ioBroker.repositories`.
+- **Publication:** the package is on npm (currently `0.0.7`, published by the CI through npm trusted publishing
+  with a provenance attestation) and `bluefox` is entered as an npm owner, so the local pre-check reports no
+  error. Open after that: the entry in `ioBroker.repositories`.
 - **Smaller gaps:** the NFC comfort in the admin area (reading and writing a badge link with a phone); the language
   files of the web app are machine translated and wait for a review by native speakers.
 
@@ -305,6 +305,12 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) internal: the status sections of the README and of the German summary describe the state of the
+  publication again (`0.0.7` on npm, `bluefox` as npm owner, 450 unit / 60 package / 10 integration / 17 browser
+  tests)
+- (Alex) internal: the decision against the legacy import of the predecessor system states its reason
+  (`docs/entscheidungen.md`)
 
 ### 0.0.7 (2026-09-16)
 

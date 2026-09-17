@@ -1,6 +1,6 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
-import { applyPauses, pauseRuleForPair, type PauseRule } from "./breaks";
+import { applyPauses, effectivePause, pauseRuleForPair, type PauseRule } from "./breaks";
 
 const graduated: PauseRule[] = [
 	{ fromMin: 0, toMin: 360, pauseMin: 0 },
@@ -63,5 +63,40 @@ describe("break rules", () => {
 	it("handles an empty rule set and empty pair list", () => {
 		expect(applyPauses([{ minutes: 500 }], []).breakMinutes).to.equal(0);
 		expect(applyPauses([], graduated).workedMinutes).to.equal(0);
+	});
+});
+
+describe("effective pause", () => {
+	it("takes the punched break as soon as there is one", () => {
+		const result = effectivePause({ mode: "auto", gapMinutes: 30, staffelMinutes: 45 });
+		expect(result.pauseMinutes).to.equal(30);
+		expect(result.source).to.equal("punched");
+	});
+
+	it("falls back to the graduated rules without a punched break", () => {
+		const result = effectivePause({ mode: "auto", gapMinutes: 0, staffelMinutes: 30 });
+		expect(result.pauseMinutes).to.equal(30);
+		expect(result.source).to.equal("staffel");
+	});
+
+	it("keeps the rules while the day has an open punch", () => {
+		const result = effectivePause({ mode: "auto", gapMinutes: 40, staffelMinutes: 30, hasOpenEntry: true });
+		expect(result.pauseMinutes).to.equal(30);
+		expect(result.source).to.equal("staffel");
+	});
+
+	it("measures only what was punched in the mode `punched`", () => {
+		expect(effectivePause({ mode: "punched", gapMinutes: 0, staffelMinutes: 30 }).pauseMinutes).to.equal(0);
+		expect(effectivePause({ mode: "punched", gapMinutes: 20, staffelMinutes: 30 }).pauseMinutes).to.equal(20);
+	});
+
+	it("always deducts the rules in the mode `staffel`", () => {
+		const result = effectivePause({ mode: "staffel", gapMinutes: 40, staffelMinutes: 30 });
+		expect(result.pauseMinutes).to.equal(30);
+		expect(result.source).to.equal("staffel");
+	});
+
+	it("reports no pause at all when neither exists", () => {
+		expect(effectivePause({ mode: "auto", gapMinutes: 0, staffelMinutes: 0 }).source).to.equal("none");
 	});
 });

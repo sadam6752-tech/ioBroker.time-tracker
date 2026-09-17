@@ -90,3 +90,37 @@ werden.
 **Löschen:** `DELETE /api/backup/:name` löscht ausschließlich Dateien, die in der Liste stehen (ein Name von außen
 erreicht nie das Dateisystem), schreibt `backup.remove` ins Audit und fragt in der Oberfläche nach. Die automatische
 Rotation bleibt unberührt und läuft weiter im Hintergrund.
+
+## D5 — Pause aus dem Stempel oder aus der Pausenstaffel (17.09.2026)
+
+Der Stundennachweis hat eine Spalte „Pause", und gerechnet wurde `Saldo = Summe(Paare) − Staffel − Soll`. Zwei
+Dinge daran waren irreführend beziehungsweise falsch:
+
+1. **Die Spalte zeigte die tatsächliche Pause nicht.** Wer Kommen/Gehen/… stempelt, erzeugt Paare; die Zeit
+   zwischen zwei Paaren ist die Pause. Sie fehlte in der Summe der Paare (also im „brutto") — die Spalte „Pause"
+   wurde aber allein aus der Pausenstaffel gefüllt. Ergebnis: Wer eine halbe Stunde stempelt, sah `Pause 0:00`.
+2. **Eine gestempelte Pause wurde doppelt abgezogen**, sobald zusätzlich eine Staffelregel griff: die Lücke fehlte
+   schon im brutto, die Regel zog noch einmal ab (07:00/13:30/14:00/17:00 ergab 9:00 statt 9:30).
+
+**Entscheidung:** Die Rechnung geht jetzt von der **Anwesenheit** aus (erster Stempel bis letzter fertiger Stempel)
+und zieht genau eine Pause ab:
+
+| Modus (`pause_mode`) | Spalte „Pause" | Arbeitszeit |
+| --- | --- | --- |
+| `auto` (Vorgabe) | gestempelte Pause, sonst Staffel | Anwesenheit − Pause |
+| `punched` | nur die gestempelte Pause (`0:00`, wenn nichts gestempelt wurde) | Anwesenheit − Pause |
+| `staffel` | nur die Staffelregeln | Anwesenheit − Pause |
+
+Die Staffel bleibt damit, wofür sie gedacht ist: die pauschale Pause für Tage, an denen niemand stempelt. Ein Tag
+mit **offenem** Stempel hat noch keine endgültige Pause — dort greift die Staffel.
+
+**Bezahlte Pause:** Neues Feld `work_profiles.pause_paid_minutes` (Migration 13) mit einem Zahlenfeld im
+Arbeitsprofil je Mitarbeiter: **so viele Minuten der Pause pro Tag werden bezahlt** (`0` = gar nicht). Ein Wert von
+`1440` bezahlt eine Pause in beliebiger Länge; eine Firma, die nur eine Viertelstunde bezahlt, trägt `15` ein. Die
+bezahlten Minuten werden der Arbeitszeit zugeschlagen, die restliche Pause bleibt Abzug — die Spalte „Pause" zeigt
+weiterhin die **ganze** Pause, damit der Nachweis nachvollziehbar bleibt. (Zuerst war das ein Ja/Nein-Schalter;
+Migration 13 wandelt ihn um: „bezahlt" wird zu `1440`.)
+
+**Randnotiz:** Einen Weg, die Pausenstaffel zu pflegen, gibt es noch nicht — die Tabelle `pause_rules` hat keinen
+Schreiber mehr (der Datenimport ist mit D1 entfallen), also sind die Regeln in einer frischen Installation leer und
+„Pause" war dort immer `0:00`. Ein Editor dafür bleibt offen.

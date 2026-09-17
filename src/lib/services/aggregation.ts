@@ -20,6 +20,7 @@ import type { UsersRepository, WorkProfileRecord } from "../db/repositories/user
 import type { WorkProfile } from "../domain/target";
 import { ValidationError } from "../errors";
 import { absenceDaysInRange, calculateDay, overtimeAfterPeriod } from "../domain/calculation";
+import type { PauseMode } from "../domain/breaks";
 import { toPunchEntries } from "../db/repositories/entries";
 import { dateRange, daysInMonth, localDate as resolveLocalDate, utcToWallTime } from "../util/time";
 
@@ -238,6 +239,7 @@ function defaultProfile(userId: number): WorkProfileRecord {
 		vacationPerYear: 0,
 		overtimeModel: "monthly",
 		holidayFlags: null,
+		pausePaidMinutes: 0,
 	};
 }
 
@@ -372,6 +374,19 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 
 	const timeZoneOf = (userId: number): string => users.findById(userId)?.timezone ?? "UTC";
 	const holidayRegion = (): string => settings.get("holiday_country") ?? "CH";
+
+	/**
+	 * How the pause of a day is determined.
+	 *
+	 * A stored value that is not one of the three modes falls back to the default, so a hand edited setting can
+	 * never spoil a calculation.
+	 *
+	 * @returns the configured pause mode
+	 */
+	const pauseMode = (): PauseMode => {
+		const stored = settings.get("pause_mode");
+		return stored === "punched" || stored === "staffel" ? stored : "auto";
+	};
 
 	/**
 	 * Reads the stored profile or the defaults (no target time, no carryovers).
@@ -562,10 +577,13 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 		const timeZone = timeZoneOf(userId);
 		const absence = absenceFor(userId, localDate);
 		const isHoliday = holidays.isHoliday(localDate, holidayRegion());
+		const profile = profileOf(userId);
 		const day = calculateDay({
-			profile: profileOf(userId),
+			profile,
 			entries: toPunchEntries(entries.listByDate(userId, localDate)),
 			pauseRules: rules.pauseRules(userId),
+			pauseMode: pauseMode(),
+			pausePaidMinutes: profile.pausePaidMinutes,
 			timeZone,
 			localDate,
 			isHoliday,

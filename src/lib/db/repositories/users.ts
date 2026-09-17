@@ -71,7 +71,8 @@ export interface WorkProfileRecord extends WorkProfile {
 	overtimeModel: OvertimeModel;
 	/** Country specific holiday flags (JSON), `null` = instance default */
 	holidayFlags: string | null;
-	/** Traceability of an imported profile */
+	/** Minutes of the break per day that are paid (0 = the break is not paid at all) */
+	pausePaidMinutes: number;
 }
 
 /** Input for creating a user. */
@@ -250,6 +251,7 @@ interface WorkProfileRow {
 	vacation_per_year: number;
 	overtime_model: OvertimeModel;
 	holiday_flags: string | null;
+	pause_paid_minutes: number;
 }
 
 /**
@@ -298,6 +300,7 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 		vacationPerYear: row.vacation_per_year,
 		overtimeModel: row.overtime_model,
 		holidayFlags: row.holiday_flags,
+		pausePaidMinutes: row.pause_paid_minutes,
 	};
 }
 
@@ -305,7 +308,7 @@ const USER_COLUMNS = `id, login, password_hash, display_name, email, rfid_card, 
 \tmust_change_pw, locale, timezone, pin_hash, avatar, created_at, updated_at, last_login_at`;
 
 const PROFILE_COLUMNS = `user_id, percent, weekly_hours, workdays, start_date, end_date, overtime_carryover,
-\tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags`;
+\tvorholzeit_per_year, vacation_carryover, vacation_per_year, overtime_model, holiday_flags, pause_paid_minutes`;
 
 /** Field names of a user that are compared for the audit trail (the password is reported separately). */
 const AUDITED_USER_FIELDS: (keyof UserRecord)[] = [
@@ -333,6 +336,7 @@ const AUDITED_PROFILE_FIELDS: (keyof WorkProfileRecord)[] = [
 	"vacationPerYear",
 	"overtimeModel",
 	"holidayFlags",
+	"pausePaidMinutes",
 ];
 
 /**
@@ -367,7 +371,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectProfile = db.prepare(`SELECT ${PROFILE_COLUMNS} FROM work_profiles WHERE user_id = ?`);
 	const upsertProfile = db.prepare(
 		`INSERT INTO work_profiles (${PROFILE_COLUMNS})
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(user_id) DO UPDATE SET
 		     percent = excluded.percent,
 		     weekly_hours = excluded.weekly_hours,
@@ -379,7 +383,8 @@ export function createUsersRepository(db: Db): UsersRepository {
 		     vacation_carryover = excluded.vacation_carryover,
 		     vacation_per_year = excluded.vacation_per_year,
 		     overtime_model = excluded.overtime_model,
-		     holiday_flags = excluded.holiday_flags`,
+		     holiday_flags = excluded.holiday_flags,
+		     pause_paid_minutes = excluded.pause_paid_minutes`,
 	);
 	const selectRoles = db.prepare(
 		`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? ORDER BY r.key`,
@@ -429,6 +434,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 		vacationPerYear: 0,
 		overtimeModel: "monthly",
 		holidayFlags: null,
+		pausePaidMinutes: 0,
 	});
 
 	const resolveRoleIds = (roleKeys: string[]): number[] =>
@@ -738,6 +744,7 @@ export function createUsersRepository(db: Db): UsersRepository {
 					next.vacationPerYear,
 					next.overtimeModel,
 					next.holidayFlags,
+					next.pausePaidMinutes,
 				);
 
 				writeAuditLog(db, {

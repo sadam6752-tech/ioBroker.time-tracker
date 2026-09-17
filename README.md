@@ -81,6 +81,7 @@ The adapter is configured in the instance settings:
 | Calculate absences only until today | Future absences are not deducted from the target time                                                  |
 | Subtract working time from absences | May convert vacation into overtime                                                                     |
 | Keep database backups for days      | Retention of `VACUUM INTO` backups                                                                     |
+| Break rule (`pause_mode`)           | How the pause of a day is determined: the punched break (`auto`, `punched`) or the graduated rules      |
 
 Instance settings (editable through `PUT /api/settings`, permission `settings.edit`) complement the
 configuration; `report_font_path` is one of them: the path of a `.ttf`/`.otf` file used for PDF statements.
@@ -318,6 +319,12 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
   that lost its data directory, because the file is checked before it is queued and only then replaces a restore
   that is already waiting — and a single copy can be **deleted** (after a confirmation, while the automatic
   retention keeps running in the background)
+- (Alex) the pause of a day can be **measured**: a break that an employee punches is taken from the time sheet —
+  the column “Pause” shows it instead of a flat rule deduction, while a day without a punched break keeps its
+  graduated deduction, and a punched break is never deducted twice. The **work profile** is editable in the app
+  now (employment level, weekly hours, working days, overtime model, vacation, carryovers) and got the number field
+  **“Paid break minutes per day”**: that part of a break is credited as working time (`0` = the break is not paid,
+  `1440` = any length), while the “Pause” column keeps documenting the whole break
 
 ### 0.0.10 (2026-09-17)
 

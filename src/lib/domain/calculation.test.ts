@@ -108,6 +108,133 @@ describe("calculation service", () => {
 			expect(day.workedMinutes).to.equal(540);
 		});
 
+		it("measures the punched break", () => {
+			const day = calculateDay({
+				profile,
+				entries: [
+					punch(1, "2026-01-07T08:00"),
+					punch(2, "2026-01-07T12:00"),
+					punch(3, "2026-01-07T12:30"),
+					punch(4, "2026-01-07T17:00"),
+				],
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			// 08:00–17:00 present, the punched break is the half hour between the two pairs
+			expect(day.spanMinutes).to.equal(540);
+			expect(day.grossMinutes).to.equal(510);
+			expect(day.breakMinutes).to.equal(30);
+			expect(day.pauseSource).to.equal("punched");
+			expect(day.workedMinutes).to.equal(510);
+		});
+
+		it("credits a paid pause as working time", () => {
+			const day = calculateDay({
+				profile,
+				entries: [
+					punch(1, "2026-01-07T08:00"),
+					punch(2, "2026-01-07T12:00"),
+					punch(3, "2026-01-07T12:30"),
+					punch(4, "2026-01-07T17:00"),
+				],
+				pausePaidMinutes: 1440,
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			// the sheet still shows the break, but the working time carries it
+			expect(day.breakMinutes).to.equal(30);
+			expect(day.paidPauseMinutes).to.equal(30);
+			expect(day.workedMinutes).to.equal(540);
+			expect(day.balanceMinutes).to.equal(60);
+		});
+
+		it("pays only the agreed part of a break", () => {
+			// a quarter of an hour of the half hour break is paid, the rest is the employee's own time
+			const day = calculateDay({
+				profile,
+				entries: [
+					punch(1, "2026-01-07T08:00"),
+					punch(2, "2026-01-07T12:00"),
+					punch(3, "2026-01-07T12:30"),
+					punch(4, "2026-01-07T17:00"),
+				],
+				pausePaidMinutes: 15,
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			expect(day.breakMinutes).to.equal(30);
+			expect(day.paidPauseMinutes).to.equal(15);
+			expect(day.workedMinutes).to.equal(525);
+		});
+
+		it("falls back to the rules when nothing was punched", () => {
+			const day = calculateDay({
+				profile,
+				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T17:00")],
+				pauseRules: [{ fromMin: 360, pauseMin: 30 }],
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			expect(day.breakMinutes).to.equal(30);
+			expect(day.pauseSource).to.equal("staffel");
+			expect(day.workedMinutes).to.equal(510);
+		});
+
+		it("does not deduct a punched break twice when a rule matches as well", () => {
+			// The first pair is long enough for the rule, but the employee punched the break: the measured break
+			// counts and the rule stays out of it (the presence carries only the pause that remains)
+			const day = calculateDay({
+				profile,
+				entries: [
+					punch(1, "2026-01-07T08:00"),
+					punch(2, "2026-01-07T14:30"),
+					punch(3, "2026-01-07T15:00"),
+					punch(4, "2026-01-07T17:00"),
+				],
+				pauseRules: [{ fromMin: 360, pauseMin: 30 }],
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			expect(day.breaks.breakMinutes, "the rule alone deducts 30 minutes").to.equal(30);
+			expect(day.breakMinutes).to.equal(30);
+			expect(day.pauseSource).to.equal("punched");
+			expect(day.workedMinutes).to.equal(510);
+		});
+
+		it("measures only what was punched in the mode `punched`", () => {
+			const day = calculateDay({
+				profile,
+				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T17:00")],
+				pauseRules: [{ fromMin: 360, pauseMin: 30 }],
+				pauseMode: "punched",
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			expect(day.breakMinutes).to.equal(0);
+			expect(day.pauseSource).to.equal("none");
+			expect(day.workedMinutes).to.equal(540);
+		});
+
+		it("leaves the rules in charge of a day that is still open", () => {
+			const day = calculateDay({
+				profile,
+				entries: [punch(1, "2026-01-07T08:00"), punch(2, "2026-01-07T14:00"), punch(3, "2026-01-07T14:30")],
+				pauseRules: [{ fromMin: 360, pauseMin: 30 }],
+				timeZone: berlin,
+				localDate: "2026-01-07",
+			});
+
+			expect(day.hasOpenEntry).to.equal(true);
+			expect(day.pauseSource, "the break of an open day is not final").to.equal("staffel");
+			expect(day.workedMinutes).to.equal(330);
+		});
+
 		it("drops immediate repetitions of a punch", () => {
 			const day = calculateDay({
 				profile,
@@ -207,8 +334,11 @@ describe("calculation service", () => {
 				hasOpenEntry: open,
 				firstInUtc: null,
 				lastOutUtc: null,
+				spanMinutes: worked,
 				grossMinutes: worked,
 				breakMinutes: 0,
+				paidPauseMinutes: 0,
+				pauseSource: "none",
 				workedMinutes: worked,
 				targetMinutes: target,
 				balanceMinutes: worked - target,

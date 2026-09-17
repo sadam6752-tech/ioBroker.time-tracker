@@ -6,7 +6,14 @@
  * the overtime balance.
  */
 
-import { applyPauses, type BreakResult, type PauseRule } from "./breaks";
+import {
+	applyPauses,
+	effectivePause,
+	type BreakResult,
+	type PauseMode,
+	type PauseRule,
+	type PauseSource,
+} from "./breaks";
 import { buildDayPunches, type PairingOptions, type PunchEntry, type PunchPair } from "./punch";
 import { isWorkdayOn, targetForDay, type AbsenceImpact, type WorkProfile } from "./target";
 import { dateRange, dayOfWeek, localDate } from "../util/time";
@@ -22,6 +29,10 @@ export interface DayCalculationInput {
 	entries: PunchEntry[];
 	/** Graduated break rules */
 	pauseRules?: PauseRule[];
+	/** How the pause is determined (default `auto`: punched break, otherwise the rules) */
+	pauseMode?: PauseMode;
+	/** Minutes of the pause per day that are credited as working time (0 = the pause is not paid) */
+	pausePaidMinutes?: number;
 	/** Time zone of the employee */
 	timeZone: string;
 	/** Local date to calculate */
@@ -48,10 +59,16 @@ export interface DayCalculation {
 	firstInUtc: number | null;
 	/** Instant of the last completed clock-out, `null` while a punch is open */
 	lastOutUtc: number | null;
+	/** Minutes the employee was present (first punch to the last completed one) */
+	spanMinutes: number;
 	/** Pair durations before break deduction */
 	grossMinutes: number;
-	/** Deducted breaks */
+	/** Pause of the day (punched break or rule deduction) */
 	breakMinutes: number;
+	/** Part of the pause that is paid and credited as working time */
+	paidPauseMinutes: number;
+	/** Where the pause came from */
+	pauseSource: PauseSource;
 	/** Net working time */
 	workedMinutes: number;
 	/** Target time of the day */
@@ -99,6 +116,17 @@ export function calculateDay(input: DayCalculationInput): DayCalculation {
 		isAfterEnd: endDate !== null && input.localDate > endDate,
 	});
 
+	// Which pause the day carries: the punched break or the graduated rules (see `effectivePause`). The presence
+	// carries that pause — and the part of it that is paid is credited, so it stays part of the working time.
+	const pause = effectivePause({
+		mode: input.pauseMode ?? "auto",
+		gapMinutes: day.gapMinutes,
+		staffelMinutes: breaks.breakMinutes,
+		hasOpenEntry: day.hasOpenEntry,
+	});
+	const paidPauseMinutes = Math.min(pause.pauseMinutes, Math.max(0, input.pausePaidMinutes ?? 0));
+	const workedMinutes = day.spanMinutes - pause.pauseMinutes + paidPauseMinutes;
+
 	return {
 		localDate: input.localDate,
 		weekday,
@@ -106,11 +134,14 @@ export function calculateDay(input: DayCalculationInput): DayCalculation {
 		hasOpenEntry: day.hasOpenEntry,
 		firstInUtc: day.firstInUtc,
 		lastOutUtc: day.lastOutUtc,
+		spanMinutes: day.spanMinutes,
 		grossMinutes: breaks.grossMinutes,
-		breakMinutes: breaks.breakMinutes,
-		workedMinutes: breaks.workedMinutes,
+		breakMinutes: pause.pauseMinutes,
+		paidPauseMinutes,
+		pauseSource: pause.source,
+		workedMinutes,
 		targetMinutes,
-		balanceMinutes: breaks.workedMinutes - targetMinutes,
+		balanceMinutes: workedMinutes - targetMinutes,
 		breaks,
 	};
 }

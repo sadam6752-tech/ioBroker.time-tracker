@@ -189,6 +189,27 @@ test("uploads a downloaded backup again and deletes a backup", async ({ page }, 
 	await expect(rows).toHaveCount(before - 1);
 });
 
+test("pays a part of the break in the work profile of an employee", async ({ page }) => {
+	await signIn(page);
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Mitarbeiter" }).click();
+
+	// Anna Muster is the employee the suite punches for; her profile carries the paid break minutes
+	const profileButton = (): ReturnType<typeof page.getByRole> =>
+		page.getByRole("listitem").filter({ hasText: "Anna Muster" }).getByRole("button", { name: "Arbeitsprofil" });
+	await profileButton().click();
+
+	const minutes = page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" });
+	await expect(minutes).toHaveValue("0");
+	await minutes.fill("15");
+	await page.getByRole("dialog").getByRole("button", { name: "Speichern" }).click();
+	await expect(page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" })).toHaveCount(0);
+
+	// the amount is stored: the dialog shows it again
+	await profileButton().click();
+	await expect(page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" })).toHaveValue("15");
+});
+
 test("requests an absence in the form and finds it in the year", async ({ page, request }) => {
 	await signIn(page);
 	await page.getByRole("button", { name: "Abwesenheiten" }).click();

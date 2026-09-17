@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -44,7 +45,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatDate, type AdminTerminal } from "../api/client";
-import type { AdminUser, CreateUserInput } from "../api/types";
+import type { AdminUser, CreateUserInput, WorkProfile } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -189,6 +190,214 @@ function formatStamp(tsUtc: number, language: string): string {
  * @param props.language - language of the display
  * @returns the users tab
  */
+/**
+ * Work profile of one employee.
+ *
+ * The profile decides the target time of every day, how overtime is carried and whether a break is paid, so it
+ * belongs to the administration. Only the changed fields are sent — the server merges them into the stored
+ * profile and notes the change in the audit trail.
+ *
+ * @param props - employee and close handler
+ * @param props.user - employee whose profile is edited, `null` closes the dialog
+ * @param props.onClose - closes the dialog
+ * @returns the dialog
+ */
+function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose: () => void }): React.JSX.Element {
+	const { t, i18n } = useTranslation();
+	const queryClient = useQueryClient();
+	const id = user?.id ?? 0;
+	const profile = useQuery({
+		queryKey: ["admin", "profile", id],
+		queryFn: () => api.workProfile(id),
+		enabled: user !== null,
+	});
+	const [draft, setDraft] = useState<Partial<WorkProfile>>({});
+
+	const save = useMutation({
+		mutationFn: (patch: Partial<WorkProfile>) => api.saveWorkProfile(id, patch),
+		onSuccess: async () => {
+			setDraft({});
+			await queryClient.invalidateQueries({ queryKey: ["admin", "profile", id] });
+			onClose();
+		},
+	});
+
+	/**
+	 * Merges a change into the pending patch.
+	 *
+	 * @param patch - fields that changed
+	 */
+	const set = (patch: Partial<WorkProfile>): void => setDraft(previous => ({ ...previous, ...patch }));
+	// the stored profile with the pending changes on top: what the fields show
+	const current = profile.data ? { ...profile.data, ...draft } : null;
+	// the profile stores minutes, the dialog shows hours
+	const minutesToHours = (minutes: number): number => Math.round((minutes / 60) * 100) / 100;
+
+	// 2026-01-04 is a Sunday, so the seven names line up with the `workdays` field (index 0 = Sunday)
+	const weekdayNames = Array.from({ length: 7 }, (_, index) =>
+		new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(new Date(Date.UTC(2026, 0, 4 + index))),
+	);
+	const workdays = (current?.workdays ?? "0;1;1;1;1;1;0").split(";");
+
+	/**
+	 * Renders a whole number field of the profile.
+	 *
+	 * @param key - field of the profile
+	 * @param label - label of the field
+	 * @param step - step of the input (fractions for hours and days)
+	 * @returns the field
+	 */
+	const numberField = (
+		key: "percent" | "weeklyHours" | "vacationPerYear" | "vacationCarryover" | "pausePaidMinutes",
+		label: string,
+		step?: string,
+	): React.JSX.Element => (
+		<TextField
+			fullWidth
+			size="small"
+			type="number"
+			label={label}
+			value={String(current?.[key] ?? 0)}
+			onChange={event => set({ [key]: Number(event.target.value) })}
+			inputProps={step ? { step } : undefined}
+		/>
+	);
+
+	return (
+		<Dialog
+			open={user !== null}
+			onClose={onClose}
+			fullWidth
+			maxWidth="sm"
+		>
+			<DialogTitle>{t("admin.user.profileTitle", { name: user?.displayName ?? "" })}</DialogTitle>
+			<DialogContent>
+				<ErrorAlert error={profile.error ?? save.error} />
+				{profile.isLoading ? (
+					<Loading />
+				) : (
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<Stack
+							direction="row"
+							spacing={2}
+						>
+							{numberField("percent", t("admin.profile.percent"))}
+							{numberField("weeklyHours", t("admin.profile.weeklyHours"), "0.5")}
+						</Stack>
+						<Box>
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.profile.workdays")}
+							</Typography>
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ alignItems: "center", flexWrap: "wrap" }}
+							>
+								{weekdayNames.map((name, index) => (
+									<Stack
+										key={`${name}-${index}`}
+										direction="row"
+										sx={{ alignItems: "center" }}
+									>
+										<Checkbox
+											size="small"
+											checked={workdays[index] === "1"}
+											onChange={() => {
+												const next = workdays.slice();
+												next[index] = next[index] === "1" ? "0" : "1";
+												set({ workdays: next.join(";") });
+											}}
+										/>
+										<Typography variant="body2">{name}</Typography>
+									</Stack>
+								))}
+							</Stack>
+						</Box>
+						<TextField
+							select
+							fullWidth
+							size="small"
+							label={t("admin.profile.overtimeModel")}
+							value={current?.overtimeModel ?? "monthly"}
+							onChange={event =>
+								set({ overtimeModel: event.target.value as WorkProfile["overtimeModel"] })
+							}
+						>
+							{(["monthly", "yearly", "cumulative"] as const).map(model => (
+								<MenuItem
+									key={model}
+									value={model}
+								>
+									{t(`admin.profile.model.${model}`)}
+								</MenuItem>
+							))}
+						</TextField>
+						<Stack
+							direction="row"
+							spacing={2}
+						>
+							{numberField("vacationPerYear", t("admin.profile.vacationPerYear"), "0.5")}
+							{numberField("vacationCarryover", t("admin.profile.vacationCarryover"), "0.5")}
+						</Stack>
+						<Stack
+							direction="row"
+							spacing={2}
+						>
+							<TextField
+								fullWidth
+								size="small"
+								type="number"
+								label={t("admin.profile.overtimeCarryover")}
+								value={String(minutesToHours(current?.overtimeCarryover ?? 0))}
+								onChange={event =>
+									set({ overtimeCarryover: Math.round(Number(event.target.value) * 60) })
+								}
+							/>
+							<TextField
+								fullWidth
+								size="small"
+								type="number"
+								label={t("admin.profile.vorholzeitPerYear")}
+								value={String(minutesToHours(current?.vorholzeitPerYear ?? 0))}
+								onChange={event =>
+									set({ vorholzeitPerYear: Math.round(Number(event.target.value) * 60) })
+								}
+							/>
+						</Stack>
+						<TextField
+							fullWidth
+							size="small"
+							type="number"
+							label={t("admin.profile.pausePaid")}
+							helperText={t("admin.profile.pausePaidHint")}
+							value={String(current?.pausePaidMinutes ?? 0)}
+							onChange={event =>
+								set({ pausePaidMinutes: Math.max(0, Math.round(Number(event.target.value))) })
+							}
+						/>
+					</Stack>
+				)}
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onClose}>{t("common.cancel")}</Button>
+				<Button
+					variant="contained"
+					disabled={save.isPending || Object.keys(draft).length === 0}
+					onClick={() => save.mutate(draft)}
+				>
+					{t("common.save")}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
 function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const { t } = useTranslation();
 	const { permissions } = useSession();
@@ -201,6 +410,7 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const [photoUser, setPhotoUser] = useState<AdminUser | null>(null);
 	const [photo, setPhoto] = useState<string | null>(null);
 	const [rolesUser, setRolesUser] = useState<AdminUser | null>(null);
+	const [profileUser, setProfileUser] = useState<AdminUser | null>(null);
 	// assigning roles is a right of its own (the server checks it again)
 	const mayManageRoles = hasPermission(permissions, "user.manage_roles");
 
@@ -303,6 +513,13 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 									>
 										{t("admin.user.photo")}
 									</Button>
+									{/* the work profile decides the target time of every day and how a break is treated */}
+									<Button
+										size="small"
+										onClick={() => setProfileUser(user)}
+									>
+										{t("admin.user.profile")}
+									</Button>
 									{mayManageRoles && (
 										<Button
 											size="small"
@@ -329,6 +546,11 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 					)}
 				</List>
 			</Card>
+
+			<WorkProfileDialog
+				user={profileUser}
+				onClose={() => setProfileUser(null)}
+			/>
 
 			<Dialog
 				open={pinUser !== null}
@@ -1538,6 +1760,35 @@ function SettingsTab(): React.JSX.Element {
 								/>
 							))}
 					</Stack>
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.settings.pauseMode")}
+					</Typography>
+					<TextField
+						select
+						fullWidth
+						label={t("admin.settings.pauseModeTitle")}
+						helperText={t("admin.settings.pauseModeHint")}
+						value={draft.pause_mode ?? values.pause_mode ?? "auto"}
+						onChange={event => change("pause_mode", event.target.value)}
+						disabled={!mayEdit}
+					>
+						{["auto", "punched", "staffel"].map(mode => (
+							<MenuItem
+								key={mode}
+								value={mode}
+							>
+								{t(`admin.settings.pauseMode.${mode}`)}
+							</MenuItem>
+						))}
+					</TextField>
 				</CardContent>
 			</Card>
 

@@ -42,6 +42,18 @@ export interface DayPunches {
 	lastOutUtc: number | null;
 	/** Sum of all complete pairs in minutes */
 	workedMinutes: number;
+	/**
+	 * Minutes the employee was present: from the first punch to the last completed one.
+	 *
+	 * While a punch is open this equals the sum of the pairs — an open day has no final end yet.
+	 */
+	spanMinutes: number;
+	/**
+	 * Minutes between the pairs: the breaks the employee punched.
+	 *
+	 * A day that is still open reports `0`, because its breaks are not final yet.
+	 */
+	gapMinutes: number;
 }
 
 /** Options for pairing. */
@@ -88,12 +100,23 @@ export function buildDayPunches(entries: PunchEntry[], options: PairingOptions =
 		pairs.push({ inEntry, outEntry, minutes: Math.round(seconds / 60) });
 	}
 
+	const hasOpenEntry = kept.length % 2 === 1;
+	// The presence reaches from the first punch to the last completed one; the difference to the pairs is exactly
+	// the time between them — the breaks. A day with an open punch measures nothing of that. Both values are
+	// rounded first and the break is their difference, so `span − break` is exactly the sum of the pairs.
+	const spanSeconds =
+		hasOpenEntry || kept.length === 0 ? totalSeconds : Math.max(0, kept[kept.length - 1].tsUtc - kept[0].tsUtc);
+	const workedMinutes = Math.round(totalSeconds / 60);
+	const spanMinutes = Math.round(spanSeconds / 60);
+
 	return {
 		pairs,
-		hasOpenEntry: kept.length % 2 === 1,
+		hasOpenEntry,
 		firstInUtc: kept.length > 0 ? kept[0].tsUtc : null,
-		lastOutUtc: kept.length > 0 && kept.length % 2 === 0 ? kept[kept.length - 1].tsUtc : null,
-		workedMinutes: Math.round(totalSeconds / 60),
+		lastOutUtc: kept.length > 0 && !hasOpenEntry ? kept[kept.length - 1].tsUtc : null,
+		workedMinutes,
+		spanMinutes,
+		gapMinutes: Math.max(0, spanMinutes - workedMinutes),
 	};
 }
 

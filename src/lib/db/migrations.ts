@@ -443,4 +443,24 @@ export const migrations: Migration[] = [
 			CREATE INDEX idx_terminal_users_user ON terminal_users(user_id);
 		`,
 	},
+	{
+		version: 12,
+		name: "work profiles: paid breaks",
+		sql: `ALTER TABLE work_profiles ADD COLUMN pause_paid INTEGER NOT NULL DEFAULT 0;`,
+	},
+	{
+		version: 13,
+		name: "work profiles: paid break minutes instead of the paid flag",
+		run: (db: Db): void => {
+			// The flag became an amount: a company may pay a quarter of an hour and nothing more. A profile that had
+			// the flag set keeps a fully paid break (a day has 1440 minutes), a fresh profile pays nothing at all.
+			if (!hasColumn(db, "work_profiles", "pause_paid_minutes")) {
+				db.exec("ALTER TABLE work_profiles ADD COLUMN pause_paid_minutes INTEGER NOT NULL DEFAULT 0");
+			}
+			if (hasColumn(db, "work_profiles", "pause_paid")) {
+				db.exec("UPDATE work_profiles SET pause_paid_minutes = 1440 WHERE pause_paid = 1");
+				db.exec("ALTER TABLE work_profiles DROP COLUMN pause_paid");
+			}
+		},
+	},
 ];

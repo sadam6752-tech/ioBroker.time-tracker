@@ -934,6 +934,21 @@ describe("web api", () => {
 					})
 				).status,
 			).to.equal(400);
+			// the pause mode knows three values and refuses everything else
+			const mode = await send("PUT", "/settings", {
+				body: { pause_mode: "punched" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(mode.status).to.equal(200);
+			expect(settings.get("pause_mode")).to.equal("punched");
+			expect(
+				(
+					await send("PUT", "/settings", {
+						body: { pause_mode: "manchmal" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
 			expect(
 				(await send("PUT", "/settings", { body: {}, headers: headers(adminToken, adminCsrf) })).status,
 			).to.equal(400);
@@ -1180,6 +1195,7 @@ describe("web api", () => {
 					workdays: "1;2;3;4;5",
 					overtimeModel: "yearly",
 					vacationPerYear: 25,
+					pausePaidMinutes: 15,
 					reason: "Anpassung Arbeitspensum",
 				},
 				headers: headers(adminToken, adminCsrf),
@@ -1191,6 +1207,7 @@ describe("web api", () => {
 				workdays: "1;2;3;4;5",
 				overtimeModel: "yearly",
 				vacationPerYear: 25,
+				pausePaidMinutes: 15,
 			});
 
 			// impossible values and unknown fields never reach the database
@@ -1214,6 +1231,23 @@ describe("web api", () => {
 				(
 					await send("PUT", `/users/${annaId}/profile`, {
 						body: { overtimeModel: "irgendwas" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			// `pausePaidMinutes` is a number of minutes, not a switch
+			expect(
+				(
+					await send("PUT", `/users/${annaId}/profile`, {
+						body: { pausePaidMinutes: "viel" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			expect(
+				(
+					await send("PUT", `/users/${annaId}/profile`, {
+						body: { pausePaidMinutes: 2000 },
 						headers: headers(adminToken, adminCsrf),
 					})
 				).status,

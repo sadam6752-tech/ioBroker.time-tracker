@@ -89,3 +89,47 @@ export function applyPauses(pairs: { minutes: number }[], rules: PauseRule[]): B
 		workedMinutes: grossMinutes - breakMinutes,
 	};
 }
+
+/** How the pause of a day is determined. */
+export type PauseMode = "auto" | "punched" | "staffel";
+
+/** Where the pause of a day came from. */
+export type PauseSource = "punched" | "staffel" | "none";
+
+/**
+ * Decides which pause a day carries.
+ *
+ * - `punched`: the breaks the employee punched (the time between two pairs of punches)
+ * - `staffel`: the graduated rules, deducted per pair
+ * - `auto`: the punched breaks as soon as there are any, otherwise the rules — so a day without a punched break
+ *   still gets its statutory deduction
+ *
+ * A day with an open punch never counts as measured: its breaks are not final yet, so the rules apply.
+ *
+ * @param input - mode, measured break and rule deduction of one day
+ * @param input.mode - chosen mode of the instance
+ * @param input.gapMinutes - minutes between the pairs of the day
+ * @param input.staffelMinutes - minutes the graduated rules deduct
+ * @param input.hasOpenEntry - true while the day has an open punch
+ * @returns the pause of the day and where it came from
+ */
+export function effectivePause(input: {
+	mode: PauseMode;
+	gapMinutes: number;
+	staffelMinutes: number;
+	hasOpenEntry?: boolean;
+}): { pauseMinutes: number; source: PauseSource } {
+	const punched = input.gapMinutes > 0 && input.hasOpenEntry !== true;
+	if (punched) {
+		if (input.mode === "punched" || input.mode === "auto") {
+			return { pauseMinutes: input.gapMinutes, source: "punched" };
+		}
+	}
+	if (input.mode === "punched") {
+		// measured breaks only: a day without them carries no pause at all
+		return { pauseMinutes: 0, source: "none" };
+	}
+	return input.staffelMinutes > 0
+		? { pauseMinutes: input.staffelMinutes, source: "staffel" }
+		: { pauseMinutes: 0, source: "none" };
+}

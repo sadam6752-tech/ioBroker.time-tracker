@@ -206,6 +206,36 @@ export interface RoleInfo {
 	permissions: string[];
 }
 
+/** Employment parameters of an employee (`work_profiles`). */
+export interface WorkProfile {
+	/** Owner of the profile */
+	userId: number;
+	/** Employment level in percent */
+	percent: number;
+	/** Contracted hours per week at 100 % */
+	weeklyHours: number;
+	/** Active working days, `0;1;…` for Sunday…Saturday */
+	workdays: string;
+	/** First day of the employment (UTC epoch seconds) */
+	startDate: number | null;
+	/** Last day of the employment (UTC epoch seconds) */
+	endDate: number | null;
+	/** Overtime taken over from the previous year, in minutes */
+	overtimeCarryover: number;
+	/** Annual “Vorholzeit” in minutes */
+	vorholzeitPerYear: number;
+	/** Vacation days taken over from the previous year */
+	vacationCarryover: number;
+	/** Annual vacation entitlement in days */
+	vacationPerYear: number;
+	/** Overtime model used for the reports */
+	overtimeModel: "cumulative" | "yearly" | "monthly";
+	/** Country specific holiday flags (JSON), `null` = instance default */
+	holidayFlags: string | null;
+	/** Minutes of the break per day that are paid (0 = the break is not paid at all) */
+	pausePaidMinutes: number;
+}
+
 /** One database backup. */
 export interface BackupFile {
 	/** File name */

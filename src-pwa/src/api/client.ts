@@ -14,6 +14,7 @@ import type {
 	AbsenceType,
 	AdminUser,
 	BackupFile,
+	WorkProfile,
 	PendingRestore,
 	Branding,
 	Conflict,
@@ -174,6 +175,10 @@ export interface ApiClient {
 	createUser(input: CreateUserInput): Promise<AdminUser>;
 	/** Changes an employee */
 	updateUser(id: number, patch: UpdateUserInput): Promise<AdminUser>;
+	/** Work profile of an employee: working time, overtime model, vacation and paid breaks */
+	workProfile(id: number): Promise<WorkProfile>;
+	/** Creates or updates the work profile (the server merges the sent fields) */
+	saveWorkProfile(id: number, patch: Partial<WorkProfile> & { reason?: string }): Promise<WorkProfile>;
 	/** Sets the badge PIN of an employee (empty value removes it) */
 	setPin(id: number, pin: string): Promise<void>;
 	/** Kiosk terminals including the revoked ones */
@@ -814,6 +819,27 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async updateUser(id, patch): Promise<AdminUser> {
 			const result = await request<{ user: AdminUser }>("PATCH", `/users/${id}`, { body: patch });
 			return result.user;
+		},
+
+		/**
+		 * Work profile: working time, overtime model, vacation and paid breaks
+		 *
+		 * @param id - id of the employee
+		 */
+		async workProfile(id): Promise<WorkProfile> {
+			const result = await request<{ profile: WorkProfile }>("GET", `/users/${id}/profile`);
+			return result.profile;
+		},
+
+		/**
+		 * Creates or updates the work profile (the server merges the sent fields)
+		 *
+		 * @param id - id of the employee
+		 * @param patch - fields to change
+		 */
+		async saveWorkProfile(id, patch): Promise<WorkProfile> {
+			const result = await request<{ profile: WorkProfile }>("PUT", `/users/${id}/profile`, { body: patch });
+			return result.profile;
 		},
 
 		async setPin(id, pin): Promise<void> {

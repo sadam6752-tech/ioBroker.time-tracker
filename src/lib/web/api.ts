@@ -427,6 +427,7 @@ const PROFILE_FIELDS: (keyof Omit<WorkProfileRecord, "userId">)[] = [
 	"vacationPerYear",
 	"overtimeModel",
 	"holidayFlags",
+	"pausePaidMinutes",
 ];
 
 /**
@@ -496,6 +497,14 @@ function readProfilePatch(body: Record<string, unknown>): Partial<Omit<WorkProfi
 				continue;
 			}
 			patch.holidayFlags = value;
+		} else if (key === "pausePaidMinutes") {
+			// minutes of the break per day that are paid; a whole number, at most a full day
+			const minutes = Number(value);
+			if (!Number.isInteger(minutes) || minutes < 0 || minutes > 1440) {
+				issues.push({ path: key, message: "must be a whole number of minutes between 0 and 1440" });
+				continue;
+			}
+			patch.pausePaidMinutes = minutes;
 		} else {
 			const number = Number(value);
 			if (!Number.isInteger(number)) {
@@ -1441,6 +1450,15 @@ export function createApi(deps: ApiDeps): Api {
 					throw new ValidationError('setting "brand_color" must be a hex colour like "#1a2b3c"');
 				}
 				changes[key] = raw;
+				continue;
+			}
+			// the pause mode decides how the pause of a day is determined; the calculation tolerates an unknown
+			// value, but the API does not hand one out in the first place
+			if (key === "pause_mode") {
+				if (value !== "auto" && value !== "punched" && value !== "staffel") {
+					throw new ValidationError('setting "pause_mode" must be "auto", "punched" or "staffel"');
+				}
+				changes[key] = value;
 				continue;
 			}
 			if (!isSettingValue(value, JSON_SETTINGS.includes(key))) {

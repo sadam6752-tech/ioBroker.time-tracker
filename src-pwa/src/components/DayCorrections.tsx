@@ -118,8 +118,8 @@ export function DayCorrectionsDialog({
 	/**
 	 * Removes a punch of the day.
 	 *
-	 * @param row - the row to remove
-	 * @param row.id
+	 * @param row - row to remove
+	 * @param row.id - id of the stored punch, missing for a row that was never saved
 	 */
 	const remove = async (row: { id?: number }): Promise<void> => {
 		if (row.id === undefined) {

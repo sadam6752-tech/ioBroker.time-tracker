@@ -128,7 +128,8 @@ Regeln dazu:
 2. `npm run version:check`, `npm run check:i18n`, `npm test`, `npm run check:adapter` und `npm run e2e` (letzteres
    **nach** `npm run build && npm run build:pwa`, sonst prüft es einen alten Stand) müssen grün sein — erst dann
    committen. Nach Skript-gestützten Änderungen immer `npm run lint` laufen lassen: eslint wertet Prettier-Regeln
-   als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern.
+   als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern. `lint` und
+   `lint:pwa` laufen mit `--max-warnings 0`, eine Warnung ist also genauso ein Fehler wie ein Fehler.
 3. Commit, **annotiertes** Tag (`git tag -a vX.Y.Z -m 'X.Y.Z'`) und Push mit Freigabe (`npm run push:approve`).
 4. **Warten, bis der Workflow „Test and Release" für das Tag grün ist — und danach weitere 5 bis 10 Minuten:**
    die Veröffentlichung auf npm läuft am Ende des Laufs und der Registry-Index zieht nach (gemessen: grüner Lauf

@@ -691,6 +691,14 @@ function buildEntriesCsv(entries: EntryRecord[], timeZone: string): Buffer {
 	return Buffer.from(`\uFEFF${lines.join("\r\n")}\r\n`, "utf8");
 }
 
+/**
+ * Builds the API of the adapter: every route of the HTTP surface and the helpers they share.
+ *
+ * The dependencies are injected, so a test can drive the API with a fixed clock and an in-memory database.
+ *
+ * @param deps - repositories, services and the clock of the instance
+ * @returns router, route table and the event bus every change is published on
+ */
 export function createApi(deps: ApiDeps): Api {
 	const { auth, users, entries, absences, holidays, rules, payouts, terminals, rfid, aggregation, sync, settings } =
 		deps;
@@ -761,12 +769,19 @@ export function createApi(deps: ApiDeps): Api {
 		method: HttpMethod | HttpMethod[],
 		path: string,
 		routeSettings: {
+			/** Permission the caller needs; without one the route only requires a session */
 			permission?: string;
+			/** True for a route that runs without a session (health, login, branding) */
 			public?: boolean;
+			/** `false` switches the CSRF check off (public routes); otherwise the router decides */
 			csrf?: boolean;
+			/** Requests allowed inside a window, e.g. `{ name: "export", limit: 20, windowSeconds: 60 }` */
 			rateLimit?: {
+				/** Name the limit is counted under */
 				name: string;
+				/** Allowed requests inside the window */
 				limit: number;
+				/** Length of the window in seconds */
 				windowSeconds: number;
 			};
 			/** Raises the body limit of this one route (a backup upload) */
@@ -965,6 +980,7 @@ export function createApi(deps: ApiDeps): Api {
 	const punch = (
 		context: RouteContext,
 		options: {
+			/** True for a quick punch: the instant is rounded to the configured step */
 			quick: boolean;
 		},
 	): RouteResponse => {
@@ -1273,7 +1289,9 @@ export function createApi(deps: ApiDeps): Api {
 	const publicAbsence = (
 		absence: AbsenceRecord,
 	): AbsenceRecord & {
+		/** Code of the type, e.g. `vacation` */
 		typeCode: string | null;
+		/** Name of the type as the client shows it */
 		typeName: string | null;
 	} => {
 		const type = absences.findType(absence.typeId);
@@ -1648,8 +1666,11 @@ export function createApi(deps: ApiDeps): Api {
 	 * @returns colour and the addresses of the two pictures, `null` when nothing is configured
 	 */
 	const brandingState = (): {
+		/** Accent colour of the instance, `null` when none is configured */
 		color: string | null;
+		/** Address of the logo, `null` when none is configured */
 		logoUrl: string | null;
+		/** Address of the background picture, `null` when none is configured */
 		backgroundUrl: string | null;
 	} => {
 		const color = (settings.get("brand_color") ?? "").trim();
@@ -1905,13 +1926,21 @@ export function createApi(deps: ApiDeps): Api {
 		}
 
 		const patch: {
+			/** New display name */
 			displayName?: string;
+			/** New e-mail address, `null` clears it */
 			email?: string | null;
+			/** New language of the account */
 			locale?: string;
+			/** New time zone of the account */
 			timezone?: string;
+			/** New badge number, `null` clears it */
 			rfidCard?: string | null;
+			/** Activates or deactivates the account */
 			isActive?: boolean;
+			/** True when the next login has to change the password */
 			mustChangePw?: boolean;
+			/** Already hashed password (the caller hashes it) */
 			passwordHash?: string;
 		} = {};
 		if (Object.prototype.hasOwnProperty.call(body, "displayName")) {
@@ -2217,8 +2246,11 @@ export function createApi(deps: ApiDeps): Api {
 			const timestamp = now();
 			const touched = new Map<string, number>();
 			const results: {
+				/** Position of the punch in the request */
 				index: number;
+				/** Id of the stored punch, missing when it was rejected */
 				entryId?: number;
+				/** Reason of the rejection, missing when the punch was stored */
 				error?: string;
 			}[] = [];
 
@@ -2822,11 +2854,16 @@ export function createApi(deps: ApiDeps): Api {
 	const monthlyReport = (
 		context: RouteContext,
 	): {
+		/** Input of the PDF and Excel builder */
 		input: ReportInput & {
+			/** Line of the generator that is printed into the document */
 			generator: string;
 		};
+		/** Year of the statement */
 		year: number;
+		/** Month of the statement (1-12) */
 		month: number;
+		/** Login of the employee, used in the file name */
 		login: string;
 	} => {
 		const userId = scopeUser(context);

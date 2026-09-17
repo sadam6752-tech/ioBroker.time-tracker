@@ -224,6 +224,10 @@ export interface ApiClient {
 	restoreBackup(name: string, reason?: string): Promise<{ pending: PendingRestore }>;
 	/** Takes a database backup */
 	createBackup(): Promise<{ backup: BackupFile; removed: string[] }>;
+	/** Deletes a backup file */
+	deleteBackup(name: string): Promise<void>;
+	/** Uploads a downloaded backup and queues it for the next start */
+	uploadBackup(file: File, reason?: string): Promise<{ pending: PendingRestore }>;
 	/** Status of the kiosk terminal */
 	terminalStatus(): Promise<TerminalStatus>;
 	/** Exchanges the device token of a terminal for a short lived terminal session */
@@ -568,6 +572,55 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		};
 	}
 
+	/**
+	 * Sends a file as the raw body of a request.
+	 *
+	 * This is the way back for a machine that lost its data directory: the chosen file travels byte for byte
+	 * (`application/octet-stream`), not as JSON, and its name goes along as a query parameter — the API puts it
+	 * into the queued restore. The file is the body, so the browser streams it from disk.
+	 *
+	 * @param path - path below the API prefix
+	 * @param file - the file to send
+	 * @param query - query parameters
+	 * @returns parsed response body
+	 */
+	async function requestUpload<T>(path: string, file: Blob, query: Record<string, string | undefined>): Promise<T> {
+		const headers: Record<string, string> = { "content-type": "application/octet-stream" };
+		if (cached) {
+			if (cached.token) {
+				// only sessions from before the cookie switch still carry the token in storage
+				headers["x-session-token"] = cached.token;
+			}
+			headers["x-csrf-token"] = cached.csrfToken;
+		}
+
+		let response: Response;
+		try {
+			response = await fetch(`${API_PREFIX}${path}${buildQuery(query)}`, {
+				method: "POST",
+				headers,
+				body: file,
+				credentials: "same-origin",
+			});
+		} catch (error) {
+			throw new ApiError(0, "network_error", error instanceof Error ? error.message : "network error");
+		}
+
+		const text = await response.text();
+		const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+		if (!response.ok) {
+			const code = typeof payload.code === "string" ? payload.code : "unknown_error";
+			const detail = typeof payload.detail === "string" ? payload.detail : undefined;
+			if (response.status === 401) {
+				// the session is gone or expired: the app has to log in again
+				writeSession(null);
+			}
+			throw new ApiError(response.status, code, detail);
+		}
+
+		return payload as T;
+	}
+
 	return {
 		session: () => cached,
 
@@ -852,6 +905,9 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			}),
 
 		createBackup: () => request("POST", "/backup"),
+		deleteBackup: name => request<void>("DELETE", `/backup/${encodeURIComponent(name)}`),
+		uploadBackup: (file, reason) =>
+			requestUpload<{ pending: PendingRestore }>("/backup/restore", file, { name: file.name, reason }),
 	};
 }
 

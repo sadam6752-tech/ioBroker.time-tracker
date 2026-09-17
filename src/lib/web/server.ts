@@ -76,11 +76,14 @@ function normalizePrefix(prefix: string): string {
 /**
  * Reads the request body up to a limit.
  *
+ * A body that is not text is kept as bytes: an uploaded backup has to arrive byte for byte. Everything else is
+ * decoded here, because the endpoints expect a JSON document.
+ *
  * @param request - incoming request
  * @param maxBytes - maximum number of bytes
- * @returns body as text or `null` when the limit is exceeded
+ * @returns body as text or bytes, `null` when the limit is exceeded
  */
-async function readBody(request: http.IncomingMessage, maxBytes: number): Promise<string | null> {
+async function readBody(request: http.IncomingMessage, maxBytes: number): Promise<string | Buffer | null> {
 	const chunks: Buffer[] = [];
 	let size = 0;
 
@@ -92,7 +95,12 @@ async function readBody(request: http.IncomingMessage, maxBytes: number): Promis
 		}
 		chunks.push(buffer);
 	}
-	return Buffer.concat(chunks).toString("utf8");
+
+	const body = Buffer.concat(chunks);
+	// the raw upload arrives as bytes; a JSON document is decoded right away
+	return (request.headers["content-type"] ?? "").toLowerCase().startsWith("application/octet-stream")
+		? body
+		: body.toString("utf8");
 }
 
 /**

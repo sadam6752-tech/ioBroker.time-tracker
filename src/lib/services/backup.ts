@@ -94,6 +94,8 @@ export interface BackupService {
 	): PendingRestoreInfo;
 	/** Queues one of the known backups for the next start */
 	queueExistingBackup(name: string, input?: { actorId?: number | null; reason?: string }): PendingRestoreInfo;
+	/** Deletes one of the known backups */
+	remove(name: string, input?: { actorId?: number | null; reason?: string }): BackupFile;
 	/** The restore that waits for the next start, `null` when there is none */
 	pending(): PendingRestoreInfo | null;
 }
@@ -508,28 +510,39 @@ export function createBackupService(deps: BackupDeps): BackupService {
 	 * @returns the queued restore
 	 */
 	function queue(
-		source: string,
+		source: string | Buffer,
 		input: { name?: string; actorId?: number | null; reason?: string },
 	): PendingRestoreInfo {
 		const dbFile = databaseFile();
 		const pendingFile = pendingRestorePath(dbFile);
 		fs.mkdirSync(path.dirname(pendingFile), { recursive: true });
-		if (path.resolve(source) !== path.resolve(pendingFile)) {
-			fs.copyFileSync(source, pendingFile);
+
+		// The new file is checked before it replaces the queued one: a failed upload must not throw away a restore
+		// that is already waiting, and a file that is not a backup must never be picked up at the next start.
+		const staged = `${pendingFile}.part`;
+		fs.rmSync(staged, { force: true });
+		if (typeof source === "string") {
+			fs.copyFileSync(source, staged);
+		} else {
+			fs.writeFileSync(staged, source);
 		}
 
 		let info: BackupInfo;
 		try {
-			info = verify(pendingFile);
+			info = verify(staged);
 		} catch (error) {
-			// a file that is not a backup of this adapter is not kept: it would be tried again on every start
-			fs.rmSync(pendingFile, { force: true });
+			// the staged file is removed, the queued one stays untouched
+			fs.rmSync(staged, { force: true });
 			throw error;
 		}
+		fs.renameSync(staged, pendingFile);
 
 		const queuedAt = now();
+		// The name only labels the queued restore (it is shown and logged), it never becomes a path — but a name
+		// full of slashes or line breaks has no business in a log line or in a header either.
+		const label = (input.name ?? "").trim().replace(/[^A-Za-z0-9._-]/g, "_");
 		const pending: PendingRestoreInfo = {
-			name: (input.name ?? "").trim() || info.name,
+			name: label || info.name,
 			actorId: input.actorId ?? null,
 			queuedAt,
 			sizeBytes: info.sizeBytes,
@@ -570,10 +583,8 @@ export function createBackupService(deps: BackupDeps): BackupService {
 		if (upload.length === 0) {
 			throw new ValidationError("the uploaded file is empty");
 		}
-		const pendingFile = pendingRestorePath(databaseFile());
-		fs.mkdirSync(path.dirname(pendingFile), { recursive: true });
-		fs.writeFileSync(pendingFile, upload);
-		return queue(pendingFile, input);
+		// the bytes go straight to the staging path: a queued restore is not touched by a refused upload
+		return queue(upload, input);
 	}
 
 	/**
@@ -601,6 +612,38 @@ export function createBackupService(deps: BackupDeps): BackupService {
 	}
 
 	/**
+	 * Deletes one of the known backups.
+	 *
+	 * Only files of the list are deleted, so the requested name never reaches the file system on its own. The
+	 * file that waits for the next start is none of them: that is not a backup but the pending restore.
+	 *
+	 * @param name - file name as `list()` reports it
+	 * @param input - who removed it and why
+	 * @param input.actorId - user id of the actor, `null` for the system
+	 * @param input.reason - short reason stored in the audit trail
+	 * @returns the removed file
+	 */
+	function remove(name: string, input: { actorId?: number | null; reason?: string } = {}): BackupFile {
+		const known = list().find(entry => entry.name === name);
+		if (!known) {
+			throw new ValidationError(`backup ${name} does not exist`);
+		}
+		fs.rmSync(known.file, { force: true });
+		writeAuditLog(deps.db, {
+			actorId: input.actorId ?? null,
+			action: "backup.remove",
+			entity: "backup",
+			entityId: known.name,
+			detail: {
+				sizeBytes: known.sizeBytes,
+				...(input.reason ? { reason: input.reason } : {}),
+			},
+			atUtc: now(),
+		});
+		return known;
+	}
+
+	/**
 	 * The restore that waits for the next start.
 	 *
 	 * A database that lives only in memory cannot be restored at all, so it reports nothing instead of failing:
@@ -616,7 +659,7 @@ export function createBackupService(deps: BackupDeps): BackupService {
 		return readPendingRestore(target);
 	}
 
-	return { create, list, rotate, verify, restore, queueRestore, queueExistingBackup, pending };
+	return { create, list, rotate, verify, restore, queueRestore, queueExistingBackup, remove, pending };
 }
 
 /**

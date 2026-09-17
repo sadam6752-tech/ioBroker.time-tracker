@@ -124,6 +124,15 @@ const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreads
 /** Media type of the PDF export. */
 const PDF_CONTENT_TYPE = "application/pdf";
 
+/**
+ * Upper bound for an uploaded backup.
+ *
+ * A backup is the only request that may be bigger than the router-wide body limit, so the restore route raises
+ * the limit for itself. The web server reads with the same bound, because the transport refuses a body before
+ * any route sees it.
+ */
+export const MAX_BACKUP_UPLOAD_BYTES = 64 * 1024 * 1024;
+
 /** A registered route (used for the documentation). */
 export interface ApiRoute {
 	/** HTTP method */
@@ -683,6 +692,8 @@ export function createApi(deps: ApiDeps): Api {
 	 * @param routeSettings.rateLimit.name - name of the counted class
 	 * @param routeSettings.rateLimit.limit - allowed requests inside the window
 	 * @param routeSettings.rateLimit.windowSeconds - length of the window
+	 * @param routeSettings.maxBodyBytes - body limit of this route in bytes (a backup upload); the router-wide
+	 *   limit applies when it is missing
 	 * @param handler - handler of the route
 	 */
 	const route = (
@@ -693,6 +704,8 @@ export function createApi(deps: ApiDeps): Api {
 			public?: boolean;
 			csrf?: boolean;
 			rateLimit?: { name: string; limit: number; windowSeconds: number };
+			/** Raises the body limit of this one route (a backup upload) */
+			maxBodyBytes?: number;
 		},
 		handler: (context: RouteContext) => ReturnType<Parameters<Router["add"]>[0]["handler"]>,
 	): void => {
@@ -715,6 +728,7 @@ export function createApi(deps: ApiDeps): Api {
 			// session, so a CSRF token could not exist yet.
 			requiresCsrf: routeSettings.csrf === false ? false : undefined,
 			rateLimit: routeSettings.rateLimit,
+			maxBodyBytes: routeSettings.maxBodyBytes,
 			handler,
 		});
 	};
@@ -2764,20 +2778,63 @@ export function createApi(deps: ApiDeps): Api {
 			},
 		);
 
+		// A single backup is removed by hand; the retention keeps doing its own job in the background. Only files
+		// of the list are deleted, so the requested name never reaches the file system.
+		route(
+			"DELETE",
+			"/backup/:name",
+			{ permission: "backup.run", csrf: true, rateLimit: { name: "backup", limit: 10, windowSeconds: 60 } },
+			context => {
+				try {
+					backup.remove(context.params.name, { actorId: context.auth?.user.id ?? null, reason: "api" });
+				} catch (error) {
+					if (error instanceof ValidationError) {
+						// a name that is not in the list is a missing resource, not a bad request
+						throw new NotFoundError(error.message);
+					}
+					throw error;
+				}
+				return noContent(204);
+			},
+		);
+
 		// One of the listed backups is queued for the next start: the swap itself happens while the adapter starts,
 		// because a restore needs a closed database (see `restore` in the backup service). Only files of the list are
 		// accepted, so the requested name never reaches the file system.
+		//
+		// The same route takes an uploaded file — the way back for a machine that lost its data directory. The browser
+		// sends the chosen file as the raw body (`application/octet-stream`), everything else stays JSON with the name
+		// of a listed backup. An upload is the only request that may exceed the router-wide body limit, so the route
+		// raises it for itself (`MAX_BACKUP_UPLOAD_BYTES`; the server reads with the same bound).
 		route(
 			"POST",
 			"/backup/restore",
-			{ permission: "backup.run", csrf: true, rateLimit: { name: "backup", limit: 10, windowSeconds: 60 } },
+			{
+				permission: "backup.run",
+				csrf: true,
+				rateLimit: { name: "backup", limit: 10, windowSeconds: 60 },
+				maxBodyBytes: MAX_BACKUP_UPLOAD_BYTES,
+			},
 			context => {
-				const body = context.jsonBody();
-				const name = typeof body.name === "string" ? body.name.trim() : "";
-				if (name === "") {
-					throw problem(400, "backup_invalid", "the request needs `name` with one of the listed backups");
-				}
+				const upload = (context.header("content-type") ?? "")
+					.toLowerCase()
+					.startsWith("application/octet-stream");
 				try {
+					if (upload) {
+						// the file itself travels as the body; name and reason are query parameters
+						const pending = backup.queueRestore(context.rawBody(), {
+							name: context.query("name") ?? undefined,
+							actorId: context.auth?.user.id ?? null,
+							reason: context.query("reason") ?? undefined,
+						});
+						return json(201, { pending });
+					}
+
+					const body = context.jsonBody();
+					const name = typeof body.name === "string" ? body.name.trim() : "";
+					if (name === "") {
+						throw problem(400, "backup_invalid", "the request needs `name` with one of the listed backups");
+					}
 					const pending = backup.queueExistingBackup(name, {
 						actorId: context.auth?.user.id ?? null,
 						reason: typeof body.reason === "string" ? body.reason : undefined,

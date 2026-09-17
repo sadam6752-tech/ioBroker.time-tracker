@@ -27,8 +27,8 @@ export interface HttpRequest {
 	query?: Record<string, string | string[] | undefined>;
 	/** Request headers, names lower case */
 	headers?: Record<string, string | string[] | undefined>;
-	/** Raw body (JSON for our endpoints) */
-	body?: string;
+	/** Raw body: JSON text for the JSON endpoints, bytes for an upload */
+	body?: string | Buffer;
 	/** Client address */
 	remoteAddress?: string | null;
 }
@@ -75,6 +75,8 @@ export interface RouteContext {
 	jsonBody<T = Record<string, unknown>>(): T;
 	/** Parses the JSON body; an empty body becomes an empty object (optional fields) */
 	optionalJsonBody<T = Record<string, unknown>>(): T;
+	/** The body as bytes — binary uploads arrive here, the JSON helpers are for everything else */
+	rawBody(): Buffer;
 }
 
 /** A single route. */
@@ -91,6 +93,13 @@ export interface RouteDefinition {
 	requiresCsrf?: boolean;
 	/** Rate limit of the route class (counted per client address) */
 	rateLimit?: { name: string; limit: number; windowSeconds: number };
+	/**
+	 * Body limit of this route in bytes; the router-wide limit applies when it is missing.
+	 *
+	 * A backup upload is bigger than any other request the API accepts, so that one route raises the limit while
+	 * everything else stays where it was.
+	 */
+	maxBodyBytes?: number;
 	/** Handler of the route */
 	handler: (context: RouteContext) => RouteResponse | Promise<RouteResponse>;
 }
@@ -413,8 +422,11 @@ export function createRouter(options: RouterOptions): Router {
 
 			const { route, params } = candidate;
 			const body = request.body ?? "";
-			if (body.length > maxBodyBytes) {
-				return problemResponse(413, "payload_too_large", `body exceeds ${maxBodyBytes} bytes`, path);
+			// a route may raise the limit for itself (a backup upload is bigger than any other body)
+			const bodyLimit = route.definition.maxBodyBytes ?? maxBodyBytes;
+			const bodySize = typeof body === "string" ? Buffer.byteLength(body) : body.length;
+			if (bodySize > bodyLimit) {
+				return problemResponse(413, "payload_too_large", `body exceeds ${bodyLimit} bytes`, path);
 			}
 
 			// The session travels in the `x-session-token` header (integration clients) or in the httpOnly
@@ -475,7 +487,9 @@ export function createRouter(options: RouterOptions): Router {
 				if (contentType && !contentType.toLowerCase().includes("application/json")) {
 					throw new HttpProblem(415, "unsupported_media_type", `unsupported content type ${contentType}`);
 				}
-				if (!body.trim()) {
+				// a body that arrived as bytes (an upload) cannot be JSON; the text endpoints send text
+				const text = Buffer.isBuffer(body) ? body.toString("utf8") : body;
+				if (!text.trim()) {
 					if (required) {
 						throw new HttpProblem(400, "bad_request", "body is required");
 					}
@@ -483,7 +497,7 @@ export function createRouter(options: RouterOptions): Router {
 					return {} as T;
 				}
 				try {
-					return JSON.parse(body) as T;
+					return JSON.parse(text) as T;
 				} catch {
 					throw new HttpProblem(400, "bad_request", "body is not valid JSON");
 				}
@@ -503,6 +517,8 @@ export function createRouter(options: RouterOptions): Router {
 				header: headerValue,
 				jsonBody: <T = Record<string, unknown>>(): T => parseRequestBody<T>(true),
 				optionalJsonBody: <T = Record<string, unknown>>(): T => parseRequestBody<T>(false),
+				rawBody: (): Buffer =>
+					Buffer.isBuffer(request.body) ? request.body : Buffer.from(request.body ?? "", "utf8"),
 			};
 
 			try {

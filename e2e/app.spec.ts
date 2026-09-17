@@ -1,8 +1,8 @@
 /**
  * Browser tests of the web app.
  *
- * They run against `e2e/server.mjs`, which starts the real API on an in-memory database and serves the built web
- * app — no ioBroker needed. The service worker is blocked on purpose (see `playwright.config.ts`).
+ * They run against `e2e/server.mjs`, which starts the real API on a throwaway database *file* and serves the built
+ * web app — no ioBroker needed. The service worker is blocked on purpose (see `playwright.config.ts`).
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -160,6 +160,33 @@ test("lets the administration download a backup", async ({ page }) => {
 	const download = page.waitForEvent("download");
 	await downloadButton.click();
 	expect((await download).suggestedFilename()).toMatch(/zeiterfassung-.*\.sqlite$/i);
+});
+
+test("uploads a downloaded backup again and deletes a backup", async ({ page }, testInfo) => {
+	await signIn(page);
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Sicherungen" }).click();
+
+	// take a copy and keep the file the browser received: that is the way back for a machine whose data directory
+	// is gone, so the same file is handed in again below
+	await page.getByRole("button", { name: "Sicherung jetzt erstellen" }).click();
+	const downloadButton = page.getByTitle("Herunterladen").first();
+	await expect(downloadButton).toBeVisible();
+	const download = page.waitForEvent("download");
+	await downloadButton.click();
+	const uploaded = testInfo.outputPath("hochgeladen.sqlite");
+	await (await download).saveAs(uploaded);
+
+	// the picker of the screen is a hidden input; the adapter checks the file and queues it for the next start
+	await page.locator('input[accept=".sqlite,application/octet-stream"]').setInputFiles(uploaded);
+	await expect(page.getByText(/wird beim nächsten Start eingespielt/)).toBeVisible();
+
+	// deleting a copy asks first and then takes the row out of the list
+	const rows = page.getByRole("listitem");
+	const before = await rows.count();
+	await rows.first().getByTitle("Löschen").click();
+	await page.getByRole("dialog").getByRole("button", { name: "Löschen" }).click();
+	await expect(rows).toHaveCount(before - 1);
 });
 
 test("requests an absence in the form and finds it in the year", async ({ page, request }) => {

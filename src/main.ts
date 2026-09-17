@@ -37,7 +37,7 @@ import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
 import { handleCommand } from "./lib/adapter/commands";
-import { createApi } from "./lib/web/api";
+import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
 import type { EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
 import { createStaticHandler } from "./lib/web/static";
@@ -391,6 +391,8 @@ class Zeiterfassung extends utils.Adapter {
 				port: this.config.port || 8082,
 				bind: this.config.bind || "127.0.0.1",
 				staticFiles,
+				// an uploaded backup is bigger than the default limit; the route carries the same bound
+				maxBodyBytes: MAX_BACKUP_UPLOAD_BYTES,
 				// live events for the PWA and the terminal: `/api/stream?token=...`
 				stream: {
 					auth,

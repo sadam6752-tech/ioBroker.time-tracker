@@ -12,7 +12,7 @@ für die ioBroker-Oberfläche steht in `io-package.json` (`common.desc`, `common
 
 **Status:** Der Adapter ist implementiert und getestet (Datenbank, Domänenlogik, REST-API mit Rollen,
 Web-App mit Offline-Warteschlange, Badge-/PIN-Terminal mit Mitarbeiterzuordnung je Gerät, Anwesenheits-Bildschirm,
-RFID, Monatsberichte, Live-Events, Sicherungen mit getestetem Restore). Die Suiten laufen grün: 450 Unit-,
-60 Paket-, 10 Integrations- und 17 End-to-End-Tests. Die Veröffentlichung läuft (`0.0.7` auf npm, über npm trusted
+RFID, Monatsberichte, Live-Events, Sicherungen mit getestetem Restore). Die Suiten laufen grün: 463 Unit-,
+60 Paket-, 10 Integrations- und 20 End-to-End-Tests. Die Veröffentlichung läuft (`0.0.7` auf npm, über npm trusted
 publishing mit Herkunftsnachweis); offen sind der Abnahmelauf auf echter Hardware (Layouts, PDF-Schriften) und der
 Eintrag im offiziellen Adapter-Repository — siehe Abschnitt „Still open" in der `README.md`.

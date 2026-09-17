@@ -191,6 +191,53 @@ describe("backup service", () => {
 		expect(users.list().length, "the restored file carries the employee").to.equal(1);
 	});
 
+	it("deletes a single backup and refuses a name that is not in the list", () => {
+		const first = service.create();
+		clock += 60;
+		const second = service.create();
+		expect(service.list().map(file => file.name)).to.deep.equal([second.backup.name, first.backup.name]);
+
+		const removed = service.remove(first.backup.name, { actorId: null, reason: "test" });
+		expect(removed.name).to.equal(first.backup.name);
+		expect(fs.existsSync(removed.file)).to.equal(false);
+		expect(service.list().map(file => file.name)).to.deep.equal([second.backup.name]);
+
+		// the audit trail records which file was deleted
+		const audit = db
+			.prepare("SELECT entity_id AS entityId FROM audit_log WHERE action = 'backup.remove'")
+			.get() as { entityId: string };
+		expect(audit.entityId).to.equal(first.backup.name);
+
+		// a name that is not in the list never reaches the file system
+		expect(() => service.remove("../zeiterfassung.sqlite")).to.throw(ValidationError);
+		expect(fs.existsSync(dbFile)).to.equal(true);
+	});
+
+	it("queues an uploaded file and keeps a waiting restore when the upload is refused", () => {
+		addEmployeeWithPunch("anna");
+		const source = service.create();
+
+		// the bytes of a real backup arrive as a file and are accepted; the name is only a label, so it is cleaned
+		const bytes = fs.readFileSync(source.backup.file);
+		const pending = service.queueRestore(bytes, { name: "../../etc/passwd", actorId: null });
+		expect(pending.name).to.equal(".._.._etc_passwd");
+		expect(pending.sizeBytes).to.equal(bytes.length);
+		expect(service.pending()?.name).to.equal(".._.._etc_passwd");
+		expect(fs.readFileSync(pendingRestorePath(dbFile)).length).to.equal(bytes.length);
+
+		// bytes that are not a backup change nothing: the queued restore stays exactly as it was
+		expect(() => service.queueRestore(Buffer.from("das ist keine Datenbank"), { name: "kaputt.sqlite" })).to.throw(
+			ValidationError,
+		);
+		expect(service.pending()?.name).to.equal(".._.._etc_passwd");
+		expect(fs.readFileSync(pendingRestorePath(dbFile)).length).to.equal(bytes.length);
+		// the staged copy of the refused upload is cleaned up
+		expect(fs.existsSync(`${pendingRestorePath(dbFile)}.part`)).to.equal(false);
+
+		// an empty upload is refused before anything is written
+		expect(() => service.queueRestore(Buffer.alloc(0))).to.throw(ValidationError);
+	});
+
 	it("keeps the queue when the queued file is not usable", () => {
 		fs.writeFileSync(pendingRestorePath(dbFile), "das ist keine Datenbank");
 		fs.writeFileSync(

@@ -63,3 +63,30 @@ wird **außerhalb** dieses Repositories geführt.
 **Wenn der automatische Abgleich zurückkommen soll:** Das Skript liegt in der Historie
 (`git show 184414c^:tools/cleanroom-check.ps1`); es erwartet die Referenzinstallation als Pfad-Parameter
 (`-LegacyPath`) und meldet Treffer als Liste.
+
+## D4 — Sicherungen aus dem Browser: Upload über den rohen Body, Limit pro Route (17.09.2026)
+
+Die Verwaltung konnte eine Sicherung herunterladen und eine **gelistete** einspielen. **Löschen** und das
+**Einspielen einer heruntergeladenen Datei** fehlten — beides braucht dieselbe Entscheidung am Transport: Die API
+liest jeden Body gegen eine **routerweite** Grenze (2 MiB), und eine Route konnte bisher keine eigene setzen. Eine
+Sicherung ist größer als diese Grenze.
+
+**Entscheidung:** `RouteDefinition` bekommt ein optionales `maxBodyBytes`. Nur `POST /backup/restore` setzt es
+(64 MiB), alle anderen Routen bleiben bei 2 MiB — die Tests halten beides fest (ein großer Body gegen eine andere
+Route endet weiterhin in `413 payload_too_large`). Der Web-Server liest mit derselben Schranke
+(`MAX_BACKUP_UPLOAD_BYTES`), weil der Transport einen Body zurückweist, bevor eine Route ihn überhaupt sieht.
+
+Der Upload kommt als **roher Body** (`application/octet-stream`) an, nicht als Base64 in JSON: Der Browser schickt
+die gewählte Datei direkt (`body: file`), der Server hält sie für diesen Content-Type als **Bytes** statt als Text.
+Ein UTF-8-Dekodieren würde Binärdaten zerstören; dafür gibt es einen Test mit einer Bytefolge, die kein gültiges
+UTF-8 ist (Größe **und** SHA-256 müssen ankommen). Name und Grund reisen als Query-Parameter; der Name ist nur eine
+Beschriftung für Anzeige und Protokoll und wird vor dem Speichern auf `[A-Za-z0-9._-]` bereinigt.
+
+**Sicherheitsnetz:** Die neue Datei ersetzt die wartende erst, **nachdem** sie geprüft wurde — sie wird zuerst als
+`<…>.part` geschrieben, verifiziert und dann umbenannt. Eine abgelehnte Datei lässt eine bereits eingereihte
+Wiederherstellung also unberührt, und eine halb geschriebene Datei kann nie beim nächsten Start zur Datenbank
+werden.
+
+**Löschen:** `DELETE /api/backup/:name` löscht ausschließlich Dateien, die in der Liste stehen (ein Name von außen
+erreicht nie das Dateisystem), schreibt `backup.remove` ins Audit und fragt in der Oberfläche nach. Die automatische
+Rotation bleibt unberührt und läuft weiter im Hintergrund.

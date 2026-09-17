@@ -1,5 +1,6 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as http from "node:http";
 import * as os from "node:os";
@@ -19,6 +20,7 @@ import { createAggregationService } from "../services/aggregation";
 import { createAuthService, hashPassword } from "../services/auth";
 import { createSyncService } from "../services/sync";
 import { createApi, type Api } from "./api";
+import { json } from "./router";
 import { startWebServer, type WebServer } from "./server";
 import { createStaticHandler } from "./static";
 
@@ -67,6 +69,18 @@ describe("web server", () => {
 			sync,
 			settings,
 			now: () => 1000,
+		});
+
+		// a route that exists only in this test: it reports what the transport handed over
+		api.router.add({
+			method: "POST",
+			path: "/probe/raw",
+			requiresAuth: false,
+			requiresCsrf: false,
+			handler: context => {
+				const body = context.rawBody();
+				return json(200, { bytes: body.length, sha256: createHash("sha256").update(body).digest("hex") });
+			},
 		});
 
 		const hash = hashPassword(password, { cost: 1024 });
@@ -214,6 +228,29 @@ describe("web server", () => {
 		expect(huge.status).to.equal(413);
 		expect(huge.headers.get("content-type")).to.equal("application/problem+json; charset=utf-8");
 		expect(await huge.json()).to.deep.include({ status: 413, code: "payload_too_large" });
+	});
+
+	it("hands a binary upload over as bytes, not as text", async () => {
+		// a sequence that is not valid UTF-8: a text decode would replace or drop bytes
+		const bytes = Buffer.from([0x00, 0xff, 0xfe, 0x80, 0x41, 0x42, 0xc3, 0x28]);
+		const response = await fetch(`${server.url}/api/probe/raw`, {
+			method: "POST",
+			headers: { "content-type": "application/octet-stream" },
+			body: bytes,
+		});
+
+		expect(response.status).to.equal(200);
+		const payload = (await response.json()) as { bytes: number; sha256: string };
+		expect(payload.bytes).to.equal(bytes.length);
+		expect(payload.sha256).to.equal(createHash("sha256").update(bytes).digest("hex"));
+
+		// a JSON body stays text and arrives as its UTF-8 bytes
+		const text = await fetch(`${server.url}/api/probe/raw`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: "AB",
+		});
+		expect(((await text.json()) as { bytes: number }).bytes).to.equal(2);
 	});
 
 	it("stops listening when the server is closed", async () => {

@@ -33,7 +33,7 @@ const { createAuthService } = require(join(repo, "build/lib/services/auth.js"));
 const { createAggregationService } = require(join(repo, "build/lib/services/aggregation.js"));
 const { createSyncService } = require(join(repo, "build/lib/services/sync.js"));
 const { createBackupService } = require(join(repo, "build/lib/services/backup.js"));
-const { createApi } = require(join(repo, "build/lib/web/api.js"));
+const { createApi, MAX_BACKUP_UPLOAD_BYTES } = require(join(repo, "build/lib/web/api.js"));
 const { createStaticHandler } = require(join(repo, "build/lib/web/static.js"));
 const { startWebServer } = require(join(repo, "build/lib/web/server.js"));
 
@@ -42,7 +42,14 @@ const adminPassword = process.env.E2E_PASSWORD ?? "E2e-2026-klar!";
 const version = "0.0.1-e2e";
 const now = () => Math.floor(Date.now() / 1000);
 
-const db = openAndMigrate(":memory:");
+/**
+ * Data directory of this run.
+ *
+ * A queued restore needs a database *file* to swap — an in-memory database cannot be restored at all, and the
+ * suite hands an uploaded backup back in. The directory is thrown away with the process.
+ */
+const dataDir = require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "zeiterfassung-e2e-data-"));
+const db = openAndMigrate(join(dataDir, "zeiterfassung.sqlite"));
 seed(db, { holidayYears: [2026] });
 
 const users = createUsersRepository(db);
@@ -57,10 +64,10 @@ const settings = createSettingsRepository(db);
 const auth = createAuthService({ db, users, settings, secret: "e2e-session-secret", defaultTtlMinutes: 720 });
 const aggregation = createAggregationService({ db, users, entries, absences, holidays, rules, settings });
 const sync = createSyncService({ db, entries, users, aggregation });
-// backups land in a throwaway directory: the suite takes one and downloads it again
+// backups land in the data directory of this run: the suite takes one, downloads it and hands it back in
 const backup = createBackupService({
 	db,
-	dir: require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "zeiterfassung-e2e-backup-")),
+	dir: join(dataDir, "backups"),
 	now,
 });
 
@@ -112,6 +119,8 @@ const server = await startWebServer({
 	port,
 	bind: "127.0.0.1",
 	staticFiles,
+	// the browser may upload a backup in the test as well
+	maxBodyBytes: MAX_BACKUP_UPLOAD_BYTES,
 	stream: {
 		auth,
 		events: api.events,

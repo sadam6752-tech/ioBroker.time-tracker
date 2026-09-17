@@ -20,7 +20,7 @@ import { createAuthService, hashPassword, type AuthService } from "../services/a
 import { createSyncService, type SyncService } from "../services/sync";
 import { createBackupService, type BackupService } from "../services/backup";
 import { createApi, type Api } from "./api";
-import type { HttpResponse } from "./router";
+import { DEFAULT_MAX_BODY_BYTES, type HttpResponse } from "./router";
 
 const SECRET = "api-test-secret";
 const password = "Zeit-2026-klar";
@@ -59,6 +59,7 @@ describe("web api", () => {
 	 * @param path - request path
 	 * @param options - body, headers and query parameters
 	 * @param options.body - body object (serialised as JSON)
+	 * @param options.rawBody - body as bytes, sent as it is (an upload)
 	 * @param options.headers - request headers
 	 * @param options.query - query parameters
 	 * @returns response
@@ -66,7 +67,12 @@ describe("web api", () => {
 	async function send(
 		method: string,
 		path: string,
-		options: { body?: unknown; headers?: Record<string, string>; query?: Record<string, string> } = {},
+		options: {
+			body?: unknown;
+			rawBody?: Buffer;
+			headers?: Record<string, string>;
+			query?: Record<string, string>;
+		} = {},
 	): Promise<HttpResponse> {
 		const headers = { ...(options.headers ?? {}) };
 		if (options.body !== undefined) {
@@ -77,7 +83,7 @@ describe("web api", () => {
 			path,
 			headers,
 			query: options.query,
-			body: options.body === undefined ? undefined : JSON.stringify(options.body),
+			body: options.rawBody ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
 			remoteAddress: "127.0.0.1",
 		});
 	}
@@ -2106,6 +2112,84 @@ describe("web api", () => {
 				.prepare("SELECT actor_id AS actorId FROM audit_log WHERE action = 'backup.create'")
 				.get() as { actorId: number };
 			expect(audit.actorId).to.equal(adminId);
+		});
+
+		it("deletes a single backup and reports an unknown name as missing", async () => {
+			const created = await send("POST", "/backup", { headers: headers(adminToken, adminCsrf) });
+			const name = bodyOf<{ backup: { name: string } }>(created).backup.name;
+
+			// deleting needs the permission as well
+			const forbidden = await send("DELETE", `/backup/${name}`, { headers: headers(annaToken, annaCsrf) });
+			expect(forbidden.status).to.equal(403);
+
+			const gone = await send("DELETE", `/backup/${name}`, { headers: headers(adminToken, adminCsrf) });
+			expect(gone.status).to.equal(204);
+			expect(fs.existsSync(path.join(backupDir, name))).to.equal(false);
+
+			const list = await send("GET", "/backup", { headers: headers(adminToken) });
+			expect(bodyOf<{ backups: unknown[] }>(list).backups).to.deep.equal([]);
+
+			// the audit trail knows who removed the file
+			const audit = db
+				.prepare("SELECT actor_id AS actorId FROM audit_log WHERE action = 'backup.remove'")
+				.get() as { actorId: number };
+			expect(audit.actorId).to.equal(adminId);
+
+			// a name outside the list is a missing resource, not a deleted one
+			const unknown = await send("DELETE", "/backup/gibts-nicht.sqlite", {
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(unknown.status).to.equal(404);
+		});
+
+		it("takes an uploaded file as the raw body, and only that route goes above the body limit", async () => {
+			// the same file the download hands out is sent back as an upload — the transport has to keep the bytes
+			const created = await send("POST", "/backup", { headers: headers(adminToken, adminCsrf) });
+			const name = bodyOf<{ backup: { name: string } }>(created).backup.name;
+			const bytes = fs.readFileSync(path.join(backupDir, name));
+
+			// This database lives in memory, so queueing is refused — but it is refused *after* the body arrived:
+			// the upload reached the route instead of being cut off by the body limit. The bytes themselves are
+			// covered by the backup service and the server tests.
+			const uploaded = await send("POST", "/backup/restore", {
+				rawBody: bytes,
+				query: { name: "hochgeladen.sqlite" },
+				headers: { ...headers(adminToken, adminCsrf), "content-type": "application/octet-stream" },
+			});
+			expect(uploaded.status).to.equal(400);
+			expect(bodyOf<{ code: string; detail: string }>(uploaded).code).to.equal("backup_invalid");
+			expect(bodyOf<{ detail: string }>(uploaded).detail).to.contain("in-memory");
+
+			// bytes that are not a backup are refused as well
+			const refused = await send("POST", "/backup/restore", {
+				rawBody: Buffer.from("das ist keine Datenbank"),
+				headers: { ...headers(adminToken, adminCsrf), "content-type": "application/octet-stream" },
+			});
+			expect(refused.status).to.equal(400);
+			expect(bodyOf<{ code: string }>(refused).code).to.equal("backup_invalid");
+
+			// an upload without the permission is refused before any of that
+			const forbidden = await send("POST", "/backup/restore", {
+				rawBody: bytes,
+				headers: { ...headers(annaToken, annaCsrf), "content-type": "application/octet-stream" },
+			});
+			expect(forbidden.status).to.equal(403);
+
+			// every other route keeps the router-wide limit
+			const tooBig = await send("GET", "/backup", {
+				rawBody: Buffer.alloc(DEFAULT_MAX_BODY_BYTES + 1),
+				headers: { ...headers(adminToken), "content-type": "application/octet-stream" },
+			});
+			expect(tooBig.status).to.equal(413);
+			expect(bodyOf<{ code: string }>(tooBig).code).to.equal("payload_too_large");
+
+			// the upload route itself carries the raised limit: it fails on the content, not on the size
+			const big = await send("POST", "/backup/restore", {
+				rawBody: Buffer.alloc(DEFAULT_MAX_BODY_BYTES + 1024),
+				headers: { ...headers(adminToken, adminCsrf), "content-type": "application/octet-stream" },
+			});
+			expect(big.status).to.equal(400);
+			expect(bodyOf<{ code: string }>(big).code).to.equal("backup_invalid");
 		});
 	});
 

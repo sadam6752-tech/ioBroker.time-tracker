@@ -14,6 +14,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes, formatWeekday } from "../api/client";
 import { AppShell } from "../components/AppShell";
@@ -43,7 +44,16 @@ export function monthRange(year: number, month: number): { from: string; to: str
 export function Month(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
 	const { session } = useSession();
+	const [params] = useSearchParams();
+	// the administration may open the month of an employee (`/month?userId=…&year=&month=`), the name is a label
+	const scopedUserId = Number(params.get("userId")) || undefined;
+	const scopedName = (params.get("name") ?? "").trim();
 	const [cursor, setCursor] = useState(() => {
+		const paramYear = Number(params.get("year"));
+		const paramMonth = Number(params.get("month"));
+		if (Number.isInteger(paramYear) && Number.isInteger(paramMonth) && paramMonth >= 1 && paramMonth <= 12) {
+			return { year: paramYear, month: paramMonth };
+		}
 		const now = new Date();
 		const timeZone = session?.user.timezone;
 		const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit" }).format(now);
@@ -53,8 +63,8 @@ export function Month(): React.JSX.Element {
 
 	const range = monthRange(cursor.year, cursor.month);
 	const days = useQuery({
-		queryKey: ["days", range.from, range.to],
-		queryFn: () => api.days(range.from, range.to),
+		queryKey: ["days", range.from, range.to, scopedUserId],
+		queryFn: () => api.days(range.from, range.to, scopedUserId),
 	});
 
 	/**
@@ -74,7 +84,7 @@ export function Month(): React.JSX.Element {
 	}).format(new Date(`${range.from}T12:00:00Z`));
 
 	return (
-		<AppShell title={t("month.title")}>
+		<AppShell title={scopedName ? `${t("month.title")} · ${scopedName}` : t("month.title")}>
 			<Card sx={{ mb: 2 }}>
 				<Stack
 					direction="row"
@@ -104,6 +114,7 @@ export function Month(): React.JSX.Element {
 				<ReportDownloads
 					year={cursor.year}
 					month={cursor.month}
+					userId={scopedUserId}
 				/>
 			</Box>
 			{days.isLoading ? (

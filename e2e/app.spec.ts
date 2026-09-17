@@ -126,6 +126,26 @@ test("hands the statement of the month to the browser as a PDF", async ({ page }
 	expect((await download).suggestedFilename()).toMatch(/\.pdf$/i);
 });
 
+test("hands the statement of an employee to the administration", async ({ page }) => {
+	await signIn(page);
+	await page.getByRole("button", { name: "Berichte" }).click();
+
+	// the picker is there for administrators (it needs `report.view_other` and `user.view`) and starts on the own account
+	const employees = page.getByRole("combobox", { name: "Mitarbeiter" });
+	await employees.click();
+	await page.getByRole("option", { name: "Anna Muster" }).click();
+
+	// the statement of the selected employee is handed over as a file and named after her login
+	const download = page.waitForEvent("download");
+	await page.getByRole("button", { name: "Excel" }).first().click();
+	expect((await download).suggestedFilename()).toMatch(/zeiterfassung-anna-\d{4}-\d{2}\.xlsx$/i);
+
+	// and her month can be opened from the list: the name of the month is the link
+	const currentMonth = new Intl.DateTimeFormat("de", { month: "long" }).format(new Date());
+	await page.getByRole("link", { name: currentMonth }).first().click();
+	await expect(page.getByRole("heading", { name: /Monat · Anna Muster/ })).toBeVisible();
+});
+
 test("requests an absence in the form and finds it in the year", async ({ page, request }) => {
 	await signIn(page);
 	await page.getByRole("button", { name: "Abwesenheiten" }).click();

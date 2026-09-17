@@ -99,14 +99,14 @@ export interface ApiClient {
 	punch(options?: { quick?: boolean; tsUtc?: number; note?: string; idempotencyKey?: string }): Promise<PunchResult>;
 	/** Status of the day and the next direction */
 	status(): Promise<PunchStatus>;
-	/** Days of a local date range */
-	days(from: string, to: string): Promise<DayRange>;
-	/** A month plus the totals of its year */
-	month(year: number, month: number): Promise<{ month: MonthAggregate; year: YearAggregate }>;
-	/** The twelve months of a year */
-	months(year: number): Promise<{ year: YearAggregate; months: (MonthAggregate | null)[] }>;
-	/** Year totals */
-	year(year: number): Promise<YearAggregate>;
+	/** Days of a local date range; with `userId` the administration reads those of an employee */
+	days(from: string, to: string, userId?: number): Promise<DayRange>;
+	/** A month plus the totals of its year; with `userId` for an employee */
+	month(year: number, month: number, userId?: number): Promise<{ month: MonthAggregate; year: YearAggregate }>;
+	/** The twelve months of a year; with `userId` for an employee */
+	months(year: number, userId?: number): Promise<{ year: YearAggregate; months: (MonthAggregate | null)[] }>;
+	/** Year totals; with `userId` for an employee */
+	year(year: number, userId?: number): Promise<YearAggregate>;
 	/** Paid out overtime of a year (own account) */
 	payouts(year: number): Promise<{ totalMinutes: number; payouts: Payout[] }>;
 	/** Punches of a range */
@@ -163,8 +163,8 @@ export interface ApiClient {
 	conflicts(): Promise<Conflict[]>;
 	/** Resolves a conflict */
 	resolve(entryId: number, action: "accept" | "dismiss", reason?: string): Promise<unknown>;
-	/** Downloads the monthly work time statement of the own account */
-	downloadReport(kind: "xls" | "pdf", year: number, month: number): Promise<DownloadFile>;
+	/** Downloads the monthly work time statement; with `userId` the statement of an employee */
+	downloadReport(kind: "xls" | "pdf", year: number, month: number, userId?: number): Promise<DownloadFile>;
 	/** Employees, optionally including the deactivated ones */
 	users(includeInactive?: boolean): Promise<AdminUser[]>;
 	/** Role catalogue */
@@ -527,7 +527,10 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 	 * @param query - query parameters
 	 * @returns blob and file name
 	 */
-	async function requestDownload(path: string, query: Record<string, string | number>): Promise<DownloadFile> {
+	async function requestDownload(
+		path: string,
+		query: Record<string, string | number | undefined>,
+	): Promise<DownloadFile> {
 		const headers: Record<string, string> = {};
 		if (cached) {
 			if (cached.token) {
@@ -667,16 +670,16 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		status: () => request<PunchStatus>("GET", "/punch/status"),
 
-		days: (from, to) => request<DayRange>("GET", "/aggregates/day", { query: { from, to } }),
+		days: (from, to, userId) => request<DayRange>("GET", "/aggregates/day", { query: { from, to, userId } }),
 
-		month: (year, month) =>
+		month: (year, month, userId) =>
 			request<{ month: MonthAggregate; year: YearAggregate }>("GET", "/aggregates/month", {
-				query: { year, month },
+				query: { year, month, userId },
 			}),
 
-		months: year => request("GET", "/aggregates/month", { query: { year } }),
+		months: (year, userId) => request("GET", "/aggregates/month", { query: { year, userId } }),
 
-		year: year => request<YearAggregate>("GET", "/aggregates/year", { query: { year } }),
+		year: (year, userId) => request<YearAggregate>("GET", "/aggregates/year", { query: { year, userId } }),
 
 		payouts: year =>
 			request<{ totalMinutes: number; payouts: Payout[] }>("GET", "/payouts", { query: { year, month: "" } }),
@@ -731,7 +734,7 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		resolve: (entryId, action, reason) =>
 			request("POST", `/entries/${entryId}/resolve`, { body: { action, ...(reason ? { reason } : {}) } }),
 
-		downloadReport: (kind, year, month) => requestDownload(`/reports/${kind}`, { year, month }),
+		downloadReport: (kind, year, month, userId) => requestDownload(`/reports/${kind}`, { year, month, userId }),
 
 		async users(includeInactive = false): Promise<AdminUser[]> {
 			const result = await request<{ users: AdminUser[] }>("GET", "/users", {

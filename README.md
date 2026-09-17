@@ -34,7 +34,7 @@ Everything in this table is implemented unless it is marked as open. The remaini
 | Working time        | Target time from weekly hours / employment level / working days, break rules (graduated, applied per time pair), overtime models (monthly/yearly/cumulative), carryover, rounding for quick punch |
 | Absences & vacation | Absence types with factors, half days, planned vacation preview, holidays incl. movable feasts                                                                                                    |
 | Corrections         | Administration fixes punches (change, delete, add a single punch or a whole day); every change carries a reason, and the history of a punch (who changed it and why) is shown in the app          |
-| Reports             | Monthly PDF timesheet, XLS export, statistics, payouts/compensation                                                                                                                               |
+| Reports             | Monthly PDF timesheet and XLS export for the own account **and for any employee** (administration), statistics, payouts/compensation                                  |
 | ioBroker            | Aggregates and events as states (`info.*`, `users.<id>.*`, `global.*`, `event.*`) and `command.*` for automations                                                                                 |
 | Data                | SQLite file (WAL) in the adapter's data directory; only aggregates are published as states                                                                                                        |
 
@@ -108,10 +108,14 @@ the employee. The PDF is one page per month with the day table, the totals, the 
 lines; for `ru`, `uk` and `zh-cn` a Unicode font has to be configured (`report_font_path`), because the
 built-in PDF fonts only cover Latin-1 — the export refuses such a language with a clear message
 (`report_font_missing`) instead of drawing empty boxes. The web app offers both files as buttons in the month
-view and in the year report, so nobody has to build a URL by hand.
+view and in the year report, so nobody has to build a URL by hand. With `&userId=` and the right
+`report.view_other` the same routes deliver the statement of an employee: the year report has an employee
+picker and the name of a month opens that month in full, so the accounting department does not have to open a
+profile for every statement.
 
-The web app itself covers the punch screen, the month calendar, the year report (including the two downloads),
-absences, the offline queue with its conflict view and the profile. Callers holding `user.view` or `backup.run`
+The web app itself covers the punch screen, the month calendar, the year report (including the two downloads
+and, for the administration, the picker for an employee), absences, the offline queue with its conflict view and
+the profile. Callers holding `user.view` or `backup.run`
 additionally get an **administration** entry in the menu: employees (create, activate/deactivate, badge PIN) and
 database backups (list, retention, "create now").
 
@@ -306,6 +310,10 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+- (Alex) the administration downloads the monthly statement of any employee from the year report: the screen has
+  an employee picker (it appears with `report.view_other` and `user.view`), the Excel and PDF buttons follow the
+  selection, and the name of a month opens that month in full — the accounting department no longer has to open
+  a profile for every statement
 - (Alex) internal: the status sections of the README and of the German summary describe the state of the
   publication again (`0.0.7` on npm, `bluefox` as npm owner, 450 unit / 60 package / 10 integration / 17 browser
   tests)

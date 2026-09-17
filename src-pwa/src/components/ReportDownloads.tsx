@@ -41,16 +41,19 @@ function saveBlob(blob: Blob, fileName: string): void {
  * @param props - month and presentation
  * @param props.year - four digit year
  * @param props.month - month, 1 to 12
+ * @param props.userId - employee whose statement is downloaded; omitted for the own account
  * @param props.compact - true for icon buttons (lists), false for labelled buttons
  * @returns buttons and an error message when the export fails
  */
 export function ReportDownloads({
 	year,
 	month,
+	userId,
 	compact = false,
 }: {
 	year: number;
 	month: number;
+	userId?: number;
 	compact?: boolean;
 }): React.JSX.Element {
 	const { t } = useTranslation();
@@ -66,7 +69,7 @@ export function ReportDownloads({
 		setBusy(kind);
 		setError(null);
 		try {
-			const file = await api.downloadReport(kind, year, month);
+			const file = await api.downloadReport(kind, year, month, userId);
 			saveBlob(file.blob, file.fileName);
 		} catch (caught) {
 			setError(caught);

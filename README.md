@@ -311,6 +311,22 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
   tests)
 - (Alex) internal: the decision against the legacy import of the predecessor system states its reason
   (`docs/entscheidungen.md`)
+- (Alex) fix: the texts of the nine translated languages show their values again — `{{minutes}}`, `{{date}}` and
+  `{{conflicts}}` had been translated, so the variable was never filled and the placeholder appeared on screen
+  (`reports.paidOut`, `sync.done`, `sync.conflictOf`, plus one text each in Dutch and Polish)
+- (Alex) fix: wrong machine translations of the core terms are corrected — “punch” as a fist punch (`ru`, `uk`,
+  `pt`, `pl`, `zh-cn`), “day share” as a campaign or as sharing (`ru`, `pt`, `nl`, `fr`, `it`, `es`, `zh-cn`),
+  “taper” instead of the absence type (`fr`), 地位 (“social rank”) instead of the status (`zh-cn`),
+  `reports.overtime` as “after a while” (`ru`), signing in/out instead of punching (`pl`) and `nav.sync` as a
+  verb instead of a noun (seven languages)
+- (Alex) fix: the same kind of mistake in the admin settings is corrected as well — a harbour instead of the
+  port (`nl`, `zh-cn`), blows instead of punches (`it`, `es`, `nl`), a vacation country instead of the country
+  whose public holidays are used (all nine languages) and field names that read like an instruction
+  (`Bind address` in `ru`, `uk`, `fr`, `it`, `es`, `pl`)
+- (Alex) internal: `npm run check:i18n` compares the placeholder names with the base file, including their
+  order, so a translated `{{name}}` fails the check instead of reaching the screen; `docs/i18n.md` records the
+  review state of every language and `docs/testplan.md` names the fonts that were verified with a real statement
+  (`arial.ttf` for `ru`/`uk`, Malgun Gothic for `zh-cn`)
 
 ### 0.0.7 (2026-09-16)
 

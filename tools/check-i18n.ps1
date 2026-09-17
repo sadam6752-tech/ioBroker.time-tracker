@@ -7,6 +7,8 @@
       * alle Sprachdateien vorhanden (Adapter: adapter/admin/i18n/<lang>.json, PWA: pwa/src/i18n/<lang>.json)
       * identische Schlüsselmengen gegenüber der Basis (en)
       * keine Texte, die noch genauso lauten wie das englische Original (Ausnahmen: siehe $AllowedIdentical)
+      * Platzhalter (`{{name}}`) heißen in jeder Sprache wie in der Basis – übersetzte Namen setzt i18next nicht
+        ein, sie erscheinen wörtlich in der Oberfläche
       * jeder im PWA-Code benutzte Textschlüssel existiert in en.json (Tippfehler fallen sofort auf)
       * io-package.json enthält alle Sprachschlüssel in common.titleLang, common.desc und common.news
     Noch nicht vorhandene Komponenten (z. B. vor Phase 1) werden übersprungen und gemeldet.
@@ -73,6 +75,15 @@ function Get-FlattenedKeys {
     }
 
     return ,$keys
+}
+
+function Get-PlaceholderNames {
+    <# Liefert die Namen der `{{...}}`-Platzhalter eines Textes, mit `|` verbunden (leerer String, wenn keine).
+       Als String, weil PowerShell eine Liste in `-join` sonst als ein Objekt behandelt (Typname statt Inhalt). #>
+    param([string] $Text)
+
+    if ([string]::IsNullOrEmpty($Text)) { return '' }
+    return ((@([regex]::Matches($Text, '\{\{([^}]+)\}\}') | ForEach-Object { $_.Groups[1].Value })) -join '|')
 }
 
 # --- Repository prüfen --------------------------------------------------------
@@ -163,6 +174,20 @@ foreach ($component in $components) {
         )
         if ($english.Count -gt 0) {
             [void]$issues.Add("$($component.Name) [$language]: $($english.Count) Text(e) noch wie Englisch – z. B. $((@($english | Select-Object -First 5)) -join ', ')")
+        }
+
+        # Platzhalter (`{{name}}`) müssen wie in der Basis heißen, inklusive Reihenfolge: i18next setzt nur die
+        # Variablen ein, die der Code übergibt – ein übersetzter Name erscheint wörtlich in der Oberfläche.
+        $placeholder = @(
+            $baseKeys | Where-Object {
+                $null -ne $languageObject -and $languageObject.Contains($_) -and
+                $languageObject[$_] -is [string] -and $baseObject[$_] -is [string] -and
+                (Get-PlaceholderNames -Text $baseObject[$_]) -cne (Get-PlaceholderNames -Text $languageObject[$_])
+            }
+        )
+        if ($placeholder.Count -gt 0) {
+            $examples = @($placeholder | Select-Object -First 3 | ForEach-Object { $baseObject[$_] + ' -> ' + $languageObject[$_] })
+            [void]$issues.Add("$($component.Name) [$language]: $($placeholder.Count) Text(e) mit abweichenden Platzhaltern – z. B. $($examples -join '; ')")
         }
     }
 }

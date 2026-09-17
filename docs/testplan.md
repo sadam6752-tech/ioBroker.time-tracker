@@ -50,6 +50,15 @@ Nach dem Start: Instanz öffnen, **Port** und **Bind-Adresse** prüfen, `report_
 PDF-Berichte in `ru`, `uk` oder `zh-cn` gebraucht werden (sonst antwortet der Bericht mit `422
 report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 
+| Sprache | Geprüfte Schrift (17.09.2026, echter Bericht mit eingebetteter Schrift) |
+| --- | --- |
+| `ru`, `uk` | `arial.ttf` (Arial deckt Kyrillisch ab) |
+| `zh-cn` | `malgun.ttf` (Malgun Gothic deckt die chinesischen Zeichen ab) |
+| `de`, `en`, `fr`, `it`, `es`, `nl`, `pl`, `pt` | keine nötig; mit gesetzter Schrift wird sie ebenfalls eingebettet |
+
+Eine **fehlende** Datei oder eine Schrift ohne die nötigen Zeichen führt zu derselben Fehlermeldung wie eine
+gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästchen ausgeliefert.
+
 ## 4. Testdaten
 
 1. Anmeldung im Admin-Formular: das Konto `admin` (bzw. der eingestellte Login) mit dem Startpasswort aus der

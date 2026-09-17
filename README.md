@@ -315,6 +315,9 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+- (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the
+  paid part in brackets as soon as there is one) and every day row lists its pause beside worked and target time
+
 ### 0.0.11 (2026-09-17)
 
 - (Alex) fix: the totals row of the PDF statement stays complete — every value of a column is measured now, so a

@@ -66,6 +66,8 @@
 	"login.title": "Se connecter",
 	"month.absence": "Absence",
 	"month.balance": "Équilibre",
+  "month.pause": "Pause",
+  "month.paidBreak": "dont payé",
 	"month.empty": "Aucun jour ce mois-ci.",
 	"month.holiday": "Vacances",
 	"month.months": "Mois de l'année",

@@ -11,6 +11,8 @@ export interface DayAggregate {
 	localDate: string;
 	workedMin: number;
 	breakMin: number;
+	/** Part of the pause that is paid (in minutes) */
+	paidBreakMin: number;
 	targetMin: number;
 	balanceMin: number;
 	absenceCode: string | null;
@@ -128,6 +130,10 @@ export interface DayRange {
 	to: string;
 	days: DayAggregate[];
 	workedMin: number;
+	/** Pause of the range in minutes */
+	breakMin: number;
+	/** Part of the pause that is paid (in minutes) */
+	paidBreakMin: number;
 	targetMin: number;
 	balanceMin: number;
 	openDays: number;

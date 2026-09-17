@@ -112,6 +112,10 @@ export interface RangeResult {
 	openDays: number;
 	/** Net working time of the range in minutes */
 	workedMin: number;
+	/** Pause of the range in minutes */
+	breakMin: number;
+	/** Part of the pause that is paid (in minutes) */
+	paidBreakMin: number;
 	/** Target time of the range in minutes */
 	targetMin: number;
 	/** Balance of the range in minutes */
@@ -639,12 +643,22 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 		},
 
 		recalculateRange(userId: number, from: string, to: string, options?: RecalculateOptions): RangeResult {
-			const totals: RangeResult = { days: 0, openDays: 0, workedMin: 0, targetMin: 0, balanceMin: 0 };
+			const totals: RangeResult = {
+				days: 0,
+				openDays: 0,
+				workedMin: 0,
+				breakMin: 0,
+				paidBreakMin: 0,
+				targetMin: 0,
+				balanceMin: 0,
+			};
 			const run = db.transaction((): void => {
 				for (const date of dateRange(from, to)) {
 					const record = this.recalculateDay(userId, date, options);
 					totals.days++;
 					totals.workedMin += record.workedMin;
+					totals.breakMin += record.breakMin;
+					totals.paidBreakMin += record.paidBreakMin;
 					totals.targetMin += record.targetMin;
 					totals.balanceMin += record.balanceMin;
 					totals.openDays += record.hasOpenEntry ? 1 : 0;

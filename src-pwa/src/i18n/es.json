@@ -66,6 +66,8 @@
 	"login.title": "Iniciar sesión",
 	"month.absence": "Ausencia",
 	"month.balance": "Saldo",
+  "month.pause": "Pausa",
+  "month.paidBreak": "de los cuales pagado",
 	"month.empty": "No hay días en este mes.",
 	"month.holiday": "Día festivo",
 	"month.months": "Meses del año",

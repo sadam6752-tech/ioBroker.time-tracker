@@ -112,6 +112,8 @@ test("shows the days of the month with their columns", async ({ page }) => {
 
 	await expect(page.getByRole("heading", { name: "Monat" })).toBeVisible();
 	await expect(page.getByText("Gearbeitet").first()).toBeVisible();
+	// the pause of the month and of each day has its own place in the view
+	await expect(page.getByText(/Pause: \d+:\d\d/).first()).toBeVisible();
 	await expect(page.getByText("Saldo").first()).toBeVisible();
 });
 

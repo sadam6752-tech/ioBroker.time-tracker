@@ -213,6 +213,8 @@ describe("aggregation service", () => {
 				days: 5,
 				openDays: 0,
 				workedMin: 2400,
+				breakMin: 0,
+				paidBreakMin: 0,
 				targetMin: 2400,
 				balanceMin: 0,
 			});

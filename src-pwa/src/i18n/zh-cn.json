@@ -66,6 +66,8 @@
 	"login.title": "登入",
 	"month.absence": "缺席",
 	"month.balance": "平衡",
+  "month.pause": "休息",
+  "month.paidBreak": "其中带薪",
 	"month.empty": "这个月没有天。",
 	"month.holiday": "假期",
 	"month.months": "一年中的月份",

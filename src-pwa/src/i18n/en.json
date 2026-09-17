@@ -48,6 +48,8 @@
 	"month.worked": "Worked",
 	"month.target": "Target",
 	"month.balance": "Balance",
+  "month.pause": "Break",
+  "month.paidBreak": "of which paid",
 	"month.open": "open",
 	"month.holiday": "Holiday",
 	"month.absence": "Absence",

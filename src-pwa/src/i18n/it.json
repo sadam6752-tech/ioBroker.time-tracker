@@ -66,6 +66,8 @@
 	"login.title": "Registrazione",
 	"month.absence": "Assenza",
 	"month.balance": "Bilancia",
+  "month.pause": "Pausa",
+  "month.paidBreak": "di cui pagato",
 	"month.empty": "Nessun giorno in questo mese.",
 	"month.holiday": "Vacanza",
 	"month.months": "Mesi dell'anno",

@@ -66,6 +66,8 @@
 	"login.title": "Log in",
 	"month.absence": "Afwezigheid",
 	"month.balance": "Evenwicht",
+  "month.pause": "Pauze",
+  "month.paidBreak": "waarvan betaald",
 	"month.empty": "Geen dagen in deze maand.",
 	"month.holiday": "Vakantie",
 	"month.months": "Maanden van het jaar",

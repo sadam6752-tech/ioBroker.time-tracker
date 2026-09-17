@@ -66,6 +66,8 @@
 	"login.title": "Войти",
 	"month.absence": "Отсутствие",
 	"month.balance": "Баланс",
+  "month.pause": "Перерыв",
+  "month.paidBreak": "из них оплачено",
 	"month.empty": "Нет дней в этом месяце.",
 	"month.holiday": "Праздничный день",
 	"month.months": "Месяцы года",

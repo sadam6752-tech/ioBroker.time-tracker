@@ -124,13 +124,23 @@ export function Month(): React.JSX.Element {
 					<Stack
 						direction="row"
 						spacing={3}
-						sx={{ px: 1, mb: 1 }}
+						useFlexGap
+						sx={{ px: 1, mb: 1, flexWrap: "wrap" }}
 					>
 						<Typography
 							variant="body2"
 							color="text.secondary"
 						>
 							{t("month.worked")}: {formatMinutes(days.data?.workedMin ?? 0)}
+						</Typography>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+						>
+							{t("month.pause")}: {formatMinutes(days.data?.breakMin ?? 0)}
+							{(days.data?.paidBreakMin ?? 0) > 0
+								? ` (${t("month.paidBreak")} ${formatMinutes(days.data?.paidBreakMin ?? 0)})`
+								: ""}
 						</Typography>
 						<Typography
 							variant="body2"
@@ -164,6 +174,11 @@ export function Month(): React.JSX.Element {
 										primary={formatWeekday(day.localDate, i18n.language)}
 										secondary={[
 											`${t("month.worked")} ${formatMinutes(day.workedMin)}`,
+											`${t("month.pause")} ${formatMinutes(day.breakMin)}${
+												day.paidBreakMin > 0
+													? ` (${t("month.paidBreak")} ${formatMinutes(day.paidBreakMin)})`
+													: ""
+											}`,
 											`${t("month.target")} ${formatMinutes(day.targetMin)}`,
 											day.isHoliday ? t("month.holiday") : null,
 											day.absenceCode ? `${t("month.absence")}: ${day.absenceCode}` : null,

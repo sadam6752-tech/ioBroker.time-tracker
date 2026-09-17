@@ -167,7 +167,7 @@ export interface ApiClient {
 	/** Resolves a conflict */
 	resolve(entryId: number, action: "accept" | "dismiss", reason?: string): Promise<unknown>;
 	/** Downloads the monthly work time statement; with `userId` the statement of an employee */
-	downloadReport(kind: "xls" | "pdf", year: number, month: number, userId?: number): Promise<DownloadFile>;
+	downloadReport(kind: "xls" | "pdf" | "csv", year: number, month: number, userId?: number): Promise<DownloadFile>;
 	/** Employees, optionally including the deactivated ones */
 	users(includeInactive?: boolean): Promise<AdminUser[]>;
 	/** Role catalogue */
@@ -180,6 +180,10 @@ export interface ApiClient {
 	pauseRules(): Promise<PauseRule[]>;
 	/** Replaces the graduated break rules (the payload is the whole table) */
 	savePauseRules(rules: PauseRule[]): Promise<PauseRule[]>;
+	/** Graduated break rules of one employee (they replace the company rule with the same `fromMin`) */
+	userPauseRules(id: number): Promise<PauseRule[]>;
+	/** Replaces the break rules of one employee */
+	saveUserPauseRules(id: number, rules: PauseRule[]): Promise<PauseRule[]>;
 	/** Work profile of an employee: working time, overtime model, vacation and paid breaks */
 	workProfile(id: number): Promise<WorkProfile>;
 	/** Creates or updates the work profile (the server merges the sent fields) */
@@ -834,6 +838,19 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async savePauseRules(rules): Promise<PauseRule[]> {
 			const result = await request<{ pauseRules: PauseRule[] }>("PUT", "/pause-rules", {
+				body: { pauseRules: rules },
+			});
+			return result.pauseRules ?? [];
+		},
+
+		// the break rules of one employee: they replace the company rule with the same `fromMin`
+		async userPauseRules(id): Promise<PauseRule[]> {
+			const result = await request<{ pauseRules: PauseRule[] }>("GET", `/users/${id}/pause-rules`);
+			return result.pauseRules ?? [];
+		},
+
+		async saveUserPauseRules(id, rules): Promise<PauseRule[]> {
+			const result = await request<{ pauseRules: PauseRule[] }>("PUT", `/users/${id}/pause-rules`, {
 				body: { pauseRules: rules },
 			});
 			return result.pauseRules ?? [];

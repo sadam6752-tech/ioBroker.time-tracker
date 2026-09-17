@@ -12,15 +12,18 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import EditIcon from "@mui/icons-material/Edit";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes, formatWeekday } from "../api/client";
+import type { DayAggregate } from "../api/types";
 import { AppShell } from "../components/AppShell";
+import { DayCorrectionsDialog } from "../components/DayCorrections";
 import { ErrorAlert, Loading } from "../components/feedback";
 import { ReportDownloads } from "../components/ReportDownloads";
-import { useSession } from "../state/session";
+import { hasPermission, useSession } from "../state/session";
 
 /**
  * Builds the first and the last day of a month.
@@ -43,7 +46,8 @@ export function monthRange(year: number, month: number): { from: string; to: str
  */
 export function Month(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
-	const { session } = useSession();
+	const { session, permissions } = useSession();
+	const [editingDay, setEditingDay] = useState<DayAggregate | null>(null);
 	const [params] = useSearchParams();
 	// the administration may open the month of an employee (`/month?userId=…&year=&month=`), the name is a label
 	const scopedUserId = Number(params.get("userId")) || undefined;
@@ -162,12 +166,27 @@ export function Month(): React.JSX.Element {
 								<ListItem
 									key={day.localDate}
 									secondaryAction={
-										<Typography
-											variant="body2"
-											color={day.balanceMin < 0 ? "error" : "text.secondary"}
+										<Stack
+											direction="row"
+											spacing={0.5}
+											sx={{ alignItems: "center" }}
 										>
-											{formatMinutes(day.balanceMin)}
-										</Typography>
+											{hasPermission(permissions, "time.edit_own") && (
+												<IconButton
+													size="small"
+													title={t("month.edit")}
+													onClick={() => setEditingDay(day)}
+												>
+													<EditIcon fontSize="small" />
+												</IconButton>
+											)}
+											<Typography
+												variant="body2"
+												color={day.balanceMin < 0 ? "error" : "text.secondary"}
+											>
+												{formatMinutes(day.balanceMin)}
+											</Typography>
+										</Stack>
 									}
 								>
 									<ListItemText
@@ -203,6 +222,12 @@ export function Month(): React.JSX.Element {
 					</Card>
 				</>
 			)}
+
+			<DayCorrectionsDialog
+				day={editingDay}
+				timeZone={session?.user.timezone ?? "UTC"}
+				onClose={() => setEditingDay(null)}
+			/>
 		</AppShell>
 	);
 }

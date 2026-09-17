@@ -20,7 +20,7 @@ import * as fs from "node:fs";
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
-import type { EntriesRepository, EntryDirection } from "../db/repositories/entries";
+import type { EntriesRepository, EntryDirection, EntryRecord } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
 import {
@@ -31,7 +31,7 @@ import {
 	signTag,
 	type RfidRepository,
 } from "../db/repositories/rfid";
-import type { RulesRepository } from "../db/repositories/rules";
+import type { PauseRuleRecord, RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
 import type { TerminalRecord, TerminalsRepository } from "../db/repositories/terminals";
 import type { UserRecord, UsersRepository, WorkProfileRecord } from "../db/repositories/users";
@@ -48,7 +48,7 @@ import { reportLabels } from "../reports/labels";
 import { buildMonthReport } from "../reports/xls";
 import { buildMonthStatement } from "../reports/pdf";
 import { reportFileName, type ReportInput } from "../reports/types";
-import { dateRange, isValidTimeZone, localDate } from "../util/time";
+import { dateRange, isValidTimeZone, localDate, utcToWallTime } from "../util/time";
 import { clearCookie, parseCookies, SESSION_COOKIE, serializeCookie } from "./cookies";
 import { createEventBus, type ApiEvent, type EventBus } from "./events";
 import { createPinGuard } from "./pin-guard";
@@ -667,6 +667,30 @@ function resolveScope(
  * @param deps - data sources
  * @returns API with its router
  */
+/**
+ * Builds the CSV of the raw punches of one employee.
+ *
+ * The header is stable and English, because the file is meant for a payroll tool rather than for reading: the
+ * separator is a semicolon and the file starts with a UTF-8 byte order mark — that is what a spreadsheet in a
+ * European locale expects.
+ *
+ * @param entries - punches of the employee in chronological order
+ * @param timeZone - time zone of the employee, used for the time column
+ * @returns the CSV document
+ */
+function buildEntriesCsv(entries: EntryRecord[], timeZone: string): Buffer {
+	const lines = ["date;time;direction;source;note"];
+	for (const entry of entries) {
+		const seconds = utcToWallTime(entry.tsUtc, timeZone) % 86_400;
+		const hour = String(Math.floor(seconds / 3600)).padStart(2, "0");
+		const minute = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+		// a note may carry the separator and quotes: quoting keeps the columns intact
+		const note = `"${(entry.note ?? "").replace(/"/g, '""')}"`;
+		lines.push([entry.localDate, `${hour}:${minute}`, entry.direction ?? "", entry.source, note].join(";"));
+	}
+	return Buffer.from(`\uFEFF${lines.join("\r\n")}\r\n`, "utf8");
+}
+
 export function createApi(deps: ApiDeps): Api {
 	const { auth, users, entries, absences, holidays, rules, payouts, terminals, rfid, aggregation, sync, settings } =
 		deps;
@@ -685,6 +709,34 @@ export function createApi(deps: ApiDeps): Api {
 	const emit = (event: Omit<ApiEvent, "atUtc">): void => {
 		events.publish({ ...event, atUtc: now() });
 	};
+
+	/**
+	 * Checks a punch against the edit window of the instance.
+	 *
+	 * Employees may change their **own** punches only inside the window the administration configured. Anyone who
+	 * may also edit foreign punches is not bound by it: a correction there is daily business of the office.
+	 *
+	 * @param context - route context of the request
+	 * @param ownerId - owner of the punch
+	 * @param tsUtc - instant the punch has or will have
+	 */
+	function requireInsideEditWindow(context: RouteContext, ownerId: number, tsUtc: number): void {
+		const actor = context.auth;
+		if (!actor || actor.user.id !== ownerId || actor.permissions.includes("time.edit_other")) {
+			return;
+		}
+		const days = settings.getNumber("edit_window_days", 0);
+		if (days <= 0) {
+			return;
+		}
+		if (tsUtc < now() - days * 86_400) {
+			throw problem(
+				403,
+				"edit_window_closed",
+				`own punches may only be changed within ${days} day(s) (edit_window_days)`,
+			);
+		}
+	}
 
 	/**
 	 * Registers a route and remembers it for the documentation.
@@ -712,7 +764,11 @@ export function createApi(deps: ApiDeps): Api {
 			permission?: string;
 			public?: boolean;
 			csrf?: boolean;
-			rateLimit?: { name: string; limit: number; windowSeconds: number };
+			rateLimit?: {
+				name: string;
+				limit: number;
+				windowSeconds: number;
+			};
 			/** Raises the body limit of this one route (a backup upload) */
 			maxBodyBytes?: number;
 		},
@@ -906,7 +962,12 @@ export function createApi(deps: ApiDeps): Api {
 	 * @param options.quick - true rounds the instant to the configured quicktime step
 	 * @returns response with the stored entry and the refreshed day
 	 */
-	const punch = (context: RouteContext, options: { quick: boolean }): RouteResponse => {
+	const punch = (
+		context: RouteContext,
+		options: {
+			quick: boolean;
+		},
+	): RouteResponse => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -1162,6 +1223,8 @@ export function createApi(deps: ApiDeps): Api {
 		if (tsUtc === null) {
 			throw new ValidationError("tsUtc is required");
 		}
+		// an employee may not write into the past beyond the configured window
+		requireInsideEditWindow(context, target, tsUtc);
 
 		const timestamp = now();
 		const stored = entries.insert({
@@ -1209,7 +1272,10 @@ export function createApi(deps: ApiDeps): Api {
 	 */
 	const publicAbsence = (
 		absence: AbsenceRecord,
-	): AbsenceRecord & { typeCode: string | null; typeName: string | null } => {
+	): AbsenceRecord & {
+		typeCode: string | null;
+		typeName: string | null;
+	} => {
 		const type = absences.findType(absence.typeId);
 		return { ...absence, typeCode: type?.code ?? null, typeName: type?.name ?? null };
 	};
@@ -1476,14 +1542,17 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, { settings: changes });
 	});
 
-	// graduated break rules of the instance (the company default): they decide the pause of a day on which nobody
-	// punched a break, so they are edited as a whole table — like the shift rules of an employee.
-
-	route("GET", "/pause-rules", { permission: "settings.view" }, () =>
-		json(200, { pauseRules: rules.listPauseRules({ userId: null, includeInactive: true }) }),
-	);
-
-	route("PUT", "/pause-rules", { permission: "settings.edit", csrf: true }, context => {
+	/**
+	 * Replaces the graduated break rules of one owner.
+	 *
+	 * The payload is the whole table: rules that are missing are removed, the rest is saved. Values are checked by
+	 * the repository, so an impossible rule becomes a client error.
+	 *
+	 * @param context - route context of the request
+	 * @param userId - owner of the rules, `null` for the company default
+	 * @returns the saved rules
+	 */
+	function replacePauseRules(context: RouteContext, userId: number | null): PauseRuleRecord[] {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -1507,17 +1576,16 @@ export function createApi(deps: ApiDeps): Api {
 			};
 		});
 
-		// the payload replaces the table: rules that are missing are removed, the rest is saved
 		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
-		for (const existing of rules.listPauseRules({ userId: null, includeInactive: true })) {
+		for (const existing of rules.listPauseRules({ userId, includeInactive: true })) {
 			if (!keep.has(existing.id)) {
 				rules.removePauseRule({ id: existing.id, ...actor });
 			}
 		}
-		const saved = wanted.map(rule =>
+		return wanted.map(rule =>
 			rules.savePauseRule({
 				...(rule.id !== undefined ? { id: rule.id } : {}),
-				userId: null,
+				userId,
 				fromMin: rule.fromMin,
 				toMin: rule.toMin,
 				pauseMin: rule.pauseMin,
@@ -1525,7 +1593,36 @@ export function createApi(deps: ApiDeps): Api {
 				...actor,
 			}),
 		);
-		return json(200, { pauseRules: saved });
+	}
+
+	// graduated break rules of the instance (the company default): they decide the pause of a day on which nobody
+	// punched a break, so they are edited as a whole table — like the shift rules of an employee.
+
+	route("GET", "/pause-rules", { permission: "settings.view" }, () =>
+		json(200, { pauseRules: rules.listPauseRules({ userId: null, includeInactive: true }) }),
+	);
+
+	route("PUT", "/pause-rules", { permission: "settings.edit", csrf: true }, context =>
+		json(200, { pauseRules: replacePauseRules(context, null) }),
+	);
+
+	// The rules of one employee: they replace the company rule with the same `fromMin`, so a single person can
+	// deviate from the house rule without changing it for everybody.
+
+	route("GET", "/users/:id/pause-rules", { permission: "user.view" }, context => {
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		return json(200, { pauseRules: rules.listPauseRules({ userId: id, includeInactive: true }) });
+	});
+
+	route("PUT", "/users/:id/pause-rules", { permission: "user.edit", csrf: true }, context => {
+		const id = numberParam(context, "id");
+		if (!users.findById(id)) {
+			throw new NotFoundError(`user ${id} not found`);
+		}
+		return json(200, { pauseRules: replacePauseRules(context, id) });
 	});
 
 	// branding: logo, background and accent colour of the installation.
@@ -1550,7 +1647,11 @@ export function createApi(deps: ApiDeps): Api {
 	 *
 	 * @returns colour and the addresses of the two pictures, `null` when nothing is configured
 	 */
-	const brandingState = (): { color: string | null; logoUrl: string | null; backgroundUrl: string | null } => {
+	const brandingState = (): {
+		color: string | null;
+		logoUrl: string | null;
+		backgroundUrl: string | null;
+	} => {
 		const color = (settings.get("brand_color") ?? "").trim();
 		const logo = (settings.get("brand_logo") ?? "").trim();
 		const background = (settings.get("brand_background") ?? "").trim();
@@ -1606,6 +1707,13 @@ export function createApi(deps: ApiDeps): Api {
 		const revision = optionalNumber(body, "revision");
 		if (revision === null) {
 			throw new ValidationError("revision is required");
+		}
+		// both the stored instant and the new one have to be inside the window, so nobody can move an old punch
+		// into it
+		requireInsideEditWindow(context, existing.userId, existing.tsUtc);
+		const wantedTs = optionalNumber(body, "tsUtc");
+		if (wantedTs !== null) {
+			requireInsideEditWindow(context, existing.userId, wantedTs);
 		}
 		const target = users.findById(existing.userId);
 		if (!target) {
@@ -2108,7 +2216,11 @@ export function createApi(deps: ApiDeps): Api {
 			const actor = context.auth;
 			const timestamp = now();
 			const touched = new Map<string, number>();
-			const results: { index: number; entryId?: number; error?: string }[] = [];
+			const results: {
+				index: number;
+				entryId?: number;
+				error?: string;
+			}[] = [];
 
 			(body.entries as unknown[]).forEach((raw, index) => {
 				try {
@@ -2709,7 +2821,14 @@ export function createApi(deps: ApiDeps): Api {
 	 */
 	const monthlyReport = (
 		context: RouteContext,
-	): { input: ReportInput & { generator: string }; year: number; month: number; login: string } => {
+	): {
+		input: ReportInput & {
+			generator: string;
+		};
+		year: number;
+		month: number;
+		login: string;
+	} => {
 		const userId = scopeUser(context);
 		const user = users.findById(userId);
 		if (!user) {
@@ -2757,6 +2876,31 @@ export function createApi(deps: ApiDeps): Api {
 			},
 		};
 	};
+
+	// the raw punches of a month as CSV: for payroll and for tools that want the single punch instead of a total
+	route(
+		"GET",
+		"/reports/csv",
+		{ permission: "report.view_own", rateLimit: { name: "export", limit: 20, windowSeconds: 60 } },
+		context => {
+			const { year, month, login } = monthlyReport(context);
+			const author = users.findById(scopeUser(context));
+			if (!author) {
+				throw new NotFoundError("user not found");
+			}
+			const prefix = `${year}-${String(month).padStart(2, "0")}`;
+			const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+			const csv = buildEntriesCsv(
+				entries.listByRange(author.id, `${prefix}-01`, `${prefix}-${String(lastDay).padStart(2, "0")}`),
+				author.timezone,
+			);
+
+			return binary(200, csv, "text/csv; charset=utf-8", {
+				"content-disposition": `attachment; filename="${reportFileName(login, year, month, "csv")}"`,
+				"cache-control": "no-store",
+			});
+		},
+	);
 
 	route(
 		"GET",

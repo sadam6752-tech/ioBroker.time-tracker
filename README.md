@@ -59,7 +59,7 @@ for a new one right away. Accounts created later in the administration start the
 
 After that the usual order is: create employees (**Administration → Employees**), set their working time
 (**Arbeitsprofil** button of the row: employment level, weekly hours, working days, overtime model, vacation,
-carryover, paid break minutes), and — if a tablet is used — create a terminal and switch the kiosk on
+carryover, paid break minutes, own break rules), and — if a tablet is used — create a terminal and switch the kiosk on
 (see [Terminal](#terminal-kiosk)).
 
 ## Configuration
@@ -94,7 +94,7 @@ Further settings are edited in the web app (**Administration → Settings**, rig
 | Setting                                     | Meaning                                                                                                        |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Pause rule (`auto` / `punched` / `staffel`)  | how the pause of a day is determined: the punched break (`auto`, default) or only the graduated rules           |
-| Graduated break rules (Pausenstaffel)        | “from … to … minutes block length → so many minutes deducted”; the pause of a day **without** a punched break    |
+| Graduated break rules (Pausenstaffel)        | “from … to … minutes block length → so many minutes deducted”; the pause of a day **without** a punched break. The work profile of an employee can carry **own rules**: a rule with the same “from minutes” replaces the company rule for that person only |
 | Paid break minutes (per employee)            | how much of a break is paid: `0` = not paid, `15` = a quarter of an hour, `1440` = any length (work profile)      |
 | Company branding                             | logo, background picture and accent colour for the login screen, the header and the kiosk screens               |
 | Unicode font for PDF statements              | `report_font_path`: needed for `ru`, `uk`, `zh-cn` and Polish, otherwise the export refuses with a clear message |
@@ -108,6 +108,10 @@ The pause of a day appears in the month view of the app and in the monthly state
 | `employee` | punch, see the own month and year, request absences, edit own punches inside the edit window   |
 | `manager`  | everything an employee may, plus statements and corrections for other employees                |
 | `admin`    | everything: employees, roles, terminals, settings, backups                                     |
+
+The **edit window** (`edit_window_days`, default 7 days) is what an `employee` is bound by: an older punch is
+rejected with `edit_window_closed` and stays with the administration. Managers and admins are not bound by it.
+Employees correct their own day right in the month view — the pencil beside a day opens its punches.
 
 ## Web app, terminal and API
 
@@ -165,6 +169,11 @@ The month view and the year report of the app offer the statement of the shown p
 (`.xlsx`) — with the day table, the numbers of the month, the absences and two signature lines in the PDF. The file
 is generated in the language and the time zone of the employee; the administration can pick another employee and
 download the same statement for them.
+
+Next to the two buttons sits a third one: the **raw data as CSV**. It carries one row per punch (`date`, `time`,
+`direction`, `source`, `note`), semicolon separated and UTF-8 with a byte order mark — so a spreadsheet opens it
+directly and a payroll tool can read it without asking. The header is English on purpose, because the file is meant
+for a machine.
 
 For `ru`, `uk`, `zh-cn` and Polish the PDF needs a Unicode font: set `report_font_path` in the app settings to a
 `.ttf`/`.otf` file that covers the script. Without it the export stops with a clear message
@@ -238,6 +247,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+- (Alex) graduated break rules can be **per employee** now: the work profile carries its own table, and a rule with
+  the same "from minutes" replaces the company rule for that one person (only the administration edits it)
+- (Alex) the **edit window** (`edit_window_days`) is enforced now: employees may change their own punches only
+  inside it — an older one is rejected with `edit_window_closed` and stays the business of the administration
+- (Alex) employees correct their own punches right in the month view: the pencil beside a day opens the punches of
+  that day, a time can be fixed or a forgotten punch added (removing one needs `time.delete`)
+- (Alex) the monthly report has a **raw data export as CSV** (button beside Excel and PDF): one row per punch with
+  date, time, direction, source and note — semicolon separated, UTF-8 with BOM, so a spreadsheet opens it directly
 - (Alex) internal: the README is a user guide now — what the adapter does, installation and first start, instance
   settings, roles, states, reports, backups, HTTPS and troubleshooting. The internals (HTTP surface, sessions,
   live events, database, breaks) moved to `docs/technik.md`, the build/test/release part to `docs/entwicklung.md`

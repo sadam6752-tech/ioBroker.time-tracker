@@ -79,7 +79,7 @@ function zoneOffsetSeconds(instant: Date, timeZone: string): number {
  * @param timeZone - time zone of the employee
  * @returns the instant in UTC epoch seconds
  */
-function localToUtc(date: string, time: string, timeZone: string): number {
+export function localToUtc(date: string, time: string, timeZone: string): number {
 	const naive = Date.parse(`${date}T${time}:00Z`);
 	const first = naive - zoneOffsetSeconds(new Date(naive), timeZone) * 1000;
 	return Math.round((naive - zoneOffsetSeconds(new Date(first), timeZone) * 1000) / 1000);

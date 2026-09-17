@@ -41,6 +41,8 @@ export type ProblemCode =
 	| "backup_invalid"
 	| "import_mismatch"
 	| "rate_limited"
+	// an employee may only change own punches inside the edit window of the instance
+	| "edit_window_closed"
 	| "internal_error";
 
 /** A problem document. */

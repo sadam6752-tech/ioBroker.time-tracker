@@ -192,6 +192,123 @@ function formatStamp(tsUtc: number, language: string): string {
  * @returns the users tab
  */
 /**
+ * Editor of a table of graduated break rules.
+ *
+ * The same table is used for the company default (settings) and for the rules of a single employee (work profile);
+ * the caller owns the state and saves the whole table, because the API replaces it.
+ *
+ * @param props - rules, permission and handlers
+ * @param props.rules - rules as they are shown
+ * @param props.disabled - true when the caller may not change them
+ * @param props.saving - true while a save is running
+ * @param props.onChange - called with the changed table
+ * @param props.onSave - saves the table
+ * @returns the editor
+ */
+function PauseRuleTable({
+	rules,
+	disabled,
+	saving,
+	onChange,
+	onSave,
+}: {
+	rules: PauseRule[];
+	disabled: boolean;
+	saving: boolean;
+	onChange: (rules: PauseRule[]) => void;
+	onSave: () => void;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+
+	/**
+	 * Merges a change into one of the rules.
+	 *
+	 * @param index - position of the rule in the list
+	 * @param patch - fields that changed
+	 */
+	const change = (index: number, patch: Partial<PauseRule>): void =>
+		onChange(rules.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
+
+	return (
+		<Stack spacing={1}>
+			{rules.map((rule, index) => (
+				<Stack
+					key={rule.id ?? `new-${index}`}
+					direction="row"
+					spacing={1}
+					useFlexGap
+					sx={{ alignItems: "center", flexWrap: "wrap" }}
+				>
+					<TextField
+						size="small"
+						type="number"
+						label={t("admin.settings.pauseFrom")}
+						value={String(rule.fromMin)}
+						onChange={event => change(index, { fromMin: Number(event.target.value) })}
+						disabled={disabled}
+					/>
+					<TextField
+						size="small"
+						type="number"
+						label={t("admin.settings.pauseTo")}
+						value={rule.toMin === null ? "" : String(rule.toMin)}
+						onChange={event =>
+							change(index, { toMin: event.target.value === "" ? null : Number(event.target.value) })
+						}
+						disabled={disabled}
+					/>
+					<TextField
+						size="small"
+						type="number"
+						label={t("admin.settings.pauseMinutes")}
+						value={String(rule.pauseMin)}
+						onChange={event => change(index, { pauseMin: Number(event.target.value) })}
+						disabled={disabled}
+					/>
+					<Switch
+						checked={rule.isActive !== false}
+						title={t("admin.settings.pauseActive")}
+						onChange={() => change(index, { isActive: rule.isActive === false })}
+						disabled={disabled}
+					/>
+					<IconButton
+						size="small"
+						title={t("admin.backup.delete")}
+						disabled={disabled}
+						onClick={() => onChange(rules.filter((_, position) => position !== index))}
+					>
+						<DeleteIcon fontSize="small" />
+					</IconButton>
+				</Stack>
+			))}
+			<Stack
+				direction="row"
+				spacing={1}
+				useFlexGap
+				sx={{ alignItems: "center", flexWrap: "wrap" }}
+			>
+				<Button
+					size="small"
+					startIcon={<AddIcon />}
+					disabled={disabled}
+					onClick={() => onChange([...rules, { fromMin: 360, toMin: null, pauseMin: 30, isActive: true }])}
+				>
+					{t("admin.settings.pauseAdd")}
+				</Button>
+				<Button
+					size="small"
+					variant="contained"
+					disabled={disabled || saving}
+					onClick={onSave}
+				>
+					{t("admin.settings.pauseSave")}
+				</Button>
+			</Stack>
+		</Stack>
+	);
+}
+
+/**
  * Work profile of one employee.
  *
  * The profile decides the target time of every day, how overtime is carried and whether a break is paid, so it
@@ -219,6 +336,22 @@ function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose:
 		onSuccess: async () => {
 			setDraft({});
 			await queryClient.invalidateQueries({ queryKey: ["admin", "profile", id] });
+			onClose();
+		},
+	});
+	// the break rules of this employee: they replace the company rule with the same `fromMin`
+	const ownRules = useQuery({
+		queryKey: ["admin", "pauseRules", id],
+		queryFn: () => api.userPauseRules(id),
+		enabled: user !== null,
+	});
+	const [rules, setRules] = useState<PauseRule[] | null>(null);
+	const shownRules = rules ?? ownRules.data ?? [];
+	const saveRules = useMutation({
+		mutationFn: (list: PauseRule[]) => api.saveUserPauseRules(id, list),
+		onSuccess: async () => {
+			setRules(null);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "pauseRules", id] });
 			onClose();
 		},
 	});
@@ -273,7 +406,7 @@ function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose:
 		>
 			<DialogTitle>{t("admin.user.profileTitle", { name: user?.displayName ?? "" })}</DialogTitle>
 			<DialogContent>
-				<ErrorAlert error={profile.error ?? save.error} />
+				<ErrorAlert error={profile.error ?? save.error ?? ownRules.error ?? saveRules.error} />
 				{profile.isLoading ? (
 					<Loading />
 				) : (
@@ -382,6 +515,29 @@ function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose:
 								set({ pausePaidMinutes: Math.max(0, Math.round(Number(event.target.value))) })
 							}
 						/>
+						<Box>
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.profile.pauseRules")}
+							</Typography>
+							<Typography
+								variant="caption"
+								color="text.secondary"
+								display="block"
+								sx={{ mb: 1 }}
+							>
+								{t("admin.profile.pauseRulesHint")}
+							</Typography>
+							<PauseRuleTable
+								rules={shownRules}
+								disabled={false}
+								saving={saveRules.isPending}
+								onChange={setRules}
+								onSave={() => saveRules.mutate(shownRules)}
+							/>
+						</Box>
 					</Stack>
 				)}
 			</DialogContent>
@@ -1596,15 +1752,6 @@ function SettingsTab(): React.JSX.Element {
 		},
 	});
 
-	/**
-	 * Merges a change into one of the pending break rules.
-	 *
-	 * @param index - position of the rule in the list
-	 * @param patch - fields that changed
-	 */
-	const changeRule = (index: number, patch: Partial<PauseRule>): void =>
-		setRules(shownRules.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
-
 	const save = useMutation({
 		mutationFn: (patch: Record<string, string>) => api.updateSettings(patch),
 		onSuccess: async () => {
@@ -1800,88 +1947,13 @@ function SettingsTab(): React.JSX.Element {
 					>
 						{t("admin.settings.pauseRulesHint")}
 					</Typography>
-					<Stack spacing={1}>
-						{shownRules.map((rule, index) => (
-							<Stack
-								key={rule.id ?? `new-${index}`}
-								direction="row"
-								spacing={1}
-								useFlexGap
-								sx={{ alignItems: "center", flexWrap: "wrap" }}
-							>
-								<TextField
-									size="small"
-									type="number"
-									label={t("admin.settings.pauseFrom")}
-									value={String(rule.fromMin)}
-									onChange={event => changeRule(index, { fromMin: Number(event.target.value) })}
-									disabled={!mayEdit}
-								/>
-								<TextField
-									size="small"
-									type="number"
-									label={t("admin.settings.pauseTo")}
-									value={rule.toMin === null ? "" : String(rule.toMin)}
-									onChange={event =>
-										changeRule(index, {
-											toMin: event.target.value === "" ? null : Number(event.target.value),
-										})
-									}
-									disabled={!mayEdit}
-								/>
-								<TextField
-									size="small"
-									type="number"
-									label={t("admin.settings.pauseMinutes")}
-									value={String(rule.pauseMin)}
-									onChange={event => changeRule(index, { pauseMin: Number(event.target.value) })}
-									disabled={!mayEdit}
-								/>
-								<Switch
-									checked={rule.isActive !== false}
-									title={t("admin.settings.pauseActive")}
-									onChange={() => changeRule(index, { isActive: rule.isActive === false })}
-									disabled={!mayEdit}
-								/>
-								<IconButton
-									size="small"
-									title={t("admin.backup.delete")}
-									disabled={!mayEdit}
-									onClick={() => setRules(shownRules.filter((_, position) => position !== index))}
-								>
-									<DeleteIcon fontSize="small" />
-								</IconButton>
-							</Stack>
-						))}
-						<Stack
-							direction="row"
-							spacing={1}
-							useFlexGap
-							sx={{ alignItems: "center", flexWrap: "wrap" }}
-						>
-							<Button
-								size="small"
-								startIcon={<AddIcon />}
-								disabled={!mayEdit}
-								onClick={() =>
-									setRules([
-										...shownRules,
-										{ fromMin: 360, toMin: null, pauseMin: 30, isActive: true },
-									])
-								}
-							>
-								{t("admin.settings.pauseAdd")}
-							</Button>
-							<Button
-								size="small"
-								variant="contained"
-								disabled={!mayEdit || rules === null || savePauseRules.isPending}
-								onClick={() => savePauseRules.mutate(shownRules)}
-							>
-								{t("admin.settings.pauseSave")}
-							</Button>
-						</Stack>
-					</Stack>
+					<PauseRuleTable
+						rules={shownRules}
+						disabled={!mayEdit}
+						saving={savePauseRules.isPending}
+						onChange={setRules}
+						onSave={() => savePauseRules.mutate(shownRules)}
+					/>
 				</CardContent>
 			</Card>
 

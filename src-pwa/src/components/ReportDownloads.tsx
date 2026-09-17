@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import GridOnIcon from "@mui/icons-material/GridOn";
+import TableChartIcon from "@mui/icons-material/TableChart";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,7 +58,7 @@ export function ReportDownloads({
 	compact?: boolean;
 }): React.JSX.Element {
 	const { t } = useTranslation();
-	const [busy, setBusy] = useState<"xls" | "pdf" | null>(null);
+	const [busy, setBusy] = useState<"xls" | "pdf" | "csv" | null>(null);
 	const [error, setError] = useState<unknown>(null);
 
 	/**
@@ -65,7 +66,7 @@ export function ReportDownloads({
 	 *
 	 * @param kind - file format
 	 */
-	const download = async (kind: "xls" | "pdf"): Promise<void> => {
+	const download = async (kind: "xls" | "pdf" | "csv"): Promise<void> => {
 		setBusy(kind);
 		setError(null);
 		try {
@@ -78,7 +79,8 @@ export function ReportDownloads({
 		}
 	};
 
-	const label = (kind: "xls" | "pdf"): string => t(kind === "xls" ? "report.xls" : "report.pdf");
+	const label = (kind: "xls" | "pdf" | "csv"): string =>
+		t(kind === "xls" ? "report.xls" : kind === "pdf" ? "report.pdf" : "report.csv");
 
 	if (compact) {
 		return (
@@ -104,6 +106,14 @@ export function ReportDownloads({
 						onClick={() => void download("pdf")}
 					>
 						<PictureAsPdfIcon fontSize="small" />
+					</IconButton>
+					<IconButton
+						size="small"
+						title={label("csv")}
+						disabled={busy !== null}
+						onClick={() => void download("csv")}
+					>
+						<TableChartIcon fontSize="small" />
 					</IconButton>
 				</Stack>
 				<ErrorAlert error={error} />
@@ -135,6 +145,15 @@ export function ReportDownloads({
 					onClick={() => void download("pdf")}
 				>
 					{label("pdf")}
+				</Button>
+				<Button
+					size="small"
+					variant="outlined"
+					startIcon={<TableChartIcon />}
+					disabled={busy !== null}
+					onClick={() => void download("csv")}
+				>
+					{label("csv")}
 				</Button>
 				{busy !== null && <CircularProgress size={18} />}
 			</Stack>

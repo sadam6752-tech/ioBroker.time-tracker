@@ -51,6 +51,8 @@ describe("web api", () => {
 	let annaCsrf: string;
 	let adminToken: string;
 	let adminCsrf: string;
+	/** Clock of the API; a test that needs the past or the future moves it. */
+	let clock = 1000;
 
 	/**
 	 * Sends a request through the API.
@@ -110,6 +112,7 @@ describe("web api", () => {
 	}
 
 	beforeEach(async () => {
+		clock = 1000;
 		db = openAndMigrate(":memory:");
 		seed(db, { holidayYears: [2026] });
 		users = createUsersRepository(db);
@@ -151,7 +154,7 @@ describe("web api", () => {
 			backup,
 			kioskEnabled: true,
 			hmacSecret: TAG_SECRET,
-			now: () => 1000,
+			now: () => clock,
 			version: "9.9.9",
 		});
 
@@ -2029,6 +2032,142 @@ describe("web api", () => {
 				query: { year: "1970", month: "1", userId: String(adminId) },
 			});
 			expect(foreign.status).to.equal(403);
+		});
+
+		it("keeps an employee inside the edit window but lets the administration through", async () => {
+			settings.set("edit_window_days", 7, adminId);
+			// the clock moves a month ahead, so the punches of the seeded day are outside the window now; both
+			// sessions are long expired then, so the test signs in again
+			clock = 1000 + 30 * 86_400;
+			const annaLater = await send("POST", "/auth/login", { body: { login: "anna", password } });
+			const adminLater = await send("POST", "/auth/login", { body: { login: "admin", password } });
+			expect(annaLater.status).to.equal(200);
+			expect(adminLater.status).to.equal(200);
+			const annaHeaders = headers(
+				bodyOf<{ token: string }>(annaLater).token,
+				bodyOf<{ csrfToken: string }>(annaLater).csrfToken,
+			);
+			const adminHeaders = headers(
+				bodyOf<{ token: string }>(adminLater).token,
+				bodyOf<{ csrfToken: string }>(adminLater).csrfToken,
+			);
+
+			const tooOld = await send("POST", "/entries", {
+				body: { tsUtc: 1000 },
+				headers: annaHeaders,
+			});
+			expect(tooOld.status).to.equal(403);
+			expect(bodyOf<{ code: string }>(tooOld).code).to.equal("edit_window_closed");
+
+			// inside the window a punch of the own account is allowed
+			const recent = await send("POST", "/entries", {
+				body: { tsUtc: clock - 3_600 },
+				headers: annaHeaders,
+			});
+			expect(recent.status).to.equal(201);
+
+			// changing an old punch is refused as well …
+			const oldEntry = await send("POST", "/entries", {
+				query: { userId: String(annaId) },
+				body: { tsUtc: 1000 },
+				headers: adminHeaders,
+			});
+			expect(oldEntry.status).to.equal(201);
+			const old = bodyOf<{ entry: { id: number; revision: number } }>(oldEntry).entry;
+			expect(old, "the punch the administration wrote is returned").to.be.an("object");
+			const patched = await send("PATCH", `/entries/${old.id}`, {
+				body: { tsUtc: 2000, revision: old.revision },
+				headers: annaHeaders,
+			});
+			expect(patched.status).to.equal(403);
+			expect(bodyOf<{ code: string }>(patched).code).to.equal("edit_window_closed");
+
+			// … while the administration is not bound by the window
+			const asAdmin = await send("PATCH", `/entries/${old.id}`, {
+				body: { tsUtc: 2000, revision: old.revision, reason: "Korrektur" },
+				headers: adminHeaders,
+			});
+			expect(asAdmin.status).to.equal(200);
+		});
+
+		it("hands the raw punches of a month out as CSV", async () => {
+			await send("POST", "/punch", { body: { tsUtc: 1000 }, headers: headers(annaToken, annaCsrf) });
+			await send("POST", "/punch", { body: { tsUtc: 3700 }, headers: headers(annaToken, annaCsrf) });
+
+			const own = await send("GET", "/reports/csv", {
+				query: { year: "1970", month: "1" },
+				headers: headers(annaToken),
+			});
+			expect(own.status).to.equal(200);
+			expect(own.headers["content-type"]).to.equal("text/csv; charset=utf-8");
+			expect(own.headers["content-disposition"]).to.equal(
+				'attachment; filename="zeiterfassung-anna-1970-01.csv"',
+			);
+			const text = own.body.toString("utf8");
+			expect(text.startsWith("\uFEFFdate;time;direction;source;note")).to.equal(true);
+			// a header line and one row per punch
+			expect(text.split("\r\n").filter(line => line !== "")).to.have.lengthOf(3);
+
+			// the punches of somebody else need `report.view_other`
+			const foreign = await send("GET", "/reports/csv", {
+				query: { year: "1970", month: "1", userId: String(adminId) },
+				headers: headers(annaToken),
+			});
+			expect(foreign.status).to.equal(403);
+
+			const asAdmin = await send("GET", "/reports/csv", {
+				query: { year: "1970", month: "1", userId: String(annaId) },
+				headers: headers(adminToken),
+			});
+			expect(asAdmin.status).to.equal(200);
+			expect(asAdmin.body.toString("utf8")).to.contain("date;time;direction;source;note");
+		});
+
+		it("replaces the break rules of one employee and deducts them for that day", async () => {
+			// the house rule deducts half an hour per block, the employee only a quarter
+			const house = await send("PUT", "/pause-rules", {
+				body: { pauseRules: [{ fromMin: 360, pauseMin: 30 }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(house.status).to.equal(200);
+
+			// the rules of an employee are an administrative change
+			expect(
+				(
+					await send("PUT", `/users/${annaId}/pause-rules`, {
+						body: { pauseRules: [{ fromMin: 360, pauseMin: 15 }] },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+
+			const own = await send("PUT", `/users/${annaId}/pause-rules`, {
+				body: { pauseRules: [{ fromMin: 360, pauseMin: 15 }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(own.status).to.equal(200);
+			const savedRules = bodyOf<{ pauseRules: { fromMin: number; pauseMin: number }[] }>(own).pauseRules;
+			expect(savedRules.map(rule => [rule.fromMin, rule.pauseMin])).to.deep.equal([[360, 15]]);
+			expect(
+				(await send("GET", `/users/${annaId}/pause-rules`, { headers: headers(adminToken) })).status,
+			).to.equal(200);
+
+			// nine hours in one block without a punched break: the rule of the employee wins over the house rule
+			for (const tsUtc of [25_200, 57_600]) {
+				await send("POST", "/entries", {
+					query: { userId: String(annaId) },
+					body: { tsUtc },
+					headers: headers(adminToken, adminCsrf),
+				});
+			}
+			const day = bodyOf<{ day: { breakMin: number; workedMin: number } }>(
+				await send("GET", "/aggregates/day", {
+					query: { date: "1970-01-01", userId: String(annaId) },
+					headers: headers(adminToken),
+				}),
+			).day;
+			expect(day.breakMin).to.equal(15);
+			expect(day.workedMin).to.equal(525);
 		});
 
 		it("answers with a workbook of the requested month", async () => {

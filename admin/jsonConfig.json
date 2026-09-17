@@ -19,7 +19,8 @@
 					"xl": 3
 				},
 				"bind": {
-					"type": "text",
+					"type": "ip",
+					"listenOnAllPorts": true,
 					"label": "Bind address",
 					"help": "127.0.0.1 = only this machine",
 					"xs": 12,

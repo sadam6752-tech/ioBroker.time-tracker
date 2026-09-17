@@ -69,7 +69,7 @@ The adapter is configured in the **instance settings** of the ioBroker admin:
 | Setting                             | Meaning                                                         |
 | ----------------------------------- | --------------------------------------------------------------- |
 | Port                                | port of the HTTP server (web app, API, terminal)                 |
-| Bind address                        | interface to listen on (`0.0.0.0` = all)                         |
+| Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all) |
 | Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`             |
 | Default language for new users      | one of the 11 supported languages                                |
 | Holiday country                     | country used to generate the public holidays                     |
@@ -246,6 +246,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+### 0.0.14 (2026-09-17)
+
+- (Alex) the **bind address** of the instance is picked from the local addresses of the host now (a list in the
+  admin settings instead of a free text field), and a value that carries a port cannot keep the server from starting
 
 ### 0.0.13 (2026-09-17)
 

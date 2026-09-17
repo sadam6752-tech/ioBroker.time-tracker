@@ -21,10 +21,35 @@ import { createAuthService, hashPassword } from "../services/auth";
 import { createSyncService } from "../services/sync";
 import { createApi, type Api } from "./api";
 import { json } from "./router";
-import { startWebServer, type WebServer } from "./server";
+import { normalizeBindAddress, startWebServer, type WebServer } from "./server";
 import { createStaticHandler } from "./static";
 
 const password = "Zeit-2026-klar";
+
+describe("bind address of the instance settings", () => {
+	it("falls back to the local machine when nothing is configured", () => {
+		expect(normalizeBindAddress(undefined)).to.equal("127.0.0.1");
+		expect(normalizeBindAddress("")).to.equal("127.0.0.1");
+		expect(normalizeBindAddress("   ")).to.equal("127.0.0.1");
+	});
+
+	it("keeps plain addresses as they are", () => {
+		expect(normalizeBindAddress("192.168.1.5")).to.equal("192.168.1.5");
+		expect(normalizeBindAddress("0.0.0.0")).to.equal("0.0.0.0");
+		// an IPv6 address is full of colons: only a bracketed port is removed
+		expect(normalizeBindAddress("::")).to.equal("::");
+		expect(normalizeBindAddress("fe80::1")).to.equal("fe80::1");
+	});
+
+	it("drops a port, because the port comes from the instance", () => {
+		expect(normalizeBindAddress("192.168.1.5:8082")).to.equal("192.168.1.5");
+		expect(normalizeBindAddress("[::1]:8082")).to.equal("::1");
+	});
+
+	it("understands a wildcard", () => {
+		expect(normalizeBindAddress("*")).to.equal("0.0.0.0");
+	});
+});
 
 describe("web server", () => {
 	let db: Db;

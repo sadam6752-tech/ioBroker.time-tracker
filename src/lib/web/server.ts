@@ -120,6 +120,36 @@ function parseQuery(requestUrl: string): Record<string, string | string[]> {
 }
 
 /**
+ * Normalises the bind address of the instance settings.
+ *
+ * The admin offers the local addresses of the host in a list, and a value may come back in the `host:port` form
+ * (`[::1]:8082` for IPv6) or as a wildcard. `listen` expects the address alone and the port comes from the
+ * instance, so such a value cannot make the server fail to start. An empty value means "this machine only".
+ *
+ * @param value - raw value of the instance settings
+ * @returns the address to bind to
+ */
+export function normalizeBindAddress(value: string | null | undefined): string {
+	const raw = (value ?? "").trim();
+	if (raw === "") {
+		return "127.0.0.1";
+	}
+	if (raw === "*") {
+		return "0.0.0.0";
+	}
+	// [::1]:8082 or 192.168.1.5:8082 - the port belongs to the instance, not to the address
+	const bracketed = /^\[([^\]]+)]:\d+$/.exec(raw);
+	if (bracketed) {
+		return bracketed[1];
+	}
+	const withPort = /^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/.exec(raw);
+	if (withPort) {
+		return withPort[1];
+	}
+	return raw;
+}
+
+/**
  * Starts the HTTP server.
  *
  * @param options - router, port and limits
@@ -127,7 +157,7 @@ function parseQuery(requestUrl: string): Record<string, string | string[]> {
  */
 export async function startWebServer(options: WebServerOptions): Promise<WebServer> {
 	const maxBodyBytes = options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
-	const bind = options.bind?.trim() || "127.0.0.1";
+	const bind = normalizeBindAddress(options.bind);
 	const apiPrefix = normalizePrefix(options.apiPrefix ?? "/api");
 
 	const handle = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {

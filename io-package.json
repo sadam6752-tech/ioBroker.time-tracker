@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.13",
+		"version": "0.0.14",
 		"nogit": true,
 		"news": {
+			"0.0.14": {
+				"en": "the bind address of the instance is picked from the local addresses of the host now: a list in the adapter settings instead of a free text field",
+				"de": "die Bind-Adresse der Instanz wird jetzt aus den lokalen Adressen des Hosts gewählt: eine Auswahlliste in den Adaptereinstellungen statt eines Freitextfelds",
+				"ru": "адрес привязки экземпляра теперь выбирается из локальных адресов хоста: список в настройках адаптера вместо поля ввода",
+				"pt": "o endereço de ligação da instância passa a ser escolhido entre os endereços locais do host: uma lista nas definições do adaptador em vez de um campo de texto",
+				"nl": "het bindadres van de instantie wordt nu gekozen uit de lokale adressen van de host: een lijst in de adapterinstellingen in plaats van een tekstveld",
+				"fr": "l'adresse de liaison de l'instance est désormais choisie parmi les adresses locales de l'hôte : une liste dans les réglages de l'adaptateur au lieu d'un champ de texte",
+				"it": "l'indirizzo di binding dell'istanza viene ora scelto tra gli indirizzi locali dell'host: un elenco nelle impostazioni dell'adattatore al posto di un campo di testo",
+				"es": "la dirección de enlace de la instancia se elige ahora entre las direcciones locales del host: una lista en los ajustes del adaptador en lugar de un campo de texto",
+				"pl": "adres nasłuchu instancji jest teraz wybierany spośród lokalnych adresów hosta: lista w ustawieniach adaptera zamiast pola tekstowego",
+				"uk": "адреса прив'язки екземпляра тепер вибирається з локальних адрес хоста: список у налаштуваннях адаптера замість поля введення",
+				"zh-cn": "实例的绑定地址现在从主机的本地地址中选择：适配器设置中为列表而不是文本输入框"
+			},
 			"0.0.13": {
 				"en": "break rules per employee, an enforced edit window for own punches (corrections right in the month view) and a CSV export of the raw punches in the monthly report",
 				"de": "Pausenregeln je Mitarbeiter, ein wirksames Bearbeitungsfenster für eigene Stempel (Korrektur direkt in der Monatsansicht) und ein CSV-Export der Rohstempel im Monatsbericht",

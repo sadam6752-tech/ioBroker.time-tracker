@@ -251,6 +251,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.0.16 (2026-09-17)
+
+- (Alex) internal: the linter is clean — the 31 missing JSDoc comments are written (fields of inline types and the
+  `createApi` entry point, which had no comment at all), and `npm run lint` refuses warnings from now on, so the
+  list cannot grow back
+- (Alex) internal: `CONTRIBUTING.md` documents the release flow — after a green workflow wait another 5 to 10
+  minutes before checking npm (measured: green run 17:37, npm 17:42), and never delete and re-push the tag of a
+  published version (it removes the GitHub release and npm refuses the second publication)
+
 ### 0.0.15 (2026-09-17)
 
 - (Alex) the **default port** is `8092` now — `8082` is the default of vis and web in ioBroker, so a fresh
@@ -283,68 +292,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 - (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the
   paid part in brackets as soon as there is one) and every day row lists its pause beside worked and target time
-
-### 0.0.11 (2026-09-17)
-
-- (Alex) fix: the totals row of the PDF statement stays complete — every value of a column is measured now, so a
-  total like `187:00` (wider than any single day) is not cut off at the end of its column any more
-- (Alex) the backup screen covers the whole round trip: a copy can be **uploaded** again — the way back for a host
-  that lost its data directory, because the file is checked before it is queued and only then replaces a restore
-  that is already waiting — and a single copy can be **deleted** (after a confirmation, while the automatic
-  retention keeps running in the background)
-- (Alex) the pause of a day can be **measured**: a break that an employee punches is taken from the time sheet —
-  the column “Pause” shows it instead of a flat rule deduction, while a day without a punched break keeps its
-  graduated deduction, and a punched break is never deducted twice. The **work profile** is editable in the app
-  now (employment level, weekly hours, working days, overtime model, vacation, carryovers) and got the number field
-  **“Paid break minutes per day”**: that part of a break is credited as working time (`0` = the break is not paid,
-  `1440` = any length), while the “Pause” column keeps documenting the whole break. Both statements carry a column
-  **“of which paid”** with its own sum, and the **graduated break rules** (Pausenstaffel) have an editor in the
-  settings at last — before that they had no writer at all, so a fresh instance could not deduct anything
-
-### 0.0.10 (2026-09-17)
-
-- (Alex) backups are now usable from the browser: the administration downloads a backup file with one click and
-  restores a listed one for the **next start** of the adapter (the swap needs a closed database), so neither
-  needs a shell on the host any more; a queued restore is announced in the screen and logged on the next start,
-  and the previous database is kept next to it as `<database>.before-restore-<time>`
-
-### 0.0.9 (2026-09-17)
-
-- (Alex) fix: the PDF statement keeps its measured layout — the column headings define the width of their column,
-  so "Arbeitszeit" and "Abwesenheit" stay on one line (and the English "02:00 AM" no longer falls apart); the two
-  signature lines are level because the underscores became a ruled line; and the footer no longer starts a second
-  page that carried nothing but the footer
-- (Alex) fix: the PDF statement refuses Polish instead of drawing nonsense, because the built-in fonts cannot draw
-  "Nieobecność", "święto" or "cały dzień" — `report_font_path` is needed there as well (the labels decide, so the
-  same happens for any other language whose letters are outside the built-in set)
-
-### 0.0.8 (2026-09-17)
-
-- (Alex) the administration downloads the monthly statement of any employee from the year report: the screen has
-  an employee picker (it appears with `report.view_other` and `user.view`), the Excel and PDF buttons follow the
-  selection, and the name of a month opens that month in full — the accounting department no longer has to open
-  a profile for every statement
-- (Alex) internal: the status sections of the README and of the German summary describe the state of the
-  publication again (`0.0.7` on npm, `bluefox` as npm owner, 450 unit / 60 package / 10 integration / 17 browser
-  tests)
-- (Alex) internal: the decision against the legacy import of the predecessor system states its reason
-  (`docs/entscheidungen.md`)
-- (Alex) fix: the texts of the nine translated languages show their values again — `{{minutes}}`, `{{date}}` and
-  `{{conflicts}}` had been translated, so the variable was never filled and the placeholder appeared on screen
-  (`reports.paidOut`, `sync.done`, `sync.conflictOf`, plus one text each in Dutch and Polish)
-- (Alex) fix: wrong machine translations of the core terms are corrected — “punch” as a fist punch (`ru`, `uk`,
-  `pt`, `pl`, `zh-cn`), “day share” as a campaign or as sharing (`ru`, `pt`, `nl`, `fr`, `it`, `es`, `zh-cn`),
-  “taper” instead of the absence type (`fr`), 地位 (“social rank”) instead of the status (`zh-cn`),
-  `reports.overtime` as “after a while” (`ru`), signing in/out instead of punching (`pl`) and `nav.sync` as a
-  verb instead of a noun (seven languages)
-- (Alex) fix: the same kind of mistake in the admin settings is corrected as well — a harbour instead of the
-  port (`nl`, `zh-cn`), blows instead of punches (`it`, `es`, `nl`), a vacation country instead of the country
-  whose public holidays are used (all nine languages) and field names that read like an instruction
-  (`Bind address` in `ru`, `uk`, `fr`, `it`, `es`, `pl`)
-- (Alex) internal: `npm run check:i18n` compares the placeholder names with the base file, including their
-  order, so a translated `{{name}}` fails the check instead of reaching the screen; `docs/i18n.md` records the
-  review state of every language and `docs/testplan.md` names the fonts that were verified with a real statement
-  (`arial.ttf` for `ru`/`uk`, Malgun Gothic for `zh-cn`)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.15",
+		"version": "0.0.16",
 		"nogit": true,
 		"news": {
+			"0.0.16": {
+				"en": "the linter is clean: 31 missing JSDoc comments written, and npm run lint now fails on warnings as well; the release flow is documented (wait for npm after a green run, never re-push a published tag)",
+				"de": "der Linter ist sauber: 31 fehlende JSDoc-Kommentare ergänzt, und npm run lint bricht jetzt auch bei Warnungen ab; der Release-Ablauf ist dokumentiert (nach grünem Lauf auf npm warten, veröffentlichtes Tag nie neu pushen)",
+				"ru": "линтер чист: дописаны 31 отсутствующих JSDoc-комментариев, и npm run lint теперь прерывается и на предупреждениях; процесс релиза документирован (после зелёного запуска дождаться npm, опубликованный тег никогда не переотправлять)",
+				"pt": "o linter está limpo: 31 comentários JSDoc em falta foram escritos e npm run lint passa a falhar também com avisos; o processo de publicação está documentado (esperar pelo npm após um run verde, nunca reenviar uma tag publicada)",
+				"nl": "de linter is schoon: 31 ontbrekende JSDoc-opmerkingen toegevoegd en npm run lint faalt nu ook op waarschuwingen; het releaseproces is gedocumenteerd (na een groene run op npm wachten, een gepubliceerde tag nooit opnieuw pushen)",
+				"fr": "le linter est propre : 31 commentaires JSDoc manquants ont été écrits et npm run lint échoue désormais aussi sur les avertissements ; le processus de publication est documenté (attendre npm après un run vert, ne jamais repousser un tag publié)",
+				"it": "il linter è pulito: scritti i 31 commenti JSDoc mancanti e npm run lint ora fallisce anche sugli avvisi; il processo di rilascio è documentato (attendere npm dopo una run verde, non ripushare mai un tag pubblicato)",
+				"es": "el linter está limpio: se escribieron los 31 comentarios JSDoc que faltaban y npm run lint ahora falla también con avisos; el proceso de publicación está documentado (esperar a npm tras una ejecución verde, nunca volver a subir una etiqueta publicada)",
+				"pl": "linter jest czysty: dopisano 31 brakujących komentarzy JSDoc, a npm run lint przerywa teraz także przy ostrzeżeniach; proces wydania jest udokumentowany (po zielonym przebiegu poczekać na npm, opublikowanego tagu nigdy nie wysyłać ponownie)",
+				"uk": "лінтер чистий: дописано 31 відсутній JSDoc-коментар, і npm run lint тепер переривається й на попередженнях; процес релізу задокументовано (після зеленого запуску дочекатися npm, опублікований тег ніколи не перевідправляти)",
+				"zh-cn": "linter 已清理：补齐了 31 处缺失的 JSDoc 注释，且 npm run lint 现在遇到警告也会失败；发布流程已有文档（绿色运行后等待 npm，切勿重新推送已发布的标签）"
+			},
 			"0.0.15": {
 				"en": "default port 8092 (vis and web use 8082), default holiday country Germany and a clear hint in the instance settings that the generated start password appears once in the ioBroker log",
 				"de": "Standardport 8092 (vis und web nutzen 8082), Standardland für Feiertage Deutschland und ein klarer Hinweis in den Instanz-Einstellungen, dass das erzeugte Startpasswort einmalig im ioBroker-Log steht",
@@ -81,84 +94,6 @@
 				"es": "las copias de seguridad ya se usan desde el navegador: descargar una con un clic y restaurar una de la lista en el próximo arranque del adaptador - la base de datos actual se conserva al lado",
 				"pl": "kopie zapasowe są teraz dostępne w przeglądarce: pobierz kopię jednym kliknięciem i przywróć wybraną przy następnym uruchomieniu adaptera - obecna baza danych pozostaje obok",
 				"zh-cn": "备份现在可在浏览器中使用：一键下载备份，并在适配器下次启动时恢复列表中的备份 - 当前数据库会保留在旁边"
-			},
-			"0.0.9": {
-				"en": "fix: the PDF statement keeps its layout - the column headings no longer break, the two signature lines are level and the footer no longer starts a second page; Polish now asks for a Unicode font instead of showing nonsense",
-				"de": "fix: der PDF-Nachweis behält sein Layout - die Spaltenüberschriften brechen nicht mehr um, die beiden Unterschriftszeilen liegen auf einer Höhe und die Fußzeile erzeugt keine zweite Seite mehr; Polnisch verlangt jetzt eine Unicode-Schrift statt Kauderwelsch zu zeigen",
-				"ru": "fix: PDF-отчёт сохраняет свою разметку - заголовки столбцов больше не переносятся, обе подписи находятся на одном уровне, а нижний колонтитул не создаёт вторую страницу; польский теперь требует Unicode-шрифт вместо нечитаемого текста",
-				"uk": "fix: PDF-звіт зберігає свою розмітку - заголовки стовпців більше не переносяться, обидва підписи на одному рівні, а колонтитул не створює другу сторінку; польська тепер вимагає Unicode-шрифт замість нечитабельного тексту",
-				"pt": "fix: o extrato em PDF mantém o seu layout - os títulos das colunas já não quebram, as duas linhas de assinatura ficam alinhadas e o rodapé não cria uma segunda página; o polaco exige agora uma fonte Unicode em vez de mostrar texto ilegível",
-				"nl": "fix: de PDF-staat behoudt zijn opmaak - de kolomkoppen breken niet meer af, beide handtekeningregels staan op één hoogte en de voettekst maakt geen tweede pagina meer; Pools vraagt nu om een Unicode-lettertype in plaats van onleesbare tekst",
-				"fr": "fix: le relevé PDF garde sa mise en page - les en-têtes de colonnes ne se coupent plus, les deux lignes de signature sont alignées et le pied de page ne crée plus de deuxième page ; le polonais exige désormais une police Unicode au lieu d'afficher du texte illisible",
-				"it": "fix: l'estratto in PDF mantiene il layout - le intestazioni delle colonne non si spezzano più, le due righe di firma sono allineate e il piè di pagina non crea più una seconda pagina; il polacco ora richiede un font Unicode invece di mostrare testo illeggibile",
-				"es": "fix: el extracto en PDF mantiene su diseño - los encabezados de columna ya no se cortan, las dos líneas de firma están alineadas y el pie de página ya no crea una segunda página; el polaco ahora exige una fuente Unicode en lugar de mostrar texto ilegible",
-				"pl": "fix: zestawienie PDF zachowuje swój układ - nagłówki kolumn nie łamią się już, obie linie podpisu są wyrównane, a stopka nie tworzy drugiej strony; polski wymaga teraz czcionki Unicode zamiast nieczytelnego tekstu",
-				"zh-cn": "fix: PDF 工时表保持其版式 - 列标题不再换行，两条签名线对齐，页脚不再生成第二页；波兰语现在要求使用 Unicode 字体，而不再显示乱码"
-			},
-			"0.0.8": {
-				"en": "fix: the texts of the nine translated languages show their values again (translated placeholders like `{{minutes}}`, wrong terms like “punch” as a fist punch) - new: the administration downloads the monthly statement of any employee from the year report",
-				"de": "fix: die Texte der neun übersetzten Sprachen zeigen ihre Werte wieder (mitübersetzte Platzhalter wie `{{minutes}}`, falsche Begriffe wie „punch“ als Faustschlag) - neu: die Verwaltung lädt den Monatsnachweis jedes Mitarbeiters direkt im Jahresbericht",
-				"ru": "fix: тексты девяти переведённых языков снова показывают свои значения (переведённые подстановки вроде `{{minutes}}`, неверные термины вроде «punch» как удар кулаком) - новое: администрация скачивает месячный отчёт любого сотрудника прямо из годового отчёта",
-				"uk": "fix: тексти дев'яти перекладених мов знову показують свої значення (перекладені підстановки як `{{minutes}}`, хибні терміни як «punch» у значенні удару кулаком) - нове: адміністрація завантажує місячний звіт будь-якого співробітника прямо з річного звіту",
-				"pt": "fix: os textos dos nove idiomas traduzidos voltam a mostrar os seus valores (espaços reservados traduzidos como `{{minutes}}`, termos errados como “punch” = murro) - novo: a administração descarrega o extrato mensal de qualquer colaborador a partir do relatório anual",
-				"nl": "fix: de teksten van de negen vertaalde talen tonen hun waarden weer (vertaalde plaatsaanduidingen zoals `{{minutes}}`, verkeerde termen zoals “punch” als vuistslag) - nieuw: de administratie downloadt de maandstaat van elke medewerker vanuit het jaarrapport",
-				"fr": "fix: les textes des neuf langues traduites affichent à nouveau leurs valeurs (variables traduites comme `{{minutes}}`, termes erronés comme « punch » = coup de poing) - nouveau : l'administration télécharge le relevé mensuel de tout collaborateur depuis le rapport annuel",
-				"it": "fix: i testi delle nove lingue tradotte mostrano di nuovo i loro valori (segnaposto tradotti come `{{minutes}}`, termini errati come “punch” = pugno) - nuovo: l'amministrazione scarica l'estratto mensile di qualsiasi collaboratore dal report annuale",
-				"es": "fix: los textos de los nueve idiomas traducidos vuelven a mostrar sus valores (marcadores traducidos como `{{minutes}}`, términos erróneos como «punch» = puñetazo) - nuevo: la administración descarga el extracto mensual de cualquier empleado desde el informe anual",
-				"pl": "fix: teksty w dziewięciu przetłumaczonych językach ponownie pokazują swoje wartości (przetłumaczone znaczniki jak `{{minutes}}`, błędne terminy jak „punch“ = uderzenie pięścią) - nowość: administracja pobiera miesięczne zestawienie dowolnego pracownika z raportu rocznego",
-				"zh-cn": "fix: 九种翻译语言再次显示其数值（被翻译的占位符如 `{{minutes}}`，错误术语如把 punch 译成出拳）- 新增：管理员可直接从年度报告中下载任意员工的月度工时表"
-			},
-			"0.0.7": {
-				"en": "fix: the published package contains the web app again - releases up to 0.0.6 shipped without `www/`, so the web interface answered 404",
-				"de": "fix: das veröffentlichte Paket enthält die Web-App wieder - die Releases bis 0.0.6 wurden ohne `www/` ausgeliefert, deshalb antwortete die Web-Oberfläche mit 404",
-				"ru": "fix: опубликованный пакет снова содержит веб-приложение - версии до 0.0.6 поставлялись без `www/`, поэтому веб-интерфейс отвечал 404",
-				"uk": "fix: опублікований пакет знову містить веб-застосунок - версії до 0.0.6 постачалися без `www/`, тому веб-інтерфейс відповідав 404",
-				"pl": "fix: opublikowany pakiet ponownie zawiera aplikację webową - wersje do 0.0.6 były dostarczane bez `www/`, dlatego interfejs odpowiadał 404",
-				"fr": "fix: le paquet publié contient à nouveau l'application web - les versions jusqu'à 0.0.6 étaient livrées sans `www/`, l'interface répondait donc 404",
-				"it": "fix: il pacchetto pubblicato contiene di nuovo l'app web - le versioni fino alla 0.0.6 erano distribuite senza `www/`, perciò l'interfaccia rispondeva 404",
-				"es": "fix: el paquete publicado vuelve a incluir la aplicación web - las versiones hasta la 0.0.6 se entregaban sin `www/`, por eso la interfaz respondía 404",
-				"pt": "fix: o pacote publicado volta a incluir a aplicação web - as versões até à 0.0.6 eram entregues sem `www/`, por isso a interface respondia 404",
-				"nl": "fix: het gepubliceerde pakket bevat de webapp weer - de versies tot 0.0.6 werden zonder `www/` geleverd, waardoor de webinterface 404 antwoordde",
-				"zh-cn": "fix: 发布包重新包含 Web 应用 - 0.0.6 及更早版本未包含 `www/`，因此 Web 界面返回 404"
-			},
-			"0.0.6": {
-				"en": "fix: the buttons of a list row (employees, terminals, holidays, badges, absences and the correction list) no longer cover the names on a phone, and an absence names its type again",
-				"de": "fix: die Schaltflächen einer Listenzeile (Mitarbeiter, Terminals, Feiertage, Ausweise, Abwesenheiten und Zeitkorrektur) verdecken auf dem Handy keine Namen mehr, und eine Abwesenheit nennt ihren Typ wieder",
-				"ru": "fix: кнопки в строке списка (сотрудники, терминалы, праздники, пропуска, отсутствия и коррекция времени) больше не закрывают имена на телефоне, а отсутствие снова называет свой тип",
-				"uk": "fix: кнопки в рядку списку (працівники, термінали, свята, перепустки, відсутності та коригування часу) більше не закривають імена на телефоні, а відсутність знову називає свій тип",
-				"pl": "fix: przyciski w wierszu listy (pracownicy, terminale, święta, identyfikatory, nieobecności i korekta czasu) nie zasłaniają już nazwisk na telefonie, a nieobecność ponownie podaje swój typ",
-				"fr": "fix: les boutons d'une ligne de liste (employés, terminaux, jours fériés, badges, absences et correction des temps) ne recouvrent plus les noms sur un téléphone, et une absence indique à nouveau son type",
-				"it": "fix: i pulsanti di una riga di elenco (dipendenti, terminali, giorni festivi, badge, assenze e correzione dei tempi) non coprono più i nomi sullo smartphone, e un'assenza indica di nuovo il suo tipo",
-				"es": "fix: los botones de una fila de la lista (empleados, terminales, festivos, credenciales, ausencias y corrección de tiempos) ya no tapan los nombres en el móvil, y una ausencia vuelve a indicar su tipo",
-				"pt": "fix: os botões de uma linha da lista (funcionários, terminais, feriados, crachás, ausências e correção de tempos) já não tapam os nomes no telemóvel, e uma ausência volta a indicar o seu tipo",
-				"nl": "fix: de knoppen van een lijstregel (medewerkers, terminals, feestdagen, pasjes, afwezigheden en tijdcorrectie) bedekken op een telefoon geen namen meer, en een afwezigheid noemt weer zijn type",
-				"zh-cn": "fix: 列表行中的按钮（员工、终端、节假日、证卡、缺勤和时间更正）不再遮挡手机上的姓名，缺勤会再次显示其类型"
-			},
-			"0.0.5": {
-				"en": "The four settings of the first administrator are now translated in all 11 languages",
-				"de": "Die vier Einstellungen des ersten Administrators sind jetzt in allen 11 Sprachen übersetzt",
-				"ru": "Четыре настройки первого администратора теперь переведены на все 11 языков",
-				"pt": "As quatro definições do primeiro administrador estão agora traduzidas nos 11 idiomas",
-				"nl": "De vier instellingen van de eerste beheerder zijn nu in alle 11 talen vertaald",
-				"fr": "Les quatre paramètres du premier administrateur sont désormais traduits dans les 11 langues",
-				"it": "Le quattro impostazioni del primo amministratore sono ora tradotte in tutte le 11 lingue",
-				"es": "Los cuatro ajustes del primer administrador ahora están traducidos en los 11 idiomas",
-				"pl": "Cztery ustawienia pierwszego administratora są teraz przetłumaczone na wszystkie 11 języków",
-				"uk": "Чотири налаштування першого адміністратора тепер перекладено всіма 11 мовами",
-				"zh-cn": "第一个管理员的四项设置现已翻译成全部 11 种语言"
-			},
-			"0.0.4": {
-				"en": "First release: punching via the PWA or a kiosk terminal (badge, PIN, PIN duty per device, employees per device), absences, corrections, monthly reports (PDF/XLS), statistics, RFID/NFC, roles and permissions, branding, 11 languages",
-				"de": "Erste Veröffentlichung: Stempeln über die PWA oder ein Kiosk-Terminal (Ausweis, PIN, PIN-Pflicht je Gerät, Mitarbeiter je Gerät), Abwesenheiten, Zeitkorrekturen, Monatsberichte (PDF/XLS), Statistik, RFID/NFC, Rollen und Rechte, Branding, 11 Sprachen",
-				"ru": "Первый выпуск: отметка через PWA или киоск-терминал (карта, PIN, PIN на устройство, сотрудники на устройство), отсутствия, корректировки, месячные отчёты (PDF/XLS), статистика, RFID/NFC, роли и права, брендирование, 11 языков",
-				"pt": "Primeira versão: marcação através da PWA ou de um terminal de quiosque (cartão, PIN, PIN por dispositivo, funcionários por dispositivo), ausências, correções, relatórios mensais (PDF/XLS), estatísticas, RFID/NFC, funções e permissões, branding, 11 idiomas",
-				"nl": "Eerste uitgave: stempelen via de PWA of een kioskterminal (badge, pincode, pincode per apparaat, medewerkers per apparaat), afwezigheden, correcties, maandrapporten (PDF/XLS), statistieken, RFID/NFC, rollen en rechten, branding, 11 talen",
-				"fr": "Première version : pointage via la PWA ou une borne (badge, code PIN, code PIN par appareil, employés par appareil), absences, corrections, rapports mensuels (PDF/XLS), statistiques, RFID/NFC, rôles et droits, branding, 11 langues",
-				"it": "Prima versione: timbratura tramite la PWA o un terminale (badge, PIN, PIN per dispositivo, dipendenti per dispositivo), assenze, correzioni, rapporti mensili (PDF/XLS), statistiche, RFID/NFC, ruoli e permessi, branding, 11 lingue",
-				"es": "Primera versión: fichaje mediante la PWA o un terminal (tarjeta, PIN, PIN por dispositivo, empleados por dispositivo), ausencias, correcciones, informes mensuales (PDF/XLS), estadísticas, RFID/NFC, roles y permisos, branding, 11 idiomas",
-				"pl": "Pierwsze wydanie: rejestracja przez PWA lub terminal (karta, PIN, PIN na urządzenie, pracownicy na urządzenie), nieobecności, korekty, raporty miesięczne (PDF/XLS), statystyki, RFID/NFC, role i uprawnienia, branding, 11 języków",
-				"uk": "Перший випуск: відмітка через PWA або кіоск-термінал (картка, PIN, PIN на пристрій, співробітники на пристрій), відсутності, коригування, місячні звіти (PDF/XLS), статистика, RFID/NFC, ролі та права, брендування, 11 мов",
-				"zh-cn": "首次发布：通过 PWA 或终端打卡（证件、PIN、按设备设置 PIN、按设备分配员工）、缺勤、更正、月度报表（PDF/XLS）、统计、RFID/NFC、角色与权限、品牌、11 种语言"
 			}
 		},
 		"titleLang": {

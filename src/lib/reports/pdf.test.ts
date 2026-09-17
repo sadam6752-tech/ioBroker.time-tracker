@@ -392,6 +392,24 @@ describe("monthly report (pdf)", () => {
 		expect(textOf(pdf)).to.not.match(/_{5,}/);
 	});
 
+	it("keeps the values of the totals row on one line", async () => {
+		// two days of 1:30 each: the total "3:00" is wider than any single day, and the column has to hold it
+		const pdf = await buildMonthStatement({
+			...baseInput,
+			days: [
+				day("2026-09-01", { workedMin: 90, breakMin: 0, targetMin: 480, balanceMin: -390 }),
+				day("2026-09-02", { workedMin: 90, breakMin: 0, targetMin: 480, balanceMin: -390 }),
+			],
+		});
+		const pieces = piecesOf(pdf);
+		const totalsRow = pieces.find(piece => piece.text === baseInput.labels.total);
+		const row = pieces.filter(piece => piece.y === totalsRow?.y).map(piece => piece.text);
+
+		expect(totalsRow, "the totals row is drawn").to.not.equal(undefined);
+		// every number of that row is one piece: a wrapped one would end up on the line below
+		expect(row).to.include.members(["3:00", "0:00", "16:00", "-13:00", "Tage: 2"]);
+	});
+
 	it("refuses Polish, whose letters are outside the built-in fonts", async () => {
 		const polish = reportLabels("pl-PL");
 		let failure: unknown = null;

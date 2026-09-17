@@ -147,14 +147,14 @@ function chooseFonts(language: string, fontPath: string | null | undefined, labe
  * @param doc - document the texts are measured on
  * @param fonts - fonts of the statement
  * @param labels - labels of the employee's language
- * @param samples - texts that stand in for the values of a column
+ * @param samples - the texts of a column, so the column is wide enough for every one of them
  * @returns the columns and the font size of the heading row
  */
 function measureColumns(
 	doc: PDFKit.PDFDocument,
 	fonts: FontChoice,
 	labels: ReportLabels,
-	samples: Partial<Record<keyof ReportLabels, string>>,
+	samples: Partial<Record<keyof ReportLabels, string[]>>,
 ): { columns: MeasuredColumn[]; headerSize: number } {
 	const available = doc.page.width - 2 * LAYOUT.margin;
 	const smallest = HEADER_SIZES.length - 1;
@@ -164,8 +164,15 @@ function measureColumns(
 			doc.font(fonts.bold).fontSize(size);
 			const heading = doc.widthOfString(labels[column.key]);
 			doc.font(fonts.regular).fontSize(LAYOUT.fontSize);
-			const value = doc.widthOfString(samples[column.key] ?? column.sample);
-			return Math.max(heading, value) + COLUMN_PADDING;
+			// every value of the column is measured: a total is wider than a single day ("187:00" against
+			// "8:00"), and measuring only a sample would break that number in the middle
+			const texts = samples[column.key] ?? [column.sample];
+			const value = Math.max(
+				...(texts.length > 0 ? texts : [column.sample]).map(text => doc.widthOfString(text)),
+			);
+			// two paddings: one is the gap to the next column, the other keeps the text off the edge — a text that
+			// fills its box to the last point is wrapped (or cut) after the last character by the renderer
+			return Math.max(heading, value) + 2 * COLUMN_PADDING;
 		});
 		const total = needed.reduce((sum, width) => sum + width, 0);
 		if (total > available && index < smallest) {
@@ -287,18 +294,31 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 	 * @param second - second text
 	 * @returns the longer text
 	 */
-	const longer = (first: string, second: string): string => (first.length >= second.length ? first : second);
+	// The values of every column are summed up here: the totals are drawn in the row below and their width is
+	// what the columns are measured against, so a total like "187:00" gets the room it needs.
+	const totals = input.days.reduce(
+		(sum, day) => ({
+			worked: sum.worked + day.workedMin,
+			breaks: sum.breaks + day.breakMin,
+			target: sum.target + day.targetMin,
+			balance: sum.balance + day.balanceMin,
+		}),
+		{ worked: 0, breaks: 0, target: 0, balance: 0 },
+	);
+	/** The widest time of a day: in English a time carries an "AM"/"PM" marker, so "11:59 PM" is what fits. */
+	const widestTime = formatTime(Date.UTC(2026, 0, 1, 23, 59) / 1000, "UTC", locale);
+
 	const { columns, headerSize } = measureColumns(doc, fonts, labels, {
 		// the date column holds the dates of the report: "czw., 30.09.2026" is wider than "Thu, 30.09.2026"
-		date: longer(formatDate(from, locale), formatDate(to, locale)),
-		// the time columns hold formatted times: in English these carry an "AM"/"PM" marker, so the widest
-		// representation of a day is measured ("11:59 PM")
-		timeIn: formatTime(Date.UTC(2026, 0, 1, 23, 59) / 1000, "UTC", locale),
-		timeOut: formatTime(Date.UTC(2026, 0, 1, 23, 59) / 1000, "UTC", locale),
+		date: input.days.map(day => formatDate(day.localDate, locale)),
+		timeIn: [...input.days.map(day => formatTime(day.firstInUtc, user.timezone, locale)), widestTime],
+		timeOut: [...input.days.map(day => formatTime(day.lastOutUtc, user.timezone, locale)), widestTime],
+		worked: [...input.days.map(day => formatMinutes(day.workedMin)), formatMinutes(totals.worked)],
+		breaks: [...input.days.map(day => formatMinutes(day.breakMin)), formatMinutes(totals.breaks)],
+		target: [...input.days.map(day => formatMinutes(day.targetMin)), formatMinutes(totals.target)],
+		balance: [...input.days.map(day => formatMinutes(day.balanceMin)), formatMinutes(totals.balance)],
 		// the note column carries the marks of a day: a public holiday and a punch without a counterpart
-		note: `${labels.holiday}, ${labels.openEntry}`,
-		// a balance is negative more often than not, and the minus sign makes the column wider
-		balance: "-00:00",
+		note: [labels.holiday, labels.openEntry, `${labels.holiday}, ${labels.openEntry}`],
 	});
 
 	/**
@@ -363,7 +383,6 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 
 	// --- days -----------------------------------------------------------------
 	drawHeaderRow();
-	const totals = { worked: 0, breaks: 0, target: 0, balance: 0 };
 
 	for (const day of input.days) {
 		// one more page when the month does not fit (defensive: 31 rows always fit on one A4 page)
@@ -398,11 +417,6 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 				color: day.balanceMin < 0 ? "#c62828" : day.isHoliday || day.workedMin === 0 ? "#757575" : "#000000",
 			},
 		);
-
-		totals.worked += day.workedMin;
-		totals.breaks += day.breakMin;
-		totals.target += day.targetMin;
-		totals.balance += day.balanceMin;
 	}
 
 	drawRow(

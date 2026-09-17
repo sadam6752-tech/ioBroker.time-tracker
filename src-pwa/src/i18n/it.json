@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Colore di sfondo",
 	"admin.settings.brandColorHint": "Valore esadecimale come #1a2b3c",
 	"admin.settings.brandColorPresets": "Colori suggeriti",
-	"admin.settings.brandColorDefault": "Predefinito"
+	"admin.settings.brandColorDefault": "Predefinito",
+	"admin.backup.download": "Scarica",
+	"admin.backup.restore": "Ripristina",
+	"admin.backup.restoreTitle": "Ripristinare un backup",
+	"admin.backup.restoreConfirm": "Il backup {{name}} viene applicato al prossimo avvio dell'adattatore; il database attuale resta accanto come file. Riavvia poi l'istanza.",
+	"admin.backup.pendingHint": "{{name}} viene applicato al prossimo avvio ({{users}} dipendenti, {{entries}} timbrature) - riavvia l'istanza.",
+	"error.backup_invalid": "Quel file non è un backup di questo adattatore."
 }

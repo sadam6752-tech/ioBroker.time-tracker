@@ -216,6 +216,22 @@ export interface BackupFile {
 	createdAt: number;
 }
 
+/** A restore that waits for the next start of the adapter. */
+export interface PendingRestore {
+	/** Name of the file that will be applied */
+	name: string;
+	/** Who queued it, `null` for the system */
+	actorId: number | null;
+	/** Instant it was queued, UTC epoch seconds */
+	queuedAt: number;
+	/** Size in bytes */
+	sizeBytes: number;
+	/** Number of employees in the file */
+	users: number;
+	/** Number of punches in the file */
+	entries: number;
+}
+
 /** Input for creating an employee. */
 export interface CreateUserInput {
 	/** Login name */

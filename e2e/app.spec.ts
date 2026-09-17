@@ -146,6 +146,22 @@ test("hands the statement of an employee to the administration", async ({ page }
 	await expect(page.getByRole("heading", { name: /Monat · Anna Muster/ })).toBeVisible();
 });
 
+test("lets the administration download a backup", async ({ page }) => {
+	await signIn(page);
+	// the administration sits behind a menu; the route is stable, so the test goes there directly
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Sicherungen" }).click();
+
+	// take one, then fetch it: the list refreshes, so the download button appears a moment later
+	await page.getByRole("button", { name: "Sicherung jetzt erstellen" }).click();
+	const downloadButton = page.getByTitle("Herunterladen").first();
+	await expect(downloadButton).toBeVisible();
+
+	const download = page.waitForEvent("download");
+	await downloadButton.click();
+	expect((await download).suggestedFilename()).toMatch(/zeiterfassung-.*\.sqlite$/i);
+});
+
 test("requests an absence in the form and finds it in the year", async ({ page, request }) => {
 	await signIn(page);
 	await page.getByRole("button", { name: "Abwesenheiten" }).click();

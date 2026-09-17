@@ -15,6 +15,7 @@
  */
 
 import { createHash } from "node:crypto";
+import * as fs from "node:fs";
 
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
@@ -2731,8 +2732,23 @@ export function createApi(deps: ApiDeps): Api {
 			json(200, {
 				retentionDays: settings.getNumber("backup_retention_days", 30),
 				backups: backup.list(),
+				// a restore that waits for the next start, so the screen can say so
+				pending: backup.pending(),
 			}),
 		);
+
+		route("GET", "/backup/:name", { permission: "backup.run" }, context => {
+			// only files the service knows are served: the requested name never reaches the file system
+			const wanted = context.params.name;
+			const file = backup.list().find(entry => entry.name === wanted);
+			if (!file) {
+				throw new NotFoundError(`backup ${wanted} not found`);
+			}
+			return binary(200, fs.readFileSync(file.file), "application/vnd.sqlite3", {
+				"content-disposition": `attachment; filename="${file.name}"`,
+				"cache-control": "no-store",
+			});
+		});
 
 		route(
 			"POST",
@@ -2745,6 +2761,35 @@ export function createApi(deps: ApiDeps): Api {
 				});
 				emit({ type: "backup.create", userId: null, data: { backup: created.backup.name } });
 				return json(201, { backup: created.backup, removed: created.removed });
+			},
+		);
+
+		// One of the listed backups is queued for the next start: the swap itself happens while the adapter starts,
+		// because a restore needs a closed database (see `restore` in the backup service). Only files of the list are
+		// accepted, so the requested name never reaches the file system.
+		route(
+			"POST",
+			"/backup/restore",
+			{ permission: "backup.run", csrf: true, rateLimit: { name: "backup", limit: 10, windowSeconds: 60 } },
+			context => {
+				const body = context.jsonBody();
+				const name = typeof body.name === "string" ? body.name.trim() : "";
+				if (name === "") {
+					throw problem(400, "backup_invalid", "the request needs `name` with one of the listed backups");
+				}
+				try {
+					const pending = backup.queueExistingBackup(name, {
+						actorId: context.auth?.user.id ?? null,
+						reason: typeof body.reason === "string" ? body.reason : undefined,
+					});
+					return json(201, { pending });
+				} catch (error) {
+					if (error instanceof ValidationError) {
+						// the file is not a backup of this adapter: the message says what is wrong with it
+						throw problem(400, "backup_invalid", error.message);
+					}
+					throw error;
+				}
 			},
 		);
 	}

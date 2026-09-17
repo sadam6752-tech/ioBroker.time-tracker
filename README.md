@@ -119,7 +119,7 @@ The web app itself covers the punch screen, the month calendar, the year report 
 and, for the administration, the picker for an employee), absences, the offline queue with its conflict view and
 the profile. Callers holding `user.view` or `backup.run`
 additionally get an **administration** entry in the menu: employees (create, activate/deactivate, badge PIN) and
-database backups (list, retention, "create now").
+database backups (list, download, restore for the next start, and "create now").
 
 ### Kiosk terminal
 
@@ -314,6 +314,10 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### 0.0.9 (2026-09-17)
 
+- (Alex) backups are now usable from the browser: the administration downloads a backup file with one click and
+  restores a listed one for the **next start** of the adapter (the swap needs a closed database), so neither
+  needs a shell on the host any more; a queued restore is announced in the screen and logged on the next start,
+  and the previous database is kept next to it as `<database>.before-restore-<time>`
 - (Alex) fix: the PDF statement keeps its measured layout — the column headings define the width of their column,
   so "Arbeitszeit" and "Abwesenheit" stay on one line (and the English "02:00 AM" no longer falls apart); the two
   signature lines are level because the underscores became a ruled line; and the footer no longer starts a second

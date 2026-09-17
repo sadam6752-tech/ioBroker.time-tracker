@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "背景颜色",
 	"admin.settings.brandColorHint": "十六进制值，例如 #1a2b3c",
 	"admin.settings.brandColorPresets": "建议颜色",
-	"admin.settings.brandColorDefault": "默认"
+	"admin.settings.brandColorDefault": "默认",
+	"admin.backup.download": "下载",
+	"admin.backup.restore": "恢复",
+	"admin.backup.restoreTitle": "恢复备份",
+	"admin.backup.restoreConfirm": "备份 {{name}} 将在适配器下次启动时应用；当前数据库会以文件形式保留在旁边。之后请重启实例。",
+	"admin.backup.pendingHint": "{{name}} 将在下次启动时应用（{{users}} 名员工，{{entries}} 条打卡）- 请重启实例。",
+	"error.backup_invalid": "该文件不是此适配器的备份。"
 }

@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Color de fondo",
 	"admin.settings.brandColorHint": "Valor hexadecimal como #1a2b3c",
 	"admin.settings.brandColorPresets": "Colores sugeridos",
-	"admin.settings.brandColorDefault": "Predeterminado"
+	"admin.settings.brandColorDefault": "Predeterminado",
+	"admin.backup.download": "Descargar",
+	"admin.backup.restore": "Restaurar",
+	"admin.backup.restoreTitle": "Restaurar una copia de seguridad",
+	"admin.backup.restoreConfirm": "La copia de seguridad {{name}} se aplica en el próximo arranque del adaptador; la base de datos actual se conserva al lado como archivo. Reinicia la instancia después.",
+	"admin.backup.pendingHint": "{{name}} se aplica en el próximo arranque ({{users}} empleados, {{entries}} fichajes) - reinicia la instancia.",
+	"error.backup_invalid": "Ese archivo no es una copia de seguridad de este adaptador."
 }

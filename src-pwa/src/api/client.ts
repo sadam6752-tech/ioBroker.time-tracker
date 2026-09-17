@@ -14,6 +14,7 @@ import type {
 	AbsenceType,
 	AdminUser,
 	BackupFile,
+	PendingRestore,
 	Branding,
 	Conflict,
 	CreateUserInput,
@@ -215,8 +216,12 @@ export interface ApiClient {
 	/** Figures of a date range, per employee and in total */
 	statistics(from: string, to: string, userId?: number): Promise<StatisticsResult>;
 	/** Redeems a scanned badge link (public, no session needed) */
-	scanTag(token: string): Promise<ScanResult>; /** Known database backups and the retention */
-	backups(): Promise<{ retentionDays: number; backups: BackupFile[] }>;
+	scanTag(token: string): Promise<ScanResult>; /** Known database backups, the retention and a queued restore */
+	backups(): Promise<{ retentionDays: number; backups: BackupFile[]; pending: PendingRestore | null }>;
+	/** Downloads a backup file */
+	downloadBackup(name: string): Promise<DownloadFile>;
+	/** Queues a backup for the next start of the adapter */
+	restoreBackup(name: string, reason?: string): Promise<{ pending: PendingRestore }>;
 	/** Takes a database backup */
 	createBackup(): Promise<{ backup: BackupFile; removed: string[] }>;
 	/** Status of the kiosk terminal */
@@ -836,7 +841,15 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			return request<ScanResult>("POST", "/rfid/scan", { body: { token }, anonymous: true });
 		},
 
-		backups: () => request("GET", "/backup"),
+		backups: () =>
+			request<{ retentionDays: number; backups: BackupFile[]; pending: PendingRestore | null }>("GET", "/backup"),
+
+		downloadBackup: name => requestDownload(`/backup/${encodeURIComponent(name)}`, {}),
+
+		restoreBackup: (name, reason) =>
+			request<{ pending: PendingRestore }>("POST", "/backup/restore", {
+				body: { name, ...(reason ? { reason } : {}) },
+			}),
 
 		createBackup: () => request("POST", "/backup"),
 	};

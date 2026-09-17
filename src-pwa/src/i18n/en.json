@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Background colour",
 	"admin.settings.brandColorHint": "Hex value like #1a2b3c, empty for the default",
 	"admin.settings.brandColorPresets": "Suggested colours",
-	"admin.settings.brandColorDefault": "Default"
+	"admin.settings.brandColorDefault": "Default",
+	"admin.backup.download": "Download",
+	"admin.backup.restore": "Restore",
+	"admin.backup.restoreTitle": "Restore a backup",
+	"admin.backup.restoreConfirm": "The backup {{name}} is applied when the adapter starts next time; the current database is kept next to it as a file. Restart the instance afterwards.",
+	"admin.backup.pendingHint": "{{name}} is applied when the adapter starts next time ({{users}} employees, {{entries}} punches) - restart the instance.",
+	"error.backup_invalid": "That file is not a backup of this adapter."
 }

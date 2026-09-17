@@ -26,7 +26,13 @@ import { createAggregationService, type AggregationService } from "./lib/service
 import { createAuthService, hashPassword } from "./lib/services/auth";
 import { SECRET_FILE_NAME, resolveSessionSecret } from "./lib/services/sessionSecret";
 import { createClosingService, type ClosingService } from "./lib/services/closing";
-import { createBackupService, type BackupService } from "./lib/services/backup";
+import {
+	applyPendingRestore,
+	createBackupService,
+	recordRestore,
+	type AppliedRestore,
+	type BackupService,
+} from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
 import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
@@ -105,7 +111,25 @@ class Zeiterfassung extends utils.Adapter {
 			await this.setState("info.connection", false, true);
 
 			const file = this.databaseFile();
+			// A restore that the administration queued is applied before the database is opened: the swap needs a
+			// closed file, and that is the only moment the adapter can offer it (see the backup service).
+			let applied: AppliedRestore | null = null;
+			try {
+				applied = applyPendingRestore(file);
+				if (applied) {
+					this.log.info(
+						`restored the database from ${applied.restored.name}: ${applied.restored.users} users, ${applied.restored.entries} punches, previous file ${applied.previous ?? "(none)"}`,
+					);
+				}
+			} catch (error) {
+				// the queued files stay in place, so a working backup can be handed in afterwards
+				this.log.error(`the queued restore was refused: ${(error as Error).message}`);
+			}
 			this.db = openAndMigrate(file, message => this.log.debug(message));
+			if (applied) {
+				// the audit entry can only be written once the restored database is open
+				recordRestore(this.db, applied.restored, applied.actorId);
+			}
 
 			const year = new Date().getUTCFullYear();
 			const country = this.holidayCountry();

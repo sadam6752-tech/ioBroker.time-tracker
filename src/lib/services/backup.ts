@@ -87,10 +87,218 @@ export interface BackupService {
 	verify(file: string): BackupInfo;
 	/** Replaces the database file with a backup (the database must be closed) */
 	restore(file: string): RestoreResult;
+	/** Queues an uploaded backup for the next start (the file is checked before it is kept) */
+	queueRestore(
+		upload: Buffer,
+		input?: { name?: string; actorId?: number | null; reason?: string },
+	): PendingRestoreInfo;
+	/** Queues one of the known backups for the next start */
+	queueExistingBackup(name: string, input?: { actorId?: number | null; reason?: string }): PendingRestoreInfo;
+	/** The restore that waits for the next start, `null` when there is none */
+	pending(): PendingRestoreInfo | null;
 }
 
 /** Default prefix of the backup files. */
 const DEFAULT_PREFIX = "zeiterfassung-";
+
+/** Name of a backup that waits for the next start of the adapter. */
+export const RESTORE_PENDING_FILE = "restore-pending.sqlite";
+
+/** Sidecar of a pending restore: who queued it and what the file contains. */
+export const RESTORE_PENDING_INFO = "restore-pending.json";
+
+/** A restore that waits for the next adapter start. */
+export interface PendingRestoreInfo {
+	/** Name the uploader gave the file, used for the download */
+	name: string;
+	/** Who queued the restore, `null` for the system */
+	actorId: number | null;
+	/** Instant the restore was queued, UTC epoch seconds */
+	queuedAt: number;
+	/** Size in bytes */
+	sizeBytes: number;
+	/** Number of employees in the file */
+	users: number;
+	/** Number of punches in the file */
+	entries: number;
+}
+
+/** Result of applying a queued restore at startup. */
+export interface AppliedRestore {
+	/** The file that became the database */
+	restored: BackupInfo;
+	/** Path the previous database was moved to, `null` when there was none */
+	previous: string | null;
+	/** Who queued it, `null` for the system */
+	actorId: number | null;
+}
+
+/**
+ * Checks a database file: readable, consistent and of this schema.
+ *
+ * The file is opened read-only, so a check never touches it. A file that is not a database, is damaged or comes
+ * from a different schema is refused with a message that says why.
+ *
+ * @param file - path of the file
+ * @param prefix - file name prefix, used to read the time from the name
+ * @returns information about the checked file
+ */
+export function verifyBackupFile(file: string, prefix: string = DEFAULT_PREFIX): BackupInfo {
+	if (!fs.existsSync(file)) {
+		throw new ValidationError(`backup ${path.basename(file)} does not exist`);
+	}
+
+	const sizeBytes = fs.statSync(file).size;
+	let check: Database.Database;
+	try {
+		check = new Database(file, { readonly: true, fileMustExist: true });
+	} catch (error) {
+		throw new ValidationError(
+			`backup ${path.basename(file)} is not a readable database (${(error as Error).message})`,
+		);
+	}
+
+	const name = path.basename(file);
+	try {
+		// SQLite opens a file lazily, so a file that is not a database only fails on the first read
+		const integrity = check.pragma("integrity_check", { simple: true });
+		if (integrity !== "ok") {
+			throw new ValidationError(`backup ${name} is damaged: ${String(integrity)}`);
+		}
+		const version = check.prepare("SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations").get() as
+			{ version: number } | undefined;
+		if (!version) {
+			throw new ValidationError(`backup ${name} has no schema information`);
+		}
+		const users = check.prepare("SELECT COUNT(*) AS count FROM users").get() as { count: number };
+		const entries = check.prepare("SELECT COUNT(*) AS count FROM time_entries").get() as { count: number };
+
+		return {
+			name,
+			file,
+			sizeBytes,
+			createdAt: createdAtOf(name, prefix) ?? Math.floor(Date.now() / 1000),
+			schemaVersion: version.version,
+			users: users.count,
+			entries: entries.count,
+		};
+	} catch (error) {
+		if (error instanceof ValidationError) {
+			throw error;
+		}
+		const message = (error as Error).message;
+		throw new ValidationError(
+			/not a database|notadb/i.test(message)
+				? `backup ${name} is not a readable database (${message})`
+				: `backup ${name} is not a backup of this adapter (${message})`,
+		);
+	} finally {
+		check.close();
+	}
+}
+
+/**
+ * Replaces a database file with a backup file.
+ *
+ * The caller closes the database first; a file that does not pass {@link verifyBackupFile} never touches the
+ * database, and the previous file is kept next to it (`<database>.before-restore-<stamp>`).
+ *
+ * @param dbFile - path of the database
+ * @param backupFile - path of the backup to apply
+ * @param now - instant source, defaults to the system clock
+ * @returns path the previous database was moved to, `null` when there was none
+ */
+export function swapDatabaseFile(
+	dbFile: string,
+	backupFile: string,
+	now: () => number = () => Math.floor(Date.now() / 1000),
+): string | null {
+	if (!dbFile || dbFile === ":memory:") {
+		throw new ValidationError("an in-memory database cannot be restored");
+	}
+
+	// the journal of the old database would shadow the restored file
+	for (const suffix of ["-wal", "-shm"]) {
+		fs.rmSync(`${dbFile}${suffix}`, { force: true });
+	}
+
+	const previous = fs.existsSync(dbFile) ? `${dbFile}.before-restore-${stamp(now())}` : null;
+	if (previous) {
+		fs.renameSync(dbFile, previous);
+	}
+	fs.copyFileSync(backupFile, dbFile);
+	return previous;
+}
+
+/**
+ * Path of a queued restore next to the database.
+ *
+ * @param dbFile - path of the database
+ * @returns path of the queued backup file
+ */
+export function pendingRestorePath(dbFile: string): string {
+	return path.join(path.dirname(dbFile), RESTORE_PENDING_FILE);
+}
+
+/**
+ * Path of the sidecar that describes the queued restore.
+ *
+ * @param dbFile - path of the database
+ * @returns path of the sidecar
+ */
+export function pendingRestoreInfoPath(dbFile: string): string {
+	return path.join(path.dirname(dbFile), RESTORE_PENDING_INFO);
+}
+
+/**
+ * Reads the queued restore, if there is one.
+ *
+ * A sidecar without the file (or the other way round) counts as nothing to do: an incomplete pair must not stop
+ * the adapter from starting.
+ *
+ * @param dbFile - path of the database
+ * @returns description of the queued restore or `null`
+ */
+export function readPendingRestore(dbFile: string): PendingRestoreInfo | null {
+	const info = pendingRestoreInfoPath(dbFile);
+	if (!fs.existsSync(info) || !fs.existsSync(pendingRestorePath(dbFile))) {
+		return null;
+	}
+	try {
+		return JSON.parse(fs.readFileSync(info, "utf8")) as PendingRestoreInfo;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Applies a queued restore while the database is closed.
+ *
+ * This runs while the adapter starts: the file the administration uploaded becomes the database, the previous
+ * file is kept next to it, and the queued files are removed afterwards. A file that fails the check is refused
+ * and the queued files stay, so the administrator can hand in a working one.
+ *
+ * @param dbFile - path of the database
+ * @param now - instant source, defaults to the system clock
+ * @returns what was restored and who queued it, `null` when nothing was queued
+ */
+export function applyPendingRestore(
+	dbFile: string,
+	now: () => number = () => Math.floor(Date.now() / 1000),
+): AppliedRestore | null {
+	const pending = readPendingRestore(dbFile);
+	if (!pending) {
+		return null;
+	}
+
+	const file = pendingRestorePath(dbFile);
+	const restored = verifyBackupFile(file);
+	const previous = swapDatabaseFile(dbFile, file, now);
+	// the queued files have done their job once the database carries their content
+	fs.rmSync(file, { force: true });
+	fs.rmSync(pendingRestoreInfoPath(dbFile), { force: true });
+	return { restored, previous, actorId: pending.actorId };
+}
 
 /** Default retention in days. */
 const DEFAULT_RETENTION_DAYS = 30;
@@ -195,58 +403,8 @@ export function createBackupService(deps: BackupDeps): BackupService {
 	 * @returns information about the checked file
 	 */
 	function verify(file: string): BackupInfo {
-		if (!fs.existsSync(file)) {
-			throw new ValidationError(`backup ${path.basename(file)} does not exist`);
-		}
-
-		const sizeBytes = fs.statSync(file).size;
-		let check: Database.Database;
-		try {
-			check = new Database(file, { readonly: true, fileMustExist: true });
-		} catch (error) {
-			throw new ValidationError(
-				`backup ${path.basename(file)} is not a readable database (${(error as Error).message})`,
-			);
-		}
-
-		const name = path.basename(file);
-		try {
-			// SQLite opens a file lazily, so a file that is not a database only fails on the first read
-			const integrity = check.pragma("integrity_check", { simple: true });
-			if (integrity !== "ok") {
-				throw new ValidationError(`backup ${name} is damaged: ${String(integrity)}`);
-			}
-			const version = check
-				.prepare("SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations")
-				.get() as { version: number } | undefined;
-			if (!version) {
-				throw new ValidationError(`backup ${name} has no schema information`);
-			}
-			const users = check.prepare("SELECT COUNT(*) AS count FROM users").get() as { count: number };
-			const entries = check.prepare("SELECT COUNT(*) AS count FROM time_entries").get() as { count: number };
-
-			return {
-				name,
-				file,
-				sizeBytes,
-				createdAt: createdAtOf(name, prefix) ?? Math.floor(Date.now() / 1000),
-				schemaVersion: version.version,
-				users: users.count,
-				entries: entries.count,
-			};
-		} catch (error) {
-			if (error instanceof ValidationError) {
-				throw error;
-			}
-			const message = (error as Error).message;
-			throw new ValidationError(
-				/not a database|notadb/i.test(message)
-					? `backup ${name} is not a readable database (${message})`
-					: `backup ${name} is not a backup of this adapter (${message})`,
-			);
-		} finally {
-			check.close();
-		}
+		// the check lives next to the service: the adapter uses it while it starts, when no database is open
+		return verifyBackupFile(file, prefix);
 	}
 
 	/**
@@ -306,6 +464,19 @@ export function createBackupService(deps: BackupDeps): BackupService {
 	}
 
 	/**
+	 * Path of the database, refused when it lives only in memory.
+	 *
+	 * @returns path of the database file
+	 */
+	function databaseFile(): string {
+		const target = deps.db.name;
+		if (!target || target === ":memory:") {
+			throw new ValidationError("an in-memory database cannot be restored");
+		}
+		return target;
+	}
+
+	/**
 	 * Replaces the database file with a backup.
 	 *
 	 * The caller closes the database first and reopens it afterwards; a backup that does not pass `verify` never
@@ -319,25 +490,133 @@ export function createBackupService(deps: BackupDeps): BackupService {
 		if (deps.db.open) {
 			throw new ValidationError("the database must be closed before it can be restored");
 		}
-		const target = deps.db.name;
-		if (!target || target === ":memory:") {
-			throw new ValidationError("an in-memory database cannot be restored");
-		}
-
-		// the journal of the old database would shadow the restored file
-		for (const suffix of ["-wal", "-shm"]) {
-			fs.rmSync(`${target}${suffix}`, { force: true });
-		}
-
-		const previous = fs.existsSync(target) ? `${target}.before-restore-${stamp(now())}` : null;
-		if (previous) {
-			fs.renameSync(target, previous);
-		}
-		fs.copyFileSync(file, target);
-		return { restored, previous };
+		return { restored, previous: swapDatabaseFile(databaseFile(), file, now) };
 	}
 
-	return { create, list, rotate, verify, restore };
+	/**
+	 * Queues a file for the next start.
+	 *
+	 * The file is checked before it is queued: a file that is not a readable database of this schema is refused
+	 * and removed, so a restart can never pick up garbage. The running database stays untouched — the swap happens
+	 * while the adapter starts, when no connection holds the file open.
+	 *
+	 * @param source - path of the file to queue
+	 * @param input - name for the overview and who queued it
+	 * @param input.name - name for the overview, defaults to the name of the stored file
+	 * @param input.actorId - user id of the actor, `null` for the system
+	 * @param input.reason - short reason stored in the audit trail
+	 * @returns the queued restore
+	 */
+	function queue(
+		source: string,
+		input: { name?: string; actorId?: number | null; reason?: string },
+	): PendingRestoreInfo {
+		const dbFile = databaseFile();
+		const pendingFile = pendingRestorePath(dbFile);
+		fs.mkdirSync(path.dirname(pendingFile), { recursive: true });
+		if (path.resolve(source) !== path.resolve(pendingFile)) {
+			fs.copyFileSync(source, pendingFile);
+		}
+
+		let info: BackupInfo;
+		try {
+			info = verify(pendingFile);
+		} catch (error) {
+			// a file that is not a backup of this adapter is not kept: it would be tried again on every start
+			fs.rmSync(pendingFile, { force: true });
+			throw error;
+		}
+
+		const queuedAt = now();
+		const pending: PendingRestoreInfo = {
+			name: (input.name ?? "").trim() || info.name,
+			actorId: input.actorId ?? null,
+			queuedAt,
+			sizeBytes: info.sizeBytes,
+			users: info.users,
+			entries: info.entries,
+		};
+		fs.writeFileSync(pendingRestoreInfoPath(dbFile), `${JSON.stringify(pending, null, "\t")}\n`, "utf8");
+		writeAuditLog(deps.db, {
+			actorId: pending.actorId,
+			action: "backup.queue_restore",
+			entity: "backup",
+			entityId: pending.name,
+			detail: {
+				sizeBytes: pending.sizeBytes,
+				users: pending.users,
+				entries: pending.entries,
+				...(input.reason ? { reason: input.reason } : {}),
+			},
+			atUtc: queuedAt,
+		});
+		return pending;
+	}
+
+	/**
+	 * Queues an uploaded backup for the next start.
+	 *
+	 * @param upload - bytes of the uploaded file
+	 * @param input - who uploaded it and what it should be called
+	 * @param input.name - name for the download, defaults to the name of the stored file
+	 * @param input.actorId - user id of the actor, `null` for the system
+	 * @param input.reason - short reason stored in the audit trail
+	 * @returns the queued restore
+	 */
+	function queueRestore(
+		upload: Buffer,
+		input: { name?: string; actorId?: number | null; reason?: string } = {},
+	): PendingRestoreInfo {
+		if (upload.length === 0) {
+			throw new ValidationError("the uploaded file is empty");
+		}
+		const pendingFile = pendingRestorePath(databaseFile());
+		fs.mkdirSync(path.dirname(pendingFile), { recursive: true });
+		fs.writeFileSync(pendingFile, upload);
+		return queue(pendingFile, input);
+	}
+
+	/**
+	 * Queues one of the known backups for the next start.
+	 *
+	 * This is the way back for the everyday case: the administration picks a file from the list, the adapter
+	 * applies it while it starts. Only files of the list are accepted, so a name from outside cannot reach the
+	 * file system.
+	 *
+	 * @param name - file name as `list()` reports it
+	 * @param input - who queued it and why
+	 * @param input.actorId - user id of the actor, `null` for the system
+	 * @param input.reason - short reason stored in the audit trail
+	 * @returns the queued restore
+	 */
+	function queueExistingBackup(
+		name: string,
+		input: { actorId?: number | null; reason?: string } = {},
+	): PendingRestoreInfo {
+		const known = list().find(entry => entry.name === name);
+		if (!known) {
+			throw new ValidationError(`backup ${name} does not exist`);
+		}
+		return queue(known.file, { ...input, name });
+	}
+
+	/**
+	 * The restore that waits for the next start.
+	 *
+	 * A database that lives only in memory cannot be restored at all, so it reports nothing instead of failing:
+	 * the list of backups stays readable.
+	 *
+	 * @returns the queued restore or `null`
+	 */
+	function pending(): PendingRestoreInfo | null {
+		const target = deps.db.name;
+		if (!target || target === ":memory:") {
+			return null;
+		}
+		return readPendingRestore(target);
+	}
+
+	return { create, list, rotate, verify, restore, queueRestore, queueExistingBackup, pending };
 }
 
 /**

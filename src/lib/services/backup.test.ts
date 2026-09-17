@@ -10,6 +10,7 @@ import { createEntriesRepository, type EntriesRepository } from "../db/repositor
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
 import { ValidationError } from "../errors";
 import { createBackupService, recordRestore, type BackupService } from "./backup";
+import { applyPendingRestore, pendingRestoreInfoPath, pendingRestorePath, readPendingRestore } from "./backup";
 
 describe("backup service", () => {
 	let root: string;
@@ -159,6 +160,50 @@ describe("backup service", () => {
 			count: number;
 		};
 		expect(audit.count).to.equal(1);
+	});
+
+	it("queues one of the known backups and applies it at the next start", () => {
+		addEmployeeWithPunch("anna");
+		const created = service.create();
+
+		// the queue is written next to the database and reported as pending
+		const pending = service.queueExistingBackup(created.backup.name, { actorId: null, reason: "test" });
+		expect(pending.name).to.equal(created.backup.name);
+		expect(pending.users).to.be.greaterThan(0);
+		expect(service.pending()?.name).to.equal(created.backup.name);
+		expect(readPendingRestore(dbFile)).to.deep.equal(pending);
+		expect(fs.existsSync(pendingRestorePath(dbFile))).to.equal(true);
+
+		// the swap itself needs a closed database, so it happens while the adapter starts
+		db.close();
+		const applied = applyPendingRestore(dbFile, () => clock);
+
+		// the file the administrator queued became the database: it carries the same content
+		expect(applied?.restored.entries).to.equal(pending.entries);
+		expect(applied?.restored.users).to.equal(pending.users);
+		expect(applied?.previous).to.not.equal(null);
+		// the queued files are gone, so the next start does not repeat the swap
+		expect(readPendingRestore(dbFile)).to.equal(null);
+		expect(fs.existsSync(pendingRestoreInfoPath(dbFile))).to.equal(false);
+		expect(fs.existsSync(dbFile)).to.equal(true);
+
+		open();
+		expect(users.list().length, "the restored file carries the employee").to.equal(1);
+	});
+
+	it("keeps the queue when the queued file is not usable", () => {
+		fs.writeFileSync(pendingRestorePath(dbFile), "das ist keine Datenbank");
+		fs.writeFileSync(
+			pendingRestoreInfoPath(dbFile),
+			JSON.stringify({ name: "kaputt", actorId: null, queuedAt: clock, sizeBytes: 23, users: 0, entries: 0 }),
+		);
+		db.close();
+
+		expect(() => applyPendingRestore(dbFile)).to.throw(ValidationError);
+
+		// nothing was swapped or deleted, so a working file can be handed in
+		expect(readPendingRestore(dbFile)?.name).to.equal("kaputt");
+		expect(fs.existsSync(dbFile)).to.equal(true);
 	});
 
 	it("ignores files that are not backups", () => {

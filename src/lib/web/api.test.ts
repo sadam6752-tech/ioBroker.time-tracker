@@ -2033,6 +2033,41 @@ describe("web api", () => {
 	});
 
 	describe("backups", () => {
+		it("hands a backup out as a file and queues a listed one for the next start", async () => {
+			const created = await send("POST", "/backup", { headers: headers(adminToken, adminCsrf) });
+			const name = bodyOf<{ backup: { name: string } }>(created).backup.name;
+
+			// the file comes with a download header; a name outside the list never reaches the file system
+			const download = await send("GET", `/backup/${name}`, { headers: headers(adminToken) });
+			expect(download.status).to.equal(200);
+			expect(download.headers["content-disposition"]).to.equal(`attachment; filename="${name}"`);
+			expect((await send("GET", "/backup/unbekannt.sqlite", { headers: headers(adminToken) })).status).to.equal(
+				404,
+			);
+
+			// queueing a restore needs `backup.run`; this database lives in memory, so the refusal explains that
+			const refused = await send("POST", "/backup/restore", {
+				headers: headers(annaToken, annaCsrf),
+				body: { name },
+			});
+			expect(refused.status).to.equal(403);
+
+			const queued = await send("POST", "/backup/restore", {
+				headers: headers(adminToken, adminCsrf),
+				body: { name },
+			});
+			expect(queued.status).to.equal(400);
+			expect(bodyOf<{ code: string }>(queued).code).to.equal("backup_invalid");
+
+			// an unknown name is refused just as clearly
+			const unknown = await send("POST", "/backup/restore", {
+				headers: headers(adminToken, adminCsrf),
+				body: { name: "gibts-nicht.sqlite" },
+			});
+			expect(unknown.status).to.equal(400);
+			expect(bodyOf<{ code: string }>(unknown).code).to.equal("backup_invalid");
+		});
+
 		it("needs backup.run and lists nothing before the first copy", async () => {
 			const forbidden = await send("GET", "/backup", { headers: headers(annaToken) });
 			expect(forbidden.status).to.equal(403);

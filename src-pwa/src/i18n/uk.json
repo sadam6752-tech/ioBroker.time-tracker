@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Колір фону",
 	"admin.settings.brandColorHint": "Значення у форматі Hex, наприклад #1a2b3c",
 	"admin.settings.brandColorPresets": "Готові кольори",
-	"admin.settings.brandColorDefault": "За замовчуванням"
+	"admin.settings.brandColorDefault": "За замовчуванням",
+	"admin.backup.download": "Завантажити",
+	"admin.backup.restore": "Відновити",
+	"admin.backup.restoreTitle": "Відновити резервну копію",
+	"admin.backup.restoreConfirm": "Резервну копію {{name}} буде застосовано під час наступного запуску адаптера; поточна база даних залишиться поруч як файл. Після цього перезапустіть інстанс.",
+	"admin.backup.pendingHint": "{{name}} буде застосовано під час наступного запуску ({{users}} співробітників, {{entries}} відміток) - перезапустіть інстанс.",
+	"error.backup_invalid": "Цей файл не є резервною копією цього адаптера."
 }

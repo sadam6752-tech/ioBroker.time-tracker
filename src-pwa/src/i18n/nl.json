@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Achtergrondkleur",
 	"admin.settings.brandColorHint": "Hex-waarde zoals #1a2b3c",
 	"admin.settings.brandColorPresets": "Voorgestelde kleuren",
-	"admin.settings.brandColorDefault": "Standaard"
+	"admin.settings.brandColorDefault": "Standaard",
+	"admin.backup.download": "Downloaden",
+	"admin.backup.restore": "Terugzetten",
+	"admin.backup.restoreTitle": "Back-up terugzetten",
+	"admin.backup.restoreConfirm": "De back-up {{name}} wordt bij de volgende start van de adapter toegepast; de huidige database blijft als bestand ernaast bewaard. Start de instantie daarna opnieuw.",
+	"admin.backup.pendingHint": "{{name}} wordt bij de volgende start toegepast ({{users}} medewerkers, {{entries}} stempels) - start de instantie opnieuw.",
+	"error.backup_invalid": "Dat bestand is geen back-up van deze adapter."
 }

@@ -280,7 +280,13 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 	const finished = new Promise<void>(resolve => doc.on("end", resolve));
 
 	const pageBottom = doc.page.height - LAYOUT.margin - 24;
-	/** Returns the longer of two texts. */
+	/**
+	 * Returns the longer of two texts.
+	 *
+	 * @param first - first text
+	 * @param second - second text
+	 * @returns the longer text
+	 */
 	const longer = (first: string, second: string): string => (first.length >= second.length ? first : second);
 	const { columns, headerSize } = measureColumns(doc, fonts, labels, {
 		// the date column holds the dates of the report: "czw., 30.09.2026" is wider than "Thu, 30.09.2026"

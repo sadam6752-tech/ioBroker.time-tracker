@@ -22,7 +22,7 @@ import { ErrorAlert } from "./feedback";
  * @param blob - content of the file
  * @param fileName - name the browser should use
  */
-function saveBlob(blob: Blob, fileName: string): void {
+export function saveBlob(blob: Blob, fileName: string): void {
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement("a");
 	link.href = url;

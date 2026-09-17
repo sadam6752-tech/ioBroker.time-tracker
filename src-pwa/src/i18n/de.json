@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Hintergrundfarbe",
 	"admin.settings.brandColorHint": "Hex-Wert wie #1a2b3c, leer für die Vorgabe",
 	"admin.settings.brandColorPresets": "Vorschläge",
-	"admin.settings.brandColorDefault": "Standard"
+	"admin.settings.brandColorDefault": "Standard",
+	"admin.backup.download": "Herunterladen",
+	"admin.backup.restore": "Wiederherstellen",
+	"admin.backup.restoreTitle": "Sicherung wiederherstellen",
+	"admin.backup.restoreConfirm": "Die Sicherung {{name}} wird beim nächsten Start des Adapters eingespielt; die aktuelle Datenbank bleibt als Datei daneben erhalten. Die Instanz danach neu starten.",
+	"admin.backup.pendingHint": "{{name}} wird beim nächsten Start eingespielt ({{users}} Mitarbeiter, {{entries}} Stempel) - bitte die Instanz neu starten.",
+	"error.backup_invalid": "Diese Datei ist keine Sicherung dieses Adapters."
 }

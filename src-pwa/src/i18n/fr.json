@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Couleur d'arrière-plan",
 	"admin.settings.brandColorHint": "Valeur hexadécimale comme #1a2b3c",
 	"admin.settings.brandColorPresets": "Couleurs proposées",
-	"admin.settings.brandColorDefault": "Par défaut"
+	"admin.settings.brandColorDefault": "Par défaut",
+	"admin.backup.download": "Télécharger",
+	"admin.backup.restore": "Restaurer",
+	"admin.backup.restoreTitle": "Restaurer une sauvegarde",
+	"admin.backup.restoreConfirm": "La sauvegarde {{name}} est appliquée au prochain démarrage de l'adaptateur ; la base de données actuelle est conservée à côté sous forme de fichier. Redémarrez ensuite l'instance.",
+	"admin.backup.pendingHint": "{{name}} est appliquée au prochain démarrage ({{users}} collaborateurs, {{entries}} pointages) - redémarrez l'instance.",
+	"error.backup_invalid": "Ce fichier n'est pas une sauvegarde de cet adaptateur."
 }

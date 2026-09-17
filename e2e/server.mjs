@@ -32,6 +32,7 @@ const { createSettingsRepository } = require(join(repo, "build/lib/db/repositori
 const { createAuthService } = require(join(repo, "build/lib/services/auth.js"));
 const { createAggregationService } = require(join(repo, "build/lib/services/aggregation.js"));
 const { createSyncService } = require(join(repo, "build/lib/services/sync.js"));
+const { createBackupService } = require(join(repo, "build/lib/services/backup.js"));
 const { createApi } = require(join(repo, "build/lib/web/api.js"));
 const { createStaticHandler } = require(join(repo, "build/lib/web/static.js"));
 const { startWebServer } = require(join(repo, "build/lib/web/server.js"));
@@ -56,6 +57,12 @@ const settings = createSettingsRepository(db);
 const auth = createAuthService({ db, users, settings, secret: "e2e-session-secret", defaultTtlMinutes: 720 });
 const aggregation = createAggregationService({ db, users, entries, absences, holidays, rules, settings });
 const sync = createSyncService({ db, entries, users, aggregation });
+// backups land in a throwaway directory: the suite takes one and downloads it again
+const backup = createBackupService({
+	db,
+	dir: require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "zeiterfassung-e2e-backup-")),
+	now,
+});
 
 // one administrator (the account the specs sign in with) and one employee to punch for
 const admin = users.create({ login: "admin", displayName: "E2E Admin", roleKeys: ["admin"] });
@@ -85,6 +92,7 @@ const api = createApi({
 	rfid,
 	aggregation,
 	sync,
+	backup,
 	settings,
 	kioskEnabled: true,
 	// the suite signs in once per case, which is more often than the shipped limit of 20 attempts per minute

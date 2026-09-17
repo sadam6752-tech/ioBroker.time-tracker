@@ -221,5 +221,11 @@
 	"admin.settings.brandColor": "Kolor tła",
 	"admin.settings.brandColorHint": "Wartość szesnastkowa, np. #1a2b3c",
 	"admin.settings.brandColorPresets": "Sugerowane kolory",
-	"admin.settings.brandColorDefault": "Domyślny"
+	"admin.settings.brandColorDefault": "Domyślny",
+	"admin.backup.download": "Pobierz",
+	"admin.backup.restore": "Przywróć",
+	"admin.backup.restoreTitle": "Przywróć kopię zapasową",
+	"admin.backup.restoreConfirm": "Kopia zapasowa {{name}} zostanie zastosowana przy następnym uruchomieniu adaptera; obecna baza danych pozostanie obok jako plik. Następnie uruchom ponownie instancję.",
+	"admin.backup.pendingHint": "{{name}} zostanie zastosowana przy następnym uruchomieniu ({{users}} pracowników, {{entries}} stempli) - uruchom ponownie instancję.",
+	"error.backup_invalid": "Ten plik nie jest kopią zapasową tego adaptera."
 }

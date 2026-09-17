@@ -16,7 +16,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -31,6 +33,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { CorrectionsTab } from "./CorrectionsTab";
 import BackupIcon from "@mui/icons-material/Backup";
+import DownloadIcon from "@mui/icons-material/Download";
+import RestoreIcon from "@mui/icons-material/Restore";
 import KeyIcon from "@mui/icons-material/Key";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TerminalIcon from "@mui/icons-material/Terminal";
@@ -42,6 +46,7 @@ import type { AdminUser, CreateUserInput } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
+import { saveBlob } from "../components/ReportDownloads";
 import { hasPermission, useSession } from "../state/session";
 
 /**
@@ -1546,7 +1551,10 @@ function SettingsTab(): React.JSX.Element {
 }
 
 /**
- * Database backups: list, retention and a button that takes one now.
+ * Database backups: list, download, restore for the next start and a button that takes one now.
+ *
+ * A restore needs a closed database, so this screen swaps nothing: it queues a file and says that the instance
+ * has to be restarted. Only the files the adapter keeps next to its database can be chosen.
  *
  * @param props - language of the display
  * @param props.language - language of the display
@@ -1555,6 +1563,8 @@ function SettingsTab(): React.JSX.Element {
 function BackupTab({ language }: { language: string }): React.JSX.Element {
 	const { t } = useTranslation();
 	const queryClient = useQueryClient();
+	const [toRestore, setToRestore] = useState<string | null>(null);
+	const [reason, setReason] = useState("");
 	const backups = useQuery({ queryKey: ["admin", "backups"], queryFn: () => api.backups() });
 	const create = useMutation({
 		mutationFn: () => api.createBackup(),
@@ -1562,14 +1572,42 @@ function BackupTab({ language }: { language: string }): React.JSX.Element {
 			await queryClient.invalidateQueries({ queryKey: ["admin", "backups"] });
 		},
 	});
+	// queueing a restore changes the list: it then reports the file that waits for the next start
+	const restore = useMutation({
+		mutationFn: (name: string) => api.restoreBackup(name, reason.trim() || undefined),
+		onSuccess: async () => {
+			setToRestore(null);
+			setReason("");
+			await queryClient.invalidateQueries({ queryKey: ["admin", "backups"] });
+		},
+	});
+	const download = useMutation({
+		mutationFn: (name: string) => api.downloadBackup(name),
+		onSuccess: file => saveBlob(file.blob, file.fileName),
+	});
 
 	if (backups.isLoading) {
 		return <Loading />;
 	}
 
+	const pending = backups.data?.pending ?? null;
+
 	return (
 		<>
-			<ErrorAlert error={backups.error ?? create.error} />
+			<ErrorAlert error={backups.error ?? create.error ?? restore.error ?? download.error} />
+			{/* a queued restore is applied while the adapter starts, and only the administrator can start it */}
+			{pending && (
+				<Alert
+					severity="warning"
+					sx={{ mb: 2 }}
+				>
+					{t("admin.backup.pendingHint", {
+						name: pending.name,
+						users: pending.users,
+						entries: pending.entries,
+					})}
+				</Alert>
+			)}
 			{create.isSuccess && (
 				<Alert
 					severity="success"
@@ -1597,10 +1635,37 @@ function BackupTab({ language }: { language: string }): React.JSX.Element {
 				<List dense>
 					{(backups.data?.backups ?? []).map(file => (
 						<ListItem key={file.name}>
+							{/* the actions are siblings of the text, not `secondaryAction`: that one floats and would
+							    lie on the long file name on a narrow screen */}
 							<ListItemText
 								primary={file.name}
 								secondary={`${formatStamp(file.createdAt, language)} · ${formatSize(file.sizeBytes, language)}`}
 							/>
+							<Stack
+								direction="row"
+								spacing={0.5}
+								alignItems="center"
+							>
+								{download.isPending && download.variables === file.name && (
+									<CircularProgress size={16} />
+								)}
+								<IconButton
+									size="small"
+									title={t("admin.backup.download")}
+									disabled={download.isPending}
+									onClick={() => download.mutate(file.name)}
+								>
+									<DownloadIcon fontSize="small" />
+								</IconButton>
+								<IconButton
+									size="small"
+									title={t("admin.backup.restore")}
+									disabled={restore.isPending}
+									onClick={() => setToRestore(file.name)}
+								>
+									<RestoreIcon fontSize="small" />
+								</IconButton>
+							</Stack>
 						</ListItem>
 					))}
 					{(backups.data?.backups ?? []).length === 0 && (
@@ -1618,6 +1683,36 @@ function BackupTab({ language }: { language: string }): React.JSX.Element {
 			>
 				{t("admin.backup.retention", { days: backups.data?.retentionDays ?? 0 })}
 			</Typography>
+
+			{/* the confirmation carries the reason: it lands in the audit trail of the adapter */}
+			<Dialog
+				open={toRestore !== null}
+				onClose={() => setToRestore(null)}
+			>
+				<DialogTitle>{t("admin.backup.restoreTitle")}</DialogTitle>
+				<DialogContent>
+					<DialogContentText sx={{ mb: 2 }}>
+						{t("admin.backup.restoreConfirm", { name: toRestore ?? "" })}
+					</DialogContentText>
+					<TextField
+						fullWidth
+						label={t("corrections.reason")}
+						helperText={t("corrections.reasonHint")}
+						value={reason}
+						onChange={event => setReason(event.target.value)}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setToRestore(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						disabled={restore.isPending}
+						onClick={() => toRestore && restore.mutate(toRestore)}
+					>
+						{t("admin.backup.restore")}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</>
 	);
 }

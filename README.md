@@ -315,6 +315,8 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.11 (2026-09-17)
+
 - (Alex) fix: the totals row of the PDF statement stays complete — every value of a column is measured now, so a
   total like `187:00` (wider than any single day) is not cut off at the end of its column any more
 - (Alex) the backup screen covers the whole round trip: a copy can be **uploaded** again — the way back for a host

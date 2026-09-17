@@ -114,6 +114,12 @@ test("shows the days of the month with their columns", async ({ page }) => {
 	await expect(page.getByText("Gearbeitet").first()).toBeVisible();
 	// the pause of the month and of each day has its own place in the view
 	await expect(page.getByText(/Pause: \d+:\d\d/).first()).toBeVisible();
+
+	// the raw punches of the month come as CSV, and a day can be corrected from its own row
+	await expect(page.getByRole("button", { name: "Rohdaten (CSV)" })).toBeVisible();
+	await page.getByRole("button", { name: "Korrigieren" }).first().click();
+	await expect(page.getByRole("dialog").getByRole("heading", { name: /Stempel korrigieren/ })).toBeVisible();
+	await page.getByRole("dialog").getByRole("button", { name: "Abbrechen" }).click();
 	await expect(page.getByText("Saldo").first()).toBeVisible();
 });
 
@@ -204,12 +210,18 @@ test("pays a part of the break in the work profile of an employee", async ({ pag
 	const minutes = page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" });
 	await expect(minutes).toHaveValue("0");
 	await minutes.fill("15");
-	await page.getByRole("dialog").getByRole("button", { name: "Speichern" }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "Speichern", exact: true }).click();
 	await expect(page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" })).toHaveCount(0);
 
 	// the amount is stored: the dialog shows it again
 	await profileButton().click();
 	await expect(page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" })).toHaveValue("15");
+
+	// the break rules of this employee are edited in the same dialog: a rule with the same "from minutes" replaces
+	// the company rule for her alone
+	await page.getByRole("button", { name: "Regel hinzufügen" }).click();
+	await page.getByRole("button", { name: "Pausenstaffel speichern" }).click();
+	await expect(page.getByRole("spinbutton", { name: "Bezahlte Pausenminuten pro Tag" })).toHaveCount(0);
 });
 
 test("requests an absence in the form and finds it in the year", async ({ page, request }) => {

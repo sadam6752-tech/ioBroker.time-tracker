@@ -54,7 +54,8 @@ report_font_missing` — das ist erwartetes Verhalten, kein Fehler).
 | --- | --- |
 | `ru`, `uk` | `arial.ttf` (Arial deckt Kyrillisch ab) |
 | `zh-cn` | `malgun.ttf` (Malgun Gothic deckt die chinesischen Zeichen ab) |
-| `de`, `en`, `fr`, `it`, `es`, `nl`, `pl`, `pt` | keine nötig; mit gesetzter Schrift wird sie ebenfalls eingebettet |
+| `pl` | `arial.ttf` — die polnischen Buchstaben (ś, ć, ł, ż, ę) liegen außerhalb der eingebauten Schrift |
+| `de`, `en`, `fr`, `it`, `es`, `nl`, `pt` | keine nötig; mit gesetzter Schrift wird sie ebenfalls eingebettet |
 
 Eine **fehlende** Datei oder eine Schrift ohne die nötigen Zeichen führt zu derselben Fehlermeldung wie eine
 gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästchen ausgeliefert.

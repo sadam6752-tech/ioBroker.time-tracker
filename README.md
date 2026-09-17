@@ -107,7 +107,9 @@ statement as a PDF — both with `content-disposition: attachment`, generated in
 the employee. The PDF is one page per month with the day table, the totals, the absences and two signature
 lines; for `ru`, `uk` and `zh-cn` a Unicode font has to be configured (`report_font_path`), because the
 built-in PDF fonts only cover Latin-1 — the export refuses such a language with a clear message
-(`report_font_missing`) instead of drawing empty boxes. The web app offers both files as buttons in the month
+(`report_font_missing`) instead of drawing empty boxes. The same happens for a language whose letters are outside
+the set the built-in fonts know — Polish ("Nieobecność", "święto", "cały dzień") needs `report_font_path` as well.
+The web app offers both files as buttons in the month
 view and in the year report, so nobody has to build a URL by hand. With `&userId=` and the right
 `report.view_other` the same routes deliver the statement of an employee: the year report has an employee
 picker and the name of a month opens that month in full, so the accounting department does not have to open a
@@ -312,6 +314,13 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### 0.0.8 (2026-09-17)
 
+- (Alex) fix: the PDF statement keeps its measured layout — the column headings define the width of their column,
+  so "Arbeitszeit" and "Abwesenheit" stay on one line (and the English "02:00 AM" no longer falls apart); the two
+  signature lines are level because the underscores became a ruled line; and the footer no longer starts a second
+  page that carried nothing but the footer
+- (Alex) fix: the PDF statement refuses Polish instead of drawing nonsense, because the built-in fonts cannot draw
+  "Nieobecność", "święto" or "cały dzień" — `report_font_path` is needed there as well (the labels decide, so the
+  same happens for any other language whose letters are outside the built-in set)
 - (Alex) the administration downloads the monthly statement of any employee from the year report: the screen has
   an employee picker (it appears with `report.view_other` and `user.view`), the Excel and PDF buttons follow the
   selection, and the name of a month opens that month in full — the accounting department no longer has to open

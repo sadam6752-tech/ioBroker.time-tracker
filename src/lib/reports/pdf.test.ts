@@ -3,7 +3,7 @@ import { expect } from "chai";
 import * as fs from "node:fs";
 import type { DayAggregateRecord } from "../services/aggregation";
 import { ValidationError } from "../errors";
-import { REPORT_LABELS, reportLabels } from "./labels";
+import { REPORT_LABELS, reportLabels, type ReportLabels } from "./labels";
 import { buildMonthStatement } from "./pdf";
 
 /**
@@ -68,6 +68,63 @@ function textOf(buffer: Buffer): string {
 	}
 	return runs.join("");
 }
+
+/**
+ * Reads the drawn text pieces of a PDF together with their position.
+ *
+ * `textOf` joins every drawn string, so a heading that the renderer broke into two lines still reads correctly
+ * there. The pieces keep the coordinate of each drawn string, which is what tells a heading on one line from a
+ * heading that was wrapped.
+ *
+ * @param buffer - generated document
+ * @returns the drawn pieces with their coordinates
+ */
+function piecesOf(buffer: Buffer): { x: number; y: number; text: string }[] {
+	const pieces: { x: number; y: number; text: string }[] = [];
+	for (const stream of rawOf(buffer).matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+		for (const block of stream[1].matchAll(/BT([\s\S]*?)ET/g)) {
+			const body = block[1];
+			const move = /1 0 0 1 ([-\d.]+) ([-\d.]+) Tm/.exec(body) ?? /([-\d.]+) ([-\d.]+) Td/.exec(body);
+			const text = [...body.matchAll(/\[([^\]]*)\]\s*TJ|\(((?:[^()\\]|\\.)*)\)\s*Tj/g)]
+				.map(match =>
+					match[1]
+						? [...match[1].matchAll(/<([0-9a-fA-F]+)>/g)]
+								.map(hex => Buffer.from(hex[1], "hex").toString("latin1"))
+								.join("")
+						: match[2],
+				)
+				.join("");
+			if (text.trim()) {
+				pieces.push({ x: move ? Number(move[1]) : 0, y: move ? Number(move[2]) : 0, text });
+			}
+		}
+	}
+	return pieces;
+}
+
+/**
+ * Counts the pages of a document.
+ *
+ * @param buffer - generated document
+ * @returns number of pages
+ */
+function pagesOf(buffer: Buffer): number {
+	// `/Type /Page` and not `/Type /Pages`: the page tree node is not a page
+	return (rawOf(buffer).match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+}
+
+/** The columns of the day table, in the order they are drawn. */
+const COLUMN_KEYS: (keyof ReportLabels)[] = [
+	"date",
+	"timeIn",
+	"timeOut",
+	"worked",
+	"breaks",
+	"target",
+	"balance",
+	"absence",
+	"note",
+];
 
 describe("monthly report (pdf)", () => {
 	/** Fixed instant the report is generated at. */
@@ -274,5 +331,101 @@ describe("monthly report (pdf)", () => {
 		// the document carries text and the font subset is embedded, not referenced
 		expect(raw).to.contain(" TJ");
 		expect(raw).to.not.contain("/BaseFont /Helvetica");
+	});
+
+	it("keeps every column heading on one line and the statement on one page", async () => {
+		// the languages whose letters the built-in fonts cover; Polish and the three non-Latin ones need a font
+		for (const language of ["en", "de", "pt", "nl", "fr", "it", "es"]) {
+			const chosen = reportLabels(language);
+			// a full month is the tallest statement, so it is the one that can spill onto a second page
+			const fullMonth = Array.from({ length: 31 }, (_, index) =>
+				day(`2026-10-${String(index + 1).padStart(2, "0")}`, {
+					workedMin: 486,
+					breakMin: 30,
+					balanceMin: 6,
+					firstInUtc: Date.UTC(2026, 9, index + 1, 6, 0) / 1000,
+					lastOutUtc: Date.UTC(2026, 9, index + 1, 14, 36) / 1000,
+					...(index === 9 ? { isHoliday: true } : {}),
+					...(index === 16 ? { hasOpenEntry: true, lastOutUtc: null } : {}),
+				}),
+			);
+			const pdf = await buildMonthStatement({
+				...baseInput,
+				labels: chosen.labels,
+				language: chosen.language,
+				locale: chosen.language,
+				days: fullMonth,
+			});
+			const pieces = piecesOf(pdf);
+
+			// a heading that is wider than its column is broken by the renderer: the rest lands on the next line
+			const headings = COLUMN_KEYS.map(key => pieces.find(piece => piece.text === chosen.labels[key]));
+			expect(headings.filter(Boolean).length, `${language}: every heading is drawn as one piece`).to.equal(
+				COLUMN_KEYS.length,
+			);
+			expect(new Set(headings.map(piece => piece?.y)).size, `${language}: all headings share one line`).to.equal(
+				1,
+			);
+
+			// and the footer stands inside the page instead of starting a second one for itself
+			expect(pagesOf(pdf), `${language}: one page`).to.equal(1);
+			expect(
+				pieces.some(piece => piece.text.includes("1/1")),
+				`${language}: the footer is on that page`,
+			).to.equal(true);
+		}
+	});
+
+	it("keeps both signature lines on one level and leaves the underscores out", async () => {
+		const pdf = await buildMonthStatement({
+			...baseInput,
+			days: [day("2026-09-01", { workedMin: 480, balanceMin: 0 })],
+		});
+		const pieces = piecesOf(pdf);
+		const employee = pieces.find(piece => piece.text.startsWith(baseInput.labels.signatureEmployee));
+		const manager = pieces.find(piece => piece.text.startsWith(baseInput.labels.signatureManager));
+
+		expect(employee, "the line of the employee is drawn").to.not.equal(undefined);
+		expect(manager, "the line of the manager is drawn").to.not.equal(undefined);
+		// the underscores were wrapped for the long label, which made the second line look offset
+		expect(employee?.y, "both lines share one height").to.equal(manager?.y);
+		expect(textOf(pdf)).to.not.match(/_{5,}/);
+	});
+
+	it("refuses Polish, whose letters are outside the built-in fonts", async () => {
+		const polish = reportLabels("pl-PL");
+		let failure: unknown = null;
+
+		try {
+			await buildMonthStatement({
+				...baseInput,
+				labels: polish.labels,
+				language: polish.language,
+				locale: "pl-PL",
+				days: [],
+			});
+		} catch (error) {
+			failure = error;
+		}
+
+		// "Nieobecność" and "święto" are outside WinAnsiEncoding: a statement would show nonsense instead
+		expect(failure, "the renderer must refuse the language").to.be.instanceOf(ValidationError);
+		expect((failure as ValidationError).message).to.contain("report_font_path");
+	});
+
+	// runs only where the machine has a TrueType font to embed
+	(systemFont ? it : it.skip)("writes Polish with a configured font", async () => {
+		const polish = reportLabels("pl-PL");
+		const pdf = await buildMonthStatement({
+			...baseInput,
+			labels: polish.labels,
+			language: polish.language,
+			locale: "pl-PL",
+			days: [day("2026-09-01", { workedMin: 480, balanceMin: 0 })],
+			fontPath: systemFont,
+		});
+
+		expect(rawOf(pdf)).to.contain("/FontFile2");
+		expect(pagesOf(pdf)).to.equal(1);
 	});
 });

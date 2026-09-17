@@ -116,6 +116,7 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 		{ key: "timeOut", width: 9 },
 		{ key: "worked", width: 11 },
 		{ key: "breaks", width: 9 },
+		{ key: "paidBreaks", width: 12 },
 		{ key: "target", width: 10 },
 		{ key: "balance", width: 10 },
 		{ key: "absence", width: 12 },
@@ -130,7 +131,7 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 	const title = sheet.getCell("A1");
 	title.value = labels.title;
 	title.font = { bold: true, size: 14 };
-	sheet.mergeCells("A1:I1");
+	sheet.mergeCells("A1:J1");
 
 	sheet.getCell("A2").value = `${labels.employee}: ${user.displayName} (${user.login})`;
 	sheet.getCell("A3").value = `${labels.period}: ${formatDate(from, locale)} - ${formatDate(to, locale)}`;
@@ -147,13 +148,14 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 		labels.timeOut,
 		labels.worked,
 		labels.breaks,
+		labels.paidBreaks,
 		labels.target,
 		labels.balance,
 		labels.absence,
 		labels.note,
 	];
 	header.font = { bold: true };
-	for (let column = 1; column <= 9; column++) {
+	for (let column = 1; column <= 10; column++) {
 		const cell = header.getCell(column);
 		cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEEF1F5" } };
 		cell.border = { bottom: { style: "thin", color: { argb: "FF9AA5B1" } } };
@@ -161,7 +163,7 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 
 	// --- one row per day ------------------------------------------------------
 	let rowIndex = FIRST_DAY_ROW;
-	const totals = { worked: 0, breaks: 0, target: 0, balance: 0 };
+	const totals = { worked: 0, breaks: 0, paidBreaks: 0, target: 0, balance: 0 };
 
 	for (const day of input.days) {
 		const row = sheet.getRow(rowIndex++);
@@ -179,17 +181,18 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 			formatTime(day.lastOutUtc, user.timezone, locale),
 			duration(day.workedMin),
 			duration(day.breakMin),
+			duration(day.paidBreakMin),
 			duration(day.targetMin),
 			duration(day.balanceMin),
 			day.absenceCode ?? "",
 			notes.join(", "),
 		];
-		for (const column of [4, 5, 6, 7]) {
+		for (const column of [4, 5, 6, 7, 8]) {
 			row.getCell(column).numFmt = DURATION_FORMAT;
 		}
 		// a negative balance is the one number a reader looks for
 		if (day.balanceMin < 0) {
-			row.getCell(7).font = { color: { argb: "FFC62828" } };
+			row.getCell(8).font = { color: { argb: "FFC62828" } };
 		}
 		if (day.isHoliday || day.workedMin === 0) {
 			row.getCell(1).font = { color: { argb: "FF757575" } };
@@ -197,6 +200,7 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 
 		totals.worked += day.workedMin;
 		totals.breaks += day.breakMin;
+		totals.paidBreaks += day.paidBreakMin;
 		totals.target += day.targetMin;
 		totals.balance += day.balanceMin;
 	}
@@ -209,19 +213,20 @@ export async function buildMonthReport(input: MonthReportInput): Promise<Buffer>
 		"",
 		duration(totals.worked),
 		duration(totals.breaks),
+		duration(totals.paidBreaks),
 		duration(totals.target),
 		duration(totals.balance),
 		`${labels.days}: ${input.days.length}`,
 		"",
 	];
 	totalRow.font = { bold: true };
-	for (const column of [4, 5, 6, 7]) {
+	for (const column of [4, 5, 6, 7, 8]) {
 		const cell = totalRow.getCell(column);
 		cell.numFmt = DURATION_FORMAT;
 		cell.border = { top: { style: "thin", color: { argb: "FF9AA5B1" } } };
 	}
 	if (totals.balance < 0) {
-		totalRow.getCell(7).font = { bold: true, color: { argb: "FFC62828" } };
+		totalRow.getCell(8).font = { bold: true, color: { argb: "FFC62828" } };
 	}
 	rowIndex += 1;
 

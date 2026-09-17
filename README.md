@@ -86,7 +86,9 @@ The adapter is configured in the instance settings:
 Instance settings (editable through `PUT /api/settings`, permission `settings.edit`) complement the
 configuration; `report_font_path` is one of them: the path of a `.ttf`/`.otf` file used for PDF statements.
 It is only needed for languages the built-in PDF fonts cannot display (`ru`, `uk`, `zh-cn`); everything else
-works without an additional file.
+works without an additional file. The **graduated break rules** (`GET`/`PUT /api/pause-rules`, permission
+`settings.edit`) are edited in the same tab: from a block length (first to last punch of a block) so many minutes
+are deducted, which is the pause of a day on which nobody punched a break.
 
 ## Web interface and API
 
@@ -324,7 +326,9 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
   graduated deduction, and a punched break is never deducted twice. The **work profile** is editable in the app
   now (employment level, weekly hours, working days, overtime model, vacation, carryovers) and got the number field
   **“Paid break minutes per day”**: that part of a break is credited as working time (`0` = the break is not paid,
-  `1440` = any length), while the “Pause” column keeps documenting the whole break
+  `1440` = any length), while the “Pause” column keeps documenting the whole break. Both statements carry a column
+  **“of which paid”** with its own sum, and the **graduated break rules** (Pausenstaffel) have an editor in the
+  settings at last — before that they had no writer at all, so a fresh instance could not deduct anything
 
 ### 0.0.10 (2026-09-17)
 

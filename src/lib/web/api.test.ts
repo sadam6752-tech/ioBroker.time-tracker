@@ -961,6 +961,55 @@ describe("web api", () => {
 			);
 		});
 
+		it("replaces the graduated break rules", async () => {
+			// the rules are a company setting, so reading and writing need the settings rights
+			expect((await send("GET", "/pause-rules", { headers: headers(annaToken) })).status).to.equal(403);
+
+			const empty = await send("GET", "/pause-rules", { headers: headers(adminToken) });
+			expect(empty.status).to.equal(200);
+			expect(bodyOf<{ pauseRules: unknown[] }>(empty).pauseRules).to.deep.equal([]);
+
+			const saved = await send("PUT", "/pause-rules", {
+				body: {
+					pauseRules: [
+						{ fromMin: 360, toMin: 540, pauseMin: 30 },
+						{ fromMin: 540, pauseMin: 60 },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(saved.status).to.equal(200);
+			const rules = bodyOf<{ pauseRules: { id: number; fromMin: number; pauseMin: number }[] }>(saved).pauseRules;
+			expect(rules.map(rule => rule.fromMin)).to.deep.equal([360, 540]);
+
+			// the payload is the whole table: a rule that is missing is removed, the rest is updated
+			const kept = await send("PUT", "/pause-rules", {
+				body: { pauseRules: [{ id: rules[1].id, fromMin: 540, pauseMin: 45 }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(kept.status).to.equal(200);
+			const remaining = bodyOf<{ pauseRules: { fromMin: number; pauseMin: number }[] }>(kept).pauseRules;
+			expect(remaining.map(rule => [rule.fromMin, rule.pauseMin])).to.deep.equal([[540, 45]]);
+
+			// a body that is not a table and impossible values are client errors
+			expect(
+				(
+					await send("PUT", "/pause-rules", {
+						body: { pauseRules: "nein" },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			expect(
+				(
+					await send("PUT", "/pause-rules", {
+						body: { pauseRules: [{ fromMin: -1, pauseMin: 30 }] },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+		});
+
 		it("changes and deletes an absence", async () => {
 			const created = await send("POST", "/absences", {
 				body: { typeCode: "F", dateFrom: "2026-07-06" },
@@ -2017,11 +2066,11 @@ describe("web api", () => {
 			expect(cellText("A7")).to.contain("01.01.1970");
 			expect(cellText("A18")).to.contain("12.01.1970");
 			// a single punch of the day leaves it open, which the note column says
-			expect(cellText("I18")).to.equal("offen");
+			expect(cellText("J18")).to.equal("offen");
 			expect(sheet?.getCell("D7").numFmt).to.equal("[h]:mm");
 			// 31 day rows and the totals row below them
 			expect(cellText("A38")).to.equal("Summe");
-			expect(cellText("H38")).to.equal("Tage: 31");
+			expect(cellText("I38")).to.equal("Tage: 31");
 		});
 		it("answers with a PDF statement of the requested month", async () => {
 			const response = await send("GET", "/reports/pdf", {

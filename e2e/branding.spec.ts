@@ -84,7 +84,7 @@ test("shows the logo, the background and the accent colour of the installation",
 	await page.goto("/admin");
 	await page.getByRole("tab", { name: "Einstellungen" }).click();
 	await page.getByLabel("#e8f1e9").click();
-	await page.getByRole("button", { name: "Speichern" }).click();
+	await page.getByRole("button", { name: "Speichern", exact: true }).click();
 
 	const stored = await request.get("/api/branding");
 	expect((await stored.json()).color).toBe("#e8f1e9");

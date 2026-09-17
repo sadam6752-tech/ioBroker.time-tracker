@@ -14,7 +14,7 @@ import type {
 	AbsenceType,
 	AdminUser,
 	BackupFile,
-	WorkProfile,
+	PauseRule,
 	PendingRestore,
 	Branding,
 	Conflict,
@@ -30,6 +30,7 @@ import type {
 	RoleInfo,
 	SessionUser,
 	UpdateUserInput,
+	WorkProfile,
 	YearAggregate,
 } from "./types";
 
@@ -175,6 +176,10 @@ export interface ApiClient {
 	createUser(input: CreateUserInput): Promise<AdminUser>;
 	/** Changes an employee */
 	updateUser(id: number, patch: UpdateUserInput): Promise<AdminUser>;
+	/** Graduated break rules of the instance (the company default) */
+	pauseRules(): Promise<PauseRule[]>;
+	/** Replaces the graduated break rules (the payload is the whole table) */
+	savePauseRules(rules: PauseRule[]): Promise<PauseRule[]>;
 	/** Work profile of an employee: working time, overtime model, vacation and paid breaks */
 	workProfile(id: number): Promise<WorkProfile>;
 	/** Creates or updates the work profile (the server merges the sent fields) */
@@ -819,6 +824,19 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async updateUser(id, patch): Promise<AdminUser> {
 			const result = await request<{ user: AdminUser }>("PATCH", `/users/${id}`, { body: patch });
 			return result.user;
+		},
+
+		// graduated break rules of the instance (read in the administration, written as a whole table)
+		async pauseRules(): Promise<PauseRule[]> {
+			const result = await request<{ pauseRules: PauseRule[] }>("GET", "/pause-rules");
+			return result.pauseRules ?? [];
+		},
+
+		async savePauseRules(rules): Promise<PauseRule[]> {
+			const result = await request<{ pauseRules: PauseRule[] }>("PUT", "/pause-rules", {
+				body: { pauseRules: rules },
+			});
+			return result.pauseRules ?? [];
 		},
 
 		/**

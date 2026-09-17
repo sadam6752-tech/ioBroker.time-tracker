@@ -27,6 +27,8 @@ export interface ReportLabels {
 	worked: string;
 	/** Column "Break" */
 	breaks: string;
+	/** Minutes of the break that are paid */
+	paidBreaks: string;
 	/** Column "Target" */
 	target: string;
 	/** Column "Balance" */
@@ -72,6 +74,7 @@ const EN: ReportLabels = {
 	timeOut: "Out",
 	worked: "Worked",
 	breaks: "Break",
+	paidBreaks: "of which paid",
 	target: "Target",
 	balance: "Balance",
 	absence: "Absence",
@@ -101,6 +104,7 @@ const FR: ReportLabels = {
 	timeOut: "Fin",
 	worked: "Travaillé",
 	breaks: "Pause",
+	paidBreaks: "dont payé",
 	target: "Objectif",
 	balance: "Solde",
 	absence: "Absence",
@@ -130,6 +134,7 @@ const IT: ReportLabels = {
 	timeOut: "Fine",
 	worked: "Lavorato",
 	breaks: "Pausa",
+	paidBreaks: "di cui pagato",
 	target: "Obiettivo",
 	balance: "Saldo",
 	absence: "Assenza",
@@ -159,6 +164,7 @@ const ES: ReportLabels = {
 	timeOut: "Salida",
 	worked: "Trabajado",
 	breaks: "Pausa",
+	paidBreaks: "de los cuales pagado",
 	target: "Objetivo",
 	balance: "Saldo",
 	absence: "Ausencia",
@@ -188,6 +194,7 @@ const PT: ReportLabels = {
 	timeOut: "Saída",
 	worked: "Trabalhado",
 	breaks: "Pausa",
+	paidBreaks: "dos quais pago",
 	target: "Meta",
 	balance: "Saldo",
 	absence: "Ausência",
@@ -217,6 +224,7 @@ const DE: ReportLabels = {
 	timeOut: "Bis",
 	worked: "Arbeitszeit",
 	breaks: "Pause",
+	paidBreaks: "davon bezahlt",
 	target: "Soll",
 	balance: "Saldo",
 	absence: "Abwesenheit",
@@ -246,6 +254,7 @@ const NL: ReportLabels = {
 	timeOut: "Tot",
 	worked: "Gewerkt",
 	breaks: "Pauze",
+	paidBreaks: "waarvan betaald",
 	target: "Doel",
 	balance: "Saldo",
 	absence: "Afwezigheid",
@@ -275,6 +284,7 @@ const PL: ReportLabels = {
 	timeOut: "Do",
 	worked: "Przepracowano",
 	breaks: "Przerwa",
+	paidBreaks: "w tym płatne",
 	target: "Norma",
 	balance: "Saldo",
 	absence: "Nieobecność",
@@ -304,6 +314,7 @@ const RU: ReportLabels = {
 	timeOut: "Окончание",
 	worked: "Отработано",
 	breaks: "Перерыв",
+	paidBreaks: "из них оплачено",
 	target: "Норма",
 	balance: "Сальдо",
 	absence: "Отсутствие",
@@ -333,6 +344,7 @@ const UK: ReportLabels = {
 	timeOut: "Закінчення",
 	worked: "Відпрацьовано",
 	breaks: "Перерва",
+	paidBreaks: "з них оплачено",
 	target: "Норма",
 	balance: "Сальдо",
 	absence: "Відсутність",
@@ -362,6 +374,7 @@ const ZH_CN: ReportLabels = {
 	timeOut: "下班",
 	worked: "工作时间",
 	breaks: "休息",
+	paidBreaks: "其中带薪",
 	target: "应出勤",
 	balance: "差额",
 	absence: "缺勤",

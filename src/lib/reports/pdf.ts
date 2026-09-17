@@ -94,6 +94,7 @@ const COLUMNS: {
 	{ key: "timeOut", align: "right", sample: "08:00", grow: 0 },
 	{ key: "worked", align: "right", sample: "00:00", grow: 0 },
 	{ key: "breaks", align: "right", sample: "00:00", grow: 0 },
+	{ key: "paidBreaks", align: "right", sample: "00:00", grow: 0 },
 	{ key: "target", align: "right", sample: "00:00", grow: 0 },
 	{ key: "balance", align: "right", sample: "-00:00", grow: 0 },
 	{ key: "absence", align: "left", sample: "F 50 %", grow: 0 },
@@ -300,10 +301,11 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 		(sum, day) => ({
 			worked: sum.worked + day.workedMin,
 			breaks: sum.breaks + day.breakMin,
+			paidBreaks: sum.paidBreaks + day.paidBreakMin,
 			target: sum.target + day.targetMin,
 			balance: sum.balance + day.balanceMin,
 		}),
-		{ worked: 0, breaks: 0, target: 0, balance: 0 },
+		{ worked: 0, breaks: 0, paidBreaks: 0, target: 0, balance: 0 },
 	);
 	/** The widest time of a day: in English a time carries an "AM"/"PM" marker, so "11:59 PM" is what fits. */
 	const widestTime = formatTime(Date.UTC(2026, 0, 1, 23, 59) / 1000, "UTC", locale);
@@ -315,6 +317,7 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 		timeOut: [...input.days.map(day => formatTime(day.lastOutUtc, user.timezone, locale)), widestTime],
 		worked: [...input.days.map(day => formatMinutes(day.workedMin)), formatMinutes(totals.worked)],
 		breaks: [...input.days.map(day => formatMinutes(day.breakMin)), formatMinutes(totals.breaks)],
+		paidBreaks: [...input.days.map(day => formatMinutes(day.paidBreakMin)), formatMinutes(totals.paidBreaks)],
 		target: [...input.days.map(day => formatMinutes(day.targetMin)), formatMinutes(totals.target)],
 		balance: [...input.days.map(day => formatMinutes(day.balanceMin)), formatMinutes(totals.balance)],
 		// the note column carries the marks of a day: a public holiday and a punch without a counterpart
@@ -408,6 +411,7 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 				timeOut: formatTime(day.lastOutUtc, user.timezone, locale),
 				worked: formatMinutes(day.workedMin),
 				breaks: formatMinutes(day.breakMin),
+				paidBreaks: formatMinutes(day.paidBreakMin),
 				target: formatMinutes(day.targetMin),
 				balance: formatMinutes(day.balanceMin),
 				absence: day.absenceCode ?? "",
@@ -424,6 +428,7 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 			date: labels.total,
 			worked: formatMinutes(totals.worked),
 			breaks: formatMinutes(totals.breaks),
+			paidBreaks: formatMinutes(totals.paidBreaks),
 			target: formatMinutes(totals.target),
 			balance: formatMinutes(totals.balance),
 			absence: `${labels.days}: ${input.days.length}`,

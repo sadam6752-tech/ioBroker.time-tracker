@@ -19,6 +19,7 @@ function day(localDate: string, overrides: Partial<DayAggregateRecord> = {}): Da
 		localDate,
 		workedMin: 0,
 		breakMin: 0,
+		paidBreakMin: 0,
 		targetMin: 480,
 		balanceMin: -480,
 		absenceCode: null,
@@ -149,7 +150,8 @@ describe("monthly report (xlsx)", () => {
 		// header of the day table
 		expect(text(sheet, "A6")).to.equal("Datum");
 		expect(text(sheet, "D6")).to.equal("Arbeitszeit");
-		expect(text(sheet, "G6")).to.equal("Saldo");
+		expect(text(sheet, "F6")).to.equal("davon bezahlt");
+		expect(text(sheet, "H6")).to.equal("Saldo");
 
 		// first day: 07:00–15:45 in Berlin, 8:30 worked
 		expect(text(sheet, "A7")).to.contain("01.09.2026");
@@ -157,20 +159,21 @@ describe("monthly report (xlsx)", () => {
 		expect(text(sheet, "C7")).to.equal("15:45");
 		expect(minutesOf(sheet, "D7")).to.equal(510);
 		expect(minutesOf(sheet, "E7")).to.equal(30);
-		expect(minutesOf(sheet, "G7")).to.equal(30);
+		expect(minutesOf(sheet, "F7")).to.equal(0);
+		expect(minutesOf(sheet, "H7")).to.equal(30);
 
 		// second day is still open, which the note column says
 		expect(text(sheet, "A8")).to.contain("02.09.2026");
-		expect(text(sheet, "I8")).to.equal("offen");
-		expect(minutesOf(sheet, "G8")).to.equal(-60);
+		expect(text(sheet, "J8")).to.equal("offen");
+		expect(minutesOf(sheet, "H8")).to.equal(-60);
 
 		// totals below the days
 		expect(text(sheet, "A9")).to.equal("Summe");
 		expect(minutesOf(sheet, "D9")).to.equal(930);
 		expect(minutesOf(sheet, "E9")).to.equal(30);
-		expect(minutesOf(sheet, "F9")).to.equal(960);
-		expect(minutesOf(sheet, "G9")).to.equal(-30);
-		expect(text(sheet, "H9")).to.equal("Tage: 2");
+		expect(minutesOf(sheet, "G9")).to.equal(960);
+		expect(minutesOf(sheet, "H9")).to.equal(-30);
+		expect(text(sheet, "I9")).to.equal("Tage: 2");
 
 		// a duration is a number so Excel can add it up
 		expect(sheet.getCell("D9").numFmt).to.equal("[h]:mm");
@@ -183,8 +186,8 @@ describe("monthly report (xlsx)", () => {
 		expect(text(sheet, "A6")).to.equal("Datum");
 		expect(text(sheet, "A7")).to.equal("Summe");
 		expect(minutesOf(sheet, "D7")).to.equal(0);
-		expect(minutesOf(sheet, "F7")).to.equal(0);
-		expect(text(sheet, "H7")).to.equal("Tage: 0");
+		expect(minutesOf(sheet, "G7")).to.equal(0);
+		expect(text(sheet, "I7")).to.equal("Tage: 0");
 	});
 
 	it("lists the absences of the month with their portion", async () => {

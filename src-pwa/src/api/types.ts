@@ -206,6 +206,20 @@ export interface RoleInfo {
 	permissions: string[];
 }
 
+/** A graduated break rule: from a pair duration of `fromMin` minutes, `pauseMin` minutes are deducted. */
+export interface PauseRule {
+	/** Primary key, `undefined` for a rule that is not stored yet */
+	id?: number;
+	/** Rule applies from this pair duration in minutes (inclusive) */
+	fromMin: number;
+	/** Rule applies below this pair duration in minutes (exclusive), `null` = open end */
+	toMin: number | null;
+	/** Minutes deducted from the pair */
+	pauseMin: number;
+	/** Inactive rules are kept but ignored */
+	isActive?: boolean;
+}
+
 /** Employment parameters of an employee (`work_profiles`). */
 export interface WorkProfile {
 	/** Owner of the profile */

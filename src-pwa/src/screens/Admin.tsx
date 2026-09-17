@@ -37,6 +37,7 @@ import BackupIcon from "@mui/icons-material/Backup";
 import DownloadIcon from "@mui/icons-material/Download";
 import RestoreIcon from "@mui/icons-material/Restore";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import KeyIcon from "@mui/icons-material/Key";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
@@ -45,7 +46,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatDate, type AdminTerminal } from "../api/client";
-import type { AdminUser, CreateUserInput, WorkProfile } from "../api/types";
+import type { AdminUser, CreateUserInput, PauseRule, WorkProfile } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -1581,7 +1582,28 @@ function SettingsTab(): React.JSX.Element {
 	const mayEdit = hasPermission(permissions, "settings.edit");
 	const queryClient = useQueryClient();
 	const settings = useQuery({ queryKey: ["admin", "settings"], queryFn: () => api.settings() });
+	const pauseRules = useQuery({ queryKey: ["admin", "pauseRules"], queryFn: () => api.pauseRules() });
 	const [draft, setDraft] = useState<Record<string, string>>({});
+	// `null` shows what the server has; the first change keeps a local copy until it is saved
+	const [rules, setRules] = useState<PauseRule[] | null>(null);
+	const shownRules = rules ?? pauseRules.data ?? [];
+
+	const savePauseRules = useMutation({
+		mutationFn: (list: PauseRule[]) => api.savePauseRules(list),
+		onSuccess: async () => {
+			setRules(null);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "pauseRules"] });
+		},
+	});
+
+	/**
+	 * Merges a change into one of the pending break rules.
+	 *
+	 * @param index - position of the rule in the list
+	 * @param patch - fields that changed
+	 */
+	const changeRule = (index: number, patch: Partial<PauseRule>): void =>
+		setRules(shownRules.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
 
 	const save = useMutation({
 		mutationFn: (patch: Record<string, string>) => api.updateSettings(patch),
@@ -1609,7 +1631,7 @@ function SettingsTab(): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={settings.error ?? save.error} />
+			<ErrorAlert error={settings.error ?? save.error ?? pauseRules.error ?? savePauseRules.error} />
 			{save.isSuccess && (
 				<Alert
 					severity="success"
@@ -1759,6 +1781,106 @@ function SettingsTab(): React.JSX.Element {
 									fullWidth
 								/>
 							))}
+					</Stack>
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.settings.pauseRules")}
+					</Typography>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						gutterBottom
+					>
+						{t("admin.settings.pauseRulesHint")}
+					</Typography>
+					<Stack spacing={1}>
+						{shownRules.map((rule, index) => (
+							<Stack
+								key={rule.id ?? `new-${index}`}
+								direction="row"
+								spacing={1}
+								useFlexGap
+								sx={{ alignItems: "center", flexWrap: "wrap" }}
+							>
+								<TextField
+									size="small"
+									type="number"
+									label={t("admin.settings.pauseFrom")}
+									value={String(rule.fromMin)}
+									onChange={event => changeRule(index, { fromMin: Number(event.target.value) })}
+									disabled={!mayEdit}
+								/>
+								<TextField
+									size="small"
+									type="number"
+									label={t("admin.settings.pauseTo")}
+									value={rule.toMin === null ? "" : String(rule.toMin)}
+									onChange={event =>
+										changeRule(index, {
+											toMin: event.target.value === "" ? null : Number(event.target.value),
+										})
+									}
+									disabled={!mayEdit}
+								/>
+								<TextField
+									size="small"
+									type="number"
+									label={t("admin.settings.pauseMinutes")}
+									value={String(rule.pauseMin)}
+									onChange={event => changeRule(index, { pauseMin: Number(event.target.value) })}
+									disabled={!mayEdit}
+								/>
+								<Switch
+									checked={rule.isActive !== false}
+									title={t("admin.settings.pauseActive")}
+									onChange={() => changeRule(index, { isActive: rule.isActive === false })}
+									disabled={!mayEdit}
+								/>
+								<IconButton
+									size="small"
+									title={t("admin.backup.delete")}
+									disabled={!mayEdit}
+									onClick={() => setRules(shownRules.filter((_, position) => position !== index))}
+								>
+									<DeleteIcon fontSize="small" />
+								</IconButton>
+							</Stack>
+						))}
+						<Stack
+							direction="row"
+							spacing={1}
+							useFlexGap
+							sx={{ alignItems: "center", flexWrap: "wrap" }}
+						>
+							<Button
+								size="small"
+								startIcon={<AddIcon />}
+								disabled={!mayEdit}
+								onClick={() =>
+									setRules([
+										...shownRules,
+										{ fromMin: 360, toMin: null, pauseMin: 30, isActive: true },
+									])
+								}
+							>
+								{t("admin.settings.pauseAdd")}
+							</Button>
+							<Button
+								size="small"
+								variant="contained"
+								disabled={!mayEdit || rules === null || savePauseRules.isPending}
+								onClick={() => savePauseRules.mutate(shownRules)}
+							>
+								{t("admin.settings.pauseSave")}
+							</Button>
+						</Stack>
 					</Stack>
 				</CardContent>
 			</Card>

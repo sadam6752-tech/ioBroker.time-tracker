@@ -463,4 +463,9 @@ export const migrations: Migration[] = [
 			}
 		},
 	},
+	{
+		version: 14,
+		name: "day aggregates: paid break minutes",
+		sql: `ALTER TABLE day_aggregates ADD COLUMN paid_break_min INTEGER NOT NULL DEFAULT 0;`,
+	},
 ];

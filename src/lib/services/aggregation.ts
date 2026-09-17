@@ -34,6 +34,8 @@ export interface DayAggregateRecord {
 	workedMin: number;
 	/** Deducted breaks in minutes */
 	breakMin: number;
+	/** Part of the deducted break that is paid (in minutes) */
+	paidBreakMin: number;
 	/** Target time in minutes */
 	targetMin: number;
 	/** `workedMin - targetMin` */
@@ -173,6 +175,7 @@ interface DayRow {
 	local_date: string;
 	worked_min: number;
 	break_min: number;
+	paid_break_min: number;
 	target_min: number;
 	balance_min: number;
 	absence_code: string | null;
@@ -210,7 +213,7 @@ interface YearRow {
 	updated_at: number;
 }
 
-const DAY_COLUMNS = `user_id, local_date, worked_min, break_min, target_min, balance_min, absence_code,
+const DAY_COLUMNS = `user_id, local_date, worked_min, break_min, paid_break_min, target_min, balance_min, absence_code,
 \tis_holiday, first_in_utc, last_out_utc, has_open_entry, updated_at`;
 
 const MONTH_COLUMNS = `user_id, year, month, worked_min, target_min, balance_min, overtime_min, vacation_used,
@@ -255,6 +258,7 @@ export function mapDayRow(row: DayRow): DayAggregateRecord {
 		localDate: row.local_date,
 		workedMin: row.worked_min,
 		breakMin: row.break_min,
+		paidBreakMin: row.paid_break_min,
 		targetMin: row.target_min,
 		balanceMin: row.balance_min,
 		absenceCode: row.absence_code,
@@ -325,10 +329,11 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 		 ORDER BY local_date`,
 	);
 	const upsertDay = db.prepare(
-		`INSERT INTO day_aggregates (${DAY_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO day_aggregates (${DAY_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(user_id, local_date) DO UPDATE SET
 		     worked_min = excluded.worked_min,
 		     break_min = excluded.break_min,
+		     paid_break_min = excluded.paid_break_min,
 		     target_min = excluded.target_min,
 		     balance_min = excluded.balance_min,
 		     absence_code = excluded.absence_code,
@@ -595,6 +600,7 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 			localDate,
 			workedMin: day.workedMinutes,
 			breakMin: day.breakMinutes,
+			paidBreakMin: day.paidPauseMinutes,
 			targetMin: day.targetMinutes,
 			balanceMin: day.balanceMinutes,
 			absenceCode: absence?.typeCode ?? null,
@@ -617,6 +623,7 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 					record.localDate,
 					record.workedMin,
 					record.breakMin,
+					record.paidBreakMin,
 					record.targetMin,
 					record.balanceMin,
 					record.absenceCode,

@@ -1476,6 +1476,58 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, { settings: changes });
 	});
 
+	// graduated break rules of the instance (the company default): they decide the pause of a day on which nobody
+	// punched a break, so they are edited as a whole table — like the shift rules of an employee.
+
+	route("GET", "/pause-rules", { permission: "settings.view" }, () =>
+		json(200, { pauseRules: rules.listPauseRules({ userId: null, includeInactive: true }) }),
+	);
+
+	route("PUT", "/pause-rules", { permission: "settings.edit", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		if (!Array.isArray(body.pauseRules)) {
+			throw new ValidationError("pauseRules must be an array");
+		}
+		const actor = {
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		};
+		const wanted = (body.pauseRules as unknown[]).map(raw => {
+			const rule = (raw ?? {}) as Record<string, unknown>;
+			return {
+				id: optionalNumber(rule, "id") ?? undefined,
+				fromMin: Number(rule.fromMin),
+				toMin: optionalNumber(rule, "toMin"),
+				pauseMin: Number(rule.pauseMin),
+				isActive: optionalBoolean(rule, "isActive") ?? undefined,
+			};
+		});
+
+		// the payload replaces the table: rules that are missing are removed, the rest is saved
+		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
+		for (const existing of rules.listPauseRules({ userId: null, includeInactive: true })) {
+			if (!keep.has(existing.id)) {
+				rules.removePauseRule({ id: existing.id, ...actor });
+			}
+		}
+		const saved = wanted.map(rule =>
+			rules.savePauseRule({
+				...(rule.id !== undefined ? { id: rule.id } : {}),
+				userId: null,
+				fromMin: rule.fromMin,
+				toMin: rule.toMin,
+				pauseMin: rule.pauseMin,
+				...(rule.isActive !== undefined ? { isActive: rule.isActive } : {}),
+				...actor,
+			}),
+		);
+		return json(200, { pauseRules: saved });
+	});
+
 	// branding: logo, background and accent colour of the installation.
 	//
 	// The values are public on purpose — the sign in screen, the kiosk terminal and the presence screen show them

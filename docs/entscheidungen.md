@@ -121,6 +121,11 @@ bezahlten Minuten werden der Arbeitszeit zugeschlagen, die restliche Pause bleib
 weiterhin die **ganze** Pause, damit der Nachweis nachvollziehbar bleibt. (Zuerst war das ein Ja/Nein-Schalter;
 Migration 13 wandelt ihn um: „bezahlt" wird zu `1440`.)
 
-**Randnotiz:** Einen Weg, die Pausenstaffel zu pflegen, gibt es noch nicht — die Tabelle `pause_rules` hat keinen
-Schreiber mehr (der Datenimport ist mit D1 entfallen), also sind die Regeln in einer frischen Installation leer und
-„Pause" war dort immer `0:00`. Ein Editor dafür bleibt offen.
+**Randnotiz:** Einen Weg, die Pausenstaffel zu pflegen, gab es zuerst nicht — die Tabelle `pause_rules` hatte
+keinen Schreiber mehr (der Datenimport ist mit D1 entfallen), also waren die Regeln in einer frischen Installation
+leer und „Pause" dort immer `0:00`. Seit der letzten Runde gibt es dafür `GET`/`PUT /api/pause-rules` (Recht
+`settings.edit`) und einen Editor im Reiter **Einstellungen**: Regeln mit „ab Minuten / bis Minuten / Pause
+Minuten" und einem Schalter je Regel; der Aufruf ersetzt die ganze Tabelle, fehlende Regeln werden entfernt.
+
+**Nachweis:** Der Stundennachweis zeigt neben „Pause" die Spalte **„davon bezahlt"** (`day_aggregates.paid_break_min`,
+Migration 14) samt Summe — so sieht man im PDF und in der Excel-Datei, welcher Teil der Pause bezahlt wurde.

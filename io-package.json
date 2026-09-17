@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.7",
+		"version": "0.0.8",
 		"nogit": true,
 		"news": {
+			"0.0.8": {
+				"en": "fix: the texts of the nine translated languages show their values again (translated placeholders like `{{minutes}}`, wrong terms like “punch” as a fist punch) - new: the administration downloads the monthly statement of any employee from the year report",
+				"de": "fix: die Texte der neun übersetzten Sprachen zeigen ihre Werte wieder (mitübersetzte Platzhalter wie `{{minutes}}`, falsche Begriffe wie „punch“ als Faustschlag) - neu: die Verwaltung lädt den Monatsnachweis jedes Mitarbeiters direkt im Jahresbericht",
+				"ru": "fix: тексты девяти переведённых языков снова показывают свои значения (переведённые подстановки вроде `{{minutes}}`, неверные термины вроде «punch» как удар кулаком) - новое: администрация скачивает месячный отчёт любого сотрудника прямо из годового отчёта",
+				"uk": "fix: тексти дев'яти перекладених мов знову показують свої значення (перекладені підстановки як `{{minutes}}`, хибні терміни як «punch» у значенні удару кулаком) - нове: адміністрація завантажує місячний звіт будь-якого співробітника прямо з річного звіту",
+				"pt": "fix: os textos dos nove idiomas traduzidos voltam a mostrar os seus valores (espaços reservados traduzidos como `{{minutes}}`, termos errados como “punch” = murro) - novo: a administração descarrega o extrato mensal de qualquer colaborador a partir do relatório anual",
+				"nl": "fix: de teksten van de negen vertaalde talen tonen hun waarden weer (vertaalde plaatsaanduidingen zoals `{{minutes}}`, verkeerde termen zoals “punch” als vuistslag) - nieuw: de administratie downloadt de maandstaat van elke medewerker vanuit het jaarrapport",
+				"fr": "fix: les textes des neuf langues traduites affichent à nouveau leurs valeurs (variables traduites comme `{{minutes}}`, termes erronés comme « punch » = coup de poing) - nouveau : l'administration télécharge le relevé mensuel de tout collaborateur depuis le rapport annuel",
+				"it": "fix: i testi delle nove lingue tradotte mostrano di nuovo i loro valori (segnaposto tradotti come `{{minutes}}`, termini errati come “punch” = pugno) - nuovo: l'amministrazione scarica l'estratto mensile di qualsiasi collaboratore dal report annuale",
+				"es": "fix: los textos de los nueve idiomas traducidos vuelven a mostrar sus valores (marcadores traducidos como `{{minutes}}`, términos erróneos como «punch» = puñetazo) - nuevo: la administración descarga el extracto mensual de cualquier empleado desde el informe anual",
+				"pl": "fix: teksty w dziewięciu przetłumaczonych językach ponownie pokazują swoje wartości (przetłumaczone znaczniki jak `{{minutes}}`, błędne terminy jak „punch“ = uderzenie pięścią) - nowość: administracja pobiera miesięczne zestawienie dowolnego pracownika z raportu rocznego",
+				"zh-cn": "fix: 九种翻译语言再次显示其数值（被翻译的占位符如 `{{minutes}}`，错误术语如把 punch 译成出拳）- 新增：管理员可直接从年度报告中下载任意员工的月度工时表"
+			},
 			"0.0.7": {
 				"en": "fix: the published package contains the web app again - releases up to 0.0.6 shipped without `www/`, so the web interface answered 404",
 				"de": "fix: das veröffentlichte Paket enthält die Web-App wieder - die Releases bis 0.0.6 wurden ohne `www/` ausgeliefert, deshalb antwortete die Web-Oberfläche mit 404",

@@ -310,6 +310,8 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
+### 0.0.8 (2026-09-17)
+
 - (Alex) the administration downloads the monthly statement of any employee from the year report: the screen has
   an employee picker (it appears with `report.view_other` and `user.view`), the Excel and PDF buttons follow the
   selection, and the name of a month opens that month in full — the accounting department no longer has to open

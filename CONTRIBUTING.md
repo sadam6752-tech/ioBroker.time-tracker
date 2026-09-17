@@ -125,7 +125,8 @@ Regeln dazu:
 
 1. `npm run version:bump patch` setzt die Version in `package.json`, `io-package.json` und im Changelog des README.
    Die News-Einträge danach in **allen 11 Sprachen** nachtragen — der Bump kopiert nur die erste Zeile.
-2. `npm run version:check`, `npm run check:i18n`, `npm test`, `npm run check:adapter` und `npm run e2e` (letzteres
+2. `npm run version:check` (prüft auch, dass die Listen nicht wachsen: höchstens sieben `common.news`-Einträge und
+   fünf Versionen im README), `npm run check:i18n`, `npm test`, `npm run check:adapter` und `npm run e2e` (letzteres
    **nach** `npm run build && npm run build:pwa`, sonst prüft es einen alten Stand) müssen grün sein — erst dann
    committen. Nach Skript-gestützten Änderungen immer `npm run lint` laufen lassen: eslint wertet Prettier-Regeln
    als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern. `lint` und

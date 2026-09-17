@@ -10,7 +10,10 @@
  * 1. beide Versionsfelder gleich sind,
  * 2. der Changelog im `README.md` (`## Changelog`) die aktuelle Version im neuesten Abschnitt nennt oder einen
  *    Abschnitt `WORK IN PROGRESS` hat (jede Änderung bekommt dort ihren Eintrag),
- * 3. zu einer festen Version ein `common.news`-Eintrag existiert — der Adapterchecker verlangt ihn (Regel E510).
+ * 3. zu einer festen Version ein `common.news`-Eintrag existiert — der Adapterchecker verlangt ihn (Regel E510),
+ * 4. die beiden Listen nicht wachsen: `common.news` darf höchstens sieben Einträge haben (der ioBroker-Repo-Builder
+ *    schneidet bei sieben ab, Repochecker-Befund E1032) und der README-Changelog höchstens fünf Versionen,
+ * 5. die neuesten Einträge vorn stehen und ältere Versionen in `CHANGELOG_OLD.md` dokumentiert sind.
  *
  * Verwendung:
  *   node tools/check-version.mjs                 # prüft das Repository im aktuellen Verzeichnis
@@ -24,6 +27,30 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+
+/** Der ioBroker-Repo-Builder schneidet `common.news` bei sieben Einträgen ab. */
+const NEWS_LIMIT = 7;
+
+/** Der README behält die letzten fünf Versionen; alles Ältere steht in `CHANGELOG_OLD.md`. */
+const README_LIMIT = 5;
+
+/**
+ * Vergleicht zwei Versionen der Form `X.Y.Z`.
+ *
+ * @param {string} a erste Version
+ * @param {string} b zweite Version
+ * @returns {number} negativ, `0` oder positiv wie bei einem Sortiervergleich
+ */
+function compareVersions(a, b) {
+	const left = a.split(".").map(Number);
+	const right = b.split(".").map(Number);
+	for (let index = 0; index < 3; index += 1) {
+		if (left[index] !== right[index]) {
+			return (left[index] ?? 0) - (right[index] ?? 0);
+		}
+	}
+	return 0;
+}
 
 /**
  * Liest eine JSON-Datei.
@@ -124,6 +151,44 @@ export function checkVersioning(directory) {
 	}
 	if (!section.workInProgress && !io.common.news?.[version]) {
 		problems.push(`io-package.json hat keinen common.news-Eintrag für ${version}`);
+	}
+
+	// Die beiden Listen dürfen nicht wachsen — sonst schneidet der Repo-Builder ab und der README verliert seine
+	// Regel „die letzten fünf Versionen".
+	const newsVersions = Object.keys(io.common.news ?? {});
+	if (newsVersions.length > NEWS_LIMIT) {
+		problems.push(
+			`io-package.json hat ${newsVersions.length} common.news-Einträge, erlaubt sind ${NEWS_LIMIT} ` +
+				"(der ioBroker-Repo-Builder schneidet den Rest ab)",
+		);
+	}
+
+	const readmeText = readFileSync(readmeFile, "utf8");
+	const readmeVersions = [...readmeText.matchAll(/^###\s+(\d+\.\d+\.\d+)\s*\(/gm)].map(match => match[1]);
+	if (readmeVersions.length > README_LIMIT) {
+		problems.push(
+			`der README-Changelog nennt ${readmeVersions.length} Versionen, erlaubt sind ${README_LIMIT} ` +
+				"— ältere gehören nach CHANGELOG_OLD.md",
+		);
+	}
+
+	const sorted = [...readmeVersions].sort(compareVersions).reverse();
+	if (readmeVersions.join(",") !== sorted.join(",")) {
+		problems.push("der README-Changelog ist nicht absteigend nach Version sortiert");
+	}
+
+	// Was aus der News-Liste herausfällt, muss in README oder CHANGELOG_OLD.md dokumentiert sein.
+	const oldFile = join(directory, "CHANGELOG_OLD.md");
+	if (existsSync(oldFile)) {
+		const oldText = readFileSync(oldFile, "utf8");
+		const undocumented = newsVersions.filter(
+			entry => !readmeVersions.includes(entry) && !oldText.includes(`### ${entry}`),
+		);
+		if (undocumented.length > 0) {
+			problems.push(
+				`diese Versionen stehen weder im README noch in CHANGELOG_OLD.md: ${undocumented.join(", ")}`,
+			);
+		}
 	}
 
 	return problems;

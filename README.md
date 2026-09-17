@@ -49,10 +49,10 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 The first start creates the database, the roles and the settings — and **one administrator account**, because
 otherwise nobody could log in:
 
-| Instance setting                            | Meaning                                                                               |
-| ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Login of the first administrator            | login of that account, default `admin`                                                |
-| Start password of the first administrator   | password of that account; empty = a random password is written to the adapter log once |
+| Instance setting                          | Meaning                                                                                |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| Login of the first administrator          | login of that account, default `admin`                                                 |
+| Start password of the first administrator | password of that account; empty = a random password is written to the adapter log once |
 
 The account starts with “change the password”, so the start password opens the door exactly once and the app asks
 for a new one right away. Accounts created later in the administration start the same way.
@@ -70,24 +70,24 @@ carryover, paid break minutes, own break rules), and — if a tablet is used —
 
 The adapter is configured in the **instance settings** of the ioBroker admin:
 
-| Setting                             | Meaning                                                         |
-| ----------------------------------- | --------------------------------------------------------------- |
-| Port                                | port of the HTTP server (web app, API, terminal)                 |
+| Setting                             | Meaning                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Port                                | port of the HTTP server (web app, API, terminal)                          |
 | Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all) |
-| Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`             |
-| Default language for new users      | one of the 11 supported languages                                |
-| Holiday country                     | country used to generate the public holidays (default `DE`)      |
-| Database file                       | optional path; empty = adapter data directory                    |
-| Enable kiosk terminal               | switches the shared badge/PIN terminal on                        |
-| Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)           |
-| Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once) |
-| Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest)            |
-| Session lifetime in minutes         | how long a login lasts                                           |
-| Days users may edit on their own    | how far back an employee may correct own punches                 |
-| Round quick punches to minutes      | rounding of the quick punch (0 = off)                            |
-| Calculate absences only until today | future absences do not reduce the target time                    |
-| Subtract working time from absences | lets vacation turn into overtime                                 |
-| Keep database backups for days      | retention of the backups                                         |
+| Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`                      |
+| Default language for new users      | one of the 11 supported languages                                         |
+| Holiday country                     | country used to generate the public holidays (default `DE`)               |
+| Database file                       | optional path; empty = adapter data directory                             |
+| Enable kiosk terminal               | switches the shared badge/PIN terminal on                                 |
+| Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)                    |
+| Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)        |
+| Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest)                     |
+| Session lifetime in minutes         | how long a login lasts                                                    |
+| Days users may edit on their own    | how far back an employee may correct own punches                          |
+| Round quick punches to minutes      | rounding of the quick punch (0 = off)                                     |
+| Calculate absences only until today | future absences do not reduce the target time                             |
+| Subtract working time from absences | lets vacation turn into overtime                                          |
+| Keep database backups for days      | retention of the backups                                                  |
 
 These settings win over the values stored in the database and are applied on every start.
 
@@ -95,13 +95,13 @@ These settings win over the values stored in the database and are applied on eve
 
 Further settings are edited in the web app (**Administration → Settings**, right `settings.edit`):
 
-| Setting                                     | Meaning                                                                                                        |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Pause rule (`auto` / `punched` / `staffel`)  | how the pause of a day is determined: the punched break (`auto`, default) or only the graduated rules           |
-| Graduated break rules (Pausenstaffel)        | “from … to … minutes block length → so many minutes deducted”; the pause of a day **without** a punched break. The work profile of an employee can carry **own rules**: a rule with the same “from minutes” replaces the company rule for that person only |
-| Paid break minutes (per employee)            | how much of a break is paid: `0` = not paid, `15` = a quarter of an hour, `1440` = any length (work profile)      |
-| Company branding                             | logo, background picture and accent colour for the login screen, the header and the kiosk screens               |
-| Unicode font for PDF statements              | `report_font_path`: needed for `ru`, `uk`, `zh-cn` and Polish, otherwise the export refuses with a clear message |
+| Setting                                     | Meaning                                                                                                                                                                                                                                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pause rule (`auto` / `punched` / `staffel`) | how the pause of a day is determined: the punched break (`auto`, default) or only the graduated rules                                                                                                                                                      |
+| Graduated break rules (Pausenstaffel)       | “from … to … minutes block length → so many minutes deducted”; the pause of a day **without** a punched break. The work profile of an employee can carry **own rules**: a rule with the same “from minutes” replaces the company rule for that person only |
+| Paid break minutes (per employee)           | how much of a break is paid: `0` = not paid, `15` = a quarter of an hour, `1440` = any length (work profile)                                                                                                                                               |
+| Company branding                            | logo, background picture and accent colour for the login screen, the header and the kiosk screens                                                                                                                                                          |
+| Unicode font for PDF statements             | `report_font_path`: needed for `ru`, `uk`, `zh-cn` and Polish, otherwise the export refuses with a clear message                                                                                                                                           |
 
 The pause of a day appears in the month view of the app and in the monthly statement — with the paid part next to it.
 
@@ -109,9 +109,9 @@ The pause of a day appears in the month view of the app and in the monthly state
 
 | Role       | May                                                                                          |
 | ---------- | -------------------------------------------------------------------------------------------- |
-| `employee` | punch, see the own month and year, request absences, edit own punches inside the edit window   |
-| `manager`  | everything an employee may, plus statements and corrections for other employees                |
-| `admin`    | everything: employees, roles, terminals, settings, backups                                     |
+| `employee` | punch, see the own month and year, request absences, edit own punches inside the edit window |
+| `manager`  | everything an employee may, plus statements and corrections for other employees              |
+| `admin`    | everything: employees, roles, terminals, settings, backups                                   |
 
 The **edit window** (`edit_window_days`, default 7 days) is what an `employee` is bound by: an older punch is
 rejected with `edit_window_closed` and stays with the administration. Managers and admins are not bound by it.
@@ -123,11 +123,11 @@ Everything is served on the port of the instance settings:
 
 | Path                      | Content                                                                       |
 | ------------------------- | ----------------------------------------------------------------------------- |
-| `/` (and all other paths) | the web app from `www/` — punch screen, month, year report, absences, profile  |
-| `/api/...`                | the REST API (JSON; errors as `application/problem+json`)                      |
-| `/api/stream`             | live events, so the app updates itself without a reload                        |
-| `/terminal?token=…`       | the kiosk screen (badge and PIN)                                               |
-| `/presence?token=…`       | the board “who is at work right now”                                            |
+| `/` (and all other paths) | the web app from `www/` — punch screen, month, year report, absences, profile |
+| `/api/...`                | the REST API (JSON; errors as `application/problem+json`)                     |
+| `/api/stream`             | live events, so the app updates itself without a reload                       |
+| `/terminal?token=…`       | the kiosk screen (badge and PIN)                                              |
+| `/presence?token=…`       | the board “who is at work right now”                                          |
 
 ### Terminal (kiosk)
 
@@ -149,23 +149,23 @@ needed for the first start.
 
 Punches stay in the database; the adapter publishes aggregates and controls:
 
-| State                                                                                     | Type    | Purpose                                   |
-| ----------------------------------------------------------------------------------------- | ------- | ----------------------------------------- |
-| `zeiterfassung.0.info.connection`                                                          | boolean | adapter/service ready                     |
-| `zeiterfassung.0.info.lastBackup`                                                          | number  | instant of the newest database backup     |
-| `zeiterfassung.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError` | —     | instance information                      |
-| `zeiterfassung.0.users.<id>.displayName`                                                   | string  | name of the employee                      |
-| `zeiterfassung.0.users.<id>.hasOpenEntry`                                                  | boolean | employee is clocked in                    |
-| `zeiterfassung.0.users.<id>.lastPunch`                                                     | number  | instant of the last punch of today        |
-| `zeiterfassung.0.users.<id>.todayWorkedMinutes`                                            | number  | minutes worked today                      |
-| `zeiterfassung.0.users.<id>.todayBalanceMinutes`                                           | number  | balance of today in minutes               |
-| `zeiterfassung.0.users.<id>.openConflicts`                                                 | number  | punches waiting for a decision            |
-| `zeiterfassung.0.commands.punchUserId`                                                     | number  | employee the punch commands apply to      |
-| `zeiterfassung.0.commands.punch`                                                           | boolean | punch in or out (button)                  |
-| `zeiterfassung.0.commands.quickPunch`                                                      | boolean | punch with the configured quick rounding  |
-| `zeiterfassung.0.commands.closeMonth`                                                      | string  | close a month, value `YYYY-MM`            |
-| `zeiterfassung.0.commands.recalc`                                                          | string  | recalculate a period, `YYYY-MM` or `YYYY` |
-| `zeiterfassung.0.commands.backup`                                                          | boolean | write a database backup (button)          |
+| State                                                                                         | Type    | Purpose                                   |
+| --------------------------------------------------------------------------------------------- | ------- | ----------------------------------------- |
+| `zeiterfassung.0.info.connection`                                                             | boolean | adapter/service ready                     |
+| `zeiterfassung.0.info.lastBackup`                                                             | number  | instant of the newest database backup     |
+| `zeiterfassung.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError` | —       | instance information                      |
+| `zeiterfassung.0.users.<id>.displayName`                                                      | string  | name of the employee                      |
+| `zeiterfassung.0.users.<id>.hasOpenEntry`                                                     | boolean | employee is clocked in                    |
+| `zeiterfassung.0.users.<id>.lastPunch`                                                        | number  | instant of the last punch of today        |
+| `zeiterfassung.0.users.<id>.todayWorkedMinutes`                                               | number  | minutes worked today                      |
+| `zeiterfassung.0.users.<id>.todayBalanceMinutes`                                              | number  | balance of today in minutes               |
+| `zeiterfassung.0.users.<id>.openConflicts`                                                    | number  | punches waiting for a decision            |
+| `zeiterfassung.0.commands.punchUserId`                                                        | number  | employee the punch commands apply to      |
+| `zeiterfassung.0.commands.punch`                                                              | boolean | punch in or out (button)                  |
+| `zeiterfassung.0.commands.quickPunch`                                                         | boolean | punch with the configured quick rounding  |
+| `zeiterfassung.0.commands.closeMonth`                                                         | string  | close a month, value `YYYY-MM`            |
+| `zeiterfassung.0.commands.recalc`                                                             | string  | recalculate a period, `YYYY-MM` or `YYYY` |
+| `zeiterfassung.0.commands.backup`                                                             | boolean | write a database backup (button)          |
 
 ## Reports
 
@@ -187,13 +187,13 @@ For `ru`, `uk`, `zh-cn` and Polish the PDF needs a Unicode font: set `report_fon
 
 **Administration → Backups** creates a copy of the database with one click and lists what exists:
 
-| Action        | What happens                                                                                     |
-| ------------- | ------------------------------------------------------------------------------------------------ |
-| Create now    | writes a copy (`VACUUM INTO`) into the backup folder                                              |
-| Download      | hands the file to the browser                                                                     |
-| Upload        | takes a downloaded file back, checks it and queues it for the next start                           |
-| Restore       | queues one of the listed files for the next start (with a reason)                                  |
-| Delete        | removes a single file after a confirmation                                                         |
+| Action     | What happens                                                             |
+| ---------- | ------------------------------------------------------------------------ |
+| Create now | writes a copy (`VACUUM INTO`) into the backup folder                     |
+| Download   | hands the file to the browser                                            |
+| Upload     | takes a downloaded file back, checks it and queues it for the next start |
+| Restore    | queues one of the listed files for the next start (with a reason)        |
+| Delete     | removes a single file after a confirmation                               |
 
 A restore needs a closed database, so it is applied **while the adapter starts** — the app says so, and the previous
 database is kept next to it as `<database>.before-restore-<time>`. Backups older than the retention of the instance
@@ -208,14 +208,14 @@ the adapter and switch **Trust the reverse proxy** on: the adapter then takes th
 
 ## Troubleshooting
 
-| Problem                                          | Cause and fix                                                                                   |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `/` answers `404 not_found`                      | the web app is missing: install the npm package or build it (`npm run install:pwa && npm run build:pwa`) |
-| Not installable as an app on the phone           | the page is not reachable over HTTPS — see above                                                 |
-| The PDF refuses or shows empty boxes             | `report_font_path` is missing — see [Reports](#reports)                                          |
-| A restore seems to do nothing                    | it is applied on the next start: restart the instance                                            |
-| An employee cannot log in                        | the start password has to be changed on first use; the administration can set a new one          |
-| A punch is missing                               | it may wait in the offline queue or be marked as a conflict (see *Synchronisation* in the app)    |
+| Problem                                | Cause and fix                                                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `/` answers `404 not_found`            | the web app is missing: install the npm package or build it (`npm run install:pwa && npm run build:pwa`) |
+| Not installable as an app on the phone | the page is not reachable over HTTPS — see above                                                         |
+| The PDF refuses or shows empty boxes   | `report_font_path` is missing — see [Reports](#reports)                                                  |
+| A restore seems to do nothing          | it is applied on the next start: restart the instance                                                    |
+| An employee cannot log in              | the start password has to be changed on first use; the administration can set a new one                  |
+| A punch is missing                     | it may wait in the offline queue or be marked as a conflict (see _Synchronisation_ in the app)           |
 
 ## Languages
 
@@ -230,16 +230,16 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ## Documentation
 
-| Document                                             | Content                                                       |
-| ---------------------------------------------------- | ------------------------------------------------------------- |
-| [`docs/erste-schritte.md`](docs/erste-schritte.md)   | a walk through the first setup (German)                       |
-| [`docs/kurzfassung-de.md`](docs/kurzfassung-de.md)   | the German summary of this README                             |
-| [`docs/testplan.md`](docs/testplan.md)               | acceptance tests and what is still open                        |
-| [`docs/entscheidungen.md`](docs/entscheidungen.md)   | the decisions behind the design (German)                      |
-| [`docs/technik.md`](docs/technik.md)                 | internals: HTTP surface, sessions, live events, database       |
-| [`docs/entwicklung.md`](docs/entwicklung.md)         | build, tests, release                                          |
-| [`docs/i18n.md`](docs/i18n.md)                       | how the 11 languages are kept complete                        |
-| [`docs/adapter-check.md`](docs/adapter-check.md)     | the local pre-check of the ioBroker adapter rules              |
+| Document                                           | Content                                                  |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| [`docs/erste-schritte.md`](docs/erste-schritte.md) | a walk through the first setup (German)                  |
+| [`docs/kurzfassung-de.md`](docs/kurzfassung-de.md) | the German summary of this README                        |
+| [`docs/testplan.md`](docs/testplan.md)             | acceptance tests and what is still open                  |
+| [`docs/entscheidungen.md`](docs/entscheidungen.md) | the decisions behind the design (German)                 |
+| [`docs/technik.md`](docs/technik.md)               | internals: HTTP surface, sessions, live events, database |
+| [`docs/entwicklung.md`](docs/entwicklung.md)       | build, tests, release                                    |
+| [`docs/i18n.md`](docs/i18n.md)                     | how the 11 languages are kept complete                   |
+| [`docs/adapter-check.md`](docs/adapter-check.md)   | the local pre-check of the ioBroker adapter rules        |
 
 ## Links
 
@@ -250,6 +250,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+### **WORK IN PROGRESS**
+
+- (Alex) internal: `npm run version:check` watches the two lists now as well — `common.news` may keep at most seven
+  entries (the ioBroker repository builder truncates at seven, finding E1032) and the README changelog at most five
+  versions; it also names a version that is in neither the README nor `CHANGELOG_OLD.md`
 
 ### 0.0.16 (2026-09-17)
 

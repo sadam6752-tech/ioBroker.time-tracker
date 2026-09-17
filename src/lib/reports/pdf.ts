@@ -321,8 +321,10 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 		doc.font(options.bold ? fonts.bold : fonts.regular).fontSize(options.fontSize ?? LAYOUT.fontSize);
 		doc.fillColor(options.color ?? "#000000");
 		for (const column of columns) {
+			// the width of the drawn box is one padding narrower than the column: without that gap a right
+			// aligned value would end exactly where the next column starts ("SaldoAbwesenheit")
 			doc.text(values[column.key] ?? "", column.x, y, {
-				width: column.width,
+				width: Math.max(1, column.width - COLUMN_PADDING),
 				align: column.align,
 				lineBreak: false,
 			});
@@ -431,10 +433,13 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 	// --- signatures -----------------------------------------------------------
 	// the label is drawn and the line is ruled: a long label plus a string of underscores is wrapped by the
 	// renderer (the Russian and Ukrainian labels are long), and then the two signature lines are no longer level
-	doc.moveDown(1.5);
-	const signatureY = doc.y;
+	//
+	// The block sits near the bottom of the page: a statement ends with two signature lines, so an empty area
+	// above them looks like the document was cut off. It stays below the content when that reaches far down.
 	const signatureGap = 16;
 	const signatureWidth = (doc.page.width - 2 * LAYOUT.margin - signatureGap) / 2;
+	const signaturePreferred = doc.page.height - 30 - LAYOUT.lineHeight - 24;
+	const signatureY = Math.max(doc.y + 24, Math.min(signaturePreferred, pageBottom - LAYOUT.lineHeight));
 
 	/**
 	 * Draws one signature line: the label followed by the rule to sign on.

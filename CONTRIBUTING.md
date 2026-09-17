@@ -121,6 +121,23 @@ Regeln dazu:
 - Der Herkunftsnachweis wird außerhalb dieses Repositories geführt und nennt die Grundlage der Umsetzung
   sowie die Feststellung „kein fremder Quellcode übernommen".
 
+### Release-Ablauf
+
+1. `npm run version:bump patch` setzt die Version in `package.json`, `io-package.json` und im Changelog des README.
+   Die News-Einträge danach in **allen 11 Sprachen** nachtragen — der Bump kopiert nur die erste Zeile.
+2. `npm run version:check`, `npm run check:i18n`, `npm test`, `npm run check:adapter` und `npm run e2e` (letzteres
+   **nach** `npm run build && npm run build:pwa`, sonst prüft es einen alten Stand) müssen grün sein — erst dann
+   committen. Nach Skript-gestützten Änderungen immer `npm run lint` laufen lassen: eslint wertet Prettier-Regeln
+   als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern.
+3. Commit, **annotiertes** Tag (`git tag -a vX.Y.Z -m 'X.Y.Z'`) und Push mit Freigabe (`npm run push:approve`).
+4. **Warten, bis der Workflow „Test and Release" für das Tag grün ist — und danach weitere 5 bis 10 Minuten:**
+   die Veröffentlichung auf npm läuft am Ende des Laufs und der Registry-Index zieht nach (gemessen: grüner Lauf
+   17:37, `npm view … dist-tags` zeigt die Version 17:42). Erst dann prüfen.
+5. Ein Tag einer veröffentlichten Version wird **nie gelöscht und neu gepusht**. Das löscht das zugehörige
+   GitHub-Release, erzeugt einen roten Lauf (npm lehnt eine zweite Veröffentlichung derselben Version ab) und
+   ändert am veröffentlichten Paket nichts. Fehlt ein Tag, wird nur das Tag neu gesetzt und das Release in der
+   GitHub-Oberfläche daraus erstellt.
+
 ## 7. Lokaler Dev-Server (ioBroker dev-server)
 
 Die Entwicklungsinstanz liegt in `.dev-server/`: Admin auf `http://127.0.0.1:8081`, der Adapter mit der

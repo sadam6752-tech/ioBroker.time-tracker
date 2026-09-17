@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.8",
+		"version": "0.0.9",
 		"nogit": true,
 		"news": {
+			"0.0.9": {
+				"en": "fix: the PDF statement keeps its layout - the column headings no longer break, the two signature lines are level and the footer no longer starts a second page; Polish now asks for a Unicode font instead of showing nonsense",
+				"de": "fix: der PDF-Nachweis behält sein Layout - die Spaltenüberschriften brechen nicht mehr um, die beiden Unterschriftszeilen liegen auf einer Höhe und die Fußzeile erzeugt keine zweite Seite mehr; Polnisch verlangt jetzt eine Unicode-Schrift statt Kauderwelsch zu zeigen",
+				"ru": "fix: PDF-отчёт сохраняет свою разметку - заголовки столбцов больше не переносятся, обе подписи находятся на одном уровне, а нижний колонтитул не создаёт вторую страницу; польский теперь требует Unicode-шрифт вместо нечитаемого текста",
+				"uk": "fix: PDF-звіт зберігає свою розмітку - заголовки стовпців більше не переносяться, обидва підписи на одному рівні, а колонтитул не створює другу сторінку; польська тепер вимагає Unicode-шрифт замість нечитабельного тексту",
+				"pt": "fix: o extrato em PDF mantém o seu layout - os títulos das colunas já não quebram, as duas linhas de assinatura ficam alinhadas e o rodapé não cria uma segunda página; o polaco exige agora uma fonte Unicode em vez de mostrar texto ilegível",
+				"nl": "fix: de PDF-staat behoudt zijn opmaak - de kolomkoppen breken niet meer af, beide handtekeningregels staan op één hoogte en de voettekst maakt geen tweede pagina meer; Pools vraagt nu om een Unicode-lettertype in plaats van onleesbare tekst",
+				"fr": "fix: le relevé PDF garde sa mise en page - les en-têtes de colonnes ne se coupent plus, les deux lignes de signature sont alignées et le pied de page ne crée plus de deuxième page ; le polonais exige désormais une police Unicode au lieu d'afficher du texte illisible",
+				"it": "fix: l'estratto in PDF mantiene il layout - le intestazioni delle colonne non si spezzano più, le due righe di firma sono allineate e il piè di pagina non crea più una seconda pagina; il polacco ora richiede un font Unicode invece di mostrare testo illeggibile",
+				"es": "fix: el extracto en PDF mantiene su diseño - los encabezados de columna ya no se cortan, las dos líneas de firma están alineadas y el pie de página ya no crea una segunda página; el polaco ahora exige una fuente Unicode en lugar de mostrar texto ilegible",
+				"pl": "fix: zestawienie PDF zachowuje swój układ - nagłówki kolumn nie łamią się już, obie linie podpisu są wyrównane, a stopka nie tworzy drugiej strony; polski wymaga teraz czcionki Unicode zamiast nieczytelnego tekstu",
+				"zh-cn": "fix: PDF 工时表保持其版式 - 列标题不再换行，两条签名线对齐，页脚不再生成第二页；波兰语现在要求使用 Unicode 字体，而不再显示乱码"
+			},
 			"0.0.8": {
 				"en": "fix: the texts of the nine translated languages show their values again (translated placeholders like `{{minutes}}`, wrong terms like “punch” as a fist punch) - new: the administration downloads the monthly statement of any employee from the year report",
 				"de": "fix: die Texte der neun übersetzten Sprachen zeigen ihre Werte wieder (mitübersetzte Platzhalter wie `{{minutes}}`, falsche Begriffe wie „punch“ als Faustschlag) - neu: die Verwaltung lädt den Monatsnachweis jedes Mitarbeiters direkt im Jahresbericht",

@@ -312,7 +312,7 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 
 ### **WORK IN PROGRESS**
 
-### 0.0.8 (2026-09-17)
+### 0.0.9 (2026-09-17)
 
 - (Alex) fix: the PDF statement keeps its measured layout — the column headings define the width of their column,
   so "Arbeitszeit" and "Abwesenheit" stay on one line (and the English "02:00 AM" no longer falls apart); the two
@@ -321,6 +321,9 @@ flags must follow the official role rules; secrets only via `encryptedNative`/`p
 - (Alex) fix: the PDF statement refuses Polish instead of drawing nonsense, because the built-in fonts cannot draw
   "Nieobecność", "święto" or "cały dzień" — `report_font_path` is needed there as well (the labels decide, so the
   same happens for any other language whose letters are outside the built-in set)
+
+### 0.0.8 (2026-09-17)
+
 - (Alex) the administration downloads the monthly statement of any employee from the year report: the screen has
   an employee picker (it appears with `report.view_other` and `user.view`), the Excel and PDF buttons follow the
   selection, and the name of a month opens that month in full — the accounting department no longer has to open

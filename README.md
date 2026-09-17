@@ -40,8 +40,8 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
    An installation from Git does not work on its own: the web app in `www/` is built, so it is not part of the
    repository — either install the npm package or build it once in the adapter directory
    (`npm ci && npm run install:pwa && npm run build:pwa && npm run build`).
-2. Start the instance and open the web app on the port of the instance settings (default **8082**):
-   `http://<ioBroker host>:8082/`
+2. Start the instance and open the web app on the port of the instance settings (default **8092**):
+   `http://<ioBroker host>:8092/`
 3. Log in with the start password (see [First start](#first-start)) and create your employees.
 
 ## First start
@@ -56,6 +56,10 @@ otherwise nobody could log in:
 
 The account starts with “change the password”, so the start password opens the door exactly once and the app asks
 for a new one right away. Accounts created later in the administration start the same way.
+
+The start password appears **once in the ioBroker log**: open `Logs` in the admin and look for the line
+`administrator "admin" created with the start password "…" - change it at the first login`. The instance settings
+show the same hint — enter your own password there and nothing has to be searched.
 
 After that the usual order is: create employees (**Administration → Employees**), set their working time
 (**Arbeitsprofil** button of the row: employment level, weekly hours, working days, overtime model, vacation,
@@ -72,7 +76,7 @@ The adapter is configured in the **instance settings** of the ioBroker admin:
 | Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all) |
 | Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`             |
 | Default language for new users      | one of the 11 supported languages                                |
-| Holiday country                     | country used to generate the public holidays                     |
+| Holiday country                     | country used to generate the public holidays (default `DE`)      |
 | Database file                       | optional path; empty = adapter data directory                    |
 | Enable kiosk terminal               | switches the shared badge/PIN terminal on                        |
 | Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)           |
@@ -246,6 +250,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+### 0.0.15 (2026-09-17)
+
+- (Alex) the **default port** is `8092` now — `8082` is the default of vis and web in ioBroker, so a fresh
+  installation could not start beside them; the port field names that in its help text
+- (Alex) the **default holiday country** is Germany (`DE`) now: new instances generate German public holidays,
+  existing ones just pick the country in the instance settings
+- (Alex) the instance settings point out the **start password** in two places now — a hint on the first tab and a
+  header right above the fields — because the generated password appears exactly once in the ioBroker log
 
 ### 0.0.14 (2026-09-17)
 

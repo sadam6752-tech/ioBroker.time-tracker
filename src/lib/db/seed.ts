@@ -77,7 +77,7 @@ export const SETTING_DEFAULTS: Record<string, string> = {
 	absence_calc_until_today: "1",
 	absence_deduct_worktime: "0",
 	print_limit_days: "0",
-	holiday_country: "CH",
+	holiday_country: "DE",
 	default_language: "de",
 	session_ttl_minutes: "720",
 	backup_retention_days: "30",
@@ -111,7 +111,7 @@ export interface SeedOptions {
  * @returns summary of what is now present
  */
 export function seed(db: Db, options: SeedOptions = {}): { permissions: number; holidays: number } {
-	const country: HolidayCountry = options.holidayCountry ?? "CH";
+	const country: HolidayCountry = options.holidayCountry ?? "DE";
 	const currentYear = new Date().getUTCFullYear();
 	const years = options.holidayYears ?? [currentYear, currentYear + 1];
 

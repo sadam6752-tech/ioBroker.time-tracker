@@ -62,7 +62,7 @@ export default defineConfig({
 		// fall back to the app shell — which is what broke the login in the dev server)
 		proxy: {
 			[API_PREFIX]: {
-				target: "http://127.0.0.1:8082",
+				target: "http://127.0.0.1:8092",
 				changeOrigin: false,
 			},
 		},

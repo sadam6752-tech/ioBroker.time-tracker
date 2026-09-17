@@ -124,7 +124,7 @@ Regeln dazu:
 ## 7. Lokaler Dev-Server (ioBroker dev-server)
 
 Die Entwicklungsinstanz liegt in `.dev-server/`: Admin auf `http://127.0.0.1:8081`, der Adapter mit der
-Weboberfläche auf `http://127.0.0.1:8082`. Gestartet wird sie mit
+Weboberfläche auf `http://127.0.0.1:8092`. Gestartet wird sie mit
 
 ```powershell
 npm run dev-server watch

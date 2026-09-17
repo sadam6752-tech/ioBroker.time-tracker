@@ -11,13 +11,13 @@
  *
  * Verwendung:
  *   node tools/load-smoke.mjs --login admin --password 'geheim'
- *   npm run load-smoke -- --base http://192.168.1.10:8082 --login anna --password 'geheim' --count 10
+ *   npm run load-smoke -- --base http://192.168.1.10:8092 --login anna --password 'geheim' --count 10
  *
  * Das Passwort kann auch über die Umgebungsvariable `ZT_PASSWORD` kommen, damit es nicht in der Shell-Historie
  * landet. Ein Bearer-Token braucht kein CSRF-Token (Vorgabe 4.10), das Skript sendet daher nur `x-session-token`.
  */
 
-const DEFAULT_BASE = "http://127.0.0.1:8082";
+const DEFAULT_BASE = "http://127.0.0.1:8092";
 const DEFAULT_COUNT = 5;
 const TIMEOUT_MS = 30000;
 

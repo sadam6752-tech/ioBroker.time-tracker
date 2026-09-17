@@ -49,7 +49,7 @@ describe("holidays repository", () => {
 			const first = repo.ensureYear({ year: 2026, country: "CH", now: 1000 });
 
 			expect(first).to.deep.equal({ year: 2026, inserted: expected });
-			expect(repo.listByYear(2026)).to.have.lengthOf(expected);
+			expect(repo.listByYear(2026, "CH")).to.have.lengthOf(expected);
 			expect(repo.years()).to.deep.equal([2026]);
 			expect(countAudit("holiday.ensure")).to.equal(1);
 			expect(lastDetail("holiday.ensure")).to.deep.equal({ year: 2026, country: "CH", inserted: expected });
@@ -57,17 +57,17 @@ describe("holidays repository", () => {
 
 		it("is idempotent and keeps edited holidays", () => {
 			repo.ensureYear({ year: 2026, country: "CH" });
-			const newYear = repo.listByYear(2026).find(holiday => holiday.date === "2026-01-01");
+			const newYear = repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-01-01");
 			if (!newYear) {
 				throw new Error("New Year was not generated");
 			}
-			repo.add({ date: "2026-01-01", name: "Neujahr", actorId: 1 });
+			repo.add({ date: "2026-01-01", name: "Neujahr", region: "CH", actorId: 1 });
 
 			const second = repo.ensureYear({ year: 2026, country: "CH" });
 
 			expect(second.inserted).to.equal(0);
 			// the renamed day is not overwritten
-			expect(repo.listByYear(2026).find(holiday => holiday.date === "2026-01-01")?.name).to.equal("Neujahr");
+			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-01-01")?.name).to.equal("Neujahr");
 			// only the first run is audited
 			expect(countAudit("holiday.ensure")).to.equal(1);
 			expect(db.prepare("SELECT COUNT(*) AS count FROM holidays WHERE date = '2026-01-01'").get()).to.deep.equal({
@@ -95,7 +95,7 @@ describe("holidays repository", () => {
 		});
 
 		it("sorts by date and reports the known years", () => {
-			const holidays = repo.listByYear(2026);
+			const holidays = repo.listByYear(2026, "CH");
 
 			expect(holidays.map(holiday => holiday.date)).to.deep.equal(
 				holidaysForYear(2026, "CH").map(holiday => holiday.date),
@@ -104,10 +104,10 @@ describe("holidays repository", () => {
 		});
 
 		it("answers single date lookups", () => {
-			expect(repo.isHoliday("2026-01-01")).to.equal(true);
-			expect(repo.isHoliday("2026-01-02")).to.equal(false);
-			expect(repo.dateSet(2026).has("2026-12-25")).to.equal(true);
-			expect(repo.dateSet(2026).size).to.equal(holidaysForYear(2026, "CH").length);
+			expect(repo.isHoliday("2026-01-01", "CH")).to.equal(true);
+			expect(repo.isHoliday("2026-01-02", "CH")).to.equal(false);
+			expect(repo.dateSet(2026, "CH").has("2026-12-25")).to.equal(true);
+			expect(repo.dateSet(2026, "CH").size).to.equal(holidaysForYear(2026, "CH").length);
 			expect(repo.dateSet(2027).size).to.equal(0);
 		});
 	});
@@ -118,20 +118,20 @@ describe("holidays repository", () => {
 
 			expect(holiday.date).to.equal("2027-01-02");
 			expect(holiday.year).to.equal(2027);
-			expect(holiday.region).to.equal("CH");
+			expect(holiday.region).to.equal("DE");
 			expect(repo.years()).to.deep.equal([2027]);
 			expect(repo.isHoliday("2027-01-02")).to.equal(true);
 			expect(countAudit("holiday.create")).to.equal(1);
 			expect(lastDetail("holiday.create")).to.deep.equal({
 				date: "2027-01-02",
 				name: "Betriebsferien",
-				region: "CH",
+				region: "DE",
 			});
 		});
 
 		it("renames an existing day of the region", () => {
 			repo.ensureYear({ year: 2026, country: "CH" });
-			const renamed = repo.add({ date: "2026-08-01", name: "Bundesfeier", actorId: 7, now: 3000 });
+			const renamed = repo.add({ date: "2026-08-01", name: "Bundesfeier", region: "CH", actorId: 7, now: 3000 });
 
 			expect(renamed.name).to.equal("Bundesfeier");
 			expect(countAudit("holiday.update")).to.equal(1);
@@ -139,8 +139,8 @@ describe("holidays repository", () => {
 				changes: { name: { old: "National Day", new: "Bundesfeier" } },
 			});
 			// the generated day keeps its name
-			expect(repo.listByYear(2026).find(holiday => holiday.date === "2026-08-01")?.name).to.equal("Bundesfeier");
-			expect(repo.listByYear(2026)).to.have.lengthOf(holidaysForYear(2026, "CH").length);
+			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-08-01")?.name).to.equal("Bundesfeier");
+			expect(repo.listByYear(2026, "CH")).to.have.lengthOf(holidaysForYear(2026, "CH").length);
 		});
 
 		it("accepts another region", () => {
@@ -162,13 +162,13 @@ describe("holidays repository", () => {
 
 		it("deletes a holiday and audits it", () => {
 			repo.ensureYear({ year: 2026, country: "CH" });
-			const target = repo.listByYear(2026).find(holiday => holiday.date === "2026-12-25");
+			const target = repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-12-25");
 			if (!target) {
 				throw new Error("Christmas was not generated");
 			}
 
 			expect(repo.remove({ id: target.id, actorId: 7, actorIp: "10.0.0.9", now: 4000 })).to.equal(true);
-			expect(repo.isHoliday("2026-12-25")).to.equal(false);
+			expect(repo.isHoliday("2026-12-25", "CH")).to.equal(false);
 			expect(countAudit("holiday.delete")).to.equal(1);
 			expect(lastDetail("holiday.delete")).to.deep.equal({ region: "CH", name: "Christmas Day" });
 			expect(repo.remove({ id: target.id, actorId: 7 })).to.equal(false);

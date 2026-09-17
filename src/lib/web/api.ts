@@ -3070,7 +3070,7 @@ export function createApi(deps: ApiDeps): Api {
 	route("GET", "/health", { public: true }, () =>
 		json(200, {
 			status: "ok",
-			holidayCountry: settings.get("holiday_country") ?? "CH",
+			holidayCountry: settings.get("holiday_country") ?? "DE",
 			time: now(),
 		}),
 	);

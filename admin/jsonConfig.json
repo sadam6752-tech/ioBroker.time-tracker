@@ -6,9 +6,20 @@
 			"type": "panel",
 			"label": "General",
 			"items": {
+				"_firstStartHint": {
+					"type": "staticText",
+					"text": "⚠️ First start: the first administrator is created when the instance starts for the first time. If the password field stays empty, the generated password is written ONCE into the ioBroker log (open “Logs” on the left, look for the yellow line with “created with the start password”) — both fields are in the tab “Migration and backup”. The app asks for a new password at the first login.",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
 				"port": {
 					"type": "number",
 					"label": "Port",
+					"help": "the port of the web app, the API and the terminal; 8082 stays free for vis and web",
 					"min": 1,
 					"max": 65535,
 					"newLine": true,
@@ -195,6 +206,26 @@
 			"type": "panel",
 			"label": "Migration and backup",
 			"items": {
+				"_adminHintHeader": {
+					"type": "header",
+					"text": "First start: the start password is in the ioBroker log",
+					"size": 4,
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
+				"_adminHint": {
+					"type": "staticText",
+					"text": "⚠️ The account of the first administrator is created at the very first start. If the password field below stays empty, the adapter generates a random password and writes it ONCE into the ioBroker log: open “Logs” in the ioBroker admin on the left and look for the yellow line with “created with the start password” — that is the password for the first login. The app then asks for a new password right away. Enter your own password below instead if you want to skip that.",
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
 				"adminLogin": {
 					"type": "text",
 					"label": "Login of the first administrator",

@@ -18,7 +18,7 @@ Adapter auf dem konfigurierten Port ausgeliefert (siehe [`../src/lib/web/static.
 ```bash
 npm run install:pwa     # Abhängigkeiten der PWA (eigenes node_modules)
 npm run build:pwa       # Typprüfung + Vite-Build nach www/
-npm run dev:pwa         # Entwicklungsserver auf :5173, /api wird auf die Instanz (127.0.0.1:8082) geleitet
+npm run dev:pwa         # Entwicklungsserver auf :5173, /api wird auf die Instanz (127.0.0.1:8092) geleitet
 npm run lint:pwa        # ESLint mit denselben Regeln wie der Adapter
 ```
 

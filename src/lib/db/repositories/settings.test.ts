@@ -23,7 +23,7 @@ describe("settings repository", () => {
 		expect(repo.getNumber("edit_window_days", 0)).to.equal(7);
 		expect(repo.getBoolean("absence_calc_until_today", false)).to.equal(true);
 		expect(repo.getBoolean("absence_deduct_worktime", true)).to.equal(false);
-		expect(repo.get("holiday_country")).to.equal("CH");
+		expect(repo.get("holiday_country")).to.equal("DE");
 		expect(Object.keys(repo.all())).to.include("backup_retention_days");
 	});
 

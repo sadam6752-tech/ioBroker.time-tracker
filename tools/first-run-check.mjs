@@ -11,13 +11,13 @@
  *
  * Verwendung:
  *   node tools/first-run-check.mjs --login admin --password 'geheim'
- *   npm run first-run -- --base http://192.168.1.10:8082 --login admin --password 'geheim'
+ *   npm run first-run -- --base http://192.168.1.10:8092 --login admin --password 'geheim'
  *
  * Das Passwort kann auch über die Umgebungsvariable `ZT_PASSWORD` kommen. Ein Bearer-Token braucht kein
  * CSRF-Token (Vorgabe 4.10), das Skript sendet daher nur `x-session-token`.
  */
 
-const DEFAULT_BASE = "http://127.0.0.1:8082";
+const DEFAULT_BASE = "http://127.0.0.1:8092";
 const EMPLOYEE_LOGIN = "pruefung";
 const EMPLOYEE_NAME = "Prüfung (Automatik)";
 const EMPLOYEE_PIN = "4712";

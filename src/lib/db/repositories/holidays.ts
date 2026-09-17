@@ -63,7 +63,7 @@ interface HolidayRow {
 }
 
 /** Default region used when the caller does not pass one. */
-const DEFAULT_REGION = "CH";
+const DEFAULT_REGION = "DE";
 
 const COLUMNS = "id, region, year, date, name";
 

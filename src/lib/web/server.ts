@@ -51,7 +51,7 @@ export interface WebServerOptions {
 export interface WebServer {
 	/** Port the server is listening on */
 	readonly port: number;
-	/** Base URL of the server, e.g. `http://127.0.0.1:8082` */
+	/** Base URL of the server, e.g. `http://127.0.0.1:8092` */
 	readonly url: string;
 	/** Live event stream, when one is configured */
 	readonly stream?: EventStream;
@@ -123,7 +123,7 @@ function parseQuery(requestUrl: string): Record<string, string | string[]> {
  * Normalises the bind address of the instance settings.
  *
  * The admin offers the local addresses of the host in a list, and a value may come back in the `host:port` form
- * (`[::1]:8082` for IPv6) or as a wildcard. `listen` expects the address alone and the port comes from the
+ * (`[::1]:8092` for IPv6) or as a wildcard. `listen` expects the address alone and the port comes from the
  * instance, so such a value cannot make the server fail to start. An empty value means "this machine only".
  *
  * @param value - raw value of the instance settings
@@ -137,7 +137,7 @@ export function normalizeBindAddress(value: string | null | undefined): string {
 	if (raw === "*") {
 		return "0.0.0.0";
 	}
-	// [::1]:8082 or 192.168.1.5:8082 - the port belongs to the instance, not to the address
+	// [::1]:8092 or 192.168.1.5:8092 - the port belongs to the instance, not to the address
 	const bracketed = /^\[([^\]]+)]:\d+$/.exec(raw);
 	if (bracketed) {
 		return bracketed[1];

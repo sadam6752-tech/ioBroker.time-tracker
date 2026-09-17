@@ -7,9 +7,9 @@ jeder Stelle, woran man erkennt, dass der Schritt geklappt hat. Der vollständig
 ## 1. Voraussetzungen
 
 - ioBroker-Instanz mit js-controller (die CI prüft gegen den echten Controller), Node ≥ 22
-- ein freier TCP-Port (Standard `8082`)
+- ein freier TCP-Port (Standard `8092`)
 - für die **installierbare PWA** und den Service Worker: HTTPS über einen Reverse Proxy (nginx/caddy) — siehe
-  README, Abschnitt „Reverse proxy and HTTPS". Für den reinen Funktionstest genügt `http://<host>:8082`
+  README, Abschnitt „Reverse proxy and HTTPS". Für den reinen Funktionstest genügt `http://<host>:8092`
 - optional: Tablet/Handy für das Kiosk-Terminal, NFC-Tag für T14/T15
 
 ## 2. Bauen und installieren
@@ -28,7 +28,7 @@ iobroker install ./iobroker.zeiterfassung-0.0.1.tgz
 iobroker add zeiterfassung        # legt die Instanz zeiterfassung.0 an
 ```
 
-**Erfolgskontrolle:** im Log steht `web interface found at …/www`, `API listening on http://127.0.0.1:8082/api`
+**Erfolgskontrolle:** im Log steht `web interface found at …/www`, `API listening on http://127.0.0.1:8092/api`
 und `API routes: …`; der Zustand `zeiterfassung.0.info.connection` ist `true`.
 
 ## 3. Instanz einstellen
@@ -49,7 +49,7 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
 
 ## 4. Erster Login
 
-Web-App öffnen (`http://<host>:8082/`), mit dem Admin-Login und dem Startpasswort anmelden. Der Server verlangt
+Web-App öffnen (`http://<host>:8092/`), mit dem Admin-Login und dem Startpasswort anmelden. Der Server verlangt
 sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschirm. Danach:
 
 1. **Verwaltung → Benutzer**: Mitarbeiter anlegen (Login, Name, Passwort, Rolle), jedem eine **Badge-PIN**

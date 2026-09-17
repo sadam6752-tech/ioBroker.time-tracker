@@ -388,7 +388,7 @@ class Zeiterfassung extends utils.Adapter {
 		try {
 			this.webServer = await startWebServer({
 				router: api.router,
-				port: this.config.port || 8082,
+				port: this.config.port || 8092,
 				bind: this.config.bind || "127.0.0.1",
 				staticFiles,
 				// an uploaded backup is bigger than the default limit; the route carries the same bound

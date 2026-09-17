@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.14",
+		"version": "0.0.15",
 		"nogit": true,
 		"news": {
+			"0.0.15": {
+				"en": "default port 8092 (vis and web use 8082), default holiday country Germany and a clear hint in the instance settings that the generated start password appears once in the ioBroker log",
+				"de": "Standardport 8092 (vis und web nutzen 8082), Standardland für Feiertage Deutschland und ein klarer Hinweis in den Instanz-Einstellungen, dass das erzeugte Startpasswort einmalig im ioBroker-Log steht",
+				"ru": "стандартный порт 8092 (vis и web используют 8082), страна по умолчанию для праздников Германия и понятная подсказка в настройках экземпляра о том, что созданный стартовый пароль появляется один раз в логе ioBroker",
+				"pt": "porta padrão 8092 (vis e web usam 8082), país padrão para feriados Alemanha e uma indicação clara nas definições da instância de que a palavra-passe inicial gerada aparece uma vez no log do ioBroker",
+				"nl": "standaardpoort 8092 (vis en web gebruiken 8082), standaardland voor feestdagen Duitsland en een duidelijke aanwijzing in de instantie-instellingen dat het gegenereerde startwachtwoord één keer in het ioBroker-log staat",
+				"fr": "port par défaut 8092 (vis et web utilisent 8082), pays par défaut pour les jours fériés l'Allemagne et une indication claire dans les réglages de l'instance que le mot de passe initial généré apparaît une fois dans le journal d'ioBroker",
+				"it": "porta predefinita 8092 (vis e web usano 8082), paese predefinito per i giorni festivi Germania e un'indicazione chiara nelle impostazioni dell'istanza che la password iniziale generata compare una volta nel log di ioBroker",
+				"es": "puerto predeterminado 8092 (vis y web usan 8082), país predeterminado para los días festivos Alemania y una indicación clara en los ajustes de la instancia de que la contraseña inicial generada aparece una vez en el registro de ioBroker",
+				"pl": "domyślny port 8092 (vis i web używają 8082), domyślny kraj świąt Niemcy oraz wyraźna wskazówka w ustawieniach instancji, że wygenerowane hasło startowe pojawia się raz w logu ioBroker",
+				"uk": "стандартний порт 8092 (vis і web використовують 8082), країна за замовчуванням для свят Німеччина та зрозуміла підказка в налаштуваннях екземпляра, що створений стартовий пароль з'являється один раз у лозі ioBroker",
+				"zh-cn": "默认端口 8092（vis 和 web 使用 8082）、默认节假日国家为德国，并在实例设置中明确提示生成的初始密码只出现在 ioBroker 日志中一次"
+			},
 			"0.0.14": {
 				"en": "the bind address of the instance is picked from the local addresses of the host now: a list in the adapter settings instead of a free text field",
 				"de": "die Bind-Adresse der Instanz wird jetzt aus den lokalen Adressen des Hosts gewählt: eine Auswahlliste in den Adaptereinstellungen statt eines Freitextfelds",
@@ -227,12 +240,12 @@
 		"adminPassword"
 	],
 	"native": {
-		"port": 8082,
+		"port": 8092,
 		"bind": "127.0.0.1",
 		"dbPath": "",
 		"timezone": "Europe/Berlin",
 		"defaultLanguage": "de",
-		"holidayCountry": "CH",
+		"holidayCountry": "DE",
 		"sessionSecret": "",
 		"hmacSecret": "",
 		"sessionTtlMinutes": 720,

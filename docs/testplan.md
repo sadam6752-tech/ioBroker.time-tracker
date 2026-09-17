@@ -20,7 +20,7 @@ berichten (Excel, PDF), Rechte serverseitig durchsetzen, sichern und wiederherst
 | --- | --- |
 | ioBroker | js-controller ≥ 6.0.11, admin ≥ 7.6.20 |
 | Node.js | ≥ 22 (lokal geprüft mit 22.22) |
-| Ports | Adapter-Port frei (Standard `8082`), `127.0.0.1` genügt für den Test |
+| Ports | Adapter-Port frei (Standard `8092`), `127.0.0.1` genügt für den Test |
 | HTTPS | für die Installation der PWA (Service Worker) **erforderlich**; im Test ein Reverse-Proxy (nginx/caddy) mit einem selbst ausgestellten Zertifikat oder ein Gerät im gleichen Netz mit gültigem Zertifikat |
 | Browser | Chrome/Edge (Android) oder Safari (iOS) für die Installation; Desktop-Browser für die API-Sicht |
 | Terminal-Gerät | Tablet/Handy im Kiosk-Modus (Bildschirm bleibt an) **oder** ein Browser-Tab |
@@ -177,7 +177,7 @@ alten Dateien aus dem Precache ausliefern.
 Fehlern):
 
 ```bash
-npm --prefix src-pwa run dev     # Port 5173, holt /api/… über den Proxy von 127.0.0.1:8082
+npm --prefix src-pwa run dev     # Port 5173, holt /api/… über den Proxy von 127.0.0.1:8092
 ```
 
 Zwei Fallstricke, die dabei Zeit gekostet haben:
@@ -196,7 +196,7 @@ der Dev-Server mit `504 Outdated Optimize Dep`.
 ### Echte ioBroker-Instanz lokal (dev-server)
 
 `npm run dev-server setup` (einmalig) und danach `npm run dev-server watch` legen unter `.dev-server/default` eine
-vollständige ioBroker-Installation mit dem Adapter an. Die Web-App läuft dann unter `http://127.0.0.1:8082`, die
+vollständige ioBroker-Installation mit dem Adapter an. Die Web-App läuft dann unter `http://127.0.0.1:8092`, die
 Admin-Oberfläche unter `http://127.0.0.1:8081`. Ohne Startpasswort in den Instanz-Einstellungen wird eines erzeugt
 und **einmalig** ins Log geschrieben:
 
@@ -246,7 +246,7 @@ New-Item -ItemType Junction -Path www -Target <Repository>\www
 `.dev-server/` und `iobroker.*.tgz` sind bereits in `.gitignore` abgedeckt.
 
 > **Beim Testen auf den Port achten:** `npm run test:integration` startet eine eigene ioBroker-Instanz und bindet
-> denselben Port wie der Adapter (Standard `8082`). Läuft die eigene Instanz dabei, kann die Testinstanz ihre API
+> denselben Port wie der Adapter (Standard `8092`). Läuft die eigene Instanz dabei, kann die Testinstanz ihre API
 > nicht öffnen und die Prüfung scheitert mit „starts the HTTP API on the configured port“ — die eigene Instanz also
 > vorher stoppen (`iobroker.js stop zeiterfassung.0`).
 

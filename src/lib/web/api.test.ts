@@ -187,7 +187,7 @@ describe("web api", () => {
 		it("serves public metadata without a session", async () => {
 			const health = await send("GET", "/health");
 			expect(health.status).to.equal(200);
-			expect(bodyOf(health)).to.deep.equal({ status: "ok", holidayCountry: "CH", time: 1000 });
+			expect(bodyOf(health)).to.deep.equal({ status: "ok", holidayCountry: "DE", time: 1000 });
 
 			const routes = await send("GET", "/routes");
 			expect(

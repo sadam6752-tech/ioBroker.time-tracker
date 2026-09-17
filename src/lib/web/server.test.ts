@@ -42,8 +42,8 @@ describe("bind address of the instance settings", () => {
 	});
 
 	it("drops a port, because the port comes from the instance", () => {
-		expect(normalizeBindAddress("192.168.1.5:8082")).to.equal("192.168.1.5");
-		expect(normalizeBindAddress("[::1]:8082")).to.equal("::1");
+		expect(normalizeBindAddress("192.168.1.5:8092")).to.equal("192.168.1.5");
+		expect(normalizeBindAddress("[::1]:8092")).to.equal("::1");
 	});
 
 	it("understands a wildcard", () => {
@@ -142,7 +142,7 @@ describe("web server", () => {
 		expect(response.status).to.equal(200);
 		expect(response.headers.get("content-type")).to.equal("application/json; charset=utf-8");
 		expect(response.headers.get("cache-control")).to.equal("no-store");
-		expect(await response.json()).to.deep.equal({ status: "ok", holidayCountry: "CH", time: 1000 });
+		expect(await response.json()).to.deep.equal({ status: "ok", holidayCountry: "DE", time: 1000 });
 	});
 
 	it("logs in, punches and reads the report over HTTP", async () => {

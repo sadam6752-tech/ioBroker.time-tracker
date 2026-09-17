@@ -382,7 +382,7 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 	const updateEntryCache = db.prepare("UPDATE time_entries SET ts_local = ?, local_date = ? WHERE id = ?");
 
 	const timeZoneOf = (userId: number): string => users.findById(userId)?.timezone ?? "UTC";
-	const holidayRegion = (): string => settings.get("holiday_country") ?? "CH";
+	const holidayRegion = (): string => settings.get("holiday_country") ?? "DE";
 
 	/**
 	 * How the pause of a day is determined.

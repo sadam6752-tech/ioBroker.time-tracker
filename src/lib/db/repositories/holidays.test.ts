@@ -67,7 +67,9 @@ describe("holidays repository", () => {
 
 			expect(second.inserted).to.equal(0);
 			// the renamed day is not overwritten
-			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-01-01")?.name).to.equal("Neujahr");
+			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-01-01")?.name).to.equal(
+				"Neujahr",
+			);
 			// only the first run is audited
 			expect(countAudit("holiday.ensure")).to.equal(1);
 			expect(db.prepare("SELECT COUNT(*) AS count FROM holidays WHERE date = '2026-01-01'").get()).to.deep.equal({
@@ -139,7 +141,9 @@ describe("holidays repository", () => {
 				changes: { name: { old: "National Day", new: "Bundesfeier" } },
 			});
 			// the generated day keeps its name
-			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-08-01")?.name).to.equal("Bundesfeier");
+			expect(repo.listByYear(2026, "CH").find(holiday => holiday.date === "2026-08-01")?.name).to.equal(
+				"Bundesfeier",
+			);
 			expect(repo.listByYear(2026, "CH")).to.have.lengthOf(holidaysForYear(2026, "CH").length);
 		});
 

@@ -247,6 +247,8 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.0.13 (2026-09-17)
+
 - (Alex) graduated break rules can be **per employee** now: the work profile carries its own table, and a rule with
   the same "from minutes" replaces the company rule for that one person (only the administration edits it)
 - (Alex) the **edit window** (`edit_window_days`) is enforced now: employees may change their own punches only

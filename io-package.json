@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.12",
+		"version": "0.0.13",
 		"nogit": true,
 		"news": {
+			"0.0.13": {
+				"en": "break rules per employee, an enforced edit window for own punches (corrections right in the month view) and a CSV export of the raw punches in the monthly report",
+				"de": "Pausenregeln je Mitarbeiter, ein wirksames Bearbeitungsfenster für eigene Stempel (Korrektur direkt in der Monatsansicht) und ein CSV-Export der Rohstempel im Monatsbericht",
+				"ru": "правила перерывов для каждого сотрудника, действующее окно редактирования своих отбивок (исправление прямо в месячном обзоре) и экспорт исходных отбивок в CSV в месячном отчёте",
+				"pt": "regras de pausa por trabalhador, janela de correção efetiva para as próprias picagens (correção direto na vista mensal) e exportação das picagens em bruto para CSV no relatório mensal",
+				"nl": "pauzeregels per medewerker, een werkend correctievenster voor eigen stempels (corrigeren direct in de maandweergave) en een CSV-export van de ruwe stempels in het maandrapport",
+				"fr": "règles de pause par collaborateur, fenêtre de correction effective pour ses propres pointages (correction directement dans la vue du mois) et export CSV des pointages bruts dans le rapport mensuel",
+				"it": "regole di pausa per dipendente, finestra di correzione effettiva per le proprie timbrature (correzione direttamente nella vista mensile) ed esportazione CSV delle timbrature grezze nel report mensile",
+				"es": "reglas de pausa por empleado, ventana de corrección efectiva para los fichajes propios (corrección directamente en la vista mensual) y exportación CSV de los fichajes brutos en el informe mensual",
+				"pl": "zasady przerw dla każdego pracownika, działające okno edycji własnych odbić (poprawki bezpośrednio w widoku miesiąca) i eksport surowych odbić do CSV w raporcie miesięcznym",
+				"uk": "правила перерв для кожного працівника, чинне вікно редагування власних відбиттів (виправлення прямо в місячному огляді) та експорт початкових відбиттів у CSV у місячному звіті",
+				"zh-cn": "按员工设置休息规则、对自己打点生效的编辑窗口（可直接在月度视图中更正）以及月度报告中的原始打点 CSV 导出"
+			},
 			"0.0.12": {
 				"en": "the month view of the web app shows the pause as well: the total of the month carries “Pause” (the paid part in brackets) and every day row its own pause",
 				"de": "die Monatsansicht der Web-App zeigt jetzt auch die Pause: die Monatssumme trägt „Pause“ (bezahlte Anteile in Klammern) und jede Tageszeile ihre eigene Pause",

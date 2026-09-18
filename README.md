@@ -100,7 +100,7 @@ Further settings are edited in the web app (**Administration → Settings**, rig
 | Pause rule (`auto` / `punched` / `staffel`) | how the pause of a day is determined: the punched break (`auto`, default) or only the graduated rules                                                                                                                                                      |
 | Graduated break rules (Pausenstaffel)       | “from … to … minutes block length → so many minutes deducted”; the pause of a day **without** a punched break. The work profile of an employee can carry **own rules**: a rule with the same “from minutes” replaces the company rule for that person only |
 | Paid break minutes (per employee)           | how much of a break is paid: `0` = not paid, `15` = a quarter of an hour, `1440` = any length (work profile)                                                                                                                                               |
-| Company branding                            | logo, background picture and accent colour for the login screen, the header and the kiosk screens                                                                                                                                                          |
+| Company branding                            | logo, background picture and background colour for the login screen, the header and the kiosk screens — the colour also tints the picture                                                                                                                  |
 | Unicode font for PDF statements             | `report_font_path`: needed for `ru`, `uk`, `zh-cn` and Polish, otherwise the export refuses with a clear message                                                                                                                                           |
 
 The pause of a day appears in the month view of the app and in the monthly statement — with the paid part next to it.
@@ -251,8 +251,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
-### **WORK IN PROGRESS**
+### 0.0.17 (2026-09-18)
 
+- (Alex) fix: the **background colour** of the branding is visible again when a background picture is set — the
+  colour now tints the veil in front of the picture instead of hiding behind it, and the suggestions have a second,
+  darker block of shades (the colour field and the “default” button work as before)
 - (Alex) internal: `npm run version:check` watches the two lists now as well — `common.news` may keep at most seven
   entries (the ioBroker repository builder truncates at seven, finding E1032) and the README changelog at most five
   versions; it also names a version that is in neither the README nor `CHANGELOG_OLD.md`
@@ -293,11 +296,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) internal: the README is a user guide now — what the adapter does, installation and first start, instance
   settings, roles, states, reports, backups, HTTPS and troubleshooting. The internals (HTTP surface, sessions,
   live events, database, breaks) moved to `docs/technik.md`, the build/test/release part to `docs/entwicklung.md`
-
-### 0.0.12 (2026-09-17)
-
-- (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the
-  paid part in brackets as soon as there is one) and every day row lists its pause beside worked and target time
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

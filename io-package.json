@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.16",
+		"version": "0.0.17",
 		"nogit": true,
 		"news": {
+			"0.0.17": {
+				"en": "the background colour of the branding is visible again when a background picture is set (the colour tints the picture now) and the suggested colours have a second, darker block",
+				"de": "die Hintergrundfarbe des Brandings ist wieder sichtbar, wenn ein Hintergrundbild gesetzt ist (die Farbe tönt jetzt das Bild), und die Farbvorschläge haben einen zweiten, dunkleren Block",
+				"ru": "цвет фона брендинга снова виден, если задано фоновое изображение (цвет теперь тонирует изображение), а в предложенных цветах появился второй, более тёмный блок",
+				"pt": "a cor de fundo da imagem corporativa volta a ser visível quando há uma imagem de fundo (a cor tinge agora a imagem) e as cores sugeridas têm um segundo bloco mais escuro",
+				"nl": "de achtergrondkleur van de branding is weer zichtbaar als er een achtergrondafbeelding is ingesteld (de kleur tint nu de afbeelding) en de voorgestelde kleuren hebben een tweede, donkerder blok",
+				"fr": "la couleur de fond de l'image de marque est de nouveau visible lorsqu'une image de fond est définie (la couleur teinte désormais l'image) et les couleurs proposées ont un second bloc plus foncé",
+				"it": "il colore di sfondo del branding è di nuovo visibile quando è impostata un'immagine di sfondo (il colore ora tinge l'immagine) e i colori suggeriti hanno un secondo blocco più scuro",
+				"es": "el color de fondo de la imagen corporativa vuelve a ser visible cuando hay una imagen de fondo (el color ahora tiñe la imagen) y los colores sugeridos tienen un segundo bloque más oscuro",
+				"pl": "kolor tła brandingu jest znów widoczny, gdy ustawiono obraz tła (kolor teraz barwi obraz), a sugerowane kolory mają drugi, ciemniejszy blok",
+				"uk": "колір фону брендингу знову видно, якщо задано фонове зображення (колір тепер тонує зображення), а серед запропонованих кольорів з'явився другий, темніший блок",
+				"zh-cn": "设置了背景图片后，品牌背景色重新可见（颜色现在会给图片着色），建议颜色新增了一组更深的颜色"
+			},
 			"0.0.16": {
 				"en": "the linter is clean: 31 missing JSDoc comments written, and npm run lint now fails on warnings as well; the release flow is documented (wait for npm after a green run, never re-push a published tag)",
 				"de": "der Linter ist sauber: 31 fehlende JSDoc-Kommentare ergänzt, und npm run lint bricht jetzt auch bei Warnungen ab; der Release-Ablauf ist dokumentiert (nach grünem Lauf auf npm warten, veröffentlichtes Tag nie neu pushen)",
@@ -81,19 +94,6 @@
 				"pl": "kopie zapasowe można znów wgrywać (droga powrotna po utracie katalogu danych) i usuwać pojedynczo - zarejestrowana przerwa jest teraz mierzona i widoczna w kolumnie „Przerwa” zestawienia, a dni bez zarejestrowanej przerwy korzystają z tabeli przerw, nigdy oba - płatne minuty przerwy na pracownika, edytor tabeli przerw i nowa kolumna „w tym płatne” w zestawieniu - a wiersz sum w PDF nie obcina już wartości",
 				"uk": "резервні копії знову можна завантажувати (шлях назад після втрати каталогу даних) і видаляти по одній - відбиту перерву тепер вимірюють, і вона видна у стовпці «Перерва» розрахункового листа, а в дні без відбитої перерви діє шкала перерв, і ніколи обидва одночасно - оплачувані хвилини перерви для кожного працівника, редактор шкали перерв і новий стовпець «з них оплачено» у листі - а рядок суми в PDF більше не обрізає значення",
 				"zh-cn": "备份可以重新上传（数据目录丢失后的回退方式）并逐条删除 - 现在会测量打点的休息，并显示在工时表的“休息”列，而未打点休息的工作日仍按休息阶梯，二者绝不叠加 - 每位员工的带薪休息分钟、休息阶梯编辑器，以及工时表中新增的“其中带薪”列 - 并且 PDF 的合计行不再截断数值"
-			},
-			"0.0.10": {
-				"en": "backups are usable from the browser: download a backup with one click and restore one from the list for the next start of the adapter - the previous database is kept next to it",
-				"de": "Sicherungen sind jetzt im Browser nutzbar: eine Sicherung mit einem Klick herunterladen und eine aus der Liste für den nächsten Start des Adapters einspielen - die bisherige Datenbank bleibt daneben erhalten",
-				"ru": "резервными копиями теперь можно управлять в браузере: скачать копию одним нажатием и восстановить выбранную при следующем запуске адаптера - текущая база данных сохранится рядом",
-				"uk": "резервними копіями тепер можна керувати у браузері: завантажити копію одним натисканням і відновити вибрану під час наступного запуску адаптера - поточна база даних залишиться поруч",
-				"pt": "as cópias de segurança agora são utilizáveis no navegador: descarregar uma cópia com um clique e restaurar uma da lista no próximo arranque do adaptador - a base de dados atual fica ao lado",
-				"nl": "back-ups zijn nu in de browser te gebruiken: met één klik downloaden en een uit de lijst terugzetten bij de volgende start van de adapter - de huidige database blijft ernaast bewaard",
-				"fr": "les sauvegardes sont désormais utilisables dans le navigateur : télécharger une sauvegarde en un clic et en restaurer une de la liste au prochain démarrage de l'adaptateur - la base de données actuelle est conservée à côté",
-				"it": "i backup ora si usano dal browser: scaricare un backup con un clic e ripristinarne uno della lista al prossimo avvio dell'adattatore - il database attuale resta accanto",
-				"es": "las copias de seguridad ya se usan desde el navegador: descargar una con un clic y restaurar una de la lista en el próximo arranque del adaptador - la base de datos actual se conserva al lado",
-				"pl": "kopie zapasowe są teraz dostępne w przeglądarce: pobierz kopię jednym kliknięciem i przywróć wybraną przy następnym uruchomieniu adaptera - obecna baza danych pozostaje obok",
-				"zh-cn": "备份现在可在浏览器中使用：一键下载备份，并在适配器下次启动时恢复列表中的备份 - 当前数据库会保留在旁边"
 			}
 		},
 		"titleLang": {
@@ -122,18 +122,8 @@
 			"uk": "Відстеження часу (прихід/вихід) для ioBroker із веб-додатком, терміналом бейджів і звітами",
 			"zh-cn": "通过网络应用程序、徽章终端和报告对 ioBroker 进行时间跟踪（上下班打卡）"
 		},
-		"authors": [
-			"Alex <sadam6752@gmail.com>"
-		],
-		"keywords": [
-			"time tracking",
-			"zeiterfassung",
-			"clock in",
-			"attendance",
-			"working time",
-			"pwa",
-			"rfid"
-		],
+		"authors": ["Alex <sadam6752@gmail.com>"],
+		"keywords": ["time tracking", "zeiterfassung", "clock in", "attendance", "working time", "pwa", "rfid"],
 		"licenseInformation": {
 			"type": "free",
 			"license": "MIT"
@@ -164,16 +154,8 @@
 			}
 		]
 	},
-	"protectedNative": [
-		"sessionSecret",
-		"hmacSecret",
-		"adminPassword"
-	],
-	"encryptedNative": [
-		"sessionSecret",
-		"hmacSecret",
-		"adminPassword"
-	],
+	"protectedNative": ["sessionSecret", "hmacSecret", "adminPassword"],
+	"encryptedNative": ["sessionSecret", "hmacSecret", "adminPassword"],
 	"native": {
 		"port": 8092,
 		"bind": "127.0.0.1",

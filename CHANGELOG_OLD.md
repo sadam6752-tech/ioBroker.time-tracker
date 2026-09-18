@@ -3,6 +3,11 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.12 (2026-09-17)
+
+- (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the
+  paid part in brackets as soon as there is one) and every day row lists its pause beside worked and target time
+
 ### 0.0.11 (2026-09-17)
 
 - (Alex) fix: the totals row of the PDF statement stays complete — every value of a column is measured now, so a

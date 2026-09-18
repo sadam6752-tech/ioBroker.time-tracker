@@ -66,12 +66,15 @@ test("shows the logo, the background and the accent colour of the installation",
 	// the signed in shell carries the logo in its header and paints the picture plus the colour
 	await expect(page.locator("header img[src*='/api/branding/logo']")).toBeVisible();
 
-	const painted = await page.evaluate(() =>
-		[...document.querySelectorAll("div")].some(node =>
-			getComputedStyle(node).backgroundImage.includes("branding/background"),
-		),
-	);
-	expect(painted, "the background picture should be painted").toBe(true);
+	const veiled = await page.evaluate(() => {
+		const node = [...document.querySelectorAll("div")].find(entry =>
+			getComputedStyle(entry).backgroundImage.includes("branding/background"),
+		);
+		return node ? getComputedStyle(node).backgroundImage : "";
+	});
+	expect(veiled, "the background picture should be painted").toContain("branding/background");
+	// the veil in front of the picture carries the colour, so both settings are visible together
+	expect(veiled, "the colour should tint the picture").toContain("26, 43, 60");
 
 	const colored = await page.evaluate(() =>
 		[...document.querySelectorAll("div")].some(
@@ -83,16 +86,17 @@ test("shows the logo, the background and the accent colour of the installation",
 	// the settings offer a row of suggested colours: one click stores the colour and paints it
 	await page.goto("/admin");
 	await page.getByRole("tab", { name: "Einstellungen" }).click();
-	await page.getByLabel("#e8f1e9").click();
+	// a darker shade from the second block
+	await page.getByLabel("#b7cbe2").click();
 	await page.getByRole("button", { name: "Speichern", exact: true }).click();
 
 	const stored = await request.get("/api/branding");
-	expect((await stored.json()).color).toBe("#e8f1e9");
+	expect((await stored.json()).color).toBe("#b7cbe2");
 	await expect
 		.poll(async () =>
 			page.evaluate(() =>
 				[...document.querySelectorAll("div")].some(
-					node => getComputedStyle(node).backgroundColor === "rgb(232, 241, 233)",
+					node => getComputedStyle(node).backgroundColor === "rgb(183, 203, 226)",
 				),
 			),
 		)

@@ -132,6 +132,9 @@ Regeln dazu:
    als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern. `lint` und
    `lint:pwa` laufen mit `--max-warnings 0`, eine Warnung ist also genauso ein Fehler wie ein Fehler.
 3. Commit, **annotiertes** Tag (`git tag -a vX.Y.Z -m 'X.Y.Z'`) und Push mit Freigabe (`npm run push:approve`).
+   Die Commit-Nachricht des Versions-Commits wird zur **Release-Notiz** — der Workflow schreibt ihren Body auf die
+   Release-Seite. Sie wird deshalb **auf Englisch** geschrieben (wie die Changelog-Einträge im README), damit die
+   Release-Seite für alle lesbar ist.
 4. **Warten, bis der Workflow „Test and Release" für das Tag grün ist — und danach weitere 5 bis 10 Minuten:**
    die Veröffentlichung auf npm läuft am Ende des Laufs und der Registry-Index zieht nach (gemessen: grüner Lauf
    17:37, `npm view … dist-tags` zeigt die Version 17:42). Erst dann prüfen.

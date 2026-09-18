@@ -28,6 +28,7 @@ const { createRulesRepository } = require(join(repo, "build/lib/db/repositories/
 const { createPayoutsRepository } = require(join(repo, "build/lib/db/repositories/payouts.js"));
 const { createTerminalsRepository } = require(join(repo, "build/lib/db/repositories/terminals.js"));
 const { createRfidRepository } = require(join(repo, "build/lib/db/repositories/rfid.js"));
+const { createTriggersRepository } = require(join(repo, "build/lib/db/repositories/triggers.js"));
 const { createSettingsRepository } = require(join(repo, "build/lib/db/repositories/settings.js"));
 const { createAuthService } = require(join(repo, "build/lib/services/auth.js"));
 const { createAggregationService } = require(join(repo, "build/lib/services/aggregation.js"));
@@ -60,6 +61,7 @@ const rules = createRulesRepository(db);
 const payouts = createPayoutsRepository(db);
 const terminals = createTerminalsRepository(db);
 const rfid = createRfidRepository(db);
+const triggers = createTriggersRepository(db);
 const settings = createSettingsRepository(db);
 const auth = createAuthService({ db, users, settings, secret: "e2e-session-secret", defaultTtlMinutes: 720 });
 const aggregation = createAggregationService({ db, users, entries, absences, holidays, rules, settings });
@@ -97,6 +99,7 @@ const api = createApi({
 	payouts,
 	terminals,
 	rfid,
+	triggers,
 	aggregation,
 	sync,
 	backup,

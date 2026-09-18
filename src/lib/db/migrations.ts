@@ -468,4 +468,31 @@ export const migrations: Migration[] = [
 		name: "day aggregates: paid break minutes",
 		sql: `ALTER TABLE day_aggregates ADD COLUMN paid_break_min INTEGER NOT NULL DEFAULT 0;`,
 	},
+	{
+		version: 15,
+		name: "trigger rules: ioBroker states that punch or set the presence",
+		sql: `
+			-- A rule watches a state of another adapter (a fingerprint reader, a button, a door contact) and turns a
+			-- write on it into a punch or a presence change. Mode "condition" fires when the value matches
+			-- "condition" and punches for "user_id"; mode "user" posts the employee the value names. "last_fired_at"
+			-- keeps a chatty reader in check together with "cooldown_sec".
+			CREATE TABLE trigger_rules (
+				id            INTEGER PRIMARY KEY AUTOINCREMENT,
+				label         TEXT,
+				source_state  TEXT    NOT NULL,
+				mode          TEXT    NOT NULL DEFAULT 'condition'
+					CHECK (mode IN ('condition','user')),
+				condition     TEXT,
+				user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+				action        TEXT    NOT NULL DEFAULT 'punch'
+					CHECK (action IN ('punch','quickPunch','present','absent')),
+				is_active     INTEGER NOT NULL DEFAULT 1,
+				cooldown_sec  INTEGER NOT NULL DEFAULT 0,
+				last_fired_at INTEGER,
+				created_at    INTEGER NOT NULL,
+				updated_at    INTEGER NOT NULL
+			);
+			CREATE INDEX idx_trigger_rules_source ON trigger_rules(source_state);
+		`,
+	},
 ];

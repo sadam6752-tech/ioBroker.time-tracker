@@ -30,7 +30,7 @@ eingeschaltetem **Trust the reverse proxy** aus `x-forwarded-for` gelesen, und e
 ## Offline-Warteschlange
 
 Die Web-App legt Stempel ohne Verbindung in eine lokale Warteschlange (`pending`) und schickt sie beim nächsten
-Kontakt nach; was nicht eindeutig zuzuordnen ist, landet als Konflikt in der Ansicht *Abgleich* und wird von der
+Kontakt nach; was nicht eindeutig zuzuordnen ist, landet als Konflikt in der Ansicht _Abgleich_ und wird von der
 Verwaltung entschieden. Solange ein Stempel `pending` oder `conflict` ist, zählt er in keiner Rechnung: die
 Paarbildung (`src/lib/domain/punch.ts`) lässt ihn weg.
 
@@ -38,8 +38,11 @@ Paarbildung (`src/lib/domain/punch.ts`) lässt ihn weg.
 
 SQLite über `better-sqlite3`, im WAL-Modus, im Datenverzeichnis des Adapters. Schema-Änderungen gibt es
 ausschließlich als versionierte Migration in `src/lib/db/migrations.ts` (`schema_migrations`); Migrationen sind
-append-only, jede Änderung ist eine neue Nummer. Nur Aggregate und Steuerbefehle werden als States veröffentlicht —
-Stempel selbst bleiben in der Datenbank.
+append-only, jede Änderung ist eine neue Nummer. Veröffentlicht werden Aggregate und Steuerbefehle — dazu die
+Firmen-Kennzahlen (`company.*`), die Monats-/Jahreswerte je Mitarbeiter, das jeweils neueste Ereignis (`events.*`)
+und die Aktionen: Regeln in `trigger_rules`, deren States der Adapter abonniert (nur bei Wertwechsel, mit
+Sperrzeit) sowie `sendTo`-Nachrichten (`punch`, `present`, `status`, `report`, `backup`). Stempel selbst bleiben in
+der Datenbank.
 
 ## Pausen
 

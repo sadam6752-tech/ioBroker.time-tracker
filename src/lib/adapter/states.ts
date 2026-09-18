@@ -54,6 +54,38 @@ export interface UserSnapshot {
 	balanceMinutes: number;
 	/** Punches waiting for a decision */
 	openConflicts: number;
+	/** Net working time of the current month in minutes */
+	monthWorkedMinutes: number;
+	/** Balance of the current month in minutes */
+	monthBalanceMinutes: number;
+	/** Balance of the current year in minutes */
+	yearBalanceMinutes: number;
+}
+
+/** Figures of the whole company, published next to the employees. */
+export interface CompanySnapshot {
+	/** Employees that are clocked in right now */
+	presentCount: number;
+	/** Names of those employees, separated by a comma (empty when nobody is present) */
+	present: string;
+	/** Punches of all employees waiting for a decision */
+	openConflicts: number;
+	/** Instant of the newest punch of today, `null` when nobody punched */
+	lastPunchUtc: number | null;
+}
+
+/** Newest event of the instance, mirrored into the state tree. */
+export interface EventSnapshot {
+	/** Kind of the event, e.g. `punch` */
+	type: string;
+	/** Instant the event belongs to */
+	atUtc: number;
+	/** Name of the employee the event belongs to, empty for instance wide events */
+	userName: string;
+	/** Direction of a punch (`in`/`out`), empty for other events */
+	direction: string;
+	/** Where the change came from, e.g. `web` or `terminal`, empty when unknown */
+	source: string;
 }
 
 /** Names of the writable command states. */
@@ -144,6 +176,11 @@ export function readUserSnapshot(args: {
 	const timestamp = args.now ?? Math.floor(Date.now() / 1000);
 	const today = resolveLocalDate(timestamp, user.timezone);
 	const day = args.aggregation.recalculateDay(user.id, today, { now: timestamp });
+	// the month is recalculated like the month view does it; the year is read, so the publishing stays cheap
+	const year = Number(today.slice(0, 4));
+	const month = Number(today.slice(5, 7));
+	const monthAggregate = args.aggregation.recalculateMonth(user.id, year, month, { now: timestamp });
+	const yearAggregate = args.aggregation.year(user.id, year);
 
 	return {
 		userId: user.id,
@@ -153,6 +190,9 @@ export function readUserSnapshot(args: {
 		workedMinutes: day.workedMin,
 		balanceMinutes: day.balanceMin,
 		openConflicts: args.sync.conflicts(user.id).length,
+		monthWorkedMinutes: monthAggregate.workedMin,
+		monthBalanceMinutes: monthAggregate.balanceMin,
+		yearBalanceMinutes: yearAggregate ? yearAggregate.workedMin - yearAggregate.targetMin : 0,
 	};
 }
 
@@ -170,6 +210,9 @@ export async function publishUserSnapshot(port: StatePort, snapshot: UserSnapsho
 	await port.setState(`${id}.lastPunch`, snapshot.lastPunchUtc ?? 0, true);
 	await port.setState(`${id}.todayWorkedMinutes`, snapshot.workedMinutes, true);
 	await port.setState(`${id}.todayBalanceMinutes`, snapshot.balanceMinutes, true);
+	await port.setState(`${id}.monthWorkedMinutes`, snapshot.monthWorkedMinutes, true);
+	await port.setState(`${id}.monthBalanceMinutes`, snapshot.monthBalanceMinutes, true);
+	await port.setState(`${id}.yearBalanceMinutes`, snapshot.yearBalanceMinutes, true);
 	await port.setState(`${id}.openConflicts`, snapshot.openConflicts, true);
 }
 
@@ -247,6 +290,18 @@ export async function createUserChannel(port: StatePort, userId: number): Promis
 	await port.setObjectNotExists(
 		`${id}.todayBalanceMinutes`,
 		stateObject({ en: "Balance today", de: "Saldo heute" }, "number", "value", { unit: "min" }),
+	);
+	await port.setObjectNotExists(
+		`${id}.monthWorkedMinutes`,
+		stateObject({ en: "Worked this month", de: "Diesen Monat gearbeitet" }, "number", "value", { unit: "min" }),
+	);
+	await port.setObjectNotExists(
+		`${id}.monthBalanceMinutes`,
+		stateObject({ en: "Balance this month", de: "Saldo diesen Monat" }, "number", "value", { unit: "min" }),
+	);
+	await port.setObjectNotExists(
+		`${id}.yearBalanceMinutes`,
+		stateObject({ en: "Balance this year", de: "Saldo dieses Jahr" }, "number", "value", { unit: "min" }),
 	);
 	await port.setObjectNotExists(
 		`${id}.openConflicts`,
@@ -338,4 +393,107 @@ export async function createInfoStates(port: StatePort): Promise<void> {
 		"info.lastBackup",
 		stateObject({ en: "Last backup", de: "Letzte Sicherung" }, "number", "value.time"),
 	);
+}
+
+/**
+ * Creates the states of the company.
+ *
+ * @param port - state port
+ */
+export async function createCompanyStates(port: StatePort): Promise<void> {
+	await port.setObjectNotExists("company", channelObject({ en: "Company", de: "Firma" }));
+	await port.setObjectNotExists(
+		"company.presentCount",
+		stateObject({ en: "Present employees", de: "Anwesende Mitarbeiter" }, "number", "value"),
+	);
+	await port.setObjectNotExists(
+		"company.present",
+		stateObject({ en: "Who is present", de: "Wer ist anwesend" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"company.openConflicts",
+		stateObject({ en: "Open conflicts", de: "Offene Konflikte" }, "number", "value"),
+	);
+	await port.setObjectNotExists(
+		"company.lastPunch",
+		stateObject({ en: "Last punch", de: "Letzte Buchung" }, "number", "value.time"),
+	);
+}
+
+/**
+ * Reads the company figures out of the figures of the employees.
+ *
+ * @param snapshots - figures of all employees
+ * @returns the company figures
+ */
+export function readCompanySnapshot(snapshots: UserSnapshot[]): CompanySnapshot {
+	const present = snapshots.filter(snapshot => snapshot.hasOpenEntry);
+	return {
+		presentCount: present.length,
+		present: present.map(snapshot => snapshot.displayName).join(", "),
+		openConflicts: snapshots.reduce((sum, snapshot) => sum + snapshot.openConflicts, 0),
+		lastPunchUtc: snapshots.reduce<number | null>(
+			(newest, snapshot) =>
+				snapshot.lastPunchUtc !== null && (newest === null || snapshot.lastPunchUtc > newest)
+					? snapshot.lastPunchUtc
+					: newest,
+			null,
+		),
+	};
+}
+
+/**
+ * Publishes the company figures.
+ *
+ * @param port - state port
+ * @param snapshot - figures to publish
+ */
+export async function publishCompanySnapshot(port: StatePort, snapshot: CompanySnapshot): Promise<void> {
+	await port.setState("company.presentCount", snapshot.presentCount, true);
+	await port.setState("company.present", snapshot.present, true);
+	await port.setState("company.openConflicts", snapshot.openConflicts, true);
+	await port.setState("company.lastPunch", snapshot.lastPunchUtc ?? 0, true);
+}
+
+/**
+ * Creates the event states.
+ *
+ * @param port - state port
+ */
+export async function createEventStates(port: StatePort): Promise<void> {
+	await port.setObjectNotExists("events", channelObject({ en: "Events", de: "Ereignisse" }));
+	await port.setObjectNotExists(
+		"events.lastAt",
+		stateObject({ en: "Last event at", de: "Letztes Ereignis um" }, "number", "value.time"),
+	);
+	await port.setObjectNotExists(
+		"events.lastType",
+		stateObject({ en: "Kind of the last event", de: "Art des letzten Ereignisses" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"events.lastUser",
+		stateObject({ en: "Employee of the last event", de: "Mitarbeiter des letzten Ereignisses" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"events.lastDirection",
+		stateObject({ en: "Direction of the last punch", de: "Richtung der letzten Buchung" }, "string", "text"),
+	);
+	await port.setObjectNotExists(
+		"events.lastSource",
+		stateObject({ en: "Source of the last event", de: "Quelle des letzten Ereignisses" }, "string", "text"),
+	);
+}
+
+/**
+ * Publishes the newest event.
+ *
+ * @param port - state port
+ * @param snapshot - event to publish
+ */
+export async function publishEventSnapshot(port: StatePort, snapshot: EventSnapshot): Promise<void> {
+	await port.setState("events.lastAt", snapshot.atUtc, true);
+	await port.setState("events.lastType", snapshot.type, true);
+	await port.setState("events.lastUser", snapshot.userName, true);
+	await port.setState("events.lastDirection", snapshot.direction, true);
+	await port.setState("events.lastSource", snapshot.source, true);
 }

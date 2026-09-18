@@ -45,7 +45,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, formatDate, type AdminTerminal } from "../api/client";
+import { api, formatDate, type AdminTerminal, type TriggerRule } from "../api/client";
 import type { AdminUser, CreateUserInput, PauseRule, WorkProfile } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
@@ -1566,6 +1566,265 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Trigger rules: a state of another adapter punches or sets the presence.
+ *
+ * The table is edited and saved as a whole, like the break rules of the company. The adapter itself subscribes to
+ * the states named here, so a fingerprint reader, a button or a door contact needs no script — and a rule fires
+ * only when the value of its state changes.
+ *
+ * @param props - language of the display
+ * @param props.language - language of the display
+ * @returns the trigger tab
+ */
+function TriggersTab({ language }: { language: string }): React.JSX.Element {
+	const { t } = useTranslation();
+	const { permissions } = useSession();
+	const mayEdit = hasPermission(permissions, "settings.edit");
+	const queryClient = useQueryClient();
+	const rules = useQuery({ queryKey: ["admin", "triggerRules"], queryFn: () => api.triggerRules() });
+	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
+	// `null` shows what the server has; the first change keeps a local copy until it is saved
+	const [draft, setDraft] = useState<TriggerRule[] | null>(null);
+	const shown = draft ?? rules.data ?? [];
+
+	const save = useMutation({
+		mutationFn: (list: TriggerRule[]) => api.saveTriggerRules(list),
+		onSuccess: async () => {
+			setDraft(null);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "triggerRules"] });
+		},
+	});
+
+	/**
+	 * Merges a change into one rule.
+	 *
+	 * @param index - position of the rule in the table
+	 * @param patch - fields that changed
+	 */
+	const change = (index: number, patch: Partial<TriggerRule>): void =>
+		setDraft(shown.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
+
+	/**
+	 * Text of the last fire of a rule.
+	 *
+	 * @param rule - rule to describe
+	 * @returns text for the row
+	 */
+	const lastFired = (rule: TriggerRule): string =>
+		rule.lastFiredAt
+			? `${t("admin.trigger.lastFired")}: ${formatStamp(rule.lastFiredAt, language)}`
+			: t("common.none");
+
+	return (
+		<>
+			<ErrorAlert error={rules.error ?? save.error} />
+			{save.isSuccess && (
+				<Alert
+					severity="success"
+					sx={{ mb: 2 }}
+				>
+					{t("admin.settings.saved")}
+				</Alert>
+			)}
+
+			<Card>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.triggers")}
+					</Typography>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						gutterBottom
+					>
+						{t("admin.triggersHint")}
+					</Typography>
+					<Stack spacing={2}>
+						{shown.map((rule, index) => (
+							<Stack
+								key={rule.id ?? `new-${index}`}
+								spacing={1}
+								sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1 }}
+							>
+								<Stack
+									direction="row"
+									spacing={1}
+									useFlexGap
+									sx={{ alignItems: "center", flexWrap: "wrap" }}
+								>
+									<TextField
+										size="small"
+										label={t("admin.trigger.label")}
+										value={rule.label ?? ""}
+										onChange={event => change(index, { label: event.target.value })}
+										disabled={!mayEdit}
+										sx={{ minWidth: 160 }}
+									/>
+									<TextField
+										size="small"
+										label={t("admin.trigger.sourceState")}
+										value={rule.sourceState}
+										onChange={event => change(index, { sourceState: event.target.value })}
+										disabled={!mayEdit}
+										sx={{ minWidth: 260 }}
+									/>
+									<TextField
+										select
+										size="small"
+										label={t("admin.trigger.mode")}
+										value={rule.mode ?? "condition"}
+										onChange={event =>
+											change(index, { mode: event.target.value as TriggerRule["mode"] })
+										}
+										disabled={!mayEdit}
+										sx={{ minWidth: 200 }}
+									>
+										<MenuItem value="condition">{t("admin.trigger.modeCondition")}</MenuItem>
+										<MenuItem value="user">{t("admin.trigger.modeUser")}</MenuItem>
+									</TextField>
+									{(rule.mode ?? "condition") === "condition" && (
+										<>
+											<TextField
+												size="small"
+												label={t("admin.trigger.condition")}
+												value={rule.condition ?? ""}
+												onChange={event => change(index, { condition: event.target.value })}
+												disabled={!mayEdit}
+												sx={{ minWidth: 120 }}
+											/>
+											<TextField
+												select
+												size="small"
+												label={t("admin.trigger.user")}
+												value={
+													rule.userId === null || rule.userId === undefined
+														? ""
+														: String(rule.userId)
+												}
+												onChange={event =>
+													change(index, {
+														userId:
+															event.target.value === ""
+																? null
+																: Number(event.target.value),
+													})
+												}
+												disabled={!mayEdit}
+												sx={{ minWidth: 190 }}
+											>
+												{(people.data ?? []).map(user => (
+													<MenuItem
+														key={user.id}
+														value={String(user.id)}
+													>
+														{user.displayName}
+													</MenuItem>
+												))}
+											</TextField>
+										</>
+									)}
+									<TextField
+										select
+										size="small"
+										label={t("admin.trigger.action")}
+										value={rule.action ?? "punch"}
+										onChange={event =>
+											change(index, { action: event.target.value as TriggerRule["action"] })
+										}
+										disabled={!mayEdit}
+										sx={{ minWidth: 230 }}
+									>
+										<MenuItem value="punch">{t("admin.trigger.actionPunch")}</MenuItem>
+										<MenuItem value="quickPunch">{t("admin.trigger.actionQuickPunch")}</MenuItem>
+										<MenuItem value="present">{t("admin.trigger.actionPresent")}</MenuItem>
+										<MenuItem value="absent">{t("admin.trigger.actionAbsent")}</MenuItem>
+									</TextField>
+									<TextField
+										size="small"
+										type="number"
+										label={t("admin.trigger.cooldown")}
+										value={String(rule.cooldownSec ?? 0)}
+										onChange={event => change(index, { cooldownSec: Number(event.target.value) })}
+										disabled={!mayEdit}
+										sx={{ maxWidth: 140 }}
+									/>
+									<Switch
+										checked={rule.isActive !== false}
+										title={t("admin.trigger.active")}
+										onChange={() => change(index, { isActive: rule.isActive === false })}
+										disabled={!mayEdit}
+									/>
+									<IconButton
+										size="small"
+										title={t("admin.tag.delete")}
+										disabled={!mayEdit}
+										onClick={() => setDraft(shown.filter((_, position) => position !== index))}
+									>
+										<DeleteIcon fontSize="small" />
+									</IconButton>
+								</Stack>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+								>
+									{lastFired(rule)}
+								</Typography>
+							</Stack>
+						))}
+						<Stack
+							direction="row"
+							spacing={1}
+							useFlexGap
+							sx={{ alignItems: "center", flexWrap: "wrap" }}
+						>
+							<Button
+								size="small"
+								startIcon={<AddIcon />}
+								disabled={!mayEdit}
+								onClick={() =>
+									setDraft([
+										...shown,
+										{
+											sourceState: "",
+											mode: "condition",
+											condition: "true",
+											action: "punch",
+											isActive: true,
+											cooldownSec: 0,
+										},
+									])
+								}
+							>
+								{t("admin.trigger.add")}
+							</Button>
+							<Button
+								size="small"
+								variant="contained"
+								disabled={!mayEdit || save.isPending || draft === null}
+								onClick={() => save.mutate(shown)}
+							>
+								{t("common.save")}
+							</Button>
+						</Stack>
+						{!rules.isLoading && shown.length === 0 && (
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.trigger.empty")}
+							</Typography>
+						)}
+					</Stack>
+				</CardContent>
+			</Card>
+		</>
+	);
+}
+
+/**
  * Text key of a picture problem.
  *
  * @param problem - reason reported by `prepareImage`
@@ -2299,6 +2558,10 @@ export function Admin(): React.JSX.Element {
 	if (hasPermission(permissions, "rfid.manage")) {
 		tabs.push({ label: t("admin.tags"), render: () => <TagsTab language={i18n.language} /> });
 	}
+	// rules that turn a state of another adapter into a punch: fingerprint reader, button, door contact
+	if (hasPermission(permissions, "settings.view")) {
+		tabs.push({ label: t("admin.triggers"), render: () => <TriggersTab language={i18n.language} /> });
+	}
 	if (hasPermission(permissions, "backup.run")) {
 		tabs.push({ label: t("admin.backup"), render: () => <BackupTab language={i18n.language} /> });
 	}
@@ -2319,7 +2582,7 @@ export function Admin(): React.JSX.Element {
 			<Tabs
 				value={active}
 				onChange={(_event, value: number) => setTab(value)}
-				// scrollable instead of fullWidth: seven labels do not fit a wide window when squeezed, and a
+				// scrollable instead of fullWidth: the labels do not fit a wide window when squeezed, and a
 				// clipped tab name is worse than a scrollable row
 				variant="scrollable"
 				scrollButtons="auto"

@@ -3,6 +3,11 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.14 (2026-09-17)
+
+- (Alex) the **bind address** of the instance is picked from the local addresses of the host now (a list in the
+  admin settings instead of a free text field), and a value that carries a port cannot keep the server from starting
+
 ### 0.0.13 (2026-09-17)
 
 - (Alex) graduated break rules can be **per employee** now: the work profile carries its own table, and a rule with

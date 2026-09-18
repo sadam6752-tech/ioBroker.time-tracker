@@ -34,6 +34,7 @@ import {
 import type { PauseRuleRecord, RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
 import type { TerminalRecord, TerminalsRepository } from "../db/repositories/terminals";
+import type { TriggerAction, TriggerMode, TriggerRuleRecord, TriggersRepository } from "../db/repositories/triggers";
 import type { UserRecord, UsersRepository, WorkProfileRecord } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { AuthService } from "../services/auth";
@@ -86,6 +87,13 @@ export interface ApiDeps {
 	terminals: TerminalsRepository;
 	/** RFID/NFC tags */
 	rfid: RfidRepository;
+	/** Trigger rules: ioBroker states that punch or set the presence */
+	triggers: TriggersRepository;
+	/**
+	 * Called after the trigger rules were saved, so the adapter watches the new states right away
+	 * (`undefined` in tests that do not care).
+	 */
+	onTriggerRulesChanged?: () => void;
 	/** Secret used to sign tag links (`hmacSecret`) */
 	hmacSecret?: string;
 	/** True when the kiosk terminal is switched on (instance setting) */
@@ -700,8 +708,21 @@ function buildEntriesCsv(entries: EntryRecord[], timeZone: string): Buffer {
  * @returns router, route table and the event bus every change is published on
  */
 export function createApi(deps: ApiDeps): Api {
-	const { auth, users, entries, absences, holidays, rules, payouts, terminals, rfid, aggregation, sync, settings } =
-		deps;
+	const {
+		auth,
+		users,
+		entries,
+		absences,
+		holidays,
+		rules,
+		payouts,
+		terminals,
+		rfid,
+		triggers,
+		aggregation,
+		sync,
+		settings,
+	} = deps;
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const events = deps.events ?? createEventBus();
 	const registered: ApiRoute[] = [];
@@ -1642,6 +1663,89 @@ export function createApi(deps: ApiDeps): Api {
 		}
 		return json(200, { pauseRules: replacePauseRules(context, id) });
 	});
+
+	/**
+	 * Replaces the trigger rules.
+	 *
+	 * Like the break rules the payload is the whole table: rules that are missing are removed, the rest is saved.
+	 * The values are checked by the repository, so an impossible rule becomes a client error. Afterwards the
+	 * adapter is told to watch the states of the new list.
+	 *
+	 * @param context - route context of the request
+	 * @returns the saved rules
+	 */
+	function replaceTriggerRules(context: RouteContext): TriggerRuleRecord[] {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		if (!Array.isArray(body.triggerRules)) {
+			throw new ValidationError("triggerRules must be an array");
+		}
+		const actor = {
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		};
+		const wanted = (body.triggerRules as unknown[]).map(raw => {
+			const rule = (raw ?? {}) as Record<string, unknown>;
+			const mode = optionalString(rule, "mode") ?? "condition";
+			const target = optionalNumber(rule, "userId");
+			if (mode === "condition" && target !== null && !users.findById(target)) {
+				throw new ValidationError(`userId must reference an existing employee (got ${target})`);
+			}
+			if (mode === "user" && target !== null) {
+				throw new ValidationError("mode user reads the employee from the state, userId has to stay empty");
+			}
+			return {
+				id: optionalNumber(rule, "id") ?? undefined,
+				label: optionalString(rule, "label"),
+				sourceState: optionalString(rule, "sourceState") ?? "",
+				mode,
+				condition: optionalString(rule, "condition"),
+				userId: target,
+				action: optionalString(rule, "action") ?? "punch",
+				isActive: optionalBoolean(rule, "isActive") ?? true,
+				cooldownSec: optionalNumber(rule, "cooldownSec") ?? 0,
+			};
+		});
+
+		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
+		for (const existing of triggers.list({ includeInactive: true })) {
+			if (!keep.has(existing.id)) {
+				triggers.remove({ id: existing.id, ...actor });
+			}
+		}
+
+		const saved = wanted.map(rule =>
+			triggers.save({
+				...(rule.id !== undefined ? { id: rule.id } : {}),
+				label: rule.label,
+				sourceState: rule.sourceState,
+				mode: rule.mode as TriggerMode,
+				condition: rule.condition,
+				userId: rule.userId,
+				action: rule.action as TriggerAction,
+				isActive: rule.isActive,
+				cooldownSec: rule.cooldownSec,
+				...actor,
+			}),
+		);
+
+		// the adapter subscribes to the states the rules name: tell it about the new list right away
+		deps.onTriggerRulesChanged?.();
+		return saved;
+	}
+
+	// Trigger rules: a state of another adapter (fingerprint reader, button, door contact) punches or sets the
+	// presence. The rules are edited as a whole table, like the break rules of the company.
+	route("GET", "/trigger-rules", { permission: "settings.view" }, () =>
+		json(200, { triggerRules: triggers.list({ includeInactive: true }) }),
+	);
+
+	route("PUT", "/trigger-rules", { permission: "settings.edit", csrf: true }, context =>
+		json(200, { triggerRules: replaceTriggerRules(context) }),
+	);
 
 	// branding: logo, background and accent colour of the installation.
 	//

@@ -227,6 +227,10 @@ export interface ApiClient {
 	}): Promise<{ tag: RfidTagRecord; url: string }>;
 	/** Deletes a tag */
 	deleteTag(id: number): Promise<void>;
+	/** Rules that turn states of other adapters into punches (fingerprint reader, button, …) */
+	triggerRules(): Promise<TriggerRule[]>;
+	/** Replaces the whole table of trigger rules with the given one */
+	saveTriggerRules(rules: TriggerRule[]): Promise<TriggerRule[]>;
 	/** Figures of a date range, per employee and in total */
 	statistics(from: string, to: string, userId?: number): Promise<StatisticsResult>;
 	/** Redeems a scanned badge link (public, no session needed) */
@@ -361,6 +365,41 @@ export interface RfidTagRecord {
 	expiresAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
+}
+
+/** How a trigger rule decides which employee it fires for (`GET /trigger-rules`). */
+export type TriggerMode = "condition" | "user";
+
+/** What a trigger rule does when it fires. */
+export type TriggerAction = "punch" | "quickPunch" | "present" | "absent";
+
+/**
+ * A rule that turns a state of another adapter into a punch or a presence change.
+ *
+ * `condition` fires when the watched state carries the stored value and punches for `userId`; `user` reads the
+ * employee out of the value itself (user id, login or shown name).
+ */
+export interface TriggerRule {
+	/** Id of an existing rule, omitted when a new one is created */
+	id?: number;
+	/** Free-form label */
+	label?: string | null;
+	/** State of another adapter that is watched, e.g. `fingerprint.0.lastMatch` */
+	sourceState: string;
+	/** How the employee is resolved, defaults to `condition` */
+	mode?: TriggerMode;
+	/** Value the state has to carry (mode `condition`) */
+	condition?: string | null;
+	/** Employee the rule fires for (mode `condition`) */
+	userId?: number | null;
+	/** What happens when the rule fires, defaults to `punch` */
+	action?: TriggerAction;
+	/** `false` disables the rule without deleting it */
+	isActive?: boolean;
+	/** Seconds that have to pass between two fires, `0` = no limit */
+	cooldownSec?: number;
+	/** Instant the rule fired last, `null` when it never fired */
+	lastFiredAt?: number | null;
 }
 
 /** One employee row of the statistics (`GET /reports/statistics`). */
@@ -934,6 +973,19 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async rfidTags(): Promise<RfidTagRecord[]> {
 			const result = await request<{ tags: RfidTagRecord[] }>("GET", "/rfid/tags");
 			return result.tags ?? [];
+		},
+
+		// trigger rules of the instance (read in the administration, written as a whole table)
+		async triggerRules(): Promise<TriggerRule[]> {
+			const result = await request<{ triggerRules: TriggerRule[] }>("GET", "/trigger-rules");
+			return result.triggerRules ?? [];
+		},
+
+		async saveTriggerRules(rules): Promise<TriggerRule[]> {
+			const result = await request<{ triggerRules: TriggerRule[] }>("PUT", "/trigger-rules", {
+				body: { triggerRules: rules },
+			});
+			return result.triggerRules ?? [];
 		},
 
 		async createTag(input) {

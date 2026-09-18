@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.18",
+		"version": "0.0.19",
 		"nogit": true,
 		"news": {
+			"0.0.19": {
+				"en": "ioBroker comfort: actions turn a state of another adapter (fingerprint reader, button, door contact) into a punch, a quick punch or a presence change, and sendTo messages (punch, present, status, report, backup) drive the instance without HTTP; new states for dashboards and notifications: company figures, month and year figures per employee and the newest event",
+				"de": "ioBroker-Komfort: Aktionen machen aus einem State eines anderen Adapters (Fingerabdruck-Leser, Taster, Türkontakt) eine Stempelung, eine Schnellstempelung oder eine Anwesenheitsänderung, und sendTo-Nachrichten (punch, present, status, report, backup) steuern die Instanz ohne HTTP; neue States für Dashboards und Benachrichtigungen: Firmen-Kennzahlen, Monats- und Jahreswerte je Mitarbeiter und das jeweils neueste Ereignis",
+				"ru": "Удобство ioBroker: действия превращают состояние другого адаптера (сканер отпечатка, кнопка, дверной контакт) в отметку, быструю отметку или изменение присутствия, а сообщения sendTo (punch, present, status, report, backup) управляют инстансом без HTTP; новые состояния для дашбордов и уведомлений: показатели фирмы, месячные и годовые значения по сотрудникам и последнее событие",
+				"pt": "Conforto ioBroker: as ações transformam um estado de outro adaptador (leitor de impressão digital, botão, contacto de porta) numa marcação, marcação rápida ou alteração de presença, e as mensagens sendTo (punch, present, status, report, backup) controlam a instância sem HTTP; novos estados para painéis e notificações: indicadores da empresa, valores mensais e anuais por funcionário e o evento mais recente",
+				"nl": "ioBroker-comfort: acties maken van een state van een andere adapter (vingerafdruklezer, knop, deurcontact) een stempeling, snelle stempeling of aanwezigheidswijziging, en sendTo-berichten (punch, present, status, report, backup) besturen de instantie zonder HTTP; nieuwe states voor dashboards en meldingen: bedrijfscijfers, maand- en jaarwaarden per medewerker en de nieuwste gebeurtenis",
+				"fr": "Confort ioBroker : les actions transforment un état d'un autre adaptateur (lecteur d'empreinte, bouton, contact de porte) en pointage, pointage rapide ou changement de présence, et les messages sendTo (punch, present, status, report, backup) pilotent l'instance sans HTTP ; nouveaux états pour les tableaux de bord et les notifications : chiffres de l'entreprise, valeurs mensuelles et annuelles par employé et le dernier événement",
+				"it": "Comfort ioBroker: le azioni trasformano uno stato di un altro adattatore (lettore di impronte, pulsante, contatto della porta) in una timbratura, una timbratura rapida o un cambio di presenza, e i messaggi sendTo (punch, present, status, report, backup) pilotano l'istanza senza HTTP; nuovi stati per dashboard e notifiche: numeri dell'azienda, valori mensili e annuali per dipendente e l'ultimo evento",
+				"es": "Comodidad de ioBroker: las acciones convierten un estado de otro adaptador (lector de huellas, botón, contacto de puerta) en un fichaje, un fichaje rápido o un cambio de presencia, y los mensajes sendTo (punch, present, status, report, backup) controlan la instancia sin HTTP; nuevos estados para paneles y notificaciones: cifras de la empresa, valores mensuales y anuales por empleado y el último evento",
+				"pl": "Wygoda ioBroker: akcje zamieniają stan innego adaptera (czytnik linii papilarnych, przycisk, kontakt drzwiowy) na zastemplowanie, szybkie zastemplowanie lub zmianę obecności, a wiadomości sendTo (punch, present, status, report, backup) sterują instancją bez HTTP; nowe stany dla pulpitów i powiadomień: wskaźniki firmy, wartości miesięczne i roczne na pracownika oraz ostatnie zdarzenie",
+				"uk": "Зручність ioBroker: дії перетворюють стан іншого адаптера (сканер відбитка, кнопка, дверний контакт) на відмітку, швидку відмітку або зміну присутності, а повідомлення sendTo (punch, present, status, report, backup) керують інстансом без HTTP; нові стани для дашбордів і сповіщень: показники фірми, місячні та річні значення на працівника й остання подія",
+				"zh-cn": "ioBroker 便利性：动作可把其他适配器的状态（指纹读卡器、按钮、门磁）转为打点、快速打点或在场状态变化，sendTo 消息（punch、present、status、report、backup）无需 HTTP 即可操作实例；新增仪表盘与通知用的状态：公司指标、每位员工的月度与年度数值以及最新事件"
+			},
 			"0.0.18": {
 				"en": "the background picture can be taken away again: every picture field has its own button “Remove picture” (the logo as well) and “Default” resets colour and background picture in one click",
 				"de": "das Hintergrundbild lässt sich wieder entfernen: jedes Bildfeld hat einen eigenen Knopf „Bild entfernen“ (auch beim Logo) und „Standard“ setzt Hintergrundfarbe und Hintergrundbild mit einem Klick zurück",
@@ -81,19 +94,6 @@
 				"pl": "zasady przerw dla każdego pracownika, działające okno edycji własnych odbić (poprawki bezpośrednio w widoku miesiąca) i eksport surowych odbić do CSV w raporcie miesięcznym",
 				"uk": "правила перерв для кожного працівника, чинне вікно редагування власних відбиттів (виправлення прямо в місячному огляді) та експорт початкових відбиттів у CSV у місячному звіті",
 				"zh-cn": "按员工设置休息规则、对自己打点生效的编辑窗口（可直接在月度视图中更正）以及月度报告中的原始打点 CSV 导出"
-			},
-			"0.0.12": {
-				"en": "the month view of the web app shows the pause as well: the total of the month carries “Pause” (the paid part in brackets) and every day row its own pause",
-				"de": "die Monatsansicht der Web-App zeigt jetzt auch die Pause: die Monatssumme trägt „Pause“ (bezahlte Anteile in Klammern) und jede Tageszeile ihre eigene Pause",
-				"ru": "в месячном обзоре веб-приложения теперь виден и перерыв: в итоге месяца есть «Перерыв» (оплачиваемая часть в скобках), а в каждой строке дня — свой перерыв",
-				"pt": "a vista mensal da aplicação web passa a mostrar também a pausa: o total do mês traz «Pausa» (a parte paga entre parênteses) e cada linha do dia a sua pausa",
-				"nl": "de maandweergave van de webapp toont nu ook de pauze: het maandtotaal toont “Pauze” (het betaalde deel tussen haakjes) en elke dagregel zijn eigen pauze",
-				"fr": "la vue du mois de l'application web affiche désormais aussi la pause : le total du mois porte « Pause » (la part payée entre parenthèses) et chaque ligne de jour sa propre pause",
-				"it": "la vista mensile dell'app web mostra ora anche la pausa: il totale del mese riporta «Pausa» (la parte pagata tra parentesi) e ogni riga del giorno la sua pausa",
-				"es": "la vista mensual de la aplicación muestra ahora también la pausa: el total del mes lleva «Pausa» (la parte pagada entre paréntesis) y cada fila del día su propia pausa",
-				"pl": "widok miesiąca w aplikacji internetowej pokazuje teraz także przerwę: suma miesiąca zawiera „Przerwa” (płatna część w nawiasach), a każdy wiersz dnia swoją przerwę",
-				"uk": "у місячному огляді веб-застосунку тепер видно й перерву: у підсумку місяця є «Перерва» (оплачувана частина в дужках), а в кожному рядку дня — своя перерва",
-				"zh-cn": "网页应用中的月度视图现在也会显示休息：月度合计中带有“休息”（括号内为带薪部分），每天的行程行也有各自的休息"
 			}
 		},
 		"titleLang": {

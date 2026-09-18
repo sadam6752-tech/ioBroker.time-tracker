@@ -19,6 +19,11 @@ import { createSettingsRepository } from "./lib/db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
 import { createTerminalsRepository } from "./lib/db/repositories/terminals";
 import { createRfidRepository } from "./lib/db/repositories/rfid";
+import {
+	createTriggersRepository,
+	type TriggerRuleRecord,
+	type TriggersRepository,
+} from "./lib/db/repositories/triggers";
 import type { EntriesRepository } from "./lib/db/repositories/entries";
 import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
@@ -34,11 +39,23 @@ import {
 	type BackupService,
 } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
-import { COMMAND_IDS, createCommandStates, createInfoStates, publishAllUserStates } from "./lib/adapter/states";
+import {
+	COMMAND_IDS,
+	createCommandStates,
+	createCompanyStates,
+	createEventStates,
+	createInfoStates,
+	publishAllUserStates,
+	publishCompanySnapshot,
+	publishEventSnapshot,
+	readCompanySnapshot,
+} from "./lib/adapter/states";
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
-import { handleCommand } from "./lib/adapter/commands";
+import { handleCommand, punchEmployee } from "./lib/adapter/commands";
+import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
+import { handleMessage } from "./lib/adapter/messages";
 import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
-import type { EventBus } from "./lib/web/events";
+import type { ApiEvent, EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
 import { createStaticHandler } from "./lib/web/static";
 
@@ -63,6 +80,7 @@ interface AdapterServices {
 	sync: SyncService;
 	closing: ClosingService;
 	backup: BackupService;
+	triggers: TriggersRepository;
 }
 
 class Zeiterfassung extends utils.Adapter {
@@ -71,6 +89,10 @@ class Zeiterfassung extends utils.Adapter {
 	private services: AdapterServices | null = null;
 	/** Bus of the API; `null` until the API is created */
 	private events: EventBus | null = null;
+	/** Last value seen per watched trigger state: only a change fires a rule */
+	private readonly triggerValues = new Map<string, string>();
+	/** Trigger states the adapter currently subscribes to */
+	private readonly triggerStates = new Set<string>();
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -80,7 +102,8 @@ class Zeiterfassung extends utils.Adapter {
 		this.on("ready", this.onReady.bind(this));
 		this.on("stateChange", this.onStateChange.bind(this));
 		// this.on("objectChange", this.onObjectChange.bind(this));
-		// this.on("message", this.onMessage.bind(this));
+		// scripts, Blockly and other adapters reach the instance through `sendTo` messages
+		this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
 	}
 
@@ -154,6 +177,8 @@ class Zeiterfassung extends utils.Adapter {
 			await this.startApi();
 			// creates the command and info states, so the instance information can be published afterwards
 			await this.subscribeCommands();
+			// watches the states the trigger rules name (fingerprint reader, button, door contact, …)
+			await this.refreshTriggerSubscriptions();
 			await this.publishInstanceInfo();
 			await this.refreshStates();
 
@@ -338,6 +363,7 @@ class Zeiterfassung extends utils.Adapter {
 			rules,
 			settings,
 		});
+		const triggers = createTriggersRepository(db);
 		const sync = createSyncService({ db, entries, users, aggregation });
 		const closing = createClosingService({ db, aggregation, payouts });
 		// backups live next to the database file: `<data dir>/backups/zeiterfassung-<timestamp>.sqlite`
@@ -357,6 +383,7 @@ class Zeiterfassung extends utils.Adapter {
 			payouts,
 			terminals,
 			rfid,
+			triggers,
 			aggregation,
 			sync,
 			settings,
@@ -367,10 +394,14 @@ class Zeiterfassung extends utils.Adapter {
 			trustProxy: this.config.trustProxy === true,
 			hmacSecret: this.config.hmacSecret,
 			version: this.version,
+			// a saved trigger rule changes the states the adapter has to watch
+			onTriggerRulesChanged: () => void this.refreshTriggerSubscriptions(),
 		});
 
-		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup };
+		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup, triggers };
 		this.events = api.events;
+		// the newest event is mirrored into the state tree, so a notification only has to watch `events.*`
+		api.events.subscribe(event => void this.publishEventState(event));
 		this.log.debug(`API routes: ${api.routes().length}`);
 
 		// the web interface is delivered from `www/` next to the compiled code (built by the PWA project);
@@ -441,6 +472,8 @@ class Zeiterfassung extends utils.Adapter {
 		try {
 			await createCommandStates(this);
 			await createInfoStates(this);
+			await createCompanyStates(this);
+			await createEventStates(this);
 			await this.subscribeStatesAsync("commands.*");
 			// the presence switch of every employee: written by a script, a fingerprint reader or a dashboard
 			await this.subscribeStatesAsync(`users.*.${PRESENCE_SUFFIX}`);
@@ -548,6 +581,8 @@ class Zeiterfassung extends utils.Adapter {
 				sync: services.sync,
 			});
 			this.log.debug(`published ${snapshots.length} employee state(s)`);
+			// the company figures are derived from the same snapshots, so they never disagree
+			await publishCompanySnapshot(this, readCompanySnapshot(snapshots));
 		} catch (error) {
 			this.log.warn(`states could not be published: ${(error as Error).message}`);
 		}
@@ -610,6 +645,135 @@ class Zeiterfassung extends utils.Adapter {
 	}
 
 	/**
+	 * Watches exactly the states the active trigger rules name.
+	 *
+	 * Runs at startup and whenever the administration saves the rules, so an added, changed or removed rule takes
+	 * effect without a restart. A state that no rule names any more is dropped from the watch list.
+	 */
+	private async refreshTriggerSubscriptions(): Promise<void> {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+
+		let rules: TriggerRuleRecord[] = [];
+		try {
+			rules = services.triggers.list();
+		} catch (error) {
+			this.log.warn(`trigger rules could not be read: ${(error as Error).message}`);
+			return;
+		}
+
+		const wanted = new Set(rules.map(rule => rule.sourceState));
+		for (const id of [...this.triggerStates]) {
+			if (wanted.has(id)) {
+				continue;
+			}
+			try {
+				await this.unsubscribeForeignStatesAsync(id);
+			} catch (error) {
+				this.log.debug(`trigger state ${id} could not be released: ${(error as Error).message}`);
+			}
+			this.triggerStates.delete(id);
+			this.triggerValues.delete(id);
+		}
+
+		for (const id of wanted) {
+			if (this.triggerStates.has(id)) {
+				continue;
+			}
+			try {
+				await this.subscribeForeignStatesAsync(id);
+				this.triggerStates.add(id);
+			} catch (error) {
+				this.log.warn(`trigger state ${id} could not be watched: ${(error as Error).message}`);
+			}
+		}
+
+		this.log.debug(`watching ${this.triggerStates.size} trigger state(s) for ${rules.length} active rule(s)`);
+	}
+
+	/**
+	 * Applies a write on a state that trigger rules watch.
+	 *
+	 * Such a state belongs to another adapter, so its `ack` says nothing about whether the value was set by a
+	 * script or by the device. What counts is that the value **changed**: a reader that repeats itself, a
+	 * dashboard that refreshes or a script that writes the same value twice does not punch twice. Together with
+	 * the cooldown of a rule even a rapidly blinking state stays harmless.
+	 *
+	 * @param id - full state id
+	 * @param state - state object of the write
+	 * @returns true when the state belongs to a rule and was handled here
+	 */
+	private handleTriggerState(id: string, state: ioBroker.State): boolean {
+		const services = this.services;
+		if (!services) {
+			return false;
+		}
+
+		const previous = this.triggerValues.get(id) ?? null;
+		this.triggerValues.set(id, triggerText(state.val));
+
+		const rules = services.triggers.list().filter(rule => rule.sourceState === id);
+		if (rules.length === 0) {
+			return false;
+		}
+
+		const now = Math.floor(Date.now() / 1000);
+		for (const rule of rules) {
+			const decision = evaluateTrigger(rule, { value: state.val, previous, now }, services.users);
+			if (!decision.fire || decision.userId === null) {
+				this.log.debug(`trigger ${rule.id} (${rule.sourceState}) did not fire: ${decision.reason}`);
+				continue;
+			}
+			this.runTrigger(rule, decision.userId);
+		}
+		return true;
+	}
+
+	/**
+	 * Runs the action of a rule that fired.
+	 *
+	 * The punch goes through the same path as the command state and a presence change through the same handler as
+	 * the `users.<id>.present` state, so direction, rounding, notes and the recalculation behave identically.
+	 *
+	 * @param rule - rule that fired
+	 * @param userId - employee the action applies to
+	 */
+	private runTrigger(rule: TriggerRuleRecord, userId: number): void {
+		void (async (): Promise<void> => {
+			const services = this.services;
+			if (!services) {
+				return;
+			}
+			try {
+				const result =
+					rule.action === "present" || rule.action === "absent"
+						? handlePresenceState(
+								{ entries: services.entries, users: services.users, aggregation: services.aggregation },
+								`users.${userId}.${PRESENCE_SUFFIX}`,
+								rule.action === "present",
+							)
+						: punchEmployee(
+								{
+									entries: services.entries,
+									users: services.users,
+									settings: services.settings,
+									aggregation: services.aggregation,
+								},
+								{ userId, quick: rule.action === "quickPunch", note: `trigger.${rule.id}` },
+							);
+				this.log.info(`trigger ${rule.id} (${rule.sourceState}) → ${result.message}`);
+				services.triggers.markFired({ id: rule.id });
+				await this.refreshStates();
+			} catch (error) {
+				// a deleted employee, a deactivated one, a value that cannot be used: never take the adapter down
+				this.log.warn(`trigger ${rule.id} failed: ${(error as Error).message}`);
+			}
+		})();
+	}
+
+	/**
 	 * Stops the HTTP server.
 	 */
 	private async stopApi(): Promise<void> {
@@ -643,6 +807,76 @@ class Zeiterfassung extends utils.Adapter {
 	}
 
 	/**
+	 * Publishes the newest event of the instance into the state tree.
+	 *
+	 * A notification adapter, a dashboard or a Blockly script then only has to watch `events.*` instead of
+	 * following the live stream of the web app.
+	 *
+	 * @param event - event published by the API
+	 */
+	private async publishEventState(event: ApiEvent): Promise<void> {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+		try {
+			const data = event.data ?? {};
+			const user =
+				event.userId === null || event.userId === undefined ? null : services.users.findById(event.userId);
+			await publishEventSnapshot(this, {
+				type: event.type,
+				atUtc: event.atUtc,
+				userName: user?.displayName ?? "",
+				direction: typeof data.direction === "string" ? data.direction : "",
+				source: typeof data.source === "string" ? data.source : "",
+			});
+		} catch (error) {
+			this.log.debug(`event state could not be published: ${(error as Error).message}`);
+		}
+	}
+
+	/**
+	 * Is called when another adapter sends a message (`sendTo`).
+	 *
+	 * @param obj - message object of the adapter framework
+	 */
+	private onMessage(obj: ioBroker.Message): void {
+		void (async (): Promise<void> => {
+			const services = this.services;
+			if (!services) {
+				return;
+			}
+			try {
+				const answer = await handleMessage(
+					{
+						users: services.users,
+						entries: services.entries,
+						absences: services.absences,
+						settings: services.settings,
+						aggregation: services.aggregation,
+						sync: services.sync,
+						backup: services.backup,
+						version: this.version,
+					},
+					obj.command,
+					obj.message,
+				);
+				this.log.info(`message ${obj.command}: ${answer.message}`);
+				if (obj.callback) {
+					this.sendTo(obj.from, obj.command, answer, obj.callback);
+				}
+				await this.refreshStates();
+			} catch (error) {
+				const message = (error as Error).message;
+				this.log.warn(`message ${obj.command} failed: ${message}`);
+				if (obj.callback) {
+					this.sendTo(obj.from, obj.command, { ok: false, message }, obj.callback);
+				}
+			}
+		})();
+	}
+
+	/**
 	 * Is called if a subscribed state changes
 	 *
 	 * @param id - State ID
@@ -650,8 +884,17 @@ class Zeiterfassung extends utils.Adapter {
 	 */
 	private onStateChange(id: string, state: ioBroker.State | null | undefined): void {
 		try {
-			if (!state || state.ack) {
-				// Ignore deletions and acknowledged (status) states
+			if (!state) {
+				// deletions carry no value
+				return;
+			}
+			// a watched state of another adapter is handled first: such a state is acknowledged by its own
+			// adapter, and what counts there is the change of the value
+			if (this.handleTriggerState(id, state)) {
+				return;
+			}
+			if (state.ack) {
+				// Ignore acknowledged (status) states of this instance
 				return;
 			}
 

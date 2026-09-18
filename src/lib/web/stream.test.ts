@@ -9,6 +9,7 @@ import { createHolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository } from "../db/repositories/payouts";
 import { createTerminalsRepository } from "../db/repositories/terminals";
 import { createRfidRepository } from "../db/repositories/rfid";
+import { createTriggersRepository } from "../db/repositories/triggers";
 import { createRulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository } from "../db/repositories/users";
@@ -187,6 +188,7 @@ describe("web event stream", () => {
 		const payouts = createPayoutsRepository(db);
 		const terminals = createTerminalsRepository(db);
 		const rfid = createRfidRepository(db);
+		const triggers = createTriggersRepository(db);
 		const settings = createSettingsRepository(db);
 		const auth = createAuthService({ db, users, settings, secret: "stream-test-secret" });
 		const aggregation = createAggregationService({ db, users, entries, absences, holidays, rules, settings });
@@ -202,6 +204,7 @@ describe("web event stream", () => {
 			payouts,
 			terminals,
 			rfid,
+			triggers,
 			aggregation,
 			sync,
 			settings,

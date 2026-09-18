@@ -149,23 +149,63 @@ needed for the first start.
 
 Punches stay in the database; the adapter publishes aggregates and controls:
 
-| State                                                                                         | Type    | Purpose                                   |
-| --------------------------------------------------------------------------------------------- | ------- | ----------------------------------------- |
-| `zeiterfassung.0.info.connection`                                                             | boolean | adapter/service ready                     |
-| `zeiterfassung.0.info.lastBackup`                                                             | number  | instant of the newest database backup     |
-| `zeiterfassung.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError` | —       | instance information                      |
-| `zeiterfassung.0.users.<id>.displayName`                                                      | string  | name of the employee                      |
-| `zeiterfassung.0.users.<id>.hasOpenEntry`                                                     | boolean | employee is clocked in                    |
-| `zeiterfassung.0.users.<id>.lastPunch`                                                        | number  | instant of the last punch of today        |
-| `zeiterfassung.0.users.<id>.todayWorkedMinutes`                                               | number  | minutes worked today                      |
-| `zeiterfassung.0.users.<id>.todayBalanceMinutes`                                              | number  | balance of today in minutes               |
-| `zeiterfassung.0.users.<id>.openConflicts`                                                    | number  | punches waiting for a decision            |
-| `zeiterfassung.0.commands.punchUserId`                                                        | number  | employee the punch commands apply to      |
-| `zeiterfassung.0.commands.punch`                                                              | boolean | punch in or out (button)                  |
-| `zeiterfassung.0.commands.quickPunch`                                                         | boolean | punch with the configured quick rounding  |
-| `zeiterfassung.0.commands.closeMonth`                                                         | string  | close a month, value `YYYY-MM`            |
-| `zeiterfassung.0.commands.recalc`                                                             | string  | recalculate a period, `YYYY-MM` or `YYYY` |
-| `zeiterfassung.0.commands.backup`                                                             | boolean | write a database backup (button)          |
+| State                                                                                          | Type    | Purpose                                    |
+| ---------------------------------------------------------------------------------------------- | ------- | ------------------------------------------ |
+| `zeiterfassung.0.info.connection`                                                              | boolean | adapter/service ready                      |
+| `zeiterfassung.0.info.lastBackup`                                                              | number  | instant of the newest database backup      |
+| `zeiterfassung.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                       |
+| `zeiterfassung.0.users.<id>.displayName`                                                       | string  | name of the employee                       |
+| `zeiterfassung.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                     |
+| `zeiterfassung.0.users.<id>.lastPunch`                                                         | number  | instant of the last punch of today         |
+| `zeiterfassung.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                       |
+| `zeiterfassung.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                |
+| `zeiterfassung.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision             |
+| `zeiterfassung.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to       |
+| `zeiterfassung.0.commands.punch`                                                               | boolean | punch in or out (button)                   |
+| `zeiterfassung.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding   |
+| `zeiterfassung.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`             |
+| `zeiterfassung.0.commands.recalc`                                                              | string  | recalculate a period, `YYYY-MM` or `YYYY`  |
+| `zeiterfassung.0.commands.backup`                                                              | boolean | write a database backup (button)           |
+| `zeiterfassung.0.users.<id>.monthWorkedMinutes` / `monthBalanceMinutes` / `yearBalanceMinutes` | number  | month and year figures                     |
+| `zeiterfassung.0.company.presentCount`                                                         | number  | employees clocked in right now             |
+| `zeiterfassung.0.company.present`                                                              | string  | their names, separated by a comma          |
+| `zeiterfassung.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
+| `zeiterfassung.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
+
+### Actions (trigger rules)
+
+The ioBroker way of connecting hardware is a state: a fingerprint reader, a button, a door contact or a dashboard
+writes it and the adapter does the rest. A rule is maintained in **Administration → Actions**:
+
+| Field    | Meaning                                                                                                                                              |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| State    | the state of the other adapter, e.g. `fingerprint.0.lastMatch`                                                                                       |
+| Trigger  | _State carries the value_: the value has to equal _Value_ — or _Value is the employee_, where the value names the employee (id, login or shown name) |
+| Value    | the value that fires the rule (mode _State carries the value_)                                                                                       |
+| Employee | who is punched (mode _State carries the value_)                                                                                                      |
+| Action   | punch in or out, punch with the quick rounding, set to present, set to absent                                                                        |
+| Cooldown | seconds that have to pass before the rule may fire again                                                                                             |
+
+A rule fires only when the **value changes**, so a reader that repeats itself is harmless, and the cooldown keeps a
+rapidly blinking state in check. Every punch appears in the audit trail with the note `trigger.<id>`, so its origin
+stays traceable.
+
+### Messages (`sendTo`)
+
+A script, a Blockly block or another adapter drives the instance without HTTP:
+
+```js
+sendTo("zeiterfassung.0", "punch", { user: "anna", quick: true }, answer => log(answer.message));
+sendTo("zeiterfassung.0", "present", { user: 2, present: false });
+sendTo("zeiterfassung.0", "status", { user: "anna" }, answer => log(JSON.stringify(answer.data)));
+sendTo("zeiterfassung.0", "report", { user: "anna", period: "2026-09", format: "pdf" }, answer =>
+	writeFile("statement.pdf", Buffer.from(answer.data.base64, "base64")),
+);
+sendTo("zeiterfassung.0", "backup");
+```
+
+`user` is a user id, a login or the shown name. `report` answers with the file name, the MIME type and the file
+itself as base64 (PDF or Excel), so it can be mailed or sent with a messenger adapter.
 
 ## Reports
 
@@ -251,10 +291,22 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.0.19 (2026-09-18)
+
 - internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the
   file is done, so it can run again and in any order; the end-to-end workflow uses the current majors of
   `actions/checkout`, `actions/setup-node` and `actions/upload-artifact` (the old ones still target Node 20, which
   the runner deprecates)
+
+- (Alex) ioBroker comfort: **actions** (trigger rules) — a state of another adapter like a fingerprint reader, a
+  button or a door contact punches or sets the presence. The table lives in the administration
+  (`GET`/`PUT /api/trigger-rules`), a rule fires only when the value changes and honours a cooldown, and every
+  punch carries the note `trigger.<id>` in the audit trail
+- (Alex) **`sendTo` messages** — `punch`, `present`, `status`, `report` (PDF or Excel as base64) and `backup`, so a
+  script or a Blockly block drives the instance without HTTP
+- (Alex) more states for dashboards and notifications: `company.presentCount`/`present`/`openConflicts`/`lastPunch`,
+  per employee `monthWorkedMinutes`/`monthBalanceMinutes`/`yearBalanceMinutes` and `events.lastAt`/`lastType`/
+  `lastUser`/`lastDirection`/`lastSource`
 
 ### 0.0.18 (2026-09-18)
 
@@ -294,11 +346,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   existing ones just pick the country in the instance settings
 - (Alex) the instance settings point out the **start password** in two places now — a hint on the first tab and a
   header right above the fields — because the generated password appears exactly once in the ioBroker log
-
-### 0.0.14 (2026-09-17)
-
-- (Alex) the **bind address** of the instance is picked from the local addresses of the host now (a list in the
-  admin settings instead of a free text field), and a value that carries a port cannot keep the server from starting
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

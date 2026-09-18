@@ -11,6 +11,7 @@ import { createEntriesRepository, type EntriesRepository } from "../db/repositor
 import { createHolidaysRepository, type HolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository, type PayoutsRepository } from "../db/repositories/payouts";
 import { createTerminalsRepository, type TerminalsRepository } from "../db/repositories/terminals";
+import { createTriggersRepository, type TriggersRepository } from "../db/repositories/triggers";
 import { createRfidRepository, type RfidRepository } from "../db/repositories/rfid";
 import { createRulesRepository, type RulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
@@ -38,6 +39,9 @@ describe("web api", () => {
 	let payouts: PayoutsRepository;
 	let terminals: TerminalsRepository;
 	let rfid: RfidRepository;
+	let triggers: TriggersRepository;
+	/** How often the API told the adapter about a changed rule table. */
+	let hookCalls = 0;
 	let aggregation: AggregationService;
 	let sync: SyncService;
 	let auth: AuthService;
@@ -113,6 +117,7 @@ describe("web api", () => {
 
 	beforeEach(async () => {
 		clock = 1000;
+		hookCalls = 0;
 		db = openAndMigrate(":memory:");
 		seed(db, { holidayYears: [2026] });
 		users = createUsersRepository(db);
@@ -123,6 +128,7 @@ describe("web api", () => {
 		payouts = createPayoutsRepository(db);
 		terminals = createTerminalsRepository(db);
 		rfid = createRfidRepository(db);
+		triggers = createTriggersRepository(db);
 		settings = createSettingsRepository(db);
 		auth = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3 });
 		aggregation = createAggregationService({
@@ -148,6 +154,7 @@ describe("web api", () => {
 			payouts,
 			terminals,
 			rfid,
+			triggers,
 			aggregation,
 			sync,
 			settings,
@@ -156,6 +163,9 @@ describe("web api", () => {
 			hmacSecret: TAG_SECRET,
 			now: () => clock,
 			version: "9.9.9",
+			onTriggerRulesChanged: () => {
+				hookCalls += 1;
+			},
 		});
 
 		// a cheap hash keeps the tests fast; the default cost is covered by the auth tests
@@ -795,6 +805,7 @@ describe("web api", () => {
 				payouts,
 				terminals,
 				rfid,
+				triggers,
 				aggregation,
 				sync,
 				settings,
@@ -1836,6 +1847,7 @@ describe("web api", () => {
 				payouts,
 				terminals,
 				rfid,
+				triggers,
 				aggregation,
 				sync,
 				settings,
@@ -1940,6 +1952,7 @@ describe("web api", () => {
 				payouts,
 				terminals,
 				rfid,
+				triggers,
 				aggregation,
 				sync,
 				settings,
@@ -2642,6 +2655,82 @@ describe("web api", () => {
 			});
 			expect(refused.status).to.equal(400);
 			expect(bodyOf<{ detail: string }>(refused).detail).to.contain("524288");
+		});
+	});
+
+	describe("trigger rules", () => {
+		it("keeps the rules behind the settings permission and tells the adapter about a change", async () => {
+			expect((await send("GET", "/trigger-rules", { headers: headers(annaToken) })).status).to.equal(403);
+			expect(
+				(
+					await send("PUT", "/trigger-rules", {
+						body: { triggerRules: [] },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+
+			const created = await send("PUT", "/trigger-rules", {
+				body: {
+					triggerRules: [
+						{ sourceState: "fingerprint.0.lastMatch", condition: "1", userId: annaId, label: "Finger" },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(200);
+			const saved = bodyOf<{ triggerRules: { label: string; cooldownSec: number; sourceState: string }[] }>(
+				created,
+			);
+			expect(saved.triggerRules).to.have.length(1);
+			expect(saved.triggerRules[0]).to.include({
+				label: "Finger",
+				cooldownSec: 0,
+				sourceState: "fingerprint.0.lastMatch",
+			});
+			// the adapter subscribes to the states of the new list right away
+			expect(hookCalls).to.be.greaterThan(0);
+
+			const listed = await send("GET", "/trigger-rules", { headers: headers(adminToken) });
+			expect(bodyOf<{ triggerRules: unknown[] }>(listed).triggerRules).to.have.length(1);
+
+			// the payload is the whole table: an empty list removes the rule again
+			const cleared = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: [] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(bodyOf<{ triggerRules: unknown[] }>(cleared).triggerRules).to.be.empty;
+			expect(triggers.list({ includeInactive: true })).to.be.empty;
+		});
+
+		it("refuses a rule that cannot work", async () => {
+			const unknown = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: [{ sourceState: "a.0.b", condition: "1", userId: 999 }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(unknown.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(unknown).detail).to.contain("existing employee");
+
+			const mixed = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: [{ sourceState: "a.0.b", mode: "user", userId: annaId }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(mixed.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(mixed).detail).to.contain("mode user");
+
+			const noValue = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: [{ sourceState: "a.0.b", userId: annaId }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(noValue.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(noValue).detail).to.contain("condition is required");
+
+			const noArray = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: "nope" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(noArray.status).to.equal(400);
+			expect(triggers.list({ includeInactive: true })).to.be.empty;
 		});
 	});
 });

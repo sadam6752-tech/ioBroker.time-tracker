@@ -102,6 +102,64 @@ function targetUser(deps: CommandDeps): { id: number; displayName: string; timez
 	throw new ValidationError("several employees exist - set command_punch_user_id or write users.<id> commands");
 }
 
+/** Data a punch needs: where to write, how to round and how to recalculate. */
+export type PunchDeps = Pick<CommandDeps, "entries" | "users" | "settings" | "aggregation" | "now">;
+
+/**
+ * Punches in or out for one employee.
+ *
+ * This is the single punch path of the adapter: the `commands.punch` button, a trigger rule and a `sendTo`
+ * message all end up here, so direction, rounding, note and recalculation behave the same everywhere.
+ *
+ * @param deps - data sources
+ * @param input - employee, rounding and note
+ * @param input.userId - employee the punch belongs to
+ * @param input.quick - true to round the instant with the configured quick rounding
+ * @param input.note - note stored with the punch
+ * @param input.now - instant of the punch, defaults to the system clock
+ * @returns result of the punch
+ */
+export function punchEmployee(
+	deps: PunchDeps,
+	input: { userId: number; quick?: boolean; note?: string; now?: number },
+): CommandResult {
+	const target = deps.users.findById(input.userId);
+	if (!target) {
+		throw new ValidationError(`employee ${input.userId} does not exist`);
+	}
+	if (!target.isActive) {
+		throw new ValidationError(`${target.displayName} is deactivated, no punch was written`);
+	}
+
+	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
+	const timestamp = input.now ?? now();
+	const quickRound = input.quick === true ? deps.settings.getNumber("quick_round_minutes", 0) : 0;
+	const tsUtc = quickRound > 0 ? roundToStep(timestamp, quickRound, target.timezone) : timestamp;
+	const today = resolveLocalDate(tsUtc, target.timezone);
+
+	const existing: PunchEntry[] = deps.entries
+		.listByDate(target.id, today)
+		.map(entry => ({ id: entry.id, tsUtc: entry.tsUtc, syncState: entry.syncState }));
+	const direction = nextDirection(buildDayPunches(existing));
+
+	const stored = deps.entries.insert({
+		userId: target.id,
+		tsUtc,
+		timeZone: target.timezone,
+		source: "api",
+		direction,
+		note: input.note ?? null,
+		now: timestamp,
+	});
+	const day = deps.aggregation.recalculateDay(target.id, stored.entry.localDate, { now: timestamp });
+
+	return {
+		ok: true,
+		message: `${target.displayName} punched ${direction} (${day.workedMin} min today, open: ${day.hasOpenEntry})`,
+		recalculated: [stored.entry.localDate],
+	};
+}
+
 /**
  * Handles a command state.
  *
@@ -155,31 +213,12 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
 		}
 
 		const target = targetUser(deps);
-		const quickRound = id === COMMAND_IDS.quickPunch ? deps.settings.getNumber("quick_round_minutes", 0) : 0;
-		const tsUtc = quickRound > 0 ? roundToStep(timestamp, quickRound, target.timezone) : timestamp;
-		const today = resolveLocalDate(tsUtc, target.timezone);
-
-		const existing: PunchEntry[] = deps.entries
-			.listByDate(target.id, today)
-			.map(entry => ({ id: entry.id, tsUtc: entry.tsUtc, syncState: entry.syncState }));
-		const direction = nextDirection(buildDayPunches(existing));
-
-		const stored = deps.entries.insert({
+		return punchEmployee(deps, {
 			userId: target.id,
-			tsUtc,
-			timeZone: target.timezone,
-			source: "api",
-			direction,
+			quick: id === COMMAND_IDS.quickPunch,
 			note: "command.punch",
 			now: timestamp,
 		});
-		const day = deps.aggregation.recalculateDay(target.id, stored.entry.localDate, { now: timestamp });
-
-		return {
-			ok: true,
-			message: `${target.displayName} punched ${direction} (${day.workedMin} min today, open: ${day.hasOpenEntry})`,
-			recalculated: [stored.entry.localDate],
-		};
 	}
 
 	if (id === COMMAND_IDS.backup) {

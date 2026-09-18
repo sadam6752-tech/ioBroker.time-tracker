@@ -75,12 +75,15 @@ test("creates a trigger rule for a state of another adapter and removes it again
 	await page.getByRole("option", { name: anna.displayName }).click();
 	await page.getByRole("button", { name: "Speichern", exact: true }).click();
 
+	// the save needs a moment, and the pipeline runner is slower than a local machine
 	await expect
-		.poll(async () => (await stored()).map(rule => `${rule.sourceState}|${rule.condition}|${rule.userId}`))
+		.poll(async () => (await stored()).map(rule => `${rule.sourceState}|${rule.condition}|${rule.userId}`), {
+			timeout: 20_000,
+		})
 		.toEqual([`fingerprint.0.lastMatch|1|${anna.id}`]);
 
 	// the table is saved as a whole: removing the row and saving an empty table clears it
 	await page.getByTitle("Löschen").click();
 	await page.getByRole("button", { name: "Speichern", exact: true }).click();
-	await expect.poll(async () => (await stored()).length).toBe(0);
+	await expect.poll(async () => (await stored()).length, { timeout: 20_000 }).toBe(0);
 });

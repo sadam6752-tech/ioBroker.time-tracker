@@ -3,6 +3,15 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.15 (2026-09-17)
+
+- (Alex) the **default port** is `8092` now — `8082` is the default of vis and web in ioBroker, so a fresh
+  installation could not start beside them; the port field names that in its help text
+- (Alex) the **default holiday country** is Germany (`DE`) now: new instances generate German public holidays,
+  existing ones just pick the country in the instance settings
+- (Alex) the instance settings point out the **start password** in two places now — a hint on the first tab and a
+  header right above the fields — because the generated password appears exactly once in the ioBroker log
+
 ### 0.0.14 (2026-09-17)
 
 - (Alex) the **bind address** of the instance is picked from the local addresses of the host now (a list in the

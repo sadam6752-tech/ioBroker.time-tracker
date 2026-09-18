@@ -47,6 +47,21 @@ export function triggerText(value: ioBroker.StateValue): string {
 }
 
 /**
+ * True when the stored value means "any change".
+ *
+ * A switch, a button or a reader that only reports *that* something happened carries `true` and `false`
+ * alternately — a fixed value would only fire for one of the two directions. `toggle` (or `*`) makes the rule
+ * fire for every change, and the action `punch` then picks the direction itself.
+ *
+ * @param condition - value stored in the rule
+ * @returns true when the rule fires for every changed value
+ */
+export function isToggleCondition(condition: string | null | undefined): boolean {
+	const normalized = (condition ?? "").trim().toLowerCase();
+	return normalized === "toggle" || normalized === "*";
+}
+
+/**
  * Resolves the employee a value of mode `user` names.
  *
  * @param value - value written on the watched state
@@ -106,7 +121,7 @@ export function evaluateTrigger(
 			return { fire: false, userId: null, reason: `no employee matches "${text}"` };
 		}
 	} else {
-		if (text !== (rule.condition ?? "")) {
+		if (!isToggleCondition(rule.condition) && text !== (rule.condition ?? "")) {
 			return { fire: false, userId: null, reason: `value ${text} does not match ${rule.condition ?? "?"}` };
 		}
 		user = rule.userId === null ? null : users.findById(rule.userId);

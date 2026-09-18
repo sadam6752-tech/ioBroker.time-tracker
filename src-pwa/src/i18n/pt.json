@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Ativo",
 	"admin.trigger.add": "Adicionar ação",
 	"admin.trigger.lastFired": "Último disparo",
-	"admin.trigger.empty": "Ainda não há ações."
+	"admin.trigger.empty": "Ainda não há ações.",
+	"admin.trigger.conditionHint": "Valor ou `toggle` para disparar em qualquer mudança"
 }

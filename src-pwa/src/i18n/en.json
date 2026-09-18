@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Active",
 	"admin.trigger.add": "Add trigger",
 	"admin.trigger.lastFired": "Last fired",
-	"admin.trigger.empty": "No trigger yet."
+	"admin.trigger.empty": "No trigger yet.",
+	"admin.trigger.conditionHint": "Value, or `toggle` to fire on every change"
 }

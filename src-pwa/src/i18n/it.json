@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Attivo",
 	"admin.trigger.add": "Aggiungi azione",
 	"admin.trigger.lastFired": "Ultima esecuzione",
-	"admin.trigger.empty": "Nessuna azione per ora."
+	"admin.trigger.empty": "Nessuna azione per ora.",
+	"admin.trigger.conditionHint": "Valore o `toggle` per reagire a ogni cambiamento"
 }

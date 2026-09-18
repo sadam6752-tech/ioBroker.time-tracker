@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import type { TriggerRuleRecord } from "../db/repositories/triggers";
 import type { UserRecord } from "../db/repositories/users";
-import { evaluateTrigger, resolveTriggerUser, triggerText, type TriggerUsers } from "./triggers";
+import { evaluateTrigger, isToggleCondition, resolveTriggerUser, triggerText, type TriggerUsers } from "./triggers";
 
 /**
  * Builds a rule with sensible defaults.
@@ -92,6 +92,26 @@ describe("trigger rules", () => {
 			users,
 		);
 		expect(byLogin).to.deep.equal({ fire: true, userId: 2, reason: "present for Anna Weber" });
+	});
+
+	it("fires for every change when the value is toggle or a star", () => {
+		expect(isToggleCondition("toggle")).to.equal(true);
+		expect(isToggleCondition(" TOGGLE ")).to.equal(true);
+		expect(isToggleCondition("*")).to.equal(true);
+		expect(isToggleCondition("true")).to.equal(false);
+		expect(isToggleCondition(null)).to.equal(false);
+
+		// a switch that goes on and off again: both directions fire, a repeated value still does not
+		const switchRule = rule({ condition: "toggle" });
+		expect(evaluateTrigger(switchRule, { value: false, previous: "true", now: 1000 }, users).fire).to.equal(true);
+		expect(evaluateTrigger(switchRule, { value: 1, previous: "false", now: 1000 }, users).fire).to.equal(true);
+		expect(evaluateTrigger(switchRule, { value: false, previous: "false", now: 1000 }, users).reason).to.contain(
+			"did not change",
+		);
+
+		// a fixed value keeps refusing the other direction
+		const fixed = rule({ condition: "true" });
+		expect(evaluateTrigger(fixed, { value: false, previous: "true", now: 1 }, users).fire).to.equal(false);
 	});
 
 	it("refuses an unknown or deactivated employee", () => {

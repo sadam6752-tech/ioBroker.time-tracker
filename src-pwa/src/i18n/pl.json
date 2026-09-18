@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Aktywne",
 	"admin.trigger.add": "Dodaj akcję",
 	"admin.trigger.lastFired": "Ostatnie wyzwolenie",
-	"admin.trigger.empty": "Nie ma jeszcze akcji."
+	"admin.trigger.empty": "Nie ma jeszcze akcji.",
+	"admin.trigger.conditionHint": "Wartość lub `toggle`, aby reagować na każdą zmianę"
 }

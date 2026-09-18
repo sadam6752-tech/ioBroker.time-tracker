@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Actief",
 	"admin.trigger.add": "Actie toevoegen",
 	"admin.trigger.lastFired": "Laatst uitgevoerd",
-	"admin.trigger.empty": "Nog geen acties."
+	"admin.trigger.empty": "Nog geen acties.",
+	"admin.trigger.conditionHint": "Waarde of `toggle` om bij elke wijziging te reageren"
 }

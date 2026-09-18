@@ -177,14 +177,14 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 The ioBroker way of connecting hardware is a state: a fingerprint reader, a button, a door contact or a dashboard
 writes it and the adapter does the rest. A rule is maintained in **Administration → Actions**:
 
-| Field    | Meaning                                                                                                                                              |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| State    | the state of the other adapter, e.g. `fingerprint.0.lastMatch`                                                                                       |
-| Trigger  | _State carries the value_: the value has to equal _Value_ — or _Value is the employee_, where the value names the employee (id, login or shown name) |
-| Value    | the value that fires the rule (mode _State carries the value_)                                                                                       |
-| Employee | who is punched (mode _State carries the value_)                                                                                                      |
-| Action   | punch in or out, punch with the quick rounding, set to present, set to absent                                                                        |
-| Cooldown | seconds that have to pass before the rule may fire again                                                                                             |
+| Field    | Meaning                                                                                                                                                         |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| State    | the state of the other adapter, e.g. `fingerprint.0.lastMatch`                                                                                                  |
+| Trigger  | _State carries the value_: the value has to equal _Value_ — or _Value is the employee_, where the value names the employee (id, login or shown name)            |
+| Value    | the value that fires the rule (mode _State carries the value_) — `toggle` (or `*`) fires for **every** change, so a switch that goes on and off again works too |
+| Employee | who is punched (mode _State carries the value_)                                                                                                                 |
+| Action   | punch in or out, punch with the quick rounding, set to present, set to absent                                                                                   |
+| Cooldown | seconds that have to pass before the rule may fire again                                                                                                        |
 
 A rule fires only when the **value changes**, so a reader that repeats itself is harmless, and the cooldown keeps a
 rapidly blinking state in check. Every punch appears in the audit trail with the note `trigger.<id>`, so its origin
@@ -291,6 +291,16 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.0 (2026-09-18)
+
+- (Alex) fix: a trigger rule fires for **every change** when its value is `toggle` (or `*`) — a switch that goes
+  from `true` to `false` punches too, the fixed value only reacted in one direction. The field in the
+  administration names that now
+- (Alex) fix: the published figures follow a punch from the web app within a second — the API of the same process
+  reports every change (punch, correction, badge, absence) over the event bus and the adapter republishes the
+  states instead of waiting for the five minute timer. That is what made `users.<id>.present` and
+  `company.presentCount` lag behind
+
 ### 0.0.19 (2026-09-18)
 
 - internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the
@@ -337,15 +347,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) internal: `CONTRIBUTING.md` documents the release flow — after a green workflow wait another 5 to 10
   minutes before checking npm (measured: green run 17:37, npm 17:42), and never delete and re-push the tag of a
   published version (it removes the GitHub release and npm refuses the second publication)
-
-### 0.0.15 (2026-09-17)
-
-- (Alex) the **default port** is `8092` now — `8082` is the default of vis and web in ioBroker, so a fresh
-  installation could not start beside them; the port field names that in its help text
-- (Alex) the **default holiday country** is Germany (`DE`) now: new instances generate German public holidays,
-  existing ones just pick the country in the instance settings
-- (Alex) the instance settings point out the **start password** in two places now — a hint on the first tab and a
-  header right above the fields — because the generated password appears exactly once in the ioBroker log
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

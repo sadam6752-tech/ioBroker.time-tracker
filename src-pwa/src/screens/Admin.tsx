@@ -1690,10 +1690,11 @@ function TriggersTab({ language }: { language: string }): React.JSX.Element {
 											<TextField
 												size="small"
 												label={t("admin.trigger.condition")}
+												helperText={t("admin.trigger.conditionHint")}
 												value={rule.condition ?? ""}
 												onChange={event => change(index, { condition: event.target.value })}
 												disabled={!mayEdit}
-												sx={{ minWidth: 120 }}
+												sx={{ minWidth: 170 }}
 											/>
 											<TextField
 												select

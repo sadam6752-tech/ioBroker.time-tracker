@@ -70,6 +70,14 @@ const STATE_REFRESH_MINUTES = 5;
 /** How old the newest backup may be before the daily check writes a new one. */
 const BACKUP_MAX_AGE_HOURS = 20;
 
+/**
+ * Events of the API that change the published figures.
+ *
+ * A punch or a correction arrives through the API of this very process, so nothing would republish the states
+ * until the five minute timer fires; these events say exactly when data changed.
+ */
+const FIGURES_EVENT_TYPES = ["punch", "terminal.punch", "rfid.scan", "entry.update", "entry.delete", "absence.change"];
+
 /** Services created at startup. */
 interface AdapterServices {
 	users: UsersRepository;
@@ -93,6 +101,8 @@ class Zeiterfassung extends utils.Adapter {
 	private readonly triggerValues = new Map<string, string>();
 	/** Trigger states the adapter currently subscribes to */
 	private readonly triggerStates = new Set<string>();
+	/** Pending refresh of the figures after a change through the API */
+	private stateRefreshTimer: ioBroker.Timeout | undefined = undefined;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -400,8 +410,14 @@ class Zeiterfassung extends utils.Adapter {
 
 		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup, triggers };
 		this.events = api.events;
-		// the newest event is mirrored into the state tree, so a notification only has to watch `events.*`
-		api.events.subscribe(event => void this.publishEventState(event));
+		// the newest event is mirrored into the state tree, so a notification only has to watch `events.*`;
+		// a punch, a correction or an absence changes the figures, so they are republished right away
+		api.events.subscribe(event => {
+			void this.publishEventState(event);
+			if (FIGURES_EVENT_TYPES.includes(event.type)) {
+				this.scheduleStateRefresh();
+			}
+		});
 		this.log.debug(`API routes: ${api.routes().length}`);
 
 		// the web interface is delivered from `www/` next to the compiled code (built by the PWA project);
@@ -804,6 +820,23 @@ class Zeiterfassung extends utils.Adapter {
 			this.log.error(`Error during unloading: ${(error as Error).message}`);
 			callback();
 		}
+	}
+
+	/**
+	 * Republishes the figures shortly after data changed.
+	 *
+	 * A punch from the web app, the terminal or a badge arrives through the API of this very process, so without
+	 * this the states would only change with the five minute timer. One action often produces several events, so
+	 * the refresh is collected for a moment instead of running once per event.
+	 */
+	private scheduleStateRefresh(): void {
+		if (this.stateRefreshTimer) {
+			return;
+		}
+		this.stateRefreshTimer = this.setTimeout(() => {
+			this.stateRefreshTimer = undefined;
+			void this.refreshStates();
+		}, 1000);
 	}
 
 	/**

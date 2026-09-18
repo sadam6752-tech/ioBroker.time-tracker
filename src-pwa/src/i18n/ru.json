@@ -296,5 +296,6 @@
 	"admin.trigger.active": "Активно",
 	"admin.trigger.add": "Добавить действие",
 	"admin.trigger.lastFired": "Последнее срабатывание",
-	"admin.trigger.empty": "Действий пока нет."
+	"admin.trigger.empty": "Действий пока нет.",
+	"admin.trigger.conditionHint": "Значение или `toggle` — тогда срабатывает любое изменение"
 }

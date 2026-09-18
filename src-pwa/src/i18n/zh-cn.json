@@ -296,5 +296,6 @@
 	"admin.trigger.active": "启用",
 	"admin.trigger.add": "添加动作",
 	"admin.trigger.lastFired": "上次触发",
-	"admin.trigger.empty": "尚未添加动作。"
+	"admin.trigger.empty": "尚未添加动作。",
+	"admin.trigger.conditionHint": "数值，或 `toggle` 表示每次变化都触发"
 }

@@ -251,6 +251,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+- internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the
+  file is done, so it can run again and in any order; the end-to-end workflow uses the current majors of
+  `actions/checkout`, `actions/setup-node` and `actions/upload-artifact` (the old ones still target Node 20, which
+  the runner deprecates)
+
 ### 0.0.18 (2026-09-18)
 
 - (Alex) fix: an uploaded background picture can be taken away again — every picture field has a “Remove picture”

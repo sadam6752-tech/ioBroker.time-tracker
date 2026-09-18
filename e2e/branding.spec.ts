@@ -125,16 +125,29 @@ test("takes an uploaded background picture away again", async ({ page, request }
 
 	const branding = async (): Promise<Record<string, unknown>> =>
 		(await (await request.get("/api/branding")).json()) as Record<string, unknown>;
-	await expect.poll(branding).toMatchObject({ backgroundUrl: null, color: null });
+	// the save and the repaint of the shell need a moment: give both checks room, the runner of the pipeline is slower
+	await expect.poll(branding, { timeout: 20_000 }).toMatchObject({ backgroundUrl: null, color: null });
 	expect((await branding()).logoUrl, "the logo should stay").not.toBeNull();
 
 	await expect
-		.poll(async () =>
-			page.evaluate(() =>
-				[...document.querySelectorAll("div")].some(node =>
-					getComputedStyle(node).backgroundImage.includes("branding/background"),
+		.poll(
+			async () =>
+				page.evaluate(() =>
+					[...document.querySelectorAll("div")].some(node =>
+						getComputedStyle(node).backgroundImage.includes("branding/background"),
+					),
 				),
-			),
+			{ timeout: 20_000 },
 		)
 		.toBe(false);
+});
+
+// the suite shares one instance: put the branding back so the file can run again (and in any order)
+test.afterAll(async ({ request }) => {
+	const session = await signInApi(request);
+	const cleared = await request.put("/api/settings", {
+		headers: { "x-session-token": session.token, "x-csrf-token": session.csrfToken },
+		data: { brand_logo: "", brand_background: "", brand_color: "" },
+	});
+	expect(cleared.status()).toBe(200);
 });

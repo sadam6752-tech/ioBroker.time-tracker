@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "移除图片",
 	"admin.settings.brandColorDefaultHint": "重置背景颜色和背景图片",
 	"admin.triggers": "动作（ioBroker）",
-	"admin.triggersHint": "其他适配器的状态会打点或设置在场 —— 例如指纹读卡器、按钮或门磁。仅在数值变化时触发。",
+	"admin.triggersHint": "其他适配器的状态会打点或设置在场 —— 例如指纹读卡器、按钮或门磁。仅在数值变化时触发。数值可填写 `toggle`：这样每次变化都会触发（例如开与关）。",
 	"admin.trigger.label": "名称",
 	"admin.trigger.sourceState": "状态",
 	"admin.trigger.mode": "触发",

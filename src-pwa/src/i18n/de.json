@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Bild entfernen",
 	"admin.settings.brandColorDefaultHint": "Setzt Hintergrundfarbe und Hintergrundbild zurück",
 	"admin.triggers": "Aktionen (ioBroker)",
-	"admin.triggersHint": "Ein State aus einem anderen Adapter löst Stempeln oder die Anwesenheit aus — z. B. ein Fingerabdruck-Leser, ein Taster oder ein Türkontakt. Ausgelöst wird nur, wenn sich der Wert ändert.",
+	"admin.triggersHint": "Ein State aus einem anderen Adapter löst Stempeln oder die Anwesenheit aus — z. B. ein Fingerabdruck-Leser, ein Taster oder ein Türkontakt. Ausgelöst wird nur, wenn sich der Wert ändert. Als Wert kannst du `toggle` eintragen: dann löst jeder Wechsel aus (zum Beispiel an und wieder aus).",
 	"admin.trigger.label": "Bezeichnung",
 	"admin.trigger.sourceState": "Datenpunkt",
 	"admin.trigger.mode": "Auslöser",

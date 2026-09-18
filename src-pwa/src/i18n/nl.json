@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Afbeelding verwijderen",
 	"admin.settings.brandColorDefaultHint": "Zet de achtergrondkleur en de achtergrondafbeelding terug",
 	"admin.triggers": "Acties (ioBroker)",
-	"admin.triggersHint": "Een state van een andere adapter stempelt of zet de aanwezigheid — een vingerafdruklezer, een knop of een deurcontact. Er wordt alleen uitgevoerd als de waarde verandert.",
+	"admin.triggersHint": "Een state van een andere adapter stempelt of zet de aanwezigheid — een vingerafdruklezer, een knop of een deurcontact. Er wordt alleen uitgevoerd als de waarde verandert. Als waarde kun je `toggle` invullen: dan reageert hij op elke wijziging (bijvoorbeeld aan en weer uit).",
 	"admin.trigger.label": "Omschrijving",
 	"admin.trigger.sourceState": "Status",
 	"admin.trigger.mode": "Voorwaarde",

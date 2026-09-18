@@ -3,6 +3,15 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.16 (2026-09-17)
+
+- (Alex) internal: the linter is clean — the 31 missing JSDoc comments are written (fields of inline types and the
+  `createApi` entry point, which had no comment at all), and `npm run lint` refuses warnings from now on, so the
+  list cannot grow back
+- (Alex) internal: `CONTRIBUTING.md` documents the release flow — after a green workflow wait another 5 to 10
+  minutes before checking npm (measured: green run 17:37, npm 17:42), and never delete and re-push the tag of a
+  published version (it removes the GitHub release and npm refuses the second publication)
+
 ### 0.0.15 (2026-09-17)
 
 - (Alex) the **default port** is `8092` now — `8082` is the default of vis and web in ioBroker, so a fresh

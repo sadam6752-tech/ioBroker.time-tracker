@@ -495,4 +495,38 @@ export const migrations: Migration[] = [
 			CREATE INDEX idx_trigger_rules_source ON trigger_rules(source_state);
 		`,
 	},
+	{
+		version: 16,
+		name: "automation rules: what the adapter does on its own (clock out, reminders)",
+		sql: `
+			-- A rule of the adapter itself, not of a foreign state: at a certain local time (clockOut, missingPunch)
+			-- or after a while without a break (breakReminder) the adapter acts. "user_id" is NULL for every
+			-- employee, so a company rule and a rule for one person can live side by side.
+			CREATE TABLE automation_rules (
+				id            INTEGER PRIMARY KEY AUTOINCREMENT,
+				label         TEXT,
+				kind          TEXT    NOT NULL
+					CHECK (kind IN ('clockOut','missingPunch','breakReminder')),
+				user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+				at_minute     INTEGER,
+				after_minutes INTEGER,
+				is_active     INTEGER NOT NULL DEFAULT 1,
+				created_at    INTEGER NOT NULL,
+				updated_at    INTEGER NOT NULL
+			);
+			CREATE INDEX idx_automation_rules_kind ON automation_rules(kind);
+
+			-- What a rule already did: one row per rule, employee and local date keeps it at "once a day" and doubles
+			-- as the log the administration shows. A punch that is already written is never written twice.
+			CREATE TABLE automation_runs (
+				rule_id    INTEGER NOT NULL REFERENCES automation_rules(id) ON DELETE CASCADE,
+				user_id    INTEGER NOT NULL REFERENCES users(id)            ON DELETE CASCADE,
+				local_date TEXT    NOT NULL,
+				fired_at   INTEGER NOT NULL,
+				action     TEXT    NOT NULL,
+				PRIMARY KEY (rule_id, user_id, local_date)
+			);
+			CREATE INDEX idx_automation_runs_user ON automation_runs(user_id, local_date);
+		`,
+	},
 ];

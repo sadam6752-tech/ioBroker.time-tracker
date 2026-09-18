@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Supprimer l'image",
 	"admin.settings.brandColorDefaultHint": "Réinitialise la couleur et l'image d'arrière-plan",
 	"admin.triggers": "Actions (ioBroker)",
-	"admin.triggersHint": "Un état d'un autre adaptateur pointe ou définit la présence — un lecteur d'empreinte, un bouton ou un contact de porte. Il se déclenche uniquement lorsque la valeur change.",
+	"admin.triggersHint": "Un état d'un autre adaptateur pointe ou définit la présence — un lecteur d'empreinte, un bouton ou un contact de porte. Il se déclenche uniquement lorsque la valeur change. Comme valeur, vous pouvez saisir `toggle` : il réagit alors à chaque changement (par exemple activé puis désactivé).",
 	"admin.trigger.label": "Désignation",
 	"admin.trigger.sourceState": "État",
 	"admin.trigger.mode": "Déclencheur",

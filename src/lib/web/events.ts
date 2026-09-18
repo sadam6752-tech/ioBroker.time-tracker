@@ -17,7 +17,10 @@ export type EventType =
 	| "month.close"
 	| "terminal.punch"
 	| "rfid.scan"
-	| "backup.create";
+	| "backup.create"
+	| "automation.clockOut"
+	| "automation.missingPunch"
+	| "automation.breakReminder";
 
 /** One live event. */
 export interface ApiEvent {

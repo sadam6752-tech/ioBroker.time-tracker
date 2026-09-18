@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Remover imagem",
 	"admin.settings.brandColorDefaultHint": "Repõe a cor e a imagem de fundo",
 	"admin.triggers": "Ações (ioBroker)",
-	"admin.triggersHint": "Um estado de outro adaptador marca o ponto ou define a presença — um leitor de impressão digital, um botão ou um contacto de porta. Só dispara quando o valor muda.",
+	"admin.triggersHint": "Um estado de outro adaptador marca o ponto ou define a presença — um leitor de impressão digital, um botão ou um contacto de porta. Só dispara quando o valor muda. Como valor pode escrever `toggle`: assim dispara em qualquer mudança (por exemplo ligar e desligar).",
 	"admin.trigger.label": "Descrição",
 	"admin.trigger.sourceState": "Estado",
 	"admin.trigger.mode": "Disparo",

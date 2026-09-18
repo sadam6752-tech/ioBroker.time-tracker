@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.1.0",
+		"version": "0.1.1",
 		"nogit": true,
 		"news": {
+			"0.1.1": {
+				"en": "the badge (RFID/NFC) tab creates a badge again: the HMAC secret that signs the links is generated on the first start and stored next to the database; the hint of the actions names `toggle` — with that value a rule fires on every change; the automation rules are prepared (migration, repository, minute check) and their administration follows",
+				"de": "der Tab Ausweise (RFID/NFC) legt wieder Ausweise an: das HMAC-Geheimnis für die Links wird beim ersten Start erzeugt und neben der Datenbank abgelegt; der Hinweis bei den Aktionen nennt `toggle` — damit löst jeder Wechsel aus; die Automatik-Regeln sind vorbereitet (Migration, Repository, Minutenprüfung), ihre Verwaltung folgt",
+				"ru": "вкладка «Пропуска (RFID/NFC)» снова создаёт пропуска: секрет HMAC для ссылок создаётся при первом запуске и хранится рядом с базой; в подсказке действий указан `toggle` — при нём срабатывает любое изменение; правила автоматики подготовлены (миграция, репозиторий, минутная проверка), их администрирование следует далее",
+				"pt": "o separador «Crachás (RFID/NFC)» volta a criar crachás: o segredo HMAC das ligações é gerado no primeiro arranque e guardado junto à base de dados; a dica das ações indica `toggle` — com esse valor dispara em qualquer mudança; as regras de automação estão preparadas (migração, repositório, verificação por minuto) e a sua administração segue",
+				"nl": "het tabblad «Badges (RFID/NFC)» maakt weer badges aan: het HMAC-geheim voor de links wordt bij de eerste start gemaakt en naast de database opgeslagen; de hint bij de acties noemt `toggle` — daarmee reageert hij op elke wijziging; de automatiseringsregels zijn voorbereid (migratie, repository, minuutcontrole) en de administratie volgt",
+				"fr": "l'onglet « Badges (RFID/NFC) » crée à nouveau des badges : le secret HMAC des liens est généré au premier démarrage et stocké à côté de la base ; l'astuce des actions mentionne `toggle` — avec cette valeur, chaque changement déclenche ; les règles d'automatisation sont préparées (migration, dépôt, contrôle par minute) et leur administration suit",
+				"it": "la scheda «Badge (RFID/NFC)» crea di nuovo i badge: il segreto HMAC dei link viene generato al primo avvio e salvato accanto al database; il suggerimento delle azioni nomina `toggle` — con quel valore scatta a ogni cambiamento; le regole di automazione sono preparate (migrazione, repository, controllo al minuto) e la loro amministrazione segue",
+				"es": "la pestaña «Credenciales (RFID/NFC)» vuelve a crear credenciales: el secreto HMAC de los enlaces se genera en el primer arranque y se guarda junto a la base de datos; la ayuda de las acciones nombra `toggle` — con ese valor se activa en cada cambio; las reglas de automatización están preparadas (migración, repositorio, comprobación por minuto) y su administración sigue",
+				"pl": "karta «Identyfikatory (RFID/NFC)» znowu tworzy identyfikatory: sekret HMAC dla linków jest generowany przy pierwszym starcie i zapisywany obok bazy; podpowiedź akcji podaje `toggle` — z tą wartością reaguje na każdą zmianę; reguły automatyki są przygotowane (migracja, repozytorium, kontrola co minutę), a ich administracja nastąpi",
+				"uk": "вкладка «Перепустки (RFID/NFC)» знову створює перепустки: секрет HMAC для посилань створюється при першому запуску й зберігається поруч із базою; підказка дій називає `toggle` — з ним реагує на будь-яку зміну; правила автоматики підготовлено (міграція, репозиторій, щохвилинна перевірка), їхнє адміністрування попереду",
+				"zh-cn": "「证件（RFID/NFC）」选项卡可再次生成证件：用于链接的 HMAC 密钥在首次启动时生成并保存在数据库旁；动作说明中提到 `toggle` —— 填它则每次变化都触发；自动化规则已准备就绪（迁移、仓库、每分钟检查），其管理界面随后提供"
+			},
 			"0.1.0": {
 				"en": "ioBroker comfort: actions turn a state of another adapter (fingerprint reader, button, door contact) into a punch, a quick punch or a presence change — with `toggle` for every change — and sendTo messages (punch, present, status, report, backup) drive the instance without HTTP; new states for dashboards and notifications (company figures, month and year figures per employee, newest event) follow within a second now; the planned phone-NFC step is dropped",
 				"de": "ioBroker-Komfort: Aktionen machen aus einem State eines anderen Adapters (Fingerabdruck-Leser, Taster, Türkontakt) eine Stempelung, Schnellstempelung oder Anwesenheitsänderung — mit `toggle` für jeden Wechsel — und sendTo-Nachrichten (punch, present, status, report, backup) steuern die Instanz ohne HTTP; neue States für Dashboards und Benachrichtigungen (Firmen-Kennzahlen, Monats-/Jahreswerte je Mitarbeiter, neuestes Ereignis) folgen jetzt binnen einer Sekunde; der geplante Handy-NFC-Schritt ist gestrichen",
@@ -81,19 +94,6 @@
 				"pl": "domyślny port 8092 (vis i web używają 8082), domyślny kraj świąt Niemcy oraz wyraźna wskazówka w ustawieniach instancji, że wygenerowane hasło startowe pojawia się raz w logu ioBroker",
 				"uk": "стандартний порт 8092 (vis і web використовують 8082), країна за замовчуванням для свят Німеччина та зрозуміла підказка в налаштуваннях екземпляра, що створений стартовий пароль з'являється один раз у лозі ioBroker",
 				"zh-cn": "默认端口 8092（vis 和 web 使用 8082）、默认节假日国家为德国，并在实例设置中明确提示生成的初始密码只出现在 ioBroker 日志中一次"
-			},
-			"0.0.14": {
-				"en": "the bind address of the instance is picked from the local addresses of the host now: a list in the adapter settings instead of a free text field",
-				"de": "die Bind-Adresse der Instanz wird jetzt aus den lokalen Adressen des Hosts gewählt: eine Auswahlliste in den Adaptereinstellungen statt eines Freitextfelds",
-				"ru": "адрес привязки экземпляра теперь выбирается из локальных адресов хоста: список в настройках адаптера вместо поля ввода",
-				"pt": "o endereço de ligação da instância passa a ser escolhido entre os endereços locais do host: uma lista nas definições do adaptador em vez de um campo de texto",
-				"nl": "het bindadres van de instantie wordt nu gekozen uit de lokale adressen van de host: een lijst in de adapterinstellingen in plaats van een tekstveld",
-				"fr": "l'adresse de liaison de l'instance est désormais choisie parmi les adresses locales de l'hôte : une liste dans les réglages de l'adaptateur au lieu d'un champ de texte",
-				"it": "l'indirizzo di binding dell'istanza viene ora scelto tra gli indirizzi locali dell'host: un elenco nelle impostazioni dell'adattatore al posto di un campo di testo",
-				"es": "la dirección de enlace de la instancia se elige ahora entre las direcciones locales del host: una lista en los ajustes del adaptador en lugar de un campo de texto",
-				"pl": "adres nasłuchu instancji jest teraz wybierany spośród lokalnych adresów hosta: lista w ustawieniach adaptera zamiast pola tekstowego",
-				"uk": "адреса прив'язки екземпляра тепер вибирається з локальних адрес хоста: список у налаштуваннях адаптера замість поля введення",
-				"zh-cn": "实例的绑定地址现在从主机的本地地址中选择：适配器设置中为列表而不是文本输入框"
 			}
 		},
 		"titleLang": {

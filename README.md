@@ -70,24 +70,24 @@ carryover, paid break minutes, own break rules), and — if a tablet is used —
 
 The adapter is configured in the **instance settings** of the ioBroker admin:
 
-| Setting                             | Meaning                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| Port                                | port of the HTTP server (web app, API, terminal)                          |
-| Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all) |
-| Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`                      |
-| Default language for new users      | one of the 11 supported languages                                         |
-| Holiday country                     | country used to generate the public holidays (default `DE`)               |
-| Database file                       | optional path; empty = adapter data directory                             |
-| Enable kiosk terminal               | switches the shared badge/PIN terminal on                                 |
-| Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)                    |
-| Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)        |
-| Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest)                     |
-| Session lifetime in minutes         | how long a login lasts                                                    |
-| Days users may edit on their own    | how far back an employee may correct own punches                          |
-| Round quick punches to minutes      | rounding of the quick punch (0 = off)                                     |
-| Calculate absences only until today | future absences do not reduce the target time                             |
-| Subtract working time from absences | lets vacation turn into overtime                                          |
-| Keep database backups for days      | retention of the backups                                                  |
+| Setting                             | Meaning                                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Port                                | port of the HTTP server (web app, API, terminal)                                                                            |
+| Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all)                                                   |
+| Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`                                                                        |
+| Default language for new users      | one of the 11 supported languages                                                                                           |
+| Holiday country                     | country used to generate the public holidays (default `DE`)                                                                 |
+| Database file                       | optional path; empty = adapter data directory                                                                               |
+| Enable kiosk terminal               | switches the shared badge/PIN terminal on                                                                                   |
+| Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)                                                                      |
+| Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)                                                          |
+| Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest); empty = generated on the first start and stored next to the database |
+| Session lifetime in minutes         | how long a login lasts                                                                                                      |
+| Days users may edit on their own    | how far back an employee may correct own punches                                                                            |
+| Round quick punches to minutes      | rounding of the quick punch (0 = off)                                                                                       |
+| Calculate absences only until today | future absences do not reduce the target time                                                                               |
+| Subtract working time from absences | lets vacation turn into overtime                                                                                            |
+| Keep database backups for days      | retention of the backups                                                                                                    |
 
 These settings win over the values stored in the database and are applied on every start.
 
@@ -291,6 +291,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.1 (2026-09-18)
+
+- (Alex) fix: the tab “Badges (RFID/NFC)” creates a badge again — the HMAC secret that signs the links is generated
+  on the first start and stored next to the database (like the session secret) instead of refusing the request with
+  “not configured”
+- (Alex) the hint above the actions names `toggle` now: with that value a rule fires on **every** change, so a
+  switch that goes on and off again works too
+- internal: the automation rules are in place (migration 16 with `automation_rules` and `automation_runs`, the
+  repository with its “once a day per employee” guard, the pure decision logic, the minute check in the adapter and
+  the events `automation.clockOut`/`missingPunch`/`breakReminder`) — the administration, the API and the texts follow
+
 ### 0.1.0 (2026-09-18)
 
 - (Alex) fix: a trigger rule fires for **every change** when its value is `toggle` (or `*`) — a switch that goes
@@ -338,15 +349,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) internal: `npm run version:check` watches the two lists now as well — `common.news` may keep at most seven
   entries (the ioBroker repository builder truncates at seven, finding E1032) and the README changelog at most five
   versions; it also names a version that is in neither the README nor `CHANGELOG_OLD.md`
-
-### 0.0.16 (2026-09-17)
-
-- (Alex) internal: the linter is clean — the 31 missing JSDoc comments are written (fields of inline types and the
-  `createApi` entry point, which had no comment at all), and `npm run lint` refuses warnings from now on, so the
-  list cannot grow back
-- (Alex) internal: `CONTRIBUTING.md` documents the release flow — after a green workflow wait another 5 to 10
-  minutes before checking npm (measured: green run 17:37, npm 17:42), and never delete and re-push the tag of a
-  published version (it removes the GitHub release and npm refuses the second publication)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

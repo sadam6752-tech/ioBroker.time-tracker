@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Remove picture",
 	"admin.settings.brandColorDefaultHint": "Resets the background colour and the background picture",
 	"admin.triggers": "Triggers (ioBroker)",
-	"admin.triggersHint": "A state of another adapter punches or sets the presence — a fingerprint reader, a button or a door contact. It fires only when the value changes.",
+	"admin.triggersHint": "A state of another adapter punches or sets the presence — a fingerprint reader, a button or a door contact. It fires only when the value changes. As the value you can write `toggle`: then every change fires (for example on and off again).",
 	"admin.trigger.label": "Label",
 	"admin.trigger.sourceState": "State",
 	"admin.trigger.mode": "Trigger",

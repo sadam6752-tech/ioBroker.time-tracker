@@ -16,7 +16,12 @@ import { createHolidaysRepository } from "./lib/db/repositories/holidays";
 import { createPayoutsRepository } from "./lib/db/repositories/payouts";
 import { createRulesRepository } from "./lib/db/repositories/rules";
 import { createSettingsRepository } from "./lib/db/repositories/settings";
-import { createUsersRepository, type UsersRepository } from "./lib/db/repositories/users";
+import { createUsersRepository, type UserRecord, type UsersRepository } from "./lib/db/repositories/users";
+import {
+	createAutomationsRepository,
+	type AutomationRuleRecord,
+	type AutomationsRepository,
+} from "./lib/db/repositories/automations";
 import { createTerminalsRepository } from "./lib/db/repositories/terminals";
 import { createRfidRepository } from "./lib/db/repositories/rfid";
 import {
@@ -53,10 +58,12 @@ import {
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
 import { handleCommand, punchEmployee } from "./lib/adapter/commands";
 import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
+import { evaluateAutomation, workBlock } from "./lib/adapter/automation";
 import { handleMessage } from "./lib/adapter/messages";
 import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
 import type { ApiEvent, EventBus } from "./lib/web/events";
 import { startWebServer, type WebServer } from "./lib/web/server";
+import { localDateTime } from "./lib/util/time";
 import { createStaticHandler } from "./lib/web/static";
 
 const SUPPORTED_COUNTRIES: HolidayCountry[] = ["CH", "DE", "AT"];
@@ -69,6 +76,12 @@ const STATE_REFRESH_MINUTES = 5;
 
 /** How old the newest backup may be before the daily check writes a new one. */
 const BACKUP_MAX_AGE_HOURS = 20;
+
+/** How often the automation rules are checked (minutes). */
+const AUTOMATION_CHECK_MINUTES = 1;
+
+/** Name of the file that holds a generated badge (HMAC) secret next to the database. */
+const TAG_SECRET_FILE_NAME = "tag-secret";
 
 /**
  * Events of the API that change the published figures.
@@ -89,6 +102,7 @@ interface AdapterServices {
 	closing: ClosingService;
 	backup: BackupService;
 	triggers: TriggersRepository;
+	automations: AutomationsRepository;
 }
 
 class Zeiterfassung extends utils.Adapter {
@@ -189,6 +203,9 @@ class Zeiterfassung extends utils.Adapter {
 			await this.subscribeCommands();
 			// watches the states the trigger rules name (fingerprint reader, button, door contact, …)
 			await this.refreshTriggerSubscriptions();
+			// the automation rules look at the clock, so they are checked once a minute
+			this.runAutomationRules();
+			this.setInterval(() => this.runAutomationRules(), AUTOMATION_CHECK_MINUTES * 60 * 1000);
 			await this.publishInstanceInfo();
 			await this.refreshStates();
 
@@ -338,6 +355,36 @@ class Zeiterfassung extends utils.Adapter {
 	}
 
 	/**
+	 * Secret that signs the badge/NFC links.
+	 *
+	 * A value from the instance settings wins. Without one a secret is generated on the first start and stored next
+	 * to the database — otherwise a fresh installation could not create a badge at all and the administration would
+	 * only report “not configured”.
+	 */
+	private tagSecret(): string {
+		const resolved = resolveSessionSecret({
+			configured: this.config.hmacSecret,
+			file: path.join(path.dirname(this.databaseFile()), TAG_SECRET_FILE_NAME),
+		});
+
+		if (resolved.source === "configured") {
+			this.log.debug("badge link secret taken from the instance settings");
+		} else if (resolved.source === "stored") {
+			this.log.debug(`badge link secret taken from ${resolved.file}`);
+		} else if (resolved.file) {
+			this.log.info(
+				`no badge link secret configured - generated one and stored it at ${resolved.file}, so badges stay valid across restarts`,
+			);
+		} else {
+			this.log.warn(
+				`no badge link secret configured and it could not be stored (${resolved.error ?? "unknown"}) - a temporary one is used, so badges stop working with the next restart`,
+			);
+		}
+
+		return resolved.secret;
+	}
+
+	/**
 	 * Builds the services and starts the HTTP server on the configured port.
 	 *
 	 * Binding can fail (port in use); that must never stop the adapter, so the failure is only logged.
@@ -374,6 +421,7 @@ class Zeiterfassung extends utils.Adapter {
 			settings,
 		});
 		const triggers = createTriggersRepository(db);
+		const automations = createAutomationsRepository(db);
 		const sync = createSyncService({ db, entries, users, aggregation });
 		const closing = createClosingService({ db, aggregation, payouts });
 		// backups live next to the database file: `<data dir>/backups/zeiterfassung-<timestamp>.sqlite`
@@ -402,13 +450,24 @@ class Zeiterfassung extends utils.Adapter {
 			// a reverse proxy in front is the normal case for HTTPS; without the switch the forwarded
 			// headers are ignored, so a client cannot choose its own address or the HTTPS flag
 			trustProxy: this.config.trustProxy === true,
-			hmacSecret: this.config.hmacSecret,
+			hmacSecret: this.tagSecret(),
 			version: this.version,
 			// a saved trigger rule changes the states the adapter has to watch
 			onTriggerRulesChanged: () => void this.refreshTriggerSubscriptions(),
 		});
 
-		this.services = { users, entries, absences, settings, aggregation, sync, closing, backup, triggers };
+		this.services = {
+			users,
+			entries,
+			absences,
+			settings,
+			aggregation,
+			sync,
+			closing,
+			backup,
+			triggers,
+			automations,
+		};
 		this.events = api.events;
 		// the newest event is mirrored into the state tree, so a notification only has to watch `events.*`;
 		// a punch, a correction or an absence changes the figures, so they are republished right away
@@ -820,6 +879,130 @@ class Zeiterfassung extends utils.Adapter {
 			this.log.error(`Error during unloading: ${(error as Error).message}`);
 			callback();
 		}
+	}
+
+	/**
+	 * Runs the automation rules that are due.
+	 *
+	 * A rule acts at most once per employee and local date — `automation_runs` holds that decision, so a restart
+	 * cannot punch twice. The run is noted **before** the action (a double punch would be worse than a missed
+	 * reminder) and taken back when the action fails, so the next minute retries it.
+	 */
+	private runAutomationRules(): void {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+
+		let rules: AutomationRuleRecord[] = [];
+		try {
+			rules = services.automations.list();
+		} catch (error) {
+			this.log.warn(`automation rules could not be read: ${(error as Error).message}`);
+			return;
+		}
+		if (rules.length === 0) {
+			return;
+		}
+
+		const nowUtc = Math.floor(Date.now() / 1000);
+		let acted = false;
+
+		for (const rule of rules) {
+			const candidates =
+				rule.userId === null
+					? services.users.list()
+					: [services.users.findById(rule.userId)].filter((user): user is UserRecord => user !== null);
+
+			for (const user of candidates) {
+				if (!user.isActive) {
+					continue;
+				}
+				const local = localDateTime(nowUtc, user.timezone);
+				if (services.automations.hasRun({ ruleId: rule.id, userId: user.id, localDate: local.date })) {
+					continue;
+				}
+
+				const punches = services.entries
+					.listByDate(user.id, local.date)
+					.map(entry => ({ tsUtc: entry.tsUtc, direction: entry.direction }));
+				const block = workBlock(punches, nowUtc);
+				const decision = evaluateAutomation(rule, {
+					localDate: local.date,
+					minuteOfDay: local.minutes,
+					hasOpenEntry: block.hasOpenEntry,
+					blockMinutes: block.blockMinutes,
+					alreadyRan: false,
+				});
+				if (!decision.fire) {
+					this.log.debug(`automation ${rule.id} (${user.displayName}): ${decision.reason}`);
+					continue;
+				}
+
+				const action = this.automationAction(rule, block.blockMinutes);
+				if (
+					!services.automations.recordRun({
+						ruleId: rule.id,
+						userId: user.id,
+						localDate: local.date,
+						action,
+						now: nowUtc,
+					})
+				) {
+					continue;
+				}
+
+				try {
+					if (rule.kind === "clockOut") {
+						const result = punchEmployee(
+							{
+								entries: services.entries,
+								users: services.users,
+								settings: services.settings,
+								aggregation: services.aggregation,
+							},
+							{ userId: user.id, note: `auto.${rule.kind}`, now: nowUtc },
+						);
+						this.log.info(`automation ${rule.id} for ${user.displayName}: ${result.message}`);
+					} else {
+						this.log.info(`automation ${rule.id} for ${user.displayName}: ${action}`);
+					}
+					acted = true;
+					this.events?.publish({
+						type: `automation.${rule.kind}`,
+						atUtc: nowUtc,
+						userId: user.id,
+						data: { ruleId: rule.id, action, reason: decision.reason },
+					});
+				} catch (error) {
+					// give the next check a chance instead of losing the day
+					services.automations.forgetRun({ ruleId: rule.id, userId: user.id, localDate: local.date });
+					this.log.warn(`automation ${rule.id} for ${user.displayName} failed: ${(error as Error).message}`);
+				}
+			}
+		}
+
+		if (acted) {
+			// a punch written by a rule changes the published figures
+			this.scheduleStateRefresh();
+		}
+	}
+
+	/**
+	 * Short description of what a rule did (the log entry of `automation_runs`).
+	 *
+	 * @param rule - rule that fired
+	 * @param blockMinutes - length of the running work block, `null` when the employee is not clocked in
+	 * @returns text for the log
+	 */
+	private automationAction(rule: AutomationRuleRecord, blockMinutes: number | null): string {
+		if (rule.kind === "clockOut") {
+			return "clocked out";
+		}
+		if (rule.kind === "breakReminder") {
+			return `reminded after ${blockMinutes ?? 0} min without a break`;
+		}
+		return "reported a missing punch";
 	}
 
 	/**

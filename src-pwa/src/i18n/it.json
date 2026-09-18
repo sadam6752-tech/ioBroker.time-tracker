@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Rimuovi immagine",
 	"admin.settings.brandColorDefaultHint": "Reimposta il colore e l'immagine di sfondo",
 	"admin.triggers": "Azioni (ioBroker)",
-	"admin.triggersHint": "Uno stato di un altro adattatore timbra o imposta la presenza — un lettore di impronte, un pulsante o un contatto della porta. Scatta solo quando il valore cambia.",
+	"admin.triggersHint": "Uno stato di un altro adattatore timbra o imposta la presenza — un lettore di impronte, un pulsante o un contatto della porta. Scatta solo quando il valore cambia. Come valore puoi scrivere `toggle`: così scatta a ogni cambiamento (per esempio acceso e poi spento).",
 	"admin.trigger.label": "Descrizione",
 	"admin.trigger.sourceState": "Stato",
 	"admin.trigger.mode": "Attivatore",

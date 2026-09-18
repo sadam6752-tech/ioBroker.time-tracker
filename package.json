@@ -1,6 +1,6 @@
 {
 	"name": "iobroker.zeiterfassung",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"author": {
 		"name": "Alex",

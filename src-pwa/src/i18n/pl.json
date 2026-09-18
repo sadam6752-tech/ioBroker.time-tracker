@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Usuń obraz",
 	"admin.settings.brandColorDefaultHint": "Przywraca kolor tła i obraz tła",
 	"admin.triggers": "Akcje (ioBroker)",
-	"admin.triggersHint": "Stan innego adaptera stempluje lub ustawia obecność — czytnik linii papilarnych, przycisk albo kontakt drzwiowy. Wyzwalane jest tylko przy zmianie wartości.",
+	"admin.triggersHint": "Stan innego adaptera stempluje lub ustawia obecność — czytnik linii papilarnych, przycisk albo kontakt drzwiowy. Wyzwalane jest tylko przy zmianie wartości. Jako wartość możesz wpisać `toggle`: wtedy reaguje na każdą zmianę (np. włączenie i wyłączenie).",
 	"admin.trigger.label": "Nazwa",
 	"admin.trigger.sourceState": "Stan",
 	"admin.trigger.mode": "Wyzwalacz",

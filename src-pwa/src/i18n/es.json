@@ -279,7 +279,7 @@
 	"admin.settings.brandImageRemove": "Quitar imagen",
 	"admin.settings.brandColorDefaultHint": "Restablece el color y la imagen de fondo",
 	"admin.triggers": "Acciones (ioBroker)",
-	"admin.triggersHint": "Un estado de otro adaptador ficha o define la presencia — un lector de huellas, un botón o un contacto de puerta. Solo se activa cuando cambia el valor.",
+	"admin.triggersHint": "Un estado de otro adaptador ficha o define la presencia — un lector de huellas, un botón o un contacto de puerta. Solo se activa cuando cambia el valor. Como valor puedes escribir `toggle`: así se activa en cada cambio (por ejemplo encendido y otra vez apagado).",
 	"admin.trigger.label": "Descripción",
 	"admin.trigger.sourceState": "Estado",
 	"admin.trigger.mode": "Disparador",

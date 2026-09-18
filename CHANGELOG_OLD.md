@@ -3,6 +3,20 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.13 (2026-09-17)
+
+- (Alex) graduated break rules can be **per employee** now: the work profile carries its own table, and a rule with
+  the same "from minutes" replaces the company rule for that one person (only the administration edits it)
+- (Alex) the **edit window** (`edit_window_days`) is enforced now: employees may change their own punches only
+  inside it — an older one is rejected with `edit_window_closed` and stays the business of the administration
+- (Alex) employees correct their own punches right in the month view: the pencil beside a day opens the punches of
+  that day, a time can be fixed or a forgotten punch added (removing one needs `time.delete`)
+- (Alex) the monthly report has a **raw data export as CSV** (button beside Excel and PDF): one row per punch with
+  date, time, direction, source and note — semicolon separated, UTF-8 with BOM, so a spreadsheet opens it directly
+- (Alex) internal: the README is a user guide now — what the adapter does, installation and first start, instance
+  settings, roles, states, reports, backups, HTTPS and troubleshooting. The internals (HTTP surface, sessions,
+  live events, database, breaks) moved to `docs/technik.md`, the build/test/release part to `docs/entwicklung.md`
+
 ### 0.0.12 (2026-09-17)
 
 - (Alex) the month view of the web app shows the **pause** as well: the summary of the month carries `Pause` (with the

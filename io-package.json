@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "zeiterfassung",
-		"version": "0.0.17",
+		"version": "0.0.18",
 		"nogit": true,
 		"news": {
+			"0.0.18": {
+				"en": "the background picture can be taken away again: every picture field has its own button “Remove picture” (the logo as well) and “Default” resets colour and background picture in one click",
+				"de": "das Hintergrundbild lässt sich wieder entfernen: jedes Bildfeld hat einen eigenen Knopf „Bild entfernen“ (auch beim Logo) und „Standard“ setzt Hintergrundfarbe und Hintergrundbild mit einem Klick zurück",
+				"ru": "фоновое изображение снова можно удалить: у каждого поля есть кнопка «Удалить изображение» (в том числе у логотипа), а «По умолчанию» сбрасывает цвет и изображение фона одним нажатием",
+				"pt": "a imagem de fundo pode ser removida outra vez: cada campo tem o seu botão «Remover imagem» (também no logótipo) e «Padrão» repõe a cor e a imagem de fundo com um clique",
+				"nl": "de achtergrondafbeelding kan weer verwijderd worden: elk beeldveld heeft een eigen knop «Afbeelding verwijderen» (ook bij het logo) en «Standaard» zet de kleur en de achtergrondafbeelding in één klik terug",
+				"fr": "l'image d'arrière-plan peut à nouveau être supprimée : chaque champ a son propre bouton « Supprimer l'image » (aussi pour le logo) et « Par défaut » réinitialise la couleur et l'image d'arrière-plan en un clic",
+				"it": "l'immagine di sfondo si può di nuovo togliere: ogni campo ha il suo pulsante «Rimuovi immagine» (anche per il logo) e «Predefinito» reimposta colore e immagine di sfondo con un clic",
+				"es": "la imagen de fondo se puede quitar de nuevo: cada campo tiene su botón «Quitar imagen» (también en el logo) y «Predeterminado» restablece el color y la imagen de fondo con un clic",
+				"pl": "obraz tła można znowu usunąć: każde pole ma własny przycisk „Usuń obraz” (także przy logo), a „Domyślny” przywraca kolor i obraz tła jednym kliknięciem",
+				"uk": "фонове зображення знову можна прибрати: кожне поле має власну кнопку «Видалити зображення» (і для логотипа), а «За замовчуванням» скидає колір і зображення фону одним натисканням",
+				"zh-cn": "背景图片可以再次移除：每个图片字段都有自己的「移除图片」按钮（徽标也一样），「默认」一键重置背景颜色和背景图片"
+			},
 			"0.0.17": {
 				"en": "the background colour of the branding is visible again when a background picture is set (the colour tints the picture now) and the suggested colours have a second, darker block",
 				"de": "die Hintergrundfarbe des Brandings ist wieder sichtbar, wenn ein Hintergrundbild gesetzt ist (die Farbe tönt jetzt das Bild), und die Farbvorschläge haben einen zweiten, dunkleren Block",
@@ -81,19 +94,6 @@
 				"pl": "widok miesiąca w aplikacji internetowej pokazuje teraz także przerwę: suma miesiąca zawiera „Przerwa” (płatna część w nawiasach), a każdy wiersz dnia swoją przerwę",
 				"uk": "у місячному огляді веб-застосунку тепер видно й перерву: у підсумку місяця є «Перерва» (оплачувана частина в дужках), а в кожному рядку дня — своя перерва",
 				"zh-cn": "网页应用中的月度视图现在也会显示休息：月度合计中带有“休息”（括号内为带薪部分），每天的行程行也有各自的休息"
-			},
-			"0.0.11": {
-				"en": "backups can be uploaded again (the way back after a lost data directory) and deleted one by one - a punched break is measured now and shows up in the “Pause” column of the statement, while a day without a punched break keeps its graduated deduction, never both - paid break minutes per employee, an editor for the graduated break rules and the new “of which paid” column in the statement - and the totals row of the PDF statement no longer cuts off values",
-				"de": "Sicherungen lassen sich wieder hochladen (der Weg zurück nach einem verlorenen Datenverzeichnis) und einzeln löschen - eine gestempelte Pause wird jetzt gemessen und steht in der Spalte „Pause“ des Stundennachweises, an Tagen ohne Stempelpause gilt weiter die Pausenstaffel, nie beides - bezahlte Pausenminuten pro Mitarbeiter, ein Editor für die Pausenstaffel und die neue Spalte „davon bezahlt“ im Nachweis - und die Summenzeile des PDF-Nachweises schneidet keine Werte mehr ab",
-				"ru": "резервные копии снова можно загружать (путь назад после потери каталога данных) и удалять по одной - отбитый перерыв теперь измеряется и виден в колонке «Перерыв» расчётного листа, а в дни без отбитого перерыва действует шкала перерывов, и никогда оба сразу - оплачиваемые минуты перерыва для каждого сотрудника, редактор шкалы перерывов и новая колонка «из них оплачено» в листе - и строка суммы в PDF больше не обрезает значения",
-				"pt": "as cópias podem voltar a ser enviadas (o caminho de volta depois de perder a pasta de dados) e eliminadas uma a uma - uma pausa registada passa a ser medida e aparece na coluna «Pausa» do extrato, e os dias sem pausa registada mantêm a escala de pausas, nunca as duas - minutos de pausa pagos por trabalhador, um editor para a escala de pausas e a nova coluna «dos quais pago» no extrato - e a linha de totais do PDF já não corta valores",
-				"nl": "back-ups kunnen weer worden geüpload (de weg terug na verlies van de datamap) en één voor één verwijderd - een geklokte pauze wordt nu gemeten en staat in de kolom “Pauze” van de afrekening, terwijl dagen zonder geklokte pauze de staffel houden, nooit beide - betaalde pauzeminuten per medewerker, een editor voor de pauzestaffel en de nieuwe kolom “waarvan betaald” in de afrekening - en de totalenrij van de PDF kapt geen waarden meer af",
-				"fr": "les sauvegardes peuvent être importées à nouveau (le retour après la perte du répertoire de données) et supprimées une par une - une pause pointée est désormais mesurée et apparaît dans la colonne « Pause » du décompte, tandis que les jours sans pause pointée gardent le barème, jamais les deux - minutes de pause payées par employé, un éditeur pour le barème des pauses et la nouvelle colonne « dont payé » dans le décompte - et la ligne des totaux du PDF ne coupe plus de valeurs",
-				"it": "i backup si possono caricare di nuovo (il ritorno dopo aver perso la cartella dati) e cancellare uno per uno - una pausa timbrata ora viene misurata e compare nella colonna «Pausa» del conteggio, mentre i giorni senza pausa timbrata mantengono la scala, mai entrambe - minuti di pausa pagati per dipendente, un editor per la scala delle pause e la nuova colonna «di cui pagato» nel conteggio - e la riga dei totali del PDF non taglia più i valori",
-				"es": "las copias se pueden subir de nuevo (el camino de vuelta tras perder el directorio de datos) y borrar una por una - una pausa registrada ahora se mide y aparece en la columna «Pausa» del extracto, mientras que los días sin pausa registrada mantienen la escala de pausas, nunca ambas - minutos de pausa pagados por empleado, un editor para la escala de pausas y la nueva columna «de los cuales pagado» en el extracto - y la fila de totales del PDF ya no corta valores",
-				"pl": "kopie zapasowe można znów wgrywać (droga powrotna po utracie katalogu danych) i usuwać pojedynczo - zarejestrowana przerwa jest teraz mierzona i widoczna w kolumnie „Przerwa” zestawienia, a dni bez zarejestrowanej przerwy korzystają z tabeli przerw, nigdy oba - płatne minuty przerwy na pracownika, edytor tabeli przerw i nowa kolumna „w tym płatne” w zestawieniu - a wiersz sum w PDF nie obcina już wartości",
-				"uk": "резервні копії знову можна завантажувати (шлях назад після втрати каталогу даних) і видаляти по одній - відбиту перерву тепер вимірюють, і вона видна у стовпці «Перерва» розрахункового листа, а в дні без відбитої перерви діє шкала перерв, і ніколи обидва одночасно - оплачувані хвилини перерви для кожного працівника, редактор шкали перерв і новий стовпець «з них оплачено» у листі - а рядок суми в PDF більше не обрізає значення",
-				"zh-cn": "备份可以重新上传（数据目录丢失后的回退方式）并逐条删除 - 现在会测量打点的休息，并显示在工时表的“休息”列，而未打点休息的工作日仍按休息阶梯，二者绝不叠加 - 每位员工的带薪休息分钟、休息阶梯编辑器，以及工时表中新增的“其中带薪”列 - 并且 PDF 的合计行不再截断数值"
 			}
 		},
 		"titleLang": {

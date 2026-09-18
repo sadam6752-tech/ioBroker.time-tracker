@@ -251,9 +251,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.0.18 (2026-09-18)
+
+- (Alex) fix: an uploaded background picture can be taken away again — every picture field has a “Remove picture”
+  button (the logo as well), and “Default” resets the colour and the background picture in one click
+- internal: the settings dialog shows the stored logo and background picture again (a read leaves the large pictures
+  out on purpose, so the preview and the remove button come from the branding route)
 - (Alex) internal: the release flow asks the owner before the version commit and the tag — the question “may I push,
   or do you have remarks?” comes first and only a “go” leads to commit, tag and push; `CONTRIBUTING.md` documents
   the step and `npm run push:approve` reminds of it
+- internal: the lint ignores the generated report of the browser tests (it carried a bundled viewer and made a local
+  `npm run lint` crash)
 
 ### 0.0.17 (2026-09-18)
 
@@ -286,20 +294,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 - (Alex) the **bind address** of the instance is picked from the local addresses of the host now (a list in the
   admin settings instead of a free text field), and a value that carries a port cannot keep the server from starting
-
-### 0.0.13 (2026-09-17)
-
-- (Alex) graduated break rules can be **per employee** now: the work profile carries its own table, and a rule with
-  the same "from minutes" replaces the company rule for that one person (only the administration edits it)
-- (Alex) the **edit window** (`edit_window_days`) is enforced now: employees may change their own punches only
-  inside it — an older one is rejected with `edit_window_closed` and stays the business of the administration
-- (Alex) employees correct their own punches right in the month view: the pencil beside a day opens the punches of
-  that day, a time can be fixed or a forgotten punch added (removing one needs `time.delete`)
-- (Alex) the monthly report has a **raw data export as CSV** (button beside Excel and PDF): one row per punch with
-  date, time, direction, source and note — semicolon separated, UTF-8 with BOM, so a spreadsheet opens it directly
-- (Alex) internal: the README is a user guide now — what the adapter does, installation and first start, instance
-  settings, roles, states, reports, backups, HTTPS and troubleshooting. The internals (HTTP surface, sessions,
-  live events, database, breaks) moved to `docs/technik.md`, the build/test/release part to `docs/entwicklung.md`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

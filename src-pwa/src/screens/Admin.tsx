@@ -1716,10 +1716,11 @@ function BrandImageField({
 					/>
 					<Button
 						color="inherit"
+						title={t("admin.settings.brandImageRemove")}
 						disabled={disabled}
 						onClick={() => onChange("")}
 					>
-						{t("admin.user.photoRemove")}
+						{t("admin.settings.brandImageRemove")}
 					</Button>
 				</>
 			)}
@@ -1739,6 +1740,8 @@ function SettingsTab(): React.JSX.Element {
 	const queryClient = useQueryClient();
 	const settings = useQuery({ queryKey: ["admin", "settings"], queryFn: () => api.settings() });
 	const pauseRules = useQuery({ queryKey: ["admin", "pauseRules"], queryFn: () => api.pauseRules() });
+	// the settings read leaves the large pictures out, so the fields take their pictures from the branding route
+	const branding = useQuery({ queryKey: ["branding"], queryFn: () => api.branding() });
 	const [draft, setDraft] = useState<Record<string, string>>({});
 	// `null` shows what the server has; the first change keeps a local copy until it is saved
 	const [rules, setRules] = useState<PauseRule[] | null>(null);
@@ -1768,6 +1771,10 @@ function SettingsTab(): React.JSX.Element {
 
 	const values = settings.data ?? {};
 
+	// an uploaded picture is in the change set; otherwise the stored picture comes from the branding route
+	const currentLogo = draft.brand_logo ?? branding.data?.logoUrl ?? "";
+	const currentBackground = draft.brand_background ?? branding.data?.backgroundUrl ?? "";
+
 	/**
 	 * Keeps one setting in the pending change set.
 	 *
@@ -1778,7 +1785,9 @@ function SettingsTab(): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={settings.error ?? save.error ?? pauseRules.error ?? savePauseRules.error} />
+			<ErrorAlert
+				error={settings.error ?? branding.error ?? save.error ?? pauseRules.error ?? savePauseRules.error}
+			/>
 			{save.isSuccess && (
 				<Alert
 					severity="success"
@@ -1806,14 +1815,14 @@ function SettingsTab(): React.JSX.Element {
 					<Stack spacing={2}>
 						<BrandImageField
 							label={t("admin.settings.brandLogo")}
-							value={draft.brand_logo ?? values.brand_logo ?? ""}
+							value={currentLogo}
 							maxBytes={BRANDING_MAX_BYTES}
 							onChange={value => change("brand_logo", value)}
 							disabled={!mayEdit}
 						/>
 						<BrandImageField
 							label={t("admin.settings.brandBackground")}
-							value={draft.brand_background ?? values.brand_background ?? ""}
+							value={currentBackground}
 							maxBytes={BRANDING_MAX_BYTES}
 							onChange={value => change("brand_background", value)}
 							disabled={!mayEdit}
@@ -1881,8 +1890,13 @@ function SettingsTab(): React.JSX.Element {
 								))}
 								<Button
 									color="inherit"
+									title={t("admin.settings.brandColorDefaultHint")}
 									disabled={!mayEdit}
-									onClick={() => change("brand_color", "")}
+									onClick={() => {
+										// "default" also takes the background picture away: one click leads back to the plain look
+										change("brand_color", "");
+										change("brand_background", "");
+									}}
 								>
 									{t("admin.settings.brandColorDefault")}
 								</Button>

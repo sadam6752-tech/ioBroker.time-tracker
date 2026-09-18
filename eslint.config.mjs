@@ -16,6 +16,10 @@ export default [
 			"dist",
 			// generated build of the web app (contains the minified bundle)
 			"www",
+			// generated report of the browser tests: it carries a bundled viewer, linting it takes minutes and
+			// overflows the report of the stylish formatter
+			"playwright-report",
+			"test-results",
 			"admin/words.js",
 			"admin/admin.d.ts",
 			"admin/blockly.js",

@@ -102,3 +102,39 @@ test("shows the logo, the background and the accent colour of the installation",
 		)
 		.toBe(true);
 });
+
+test("takes an uploaded background picture away again", async ({ page, request }) => {
+	const session = await signInApi(request);
+	const saved = await request.put("/api/settings", {
+		headers: { "x-session-token": session.token, "x-csrf-token": session.csrfToken },
+		data: { brand_logo: png, brand_background: png, brand_color: "#1a2b3c" },
+	});
+	expect(saved.status()).toBe(200);
+
+	await page.goto("/");
+	await signIn(page);
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Einstellungen" }).click();
+
+	// every picture field offers to take its picture away — the logo field and the background field
+	await expect(page.getByRole("button", { name: "Bild entfernen" })).toHaveCount(2);
+
+	// "Standard" puts colour and background picture back in one click; the logo is a separate choice and stays
+	await page.getByRole("button", { name: "Standard", exact: true }).click();
+	await page.getByRole("button", { name: "Speichern", exact: true }).click();
+
+	const branding = async (): Promise<Record<string, unknown>> =>
+		(await (await request.get("/api/branding")).json()) as Record<string, unknown>;
+	await expect.poll(branding).toMatchObject({ backgroundUrl: null, color: null });
+	expect((await branding()).logoUrl, "the logo should stay").not.toBeNull();
+
+	await expect
+		.poll(async () =>
+			page.evaluate(() =>
+				[...document.querySelectorAll("div")].some(node =>
+					getComputedStyle(node).backgroundImage.includes("branding/background"),
+				),
+			),
+		)
+		.toBe(false);
+});

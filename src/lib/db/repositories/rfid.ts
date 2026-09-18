@@ -56,6 +56,8 @@ export interface RfidRepository {
 	touch(input: { id: number; now?: number }): void;
 	/** Revokes a tag */
 	revoke(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
+	/** Deletes a tag for good — for a revoked badge that should disappear from the list */
+	remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 }
 
 /**
@@ -180,6 +182,7 @@ export function createRfidRepository(db: Db): RfidRepository {
 	);
 	const updateLastUsed = db.prepare("UPDATE rfid_tags SET last_used_at = ? WHERE id = ?");
 	const deactivate = db.prepare("UPDATE rfid_tags SET is_active = 0 WHERE id = ?");
+	const deleteTag = db.prepare("DELETE FROM rfid_tags WHERE id = ?");
 
 	/**
 	 * Reads a tag.
@@ -289,6 +292,29 @@ export function createRfidRepository(db: Db): RfidRepository {
 					entity: "rfid_tag",
 					entityId: input.id,
 					detail: { uid: tag.uid, userId: tag.userId },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+			return true;
+		},
+
+		remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean {
+			const tag = read(input.id);
+			if (!tag) {
+				return false;
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				deleteTag.run(input.id);
+				// the row is gone, the audit trail keeps the trace of it
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "rfid.delete",
+					entity: "rfid_tag",
+					entityId: input.id,
+					detail: { uid: tag.uid, userId: tag.userId, isActive: tag.isActive },
 					ip: input.actorIp ?? null,
 				});
 			});

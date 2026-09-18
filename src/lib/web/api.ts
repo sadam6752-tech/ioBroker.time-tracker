@@ -2944,6 +2944,24 @@ export function createApi(deps: ApiDeps): Api {
 		return noContent();
 	});
 
+	// A badge that was revoked can be removed from the list for good. Revoking is what stops the link from working,
+	// so this only removes the row — the audit trail keeps the trace either way.
+	route("DELETE", "/rfid/tags/:id/permanent", { permission: "rfid.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const removed = rfid.remove({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!removed) {
+			throw new NotFoundError(`tag ${context.params.id} not found`);
+		}
+		return noContent();
+	});
+
 	route(
 		"POST",
 		"/rfid/scan",

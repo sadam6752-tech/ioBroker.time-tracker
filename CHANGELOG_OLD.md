@@ -3,6 +3,18 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.18 (2026-09-18)
+
+- (Alex) fix: an uploaded background picture can be taken away again — every picture field has a “Remove picture”
+  button (the logo as well), and “Default” resets the colour and the background picture in one click
+- internal: the settings dialog shows the stored logo and background picture again (a read leaves the large pictures
+  out on purpose, so the preview and the remove button come from the branding route)
+- (Alex) internal: the release flow asks the owner before the version commit and the tag — the question “may I push,
+  or do you have remarks?” comes first and only a “go” leads to commit, tag and push; `CONTRIBUTING.md` documents
+  the step and `npm run push:approve` reminds of it
+- internal: the lint ignores the generated report of the browser tests (it carried a bundled viewer and made a local
+  `npm run lint` crash)
+
 ### 0.0.17 (2026-09-18)
 
 - (Alex) fix: the **background colour** of the branding is visible again when a background picture is set — the

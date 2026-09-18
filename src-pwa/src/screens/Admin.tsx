@@ -1448,7 +1448,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
 	const [userId, setUserId] = useState("");
 	const [label, setLabel] = useState("");
-	const [issued, setIssued] = useState<string | null>(null);
+	const [issued, setIssued] = useState<{ token: string; url: string } | null>(null);
 
 	/** Refreshes the list of the badges. */
 	const reload = async (): Promise<void> => {
@@ -1458,7 +1458,10 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 	const create = useMutation({
 		mutationFn: () => api.createTag({ userId: Number(userId), ...(label.trim() ? { label: label.trim() } : {}) }),
 		onSuccess: async created => {
-			setIssued(created.url);
+			// the browser knows the address this administration is reached with — scheme, host and port — so the
+			// link is built here instead of trusting a server side guess: it works on plain HTTP and behind a
+			// reverse proxy alike, and a scanner only has to reach the same address the operator is using
+			setIssued({ token: created.token, url: `${window.location.origin}/?tag=${created.token}` });
 			setLabel("");
 			await reload();
 		},
@@ -1466,6 +1469,12 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 
 	const remove = useMutation({
 		mutationFn: (id: number) => api.deleteTag(id),
+		onSuccess: reload,
+	});
+
+	// a revoked badge can be taken out of the list for good
+	const purge = useMutation({
+		mutationFn: (id: number) => api.deleteTagPermanently(id),
 		onSuccess: reload,
 	});
 
@@ -1479,7 +1488,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={tags.error ?? create.error ?? remove.error} />
+			<ErrorAlert error={tags.error ?? create.error ?? remove.error ?? purge.error} />
 
 			{issued && (
 				<Alert
@@ -1496,7 +1505,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 						variant="body2"
 						sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
 					>
-						{issued}
+						{issued.url}
 					</Typography>
 				</Alert>
 			)}
@@ -1544,20 +1553,39 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 			<Card>
 				<List dense>
 					{(tags.data ?? []).map(tag => {
+						const expired = tag.expiresAt !== null && tag.expiresAt * 1000 < Date.now();
+						const state =
+							tag.isActive === false
+								? t("admin.tag.revoked")
+								: expired
+									? t("admin.tag.expired")
+									: t("admin.tag.active");
 						const until = tag.expiresAt ? formatStamp(tag.expiresAt, language) : t("common.none");
+						const used = tag.lastUsedAt ? formatStamp(tag.lastUsedAt, language) : t("common.none");
 						return (
 							<ActionRow
 								key={tag.id}
 								primary={`${tag.label ?? tag.uid ?? `#${tag.id}`} · ${nameOf(tag.userId)}`}
-								secondary={`${tag.uid ?? t("common.none")} · ${until}`}
+								secondary={`${state} · ${t("admin.tag.lastUsed")}: ${used} · ${tag.uid ?? t("common.none")} · ${until}`}
 							>
-								<Button
-									size="small"
-									color="error"
-									onClick={() => remove.mutate(tag.id)}
-								>
-									{t("admin.tag.delete")}
-								</Button>
+								{tag.isActive !== false && (
+									<Button
+										size="small"
+										color="error"
+										onClick={() => remove.mutate(tag.id)}
+									>
+										{t("admin.tag.delete")}
+									</Button>
+								)}
+								{tag.isActive === false && (
+									<Button
+										size="small"
+										color="error"
+										onClick={() => purge.mutate(tag.id)}
+									>
+										{t("admin.tag.remove")}
+									</Button>
+								)}
 							</ActionRow>
 						);
 					})}

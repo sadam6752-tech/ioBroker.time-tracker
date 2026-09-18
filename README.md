@@ -305,6 +305,19 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.3 (2026-09-18)
+
+- (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open
+  with — scheme, host and port come from the browser, so the link works on a plain HTTP instance and behind a reverse
+  proxy alike, and no server side guess can point at a scheme the instance does not serve
+- (Alex) fix: the badge (RFID/NFC) tab shows the state of every badge — active, expired or revoked — and when it was
+  last used. A revoked badge now offers “Remove permanently” instead of failing with “not found”: the old entry
+  disappears from the list, while the audit trail keeps the trace of it
+- (Alex) translations: a technical review pass over the 11 languages — the punch, break, absence, badge and overtime
+  text families were compared with each other. Five wrong `reports.overtime` labels were corrected (`pt`, `fr`, `it`,
+  `es`, `zh-cn` said “over time” instead of overtime), and the Polish punch labels now use the same root as the badge
+  texts. `docs/i18n.md` records the method and what a native speaker still has to settle
+
 ### 0.1.2 (2026-09-18)
 
 - (Alex) fix: a badge (RFID/NFC) link points to the address the administration itself is reached with — the scheme
@@ -352,18 +365,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) more states for dashboards and notifications: `company.presentCount`/`present`/`openConflicts`/`lastPunch`,
   per employee `monthWorkedMinutes`/`monthBalanceMinutes`/`yearBalanceMinutes` and `events.lastAt`/`lastType`/
   `lastUser`/`lastDirection`/`lastSource`
-
-### 0.0.18 (2026-09-18)
-
-- (Alex) fix: an uploaded background picture can be taken away again — every picture field has a “Remove picture”
-  button (the logo as well), and “Default” resets the colour and the background picture in one click
-- internal: the settings dialog shows the stored logo and background picture again (a read leaves the large pictures
-  out on purpose, so the preview and the remove button come from the branding route)
-- (Alex) internal: the release flow asks the owner before the version commit and the tag — the question “may I push,
-  or do you have remarks?” comes first and only a “go” leads to commit, tag and push; `CONTRIBUTING.md` documents
-  the step and `npm run push:approve` reminds of it
-- internal: the lint ignores the generated report of the browser tests (it carried a bundled viewer and made a local
-  `npm run lint` crash)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

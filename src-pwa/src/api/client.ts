@@ -224,9 +224,11 @@ export interface ApiClient {
 		userId: number;
 		label?: string;
 		ttlDays?: number;
-	}): Promise<{ tag: RfidTagRecord; url: string }>;
+	}): Promise<{ tag: RfidTagRecord; token: string; url: string }>;
 	/** Deletes a tag */
 	deleteTag(id: number): Promise<void>;
+	/** Removes a revoked badge from the list for good */
+	deleteTagPermanently(id: number): Promise<void>;
 	/** Rules that turn states of other adapters into punches (fingerprint reader, button, …) */
 	triggerRules(): Promise<TriggerRule[]>;
 	/** Replaces the whole table of trigger rules with the given one */
@@ -371,6 +373,10 @@ export interface RfidTagRecord {
 	expiresAt: number | null;
 	/** Instant of creation */
 	createdAt: number;
+	/** False for revoked badges */
+	isActive: boolean;
+	/** Instant of the last scan, `null` when never used */
+	lastUsedAt: number | null;
 }
 
 /** How a trigger rule decides which employee it fires for (`GET /trigger-rules`). */
@@ -1054,7 +1060,11 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		},
 
 		async createTag(input) {
-			return request<{ tag: RfidTagRecord; url: string }>("POST", "/rfid/tags", { body: input });
+			return request<{ tag: RfidTagRecord; token: string; url: string }>("POST", "/rfid/tags", { body: input });
+		},
+
+		async deleteTagPermanently(id: number): Promise<void> {
+			await request<void>("DELETE", `/rfid/tags/${id}/permanent`);
 		},
 
 		async deleteTag(id: number): Promise<void> {

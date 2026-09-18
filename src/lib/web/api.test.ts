@@ -1946,6 +1946,27 @@ describe("web api", () => {
 				(await send("DELETE", `/rfid/tags/${payload.tag.id}`, { headers: headers(adminToken, adminCsrf) }))
 					.status,
 			).to.equal(404);
+
+			// a revoked badge can be removed from the list for good, which is what the tab offers for old badges
+			expect(
+				(
+					await send("DELETE", `/rfid/tags/${payload.tag.id}/permanent`, {
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(204);
+			const withoutTag = bodyOf<{ tags: { id: number }[] }>(
+				await send("GET", "/rfid/tags", { headers: headers(adminToken) }),
+			);
+			expect(withoutTag.tags.some(tag => tag.id === payload.tag.id)).to.equal(false);
+			// and removing it twice is a not found, not a silent success
+			expect(
+				(
+					await send("DELETE", `/rfid/tags/${payload.tag.id}/permanent`, {
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(404);
 		});
 
 		it("refuses tag links without a configured secret", async () => {

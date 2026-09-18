@@ -1,6 +1,6 @@
 {
 	"name": "iobroker.zeiterfassung",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"author": {
 		"name": "Alex",
@@ -99,6 +99,7 @@
 		"e2e": "playwright test",
 		"check:i18n": "pwsh -NoProfile -File tools/check-i18n.ps1 -FailOnIssue",
 		"check:i18n:report": "pwsh -NoProfile -File tools/check-i18n.ps1",
+		"check:i18n:review": "node tools/check-i18n-review.mjs",
 		"check:adapter": "pwsh -NoProfile -File tools/check-adapter.ps1 -FailOnIssue"
 	},
 	"nyc": {

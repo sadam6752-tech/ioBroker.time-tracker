@@ -58,6 +58,24 @@ export interface RfidRepository {
 	revoke(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 	/** Deletes a tag for good — for a revoked badge that should disappear from the list */
 	remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
+	/**
+	 * Changes label, owner, expiry and — when a new signature is passed — the link of a badge.
+	 *
+	 * The signature binds `uid`, owner and expiry, so handing in `signature` is what issues a new link: the stored
+	 * hash is replaced and every link given out before stops working immediately. `activate` brings a revoked badge
+	 * back into use.
+	 */
+	update(input: {
+		id: number;
+		label?: string | null;
+		userId?: number | null;
+		expiresAt?: number | null;
+		signature?: string;
+		activate?: boolean;
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): RfidTagRecord | null;
 }
 
 /**
@@ -183,6 +201,11 @@ export function createRfidRepository(db: Db): RfidRepository {
 	const updateLastUsed = db.prepare("UPDATE rfid_tags SET last_used_at = ? WHERE id = ?");
 	const deactivate = db.prepare("UPDATE rfid_tags SET is_active = 0 WHERE id = ?");
 	const deleteTag = db.prepare("DELETE FROM rfid_tags WHERE id = ?");
+	// the visible fields and the credential are changed separately: a label edit must not touch the signature
+	const changeFields = db.prepare(
+		"UPDATE rfid_tags SET user_id = ?, label = ?, expires_at = ?, is_active = ? WHERE id = ?",
+	);
+	const changeSignature = db.prepare("UPDATE rfid_tags SET token_hash = ? WHERE id = ?");
 
 	/**
 	 * Reads a tag.
@@ -320,6 +343,64 @@ export function createRfidRepository(db: Db): RfidRepository {
 			});
 			run();
 			return true;
+		},
+
+		update(input: {
+			id: number;
+			label?: string | null;
+			userId?: number | null;
+			expiresAt?: number | null;
+			signature?: string;
+			activate?: boolean;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): RfidTagRecord | null {
+			const tag = read(input.id);
+			if (!tag) {
+				return null;
+			}
+			const userId = input.userId === undefined ? tag.userId : input.userId;
+			if (userId !== null && (!Number.isInteger(userId) || userId <= 0)) {
+				throw new ValidationError(`userId must be a positive whole number (got ${input.userId})`);
+			}
+			const expiresAt = input.expiresAt === undefined ? tag.expiresAt : input.expiresAt;
+			if (expiresAt !== null && (!Number.isInteger(expiresAt) || expiresAt <= 0)) {
+				throw new ValidationError(`expiresAt must be a positive instant (got ${input.expiresAt})`);
+			}
+			// a new link always carries a signature: an empty one would leave a signatureless badge behind
+			if (input.signature !== undefined && !input.signature) {
+				throw new ValidationError("signature must not be empty");
+			}
+			const label = input.label === undefined ? tag.label : input.label;
+			const isActive = input.activate === undefined ? tag.isActive : input.activate;
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+
+			const run = db.transaction((): void => {
+				changeFields.run(userId, label, expiresAt, isActive ? 1 : 0, input.id);
+				if (input.signature !== undefined) {
+					changeSignature.run(input.signature, input.id);
+				}
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "rfid.update",
+					entity: "rfid_tag",
+					entityId: input.id,
+					// the signature itself stays out of the audit trail, whether it was replaced is what counts
+					detail: {
+						uid: tag.uid,
+						userId,
+						label,
+						expiresAt,
+						isActive,
+						reissued: input.signature !== undefined,
+					},
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+			return read(input.id);
 		},
 	};
 }

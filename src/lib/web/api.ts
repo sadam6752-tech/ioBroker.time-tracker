@@ -31,6 +31,7 @@ import {
 	sameSignature,
 	signTag,
 	type RfidRepository,
+	type RfidTagRecord,
 } from "../db/repositories/rfid";
 import type { PauseRuleRecord, RulesRepository } from "../db/repositories/rules";
 import type { SettingsRepository, SettingValue } from "../db/repositories/settings";
@@ -2884,6 +2885,66 @@ export function createApi(deps: ApiDeps): Api {
 		return secret;
 	};
 
+	/**
+	 * Builds the link a phone scans for a badge token.
+	 *
+	 * @param context - request context (host and scheme)
+	 * @param token - signed token of the badge
+	 * @returns absolute URL the badge carries
+	 */
+	const tagLink = (context: RouteContext, token: string): string => {
+		const host = context.header("host") ?? "localhost";
+		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan. The scheme comes
+		// from the request (and from a trusted reverse proxy), so the link matches the address the administration
+		// itself is reached with — a fixed `https://` pointed nowhere on a plain HTTP instance.
+		const scheme = host.includes("://") ? "" : `${context.secure ? "https" : "http"}://`;
+		return `${scheme}${host}/?tag=${token}`;
+	};
+
+	/**
+	 * Signs a new link for a badge and stores it.
+	 *
+	 * The signature binds `uid`, owner and expiry, so this is what replaces the link: everything handed out before
+	 * stops working immediately, and a revoked badge comes back into use with it.
+	 *
+	 * @param context - request context
+	 * @param tag - badge to give a new link (its `userId` may be the new owner)
+	 * @param ttlDays - validity of the new link in days
+	 * @param label - new label, `undefined` keeps the stored one
+	 * @returns the changed badge and its new token
+	 */
+	const reissueLink = (
+		context: RouteContext,
+		tag: RfidTagRecord,
+		ttlDays: number,
+		label?: string | null,
+	): { tag: RfidTagRecord; token: string } => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		if (tag.userId === null) {
+			throw new ValidationError("the badge has no employee any more — give it one first");
+		}
+		const timestamp = now();
+		const expiresAt = timestamp + ttlDays * 86400;
+		const signature = signTag(requireHmacSecret(), tag.uid, tag.userId, expiresAt);
+		const updated = rfid.update({
+			id: tag.id,
+			userId: tag.userId,
+			expiresAt,
+			signature,
+			activate: true,
+			...(label === undefined ? {} : { label }),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: timestamp,
+		});
+		if (!updated) {
+			throw new NotFoundError(`tag ${tag.id} not found`);
+		}
+		return { tag: updated, token: buildTagToken(updated.uid, tag.userId, expiresAt, signature) };
+	};
+
 	route("GET", "/rfid/tags", { permission: "rfid.manage" }, () =>
 		json(200, { tags: rfid.list({ includeInactive: true }) }),
 	);
@@ -2919,13 +2980,7 @@ export function createApi(deps: ApiDeps): Api {
 		});
 
 		const token = buildTagToken(uid, target, expiresAt, signature);
-		const host = context.header("host") ?? "localhost";
-		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan
-		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan.
-		// The scheme comes from the request (and from a trusted reverse proxy), so the link matches the address the
-		// administration itself is reached with — a fixed `https://` pointed nowhere on a plain HTTP instance.
-		const scheme = host.includes("://") ? "" : `${context.secure ? "https" : "http"}://`;
-		return json(201, { tag, token, url: `${scheme}${host}/?tag=${token}` }, { location: `/rfid/tags/${tag.id}` });
+		return json(201, { tag, token, url: tagLink(context, token) }, { location: `/rfid/tags/${tag.id}` });
 	});
 
 	route("DELETE", "/rfid/tags/:id", { permission: "rfid.manage", csrf: true }, context => {
@@ -2960,6 +3015,67 @@ export function createApi(deps: ApiDeps): Api {
 			throw new NotFoundError(`tag ${context.params.id} not found`);
 		}
 		return noContent();
+	});
+
+	// Changes a badge: label, owner and validity. The signature binds uid, owner and expiry, so a new owner or a new
+	// validity re-issues the link — the answer carries the new token then, and the link given out before is dead.
+	route("PATCH", "/rfid/tags/:id", { permission: "rfid.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const id = numberParam(context, "id");
+		const body = context.jsonBody();
+		const current = rfid.findById(id);
+		if (!current) {
+			throw new NotFoundError(`tag ${context.params.id} not found`);
+		}
+		const userId = body.userId === undefined ? current.userId : Number(body.userId);
+		if (userId === null || !Number.isInteger(userId) || !users.findById(userId)) {
+			throw new ValidationError("userId must reference an existing employee");
+		}
+		const ttlDays = optionalNumber(body, "ttlDays") ?? undefined;
+		if (ttlDays !== undefined && (!Number.isInteger(ttlDays) || ttlDays <= 0)) {
+			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
+		}
+		const label = body.label === undefined ? undefined : optionalString(body, "label");
+
+		if (userId !== current.userId || ttlDays !== undefined) {
+			// the link has to be signed again: it carries the owner in its payload
+			const signed = reissueLink(context, { ...current, userId }, ttlDays ?? 365, label);
+			return json(200, { tag: signed.tag, token: signed.token, url: tagLink(context, signed.token) });
+		}
+
+		// a label on its own leaves the link alone — the signature does not know about it
+		const changed = rfid.update({
+			id,
+			userId,
+			...(label === undefined ? {} : { label }),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!changed) {
+			throw new NotFoundError(`tag ${context.params.id} not found`);
+		}
+		return json(200, { tag: changed });
+	});
+
+	// A new link for an existing badge: for one that was lost, expired, or revoked and should work again. The link
+	// handed out before stops working with it.
+	route("POST", "/rfid/tags/:id/link", { permission: "rfid.manage", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const tag = rfid.findById(numberParam(context, "id"));
+		if (!tag) {
+			throw new NotFoundError(`tag ${context.params.id} not found`);
+		}
+		const ttlDays = optionalNumber(context.jsonBody(), "ttlDays") ?? 365;
+		if (!Number.isInteger(ttlDays) || ttlDays <= 0) {
+			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
+		}
+		const signed = reissueLink(context, tag, ttlDays);
+		return json(200, { tag: signed.tag, token: signed.token, url: tagLink(context, signed.token) });
 	});
 
 	route(

@@ -3,6 +3,23 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.19 (2026-09-18)
+
+- internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the
+  file is done, so it can run again and in any order; the end-to-end workflow uses the current majors of
+  `actions/checkout`, `actions/setup-node` and `actions/upload-artifact` (the old ones still target Node 20, which
+  the runner deprecates)
+
+- (Alex) ioBroker comfort: **actions** (trigger rules) — a state of another adapter like a fingerprint reader, a
+  button or a door contact punches or sets the presence. The table lives in the administration
+  (`GET`/`PUT /api/trigger-rules`), a rule fires only when the value changes and honours a cooldown, and every
+  punch carries the note `trigger.<id>` in the audit trail
+- (Alex) **`sendTo` messages** — `punch`, `present`, `status`, `report` (PDF or Excel as base64) and `backup`, so a
+  script or a Blockly block drives the instance without HTTP
+- (Alex) more states for dashboards and notifications: `company.presentCount`/`present`/`openConflicts`/`lastPunch`,
+  per employee `monthWorkedMinutes`/`monthBalanceMinutes`/`yearBalanceMinutes` and `events.lastAt`/`lastType`/
+  `lastUser`/`lastDirection`/`lastSource`
+
 ### 0.0.18 (2026-09-18)
 
 - (Alex) fix: an uploaded background picture can be taken away again — every picture field has a “Remove picture”

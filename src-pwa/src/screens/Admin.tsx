@@ -51,6 +51,7 @@ import {
 	type AdminTerminal,
 	type AutomationRule,
 	type AutomationRun,
+	type RfidTagRecord,
 	type TriggerRule,
 } from "../api/client";
 import type { AdminUser, CreateUserInput, PauseRule, WorkProfile } from "../api/types";
@@ -1435,6 +1436,108 @@ function HolidaysTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Edits a badge: employee, label and validity.
+ *
+ * The link signs the owner and the expiry, so a different employee or a new validity issues a new link — the answer
+ * carries it, and everything handed out before stops working. A label on its own leaves the link alone.
+ *
+ * @param props - badge to edit, close handler and success handler
+ * @param props.tag - badge to edit
+ * @param props.onClose - called when the dialog is closed
+ * @param props.onSaved - called with the answer of the server after a successful change
+ * @returns the dialog
+ */
+function TagDialog({
+	tag,
+	onClose,
+	onSaved,
+}: {
+	tag: RfidTagRecord;
+	onClose: () => void;
+	onSaved: (saved: { tag: RfidTagRecord; token?: string; url?: string }) => Promise<void>;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
+	const [userId, setUserId] = useState(tag.userId === null ? "" : String(tag.userId));
+	const [label, setLabel] = useState(tag.label ?? "");
+	const [ttlDays, setTtlDays] = useState("");
+
+	const days = ttlDays.trim() === "" ? undefined : Number(ttlDays);
+	const invalid = !userId || (days !== undefined && (!Number.isInteger(days) || days <= 0));
+
+	const save = useMutation({
+		mutationFn: () =>
+			api.updateTag(tag.id, {
+				userId: Number(userId),
+				// an empty field clears the label, that is what the server understands as `null`
+				label: label.trim() ? label.trim() : null,
+				...(days === undefined ? {} : { ttlDays: days }),
+			}),
+		onSuccess: onSaved,
+	});
+
+	return (
+		<Dialog
+			open
+			onClose={onClose}
+			fullWidth
+		>
+			<DialogTitle>{`${t("admin.tag.editTitle")} · ${tag.label ?? tag.uid}`}</DialogTitle>
+			<DialogContent>
+				<Stack
+					spacing={2}
+					sx={{ mt: 1 }}
+				>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+					>
+						{t("admin.tag.editHint")}
+					</Typography>
+					<TextField
+						select
+						label={t("admin.tag.user")}
+						value={userId}
+						onChange={event => setUserId(event.target.value)}
+					>
+						{(people.data ?? []).map(user => (
+							<MenuItem
+								key={user.id}
+								value={String(user.id)}
+							>
+								{`${user.displayName} (${user.login})`}
+							</MenuItem>
+						))}
+					</TextField>
+					<TextField
+						label={t("admin.tag.label")}
+						value={label}
+						onChange={event => setLabel(event.target.value)}
+					/>
+					<TextField
+						label={t("admin.tag.validityDays")}
+						type="number"
+						value={ttlDays}
+						onChange={event => setTtlDays(event.target.value)}
+					/>
+					<ErrorAlert error={people.error ?? save.error} />
+				</Stack>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onClose}>{t("common.cancel")}</Button>
+				<Button
+					variant="contained"
+					disabled={invalid || save.isPending}
+					onClick={() => save.mutate()}
+				>
+					{t("common.save")}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+/**
  * Badges of the employees: create a signed link for a tag, list and remove them.
  *
  * @param props - language of the display
@@ -1448,20 +1551,38 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
 	const [userId, setUserId] = useState("");
 	const [label, setLabel] = useState("");
-	const [issued, setIssued] = useState<{ token: string; url: string } | null>(null);
+	const [issued, setIssued] = useState<{ token: string; url: string; reissued: boolean } | null>(null);
+	const [editing, setEditing] = useState<RfidTagRecord | null>(null);
 
 	/** Refreshes the list of the badges. */
 	const reload = async (): Promise<void> => {
 		await queryClient.invalidateQueries({ queryKey: ["admin", "tags"] });
 	};
 
+	/**
+	 * Builds the link from the address this administration is reached with — scheme, host and port come from the
+	 * browser, so it works on plain HTTP and behind a reverse proxy alike and no server side guess can point at a
+	 * scheme the instance does not serve.
+	 *
+	 * @param token - signed token of the badge
+	 * @returns the link to write onto the badge
+	 */
+	const linkFor = (token: string): string => `${window.location.origin}/?tag=${token}`;
+
+	/**
+	 * Shows the link of a badge that was just created or given a new one.
+	 *
+	 * @param token - signed token of the badge
+	 * @param reissued - true when the badge had a link before, which is dead now
+	 */
+	const showLink = (token: string, reissued: boolean): void => {
+		setIssued({ token, url: linkFor(token), reissued });
+	};
+
 	const create = useMutation({
 		mutationFn: () => api.createTag({ userId: Number(userId), ...(label.trim() ? { label: label.trim() } : {}) }),
 		onSuccess: async created => {
-			// the browser knows the address this administration is reached with — scheme, host and port — so the
-			// link is built here instead of trusting a server side guess: it works on plain HTTP and behind a
-			// reverse proxy alike, and a scanner only has to reach the same address the operator is using
-			setIssued({ token: created.token, url: `${window.location.origin}/?tag=${created.token}` });
+			showLink(created.token, false);
 			setLabel("");
 			await reload();
 		},
@@ -1478,6 +1599,15 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 		onSuccess: reload,
 	});
 
+	// gives a badge a new link: for one that was lost, expired or revoked and should work again
+	const reissue = useMutation({
+		mutationFn: (id: number) => api.reissueTagLink(id),
+		onSuccess: async created => {
+			showLink(created.token, true);
+			await reload();
+		},
+	});
+
 	/**
 	 * Name of the employee a badge belongs to.
 	 *
@@ -1488,7 +1618,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={tags.error ?? create.error ?? remove.error ?? purge.error} />
+			<ErrorAlert error={tags.error ?? create.error ?? remove.error ?? purge.error ?? reissue.error} />
 
 			{issued && (
 				<Alert
@@ -1507,6 +1637,14 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 					>
 						{issued.url}
 					</Typography>
+					{issued.reissued && (
+						<Typography
+							variant="body2"
+							sx={{ mt: 1 }}
+						>
+							{t("admin.tag.oldLinkDead")}
+						</Typography>
+					)}
 				</Alert>
 			)}
 
@@ -1568,6 +1706,19 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 								primary={`${tag.label ?? tag.uid ?? `#${tag.id}`} · ${nameOf(tag.userId)}`}
 								secondary={`${state} · ${t("admin.tag.lastUsed")}: ${used} · ${tag.uid ?? t("common.none")} · ${until}`}
 							>
+								<Button
+									size="small"
+									onClick={() => setEditing(tag)}
+								>
+									{t("admin.tag.edit")}
+								</Button>
+								<Button
+									size="small"
+									disabled={reissue.isPending}
+									onClick={() => reissue.mutate(tag.id)}
+								>
+									{t("admin.tag.reissue")}
+								</Button>
 								{tag.isActive !== false && (
 									<Button
 										size="small"
@@ -1596,6 +1747,21 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 					)}
 				</List>
 			</Card>
+
+			{editing && (
+				<TagDialog
+					tag={editing}
+					onClose={() => setEditing(null)}
+					onSaved={async saved => {
+						setEditing(null);
+						// a new employee or a new validity answers with a new link: show it like a fresh badge
+						if (saved.token) {
+							showLink(saved.token, true);
+						}
+						await reload();
+					}}
+				/>
+			)}
 		</>
 	);
 }

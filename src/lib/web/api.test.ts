@@ -1969,6 +1969,117 @@ describe("web api", () => {
 			).to.equal(404);
 		});
 
+		it("changes a badge, gives it a new link and brings a revoked one back", async () => {
+			const created = await send("POST", "/rfid/tags", {
+				body: { userId: annaId, label: "Werkstatt" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			const first = bodyOf<{ tag: { id: number }; token: string }>(created);
+			expect(created.status).to.equal(201);
+			expect((await send("POST", "/rfid/scan", { body: { token: first.token, tsUtc: 1000 } })).status).to.equal(
+				201,
+			);
+
+			// a label on its own leaves the link alone — the signature does not know about it
+			const relabelled = await send("PATCH", `/rfid/tags/${first.tag.id}`, {
+				body: { label: "Werkstatt (neu)" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(relabelled.status).to.equal(200);
+			expect(bodyOf<{ tag: { label: string; userId: number } }>(relabelled).tag).to.deep.include({
+				label: "Werkstatt (neu)",
+				userId: annaId,
+			});
+			expect(bodyOf<{ token?: string }>(relabelled).token).to.equal(undefined);
+			expect((await send("POST", "/rfid/scan", { body: { token: first.token, tsUtc: 2000 } })).status).to.equal(
+				201,
+			);
+
+			// a new validity signs a new link, the one handed out before is dead
+			const renewed = await send("PATCH", `/rfid/tags/${first.tag.id}`, {
+				body: { ttlDays: 30 },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(renewed.status).to.equal(200);
+			const second = bodyOf<{ tag: { expiresAt: number }; token: string; url: string }>(renewed);
+			expect(second.token).to.be.a("string");
+			expect(second.url).to.contain(`/?tag=${second.token}`);
+			expect((await send("POST", "/rfid/scan", { body: { token: first.token, tsUtc: 2500 } })).status).to.equal(
+				401,
+			);
+			expect((await send("POST", "/rfid/scan", { body: { token: second.token, tsUtc: 3000 } })).status).to.equal(
+				201,
+			);
+
+			// a new owner needs a new signature as well, because the link carries the owner
+			const moved = await send("PATCH", `/rfid/tags/${first.tag.id}`, {
+				body: { userId: adminId },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(moved.status).to.equal(200);
+			const third = bodyOf<{ tag: { userId: number }; token: string }>(moved);
+			expect(third.tag.userId).to.equal(adminId);
+			expect((await send("POST", "/rfid/scan", { body: { token: second.token, tsUtc: 3500 } })).status).to.equal(
+				401,
+			);
+			expect((await send("POST", "/rfid/scan", { body: { token: third.token, tsUtc: 4000 } })).status).to.equal(
+				201,
+			);
+
+			// revoking kills the link, a new link brings the badge back into use
+			expect(
+				(await send("DELETE", `/rfid/tags/${first.tag.id}`, { headers: headers(adminToken, adminCsrf) }))
+					.status,
+			).to.equal(204);
+			expect((await send("POST", "/rfid/scan", { body: { token: third.token, tsUtc: 4500 } })).status).to.equal(
+				401,
+			);
+			const again = await send("POST", `/rfid/tags/${first.tag.id}/link`, {
+				body: { ttlDays: 10 },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(again.status).to.equal(200);
+			const fourth = bodyOf<{ tag: { isActive: boolean }; token: string }>(again);
+			expect(fourth.tag.isActive).to.equal(true);
+			expect((await send("POST", "/rfid/scan", { body: { token: fourth.token, tsUtc: 5000 } })).status).to.equal(
+				201,
+			);
+
+			// nonsense is refused instead of silently changing something
+			expect(
+				(
+					await send("PATCH", `/rfid/tags/${first.tag.id}`, {
+						body: { userId: 9999 },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			expect(
+				(
+					await send("POST", `/rfid/tags/${first.tag.id}/link`, {
+						body: { ttlDays: 0 },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(400);
+			expect(
+				(await send("POST", "/rfid/tags/9999/link", { body: {}, headers: headers(adminToken, adminCsrf) }))
+					.status,
+			).to.equal(404);
+			expect(
+				(await send("PATCH", "/rfid/tags/9999", { body: {}, headers: headers(adminToken, adminCsrf) })).status,
+			).to.equal(404);
+			// a badge answers only to an administrator
+			expect(
+				(
+					await send("PATCH", `/rfid/tags/${first.tag.id}`, {
+						body: { label: "x" },
+						headers: headers(annaToken, annaCsrf),
+					})
+				).status,
+			).to.equal(403);
+		});
+
 		it("refuses tag links without a configured secret", async () => {
 			const withoutSecret = createApi({
 				db,

@@ -305,6 +305,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.4 (2026-09-18)
+
+- (Alex) **badges (RFID/NFC)**: a badge can be edited (employee, label, validity) and given a **new link** — for one
+  that was lost, expired or revoked and should work again. A new employee or a new validity re-signs the link, so the
+  answer carries it and the link handed out before stops working immediately (a label on its own leaves it alone)
+- (Alex) translations: a second technical pass, this time with a helper (`tools/check-i18n-review.mjs`) that looks for
+  what `check:i18n` cannot see — wrong script, copies between languages, texts much longer or shorter than English.
+  It found real gaps: `brandingHint` had lost its second sentence in nine languages, `brandColorHint` its “empty for
+  the default” in seven, and `admin.user.pinTitle` was a Russian sentence in the Ukrainian file. `docs/i18n.md` lists
+  what stays with a native speaker
+
 ### 0.1.3 (2026-09-18)
 
 - (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open
@@ -348,23 +359,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   reports every change (punch, correction, badge, absence) over the event bus and the adapter republishes the
   states instead of waiting for the five minute timer. That is what made `users.<id>.present` and
   `company.presentCount` lag behind
-
-### 0.0.19 (2026-09-18)
-
-- internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the
-  file is done, so it can run again and in any order; the end-to-end workflow uses the current majors of
-  `actions/checkout`, `actions/setup-node` and `actions/upload-artifact` (the old ones still target Node 20, which
-  the runner deprecates)
-
-- (Alex) ioBroker comfort: **actions** (trigger rules) — a state of another adapter like a fingerprint reader, a
-  button or a door contact punches or sets the presence. The table lives in the administration
-  (`GET`/`PUT /api/trigger-rules`), a rule fires only when the value changes and honours a cooldown, and every
-  punch carries the note `trigger.<id>` in the audit trail
-- (Alex) **`sendTo` messages** — `punch`, `present`, `status`, `report` (PDF or Excel as base64) and `backup`, so a
-  script or a Blockly block drives the instance without HTTP
-- (Alex) more states for dashboards and notifications: `company.presentCount`/`present`/`openConflicts`/`lastPunch`,
-  per employee `monthWorkedMinutes`/`monthBalanceMinutes`/`yearBalanceMinutes` and `events.lastAt`/`lastType`/
-  `lastUser`/`lastDirection`/`lastSource`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

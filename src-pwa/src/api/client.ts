@@ -227,6 +227,16 @@ export interface ApiClient {
 	}): Promise<{ tag: RfidTagRecord; token: string; url: string }>;
 	/** Deletes a tag */
 	deleteTag(id: number): Promise<void>;
+	/** Changes label, owner or validity; a new owner or validity answers with a new link */
+	updateTag(
+		id: number,
+		input: { label?: string | null; userId?: number; ttlDays?: number },
+	): Promise<{ tag: RfidTagRecord; token?: string; url?: string }>;
+	/** Signs a new link for an existing badge — the link handed out before stops working */
+	reissueTagLink(
+		id: number,
+		input?: { ttlDays?: number },
+	): Promise<{ tag: RfidTagRecord; token: string; url: string }>;
 	/** Removes a revoked badge from the list for good */
 	deleteTagPermanently(id: number): Promise<void>;
 	/** Rules that turn states of other adapters into punches (fingerprint reader, button, …) */
@@ -1061,6 +1071,18 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async createTag(input) {
 			return request<{ tag: RfidTagRecord; token: string; url: string }>("POST", "/rfid/tags", { body: input });
+		},
+
+		async updateTag(id, input) {
+			return request<{ tag: RfidTagRecord; token?: string; url?: string }>("PATCH", `/rfid/tags/${id}`, {
+				body: input,
+			});
+		},
+
+		async reissueTagLink(id, input = {}) {
+			return request<{ tag: RfidTagRecord; token: string; url: string }>("POST", `/rfid/tags/${id}/link`, {
+				body: input,
+			});
 		},
 
 		async deleteTagPermanently(id: number): Promise<void> {

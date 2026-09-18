@@ -41,8 +41,9 @@ ausschließlich als versionierte Migration in `src/lib/db/migrations.ts` (`schem
 append-only, jede Änderung ist eine neue Nummer. Veröffentlicht werden Aggregate und Steuerbefehle — dazu die
 Firmen-Kennzahlen (`company.*`), die Monats-/Jahreswerte je Mitarbeiter, das jeweils neueste Ereignis (`events.*`)
 und die Aktionen: Regeln in `trigger_rules`, deren States der Adapter abonniert (nur bei Wertwechsel, mit
-Sperrzeit) sowie `sendTo`-Nachrichten (`punch`, `present`, `status`, `report`, `backup`). Stempel selbst bleiben in
-der Datenbank.
+Sperrzeit), die Automatik in `automation_rules`/`automation_runs` (Ausstempeln, Meldung, Pausenerinnerung — jede
+Regel höchstens einmal pro Mitarbeiter und Tag) sowie `sendTo`-Nachrichten (`punch`, `present`, `status`, `report`,
+`backup`). Stempel selbst bleiben in der Datenbank.
 
 ## Pausen
 

@@ -442,6 +442,7 @@ class Zeiterfassung extends utils.Adapter {
 			terminals,
 			rfid,
 			triggers,
+			automations,
 			aggregation,
 			sync,
 			settings,

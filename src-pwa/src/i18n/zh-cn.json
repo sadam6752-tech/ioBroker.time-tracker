@@ -297,5 +297,19 @@
 	"admin.trigger.add": "添加动作",
 	"admin.trigger.lastFired": "上次触发",
 	"admin.trigger.empty": "尚未添加动作。",
-	"admin.trigger.conditionHint": "数值，或 `toggle` 表示每次变化都触发"
+	"admin.trigger.conditionHint": "数值，或 `toggle` 表示每次变化都触发",
+	"admin.settings.automations": "规则（自动）",
+	"admin.settings.automationsHint": "适配器自动完成的事：在设定的本地时间下班打点、提示缺少下班打点，或在长时间未休息后提醒。每条规则每位员工每天最多执行一次。",
+	"admin.automation.kind": "类型",
+	"admin.automation.kindClockOut": "自动下班打点",
+	"admin.automation.kindMissingPunch": "提示缺少下班打点",
+	"admin.automation.kindBreakReminder": "休息提醒",
+	"admin.automation.at": "时间",
+	"admin.automation.atHint": "员工的本地时间",
+	"admin.automation.after": "之后（分钟）",
+	"admin.automation.user": "员工",
+	"admin.automation.allUsers": "所有员工",
+	"admin.automation.add": "添加规则",
+	"admin.automation.empty": "尚未添加规则。",
+	"admin.automation.runs": "最近执行"
 }

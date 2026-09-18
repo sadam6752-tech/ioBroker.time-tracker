@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Actie toevoegen",
 	"admin.trigger.lastFired": "Laatst uitgevoerd",
 	"admin.trigger.empty": "Nog geen acties.",
-	"admin.trigger.conditionHint": "Waarde of `toggle` om bij elke wijziging te reageren"
+	"admin.trigger.conditionHint": "Waarde of `toggle` om bij elke wijziging te reageren",
+	"admin.settings.automations": "Regels (automatisch)",
+	"admin.settings.automationsHint": "Wat de adapter zelf doet: op de ingestelde lokale tijd uitstempelen, een ontbrekende uitstempeling melden of herinneren na te lang werken zonder pauze. Een regel loopt hooguit één keer per medewerker en dag.",
+	"admin.automation.kind": "Soort",
+	"admin.automation.kindClockOut": "Automatisch uitstempelen",
+	"admin.automation.kindMissingPunch": "Ontbrekende uitstempeling melden",
+	"admin.automation.kindBreakReminder": "Pauzeherinnering",
+	"admin.automation.at": "Tijd",
+	"admin.automation.atHint": "Lokale tijd van de medewerker",
+	"admin.automation.after": "Na (minuten)",
+	"admin.automation.user": "Medewerker",
+	"admin.automation.allUsers": "alle medewerkers",
+	"admin.automation.add": "Regel toevoegen",
+	"admin.automation.empty": "Nog geen regels.",
+	"admin.automation.runs": "Laatste uitvoeringen"
 }

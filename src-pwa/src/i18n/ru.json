@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Добавить действие",
 	"admin.trigger.lastFired": "Последнее срабатывание",
 	"admin.trigger.empty": "Действий пока нет.",
-	"admin.trigger.conditionHint": "Значение или `toggle` — тогда срабатывает любое изменение"
+	"admin.trigger.conditionHint": "Значение или `toggle` — тогда срабатывает любое изменение",
+	"admin.settings.automations": "Правила (автоматика)",
+	"admin.settings.automationsHint": "Что адаптер делает сам: отмечает выход в заданное местное время, сообщает об отсутствующей отметке выхода или напоминает о паузе после слишком долгой работы. Правило срабатывает не чаще одного раза в день на сотрудника.",
+	"admin.automation.kind": "Тип",
+	"admin.automation.kindClockOut": "Автоматически отметить выход",
+	"admin.automation.kindMissingPunch": "Сообщить об отсутствии выхода",
+	"admin.automation.kindBreakReminder": "Напоминание о паузе",
+	"admin.automation.at": "Время",
+	"admin.automation.atHint": "Местное время сотрудника",
+	"admin.automation.after": "Через (минуты)",
+	"admin.automation.user": "Сотрудник",
+	"admin.automation.allUsers": "все сотрудники",
+	"admin.automation.add": "Добавить правило",
+	"admin.automation.empty": "Правил пока нет.",
+	"admin.automation.runs": "Последние срабатывания"
 }

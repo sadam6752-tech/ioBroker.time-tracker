@@ -190,6 +190,20 @@ A rule fires only when the **value changes**, so a reader that repeats itself is
 rapidly blinking state in check. Every punch appears in the audit trail with the note `trigger.<id>`, so its origin
 stays traceable.
 
+### Rules (automatic)
+
+The adapter can act on its own as well — that table lives in **Administration → Settings**:
+
+| Kind                    | What it does                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| Clock out automatically | At the configured local time of the employee the open day is closed with a punch (note `auto.clockOut`) |
+| Report a missing punch  | The same moment, but nothing is written — the instance only reports it                                  |
+| Break reminder          | Reminds an employee whose running work block reached the configured length                              |
+
+Every rule runs **at most once per employee and local date**; `automation_runs` holds that decision and doubles as
+the log shown below the table. The events `automation.clockOut`, `automation.missingPunch` and
+`automation.breakReminder` appear in `events.*` too, so a notification adapter can pick them up.
+
 ### Messages (`sendTo`)
 
 A script, a Blockly block or another adapter drives the instance without HTTP:
@@ -291,6 +305,16 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.2 (2026-09-18)
+
+- (Alex) fix: a badge (RFID/NFC) link points to the address the administration itself is reached with — the scheme
+  comes from the request (and from a trusted reverse proxy) instead of a fixed `https://` that pointed nowhere on a
+  plain HTTP instance. A badge created before only needs the right prefix, the token in it stays valid
+- (Alex) **rules (automatic)**: the adapter can clock out at a local time, report a missing punch or remind about a
+  break — maintained in **Administration → Settings** (`GET`/`PUT /api/automation-rules` and the run log
+  `GET /api/automation-rules/runs`), at most once per employee and day, with the events `automation.*` in the state
+  tree so a notification can pick them up
+
 ### 0.1.1 (2026-09-18)
 
 - (Alex) fix: the tab “Badges (RFID/NFC)” creates a badge again — the HMAC secret that signs the links is generated
@@ -340,15 +364,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   the step and `npm run push:approve` reminds of it
 - internal: the lint ignores the generated report of the browser tests (it carried a bundled viewer and made a local
   `npm run lint` crash)
-
-### 0.0.17 (2026-09-18)
-
-- (Alex) fix: the **background colour** of the branding is visible again when a background picture is set — the
-  colour now tints the veil in front of the picture instead of hiding behind it, and the suggestions have a second,
-  darker block of shades (the colour field and the “default” button work as before)
-- (Alex) internal: `npm run version:check` watches the two lists now as well — `common.news` may keep at most seven
-  entries (the ioBroker repository builder truncates at seven, finding E1032) and the README changelog at most five
-  versions; it also names a version that is in neither the README nor `CHANGELOG_OLD.md`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

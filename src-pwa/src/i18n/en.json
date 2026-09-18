@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Add trigger",
 	"admin.trigger.lastFired": "Last fired",
 	"admin.trigger.empty": "No trigger yet.",
-	"admin.trigger.conditionHint": "Value, or `toggle` to fire on every change"
+	"admin.trigger.conditionHint": "Value, or `toggle` to fire on every change",
+	"admin.settings.automations": "Rules (automatic)",
+	"admin.settings.automationsHint": "What the adapter does on its own: clock out at the configured local time, report a missing punch or remind after working too long without a break. A rule runs at most once per employee and day.",
+	"admin.automation.kind": "Kind",
+	"admin.automation.kindClockOut": "Clock out automatically",
+	"admin.automation.kindMissingPunch": "Report a missing punch",
+	"admin.automation.kindBreakReminder": "Break reminder",
+	"admin.automation.at": "Time",
+	"admin.automation.atHint": "Local time of the employee",
+	"admin.automation.after": "After (minutes)",
+	"admin.automation.user": "Employee",
+	"admin.automation.allUsers": "all employees",
+	"admin.automation.add": "Add rule",
+	"admin.automation.empty": "No rule yet.",
+	"admin.automation.runs": "Last runs"
 }

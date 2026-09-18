@@ -3,6 +3,15 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.0.17 (2026-09-18)
+
+- (Alex) fix: the **background colour** of the branding is visible again when a background picture is set — the
+  colour now tints the veil in front of the picture instead of hiding behind it, and the suggestions have a second,
+  darker block of shades (the colour field and the “default” button work as before)
+- (Alex) internal: `npm run version:check` watches the two lists now as well — `common.news` may keep at most seven
+  entries (the ioBroker repository builder truncates at seven, finding E1032) and the README changelog at most five
+  versions; it also names a version that is in neither the README nor `CHANGELOG_OLD.md`
+
 ### 0.0.16 (2026-09-17)
 
 - (Alex) internal: the linter is clean — the 31 missing JSDoc comments are written (fields of inline types and the

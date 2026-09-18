@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Adicionar ação",
 	"admin.trigger.lastFired": "Último disparo",
 	"admin.trigger.empty": "Ainda não há ações.",
-	"admin.trigger.conditionHint": "Valor ou `toggle` para disparar em qualquer mudança"
+	"admin.trigger.conditionHint": "Valor ou `toggle` para disparar em qualquer mudança",
+	"admin.settings.automations": "Regras (automáticas)",
+	"admin.settings.automationsHint": "O que o adaptador faz sozinho: marcar a saída à hora local definida, avisar de uma saída em falta ou lembrar depois de trabalhar demasiado tempo sem pausa. Cada regra corre no máximo uma vez por funcionário e dia.",
+	"admin.automation.kind": "Tipo",
+	"admin.automation.kindClockOut": "Marcar saída automaticamente",
+	"admin.automation.kindMissingPunch": "Avisar de saída em falta",
+	"admin.automation.kindBreakReminder": "Lembrete de pausa",
+	"admin.automation.at": "Hora",
+	"admin.automation.atHint": "Hora local do funcionário",
+	"admin.automation.after": "Após (minutos)",
+	"admin.automation.user": "Funcionário",
+	"admin.automation.allUsers": "todos os funcionários",
+	"admin.automation.add": "Adicionar regra",
+	"admin.automation.empty": "Ainda não há regras.",
+	"admin.automation.runs": "Últimas execuções"
 }

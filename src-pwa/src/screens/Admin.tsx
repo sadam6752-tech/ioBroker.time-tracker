@@ -45,7 +45,14 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, formatDate, type AdminTerminal, type TriggerRule } from "../api/client";
+import {
+	api,
+	formatDate,
+	type AdminTerminal,
+	type AutomationRule,
+	type AutomationRun,
+	type TriggerRule,
+} from "../api/client";
 import type { AdminUser, CreateUserInput, PauseRule, WorkProfile } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
@@ -1826,6 +1833,268 @@ function TriggersTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
+ * Table of the automation rules: what the adapter does on its own.
+ *
+ * The table is edited and saved as a whole, like the break rules of the company. Below it the last runs are
+ * listed, so the administration can see whether a rule works the way it is meant to.
+ *
+ * @param props - rules, runs, employees, permission and handlers
+ * @param props.rules - rules as they are shown
+ * @param props.runs - last runs of the rules
+ * @param props.people - employees a rule can be limited to
+ * @param props.disabled - true when the caller may not change them
+ * @param props.saving - true while a save is running
+ * @param props.onChange - called with the changed table
+ * @param props.onSave - saves the table
+ * @param props.language - language of the display
+ * @returns the editor
+ */
+function AutomationRulesCard({
+	rules,
+	runs,
+	people,
+	disabled,
+	saving,
+	onChange,
+	onSave,
+	language,
+}: {
+	rules: AutomationRule[];
+	runs: AutomationRun[];
+	people: AdminUser[];
+	disabled: boolean;
+	saving: boolean;
+	onChange: (rules: AutomationRule[]) => void;
+	onSave: () => void;
+	language: string;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+
+	/**
+	 * Merges a change into one rule.
+	 *
+	 * @param index - position of the rule in the table
+	 * @param patch - fields that changed
+	 */
+	const change = (index: number, patch: Partial<AutomationRule>): void =>
+		onChange(rules.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
+
+	/**
+	 * Writes a minute of the day as a time.
+	 *
+	 * @param minute - minutes since midnight, `null` renders `00:00`
+	 * @returns `HH:MM`
+	 */
+	const timeOf = (minute: number | null | undefined): string => {
+		const value = minute ?? 0;
+		return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+	};
+
+	/**
+	 * Reads a time out of a field.
+	 *
+	 * @param value - text of the field
+	 * @returns minutes since midnight, `null` when the text is not a time
+	 */
+	const minutesOf = (value: string): number | null => {
+		const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+		if (!match) {
+			return null;
+		}
+		const hours = Number(match[1]);
+		const minutes = Number(match[2]);
+		return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59 ? hours * 60 + minutes : null;
+	};
+
+	/**
+	 * Name of the employee a run belongs to.
+	 *
+	 * @param id - user id
+	 * @returns shown name
+	 */
+	const nameOf = (id: number): string => people.find(user => user.id === id)?.displayName ?? `#${id}`;
+
+	return (
+		<Card sx={{ mb: 2 }}>
+			<CardContent>
+				<Typography
+					variant="subtitle1"
+					gutterBottom
+				>
+					{t("admin.settings.automations")}
+				</Typography>
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					gutterBottom
+				>
+					{t("admin.settings.automationsHint")}
+				</Typography>
+				<Stack spacing={2}>
+					{rules.map((rule, index) => (
+						<Stack
+							key={rule.id ?? `new-${index}`}
+							direction="row"
+							spacing={1}
+							useFlexGap
+							sx={{ alignItems: "center", flexWrap: "wrap" }}
+						>
+							<TextField
+								size="small"
+								label={t("admin.trigger.label")}
+								value={rule.label ?? ""}
+								onChange={event => change(index, { label: event.target.value })}
+								disabled={disabled}
+								sx={{ minWidth: 150 }}
+							/>
+							<TextField
+								select
+								size="small"
+								label={t("admin.automation.kind")}
+								value={rule.kind}
+								onChange={event =>
+									change(index, { kind: event.target.value as AutomationRule["kind"] })
+								}
+								disabled={disabled}
+								sx={{ minWidth: 230 }}
+							>
+								<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
+								<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
+								<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
+							</TextField>
+							{rule.kind === "breakReminder" ? (
+								<TextField
+									size="small"
+									type="number"
+									label={t("admin.automation.after")}
+									value={String(rule.afterMinutes ?? 360)}
+									onChange={event => change(index, { afterMinutes: Number(event.target.value) })}
+									disabled={disabled}
+									sx={{ maxWidth: 170 }}
+								/>
+							) : (
+								<TextField
+									size="small"
+									label={t("admin.automation.at")}
+									helperText={t("admin.automation.atHint")}
+									value={timeOf(rule.atMinute)}
+									onChange={event => {
+										const minute = minutesOf(event.target.value);
+										if (minute !== null) {
+											change(index, { atMinute: minute });
+										}
+									}}
+									disabled={disabled}
+									sx={{ maxWidth: 160 }}
+								/>
+							)}
+							<TextField
+								select
+								size="small"
+								label={t("admin.automation.user")}
+								value={rule.userId === null || rule.userId === undefined ? "" : String(rule.userId)}
+								onChange={event =>
+									change(index, {
+										userId: event.target.value === "" ? null : Number(event.target.value),
+									})
+								}
+								disabled={disabled}
+								sx={{ minWidth: 190 }}
+							>
+								<MenuItem value="">{t("admin.automation.allUsers")}</MenuItem>
+								{people.map(user => (
+									<MenuItem
+										key={user.id}
+										value={String(user.id)}
+									>
+										{user.displayName}
+									</MenuItem>
+								))}
+							</TextField>
+							<Button
+								size="small"
+								disabled={disabled}
+								color={rule.isActive === false ? "inherit" : "primary"}
+								onClick={() => change(index, { isActive: rule.isActive === false })}
+							>
+								{t("admin.trigger.active")}
+							</Button>
+							<IconButton
+								size="small"
+								title={t("admin.tag.delete")}
+								disabled={disabled}
+								onClick={() => onChange(rules.filter((_, position) => position !== index))}
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</Stack>
+					))}
+					<Stack
+						direction="row"
+						spacing={1}
+						useFlexGap
+						sx={{ alignItems: "center", flexWrap: "wrap" }}
+					>
+						<Button
+							size="small"
+							startIcon={<AddIcon />}
+							disabled={disabled}
+							onClick={() =>
+								onChange([
+									...rules,
+									{ kind: "clockOut", atMinute: 20 * 60, userId: null, isActive: true },
+								])
+							}
+						>
+							{t("admin.automation.add")}
+						</Button>
+						<Button
+							size="small"
+							variant="contained"
+							disabled={disabled || saving}
+							onClick={onSave}
+						>
+							{t("admin.settings.pauseSave")}
+						</Button>
+					</Stack>
+					{rules.length === 0 && (
+						<Typography
+							variant="body2"
+							color="text.secondary"
+						>
+							{t("admin.automation.empty")}
+						</Typography>
+					)}
+				</Stack>
+				{runs.length > 0 && (
+					<>
+						<Typography
+							variant="subtitle2"
+							sx={{ mt: 2 }}
+						>
+							{t("admin.automation.runs")}
+						</Typography>
+						<List dense>
+							{runs.map((run, index) => (
+								<ListItem
+									key={`${run.ruleId}-${run.userId}-${run.localDate}-${index}`}
+									disableGutters
+								>
+									<ListItemText
+										primary={`${formatStamp(run.firedAt, language)} · ${nameOf(run.userId)}`}
+										secondary={run.action}
+									/>
+								</ListItem>
+							))}
+						</List>
+					</>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+/**
  * Text key of a picture problem.
  *
  * @param problem - reason reported by `prepareImage`
@@ -1994,7 +2263,7 @@ function BrandImageField({
  * @returns the settings tab
  */
 function SettingsTab(): React.JSX.Element {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { permissions } = useSession();
 	const mayEdit = hasPermission(permissions, "settings.edit");
 	const queryClient = useQueryClient();
@@ -2012,6 +2281,22 @@ function SettingsTab(): React.JSX.Element {
 		onSuccess: async () => {
 			setRules(null);
 			await queryClient.invalidateQueries({ queryKey: ["admin", "pauseRules"] });
+		},
+	});
+
+	// automation rules: the adapter follows them on its own, the runs are its log
+	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
+	const automations = useQuery({ queryKey: ["admin", "automations"], queryFn: () => api.automationRules() });
+	const automationRuns = useQuery({ queryKey: ["admin", "automationRuns"], queryFn: () => api.automationRuns() });
+	const [automationDraft, setAutomationDraft] = useState<AutomationRule[] | null>(null);
+	const shownAutomations = automationDraft ?? automations.data ?? [];
+
+	const saveAutomations = useMutation({
+		mutationFn: (list: AutomationRule[]) => api.saveAutomationRules(list),
+		onSuccess: async () => {
+			setAutomationDraft(null);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "automations"] });
+			await queryClient.invalidateQueries({ queryKey: ["admin", "automationRuns"] });
 		},
 	});
 
@@ -2230,6 +2515,17 @@ function SettingsTab(): React.JSX.Element {
 					/>
 				</CardContent>
 			</Card>
+
+			<AutomationRulesCard
+				rules={shownAutomations}
+				runs={automationRuns.data ?? []}
+				people={people.data ?? []}
+				disabled={!mayEdit}
+				saving={saveAutomations.isPending}
+				onChange={setAutomationDraft}
+				onSave={() => saveAutomations.mutate(shownAutomations)}
+				language={i18n.language}
+			/>
 
 			<Card sx={{ mb: 2 }}>
 				<CardContent>

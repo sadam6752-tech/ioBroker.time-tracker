@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Dodaj akcję",
 	"admin.trigger.lastFired": "Ostatnie wyzwolenie",
 	"admin.trigger.empty": "Nie ma jeszcze akcji.",
-	"admin.trigger.conditionHint": "Wartość lub `toggle`, aby reagować na każdą zmianę"
+	"admin.trigger.conditionHint": "Wartość lub `toggle`, aby reagować na każdą zmianę",
+	"admin.settings.automations": "Reguły (automatyczne)",
+	"admin.settings.automationsHint": "Co adapter robi sam: stempluje wyjście o ustalonej godzinie lokalnej, zgłasza brak wyjścia albo przypomina po zbyt długiej pracy bez przerwy. Reguła działa co najwyżej raz na pracownika i dzień.",
+	"admin.automation.kind": "Rodzaj",
+	"admin.automation.kindClockOut": "Automatycznie stempluj wyjście",
+	"admin.automation.kindMissingPunch": "Zgłoś brak wyjścia",
+	"admin.automation.kindBreakReminder": "Przypomnienie o przerwie",
+	"admin.automation.at": "Godzina",
+	"admin.automation.atHint": "Czas lokalny pracownika",
+	"admin.automation.after": "Po (minutach)",
+	"admin.automation.user": "Pracownik",
+	"admin.automation.allUsers": "wszyscy pracownicy",
+	"admin.automation.add": "Dodaj regułę",
+	"admin.automation.empty": "Nie ma jeszcze reguł.",
+	"admin.automation.runs": "Ostatnie wykonania"
 }

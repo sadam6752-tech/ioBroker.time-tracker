@@ -20,6 +20,7 @@ import * as fs from "node:fs";
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
+import type { AutomationKind, AutomationRuleRecord, AutomationsRepository } from "../db/repositories/automations";
 import type { EntriesRepository, EntryDirection, EntryRecord } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
@@ -89,6 +90,8 @@ export interface ApiDeps {
 	rfid: RfidRepository;
 	/** Trigger rules: ioBroker states that punch or set the presence */
 	triggers: TriggersRepository;
+	/** Automation rules: what the adapter does on its own (clock out, reminders) */
+	automations: AutomationsRepository;
 	/**
 	 * Called after the trigger rules were saved, so the adapter watches the new states right away
 	 * (`undefined` in tests that do not care).
@@ -719,6 +722,7 @@ export function createApi(deps: ApiDeps): Api {
 		terminals,
 		rfid,
 		triggers,
+		automations,
 		aggregation,
 		sync,
 		settings,
@@ -1745,6 +1749,80 @@ export function createApi(deps: ApiDeps): Api {
 
 	route("PUT", "/trigger-rules", { permission: "settings.edit", csrf: true }, context =>
 		json(200, { triggerRules: replaceTriggerRules(context) }),
+	);
+
+	/**
+	 * Replaces the automation rules.
+	 *
+	 * Like the other rule tables the payload is the whole table: rules that are missing are removed, the rest is
+	 * saved. The adapter reads the table every minute, so nothing has to be told about the change.
+	 *
+	 * @param context - route context of the request
+	 * @returns the saved rules
+	 */
+	function replaceAutomationRules(context: RouteContext): AutomationRuleRecord[] {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		if (!Array.isArray(body.automationRules)) {
+			throw new ValidationError("automationRules must be an array");
+		}
+		const actor = {
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		};
+		const wanted = (body.automationRules as unknown[]).map(raw => {
+			const rule = (raw ?? {}) as Record<string, unknown>;
+			const target = optionalNumber(rule, "userId");
+			if (target !== null && !users.findById(target)) {
+				throw new ValidationError(`userId must reference an existing employee (got ${target})`);
+			}
+			return {
+				id: optionalNumber(rule, "id") ?? undefined,
+				label: optionalString(rule, "label"),
+				kind: optionalString(rule, "kind") ?? "clockOut",
+				userId: target,
+				atMinute: optionalNumber(rule, "atMinute"),
+				afterMinutes: optionalNumber(rule, "afterMinutes"),
+				isActive: optionalBoolean(rule, "isActive") ?? true,
+			};
+		});
+
+		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
+		for (const existing of automations.list({ includeInactive: true })) {
+			if (!keep.has(existing.id)) {
+				automations.remove({ id: existing.id, ...actor });
+			}
+		}
+
+		return wanted.map(rule =>
+			automations.save({
+				...(rule.id !== undefined ? { id: rule.id } : {}),
+				label: rule.label,
+				kind: rule.kind as AutomationKind,
+				userId: rule.userId,
+				atMinute: rule.atMinute,
+				afterMinutes: rule.afterMinutes,
+				isActive: rule.isActive,
+				...actor,
+			}),
+		);
+	}
+
+	// Automation rules: what the adapter does on its own — clock out at a time, report a missing punch, remind
+	// about a break. The runs of the last days come with it, so the administration can see what happened.
+	route("GET", "/automation-rules", { permission: "settings.view" }, () =>
+		json(200, { automationRules: automations.list({ includeInactive: true }) }),
+	);
+
+	route("GET", "/automation-rules/runs", { permission: "settings.view" }, () =>
+		json(200, { runs: automations.runs({ limit: 20 }) }),
+	);
+
+	route("PUT", "/automation-rules", { permission: "settings.edit", csrf: true }, context =>
+		json(200, { automationRules: replaceAutomationRules(context) }),
 	);
 
 	// branding: logo, background and accent colour of the installation.
@@ -2843,11 +2921,11 @@ export function createApi(deps: ApiDeps): Api {
 		const token = buildTagToken(uid, target, expiresAt, signature);
 		const host = context.header("host") ?? "localhost";
 		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan
-		return json(
-			201,
-			{ tag, token, url: `${host.includes("://") ? host : `https://${host}`}/?tag=${token}` },
-			{ location: `/rfid/tags/${tag.id}` },
-		);
+		// the link is what a phone scans: it opens the web app, which sends the token to /rfid/scan.
+		// The scheme comes from the request (and from a trusted reverse proxy), so the link matches the address the
+		// administration itself is reached with — a fixed `https://` pointed nowhere on a plain HTTP instance.
+		const scheme = host.includes("://") ? "" : `${context.secure ? "https" : "http"}://`;
+		return json(201, { tag, token, url: `${scheme}${host}/?tag=${token}` }, { location: `/rfid/tags/${tag.id}` });
 	});
 
 	route("DELETE", "/rfid/tags/:id", { permission: "rfid.manage", csrf: true }, context => {

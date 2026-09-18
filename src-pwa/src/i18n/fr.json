@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Ajouter une action",
 	"admin.trigger.lastFired": "Dernier déclenchement",
 	"admin.trigger.empty": "Aucune action pour l'instant.",
-	"admin.trigger.conditionHint": "Valeur ou `toggle` pour réagir à chaque changement"
+	"admin.trigger.conditionHint": "Valeur ou `toggle` pour réagir à chaque changement",
+	"admin.settings.automations": "Règles (automatiques)",
+	"admin.settings.automationsHint": "Ce que l'adaptateur fait seul : pointer la sortie à l'heure locale définie, signaler une sortie manquante ou rappeler après un travail trop long sans pause. Une règle s'exécute au plus une fois par employé et par jour.",
+	"admin.automation.kind": "Type",
+	"admin.automation.kindClockOut": "Pointer la sortie automatiquement",
+	"admin.automation.kindMissingPunch": "Signaler une sortie manquante",
+	"admin.automation.kindBreakReminder": "Rappel de pause",
+	"admin.automation.at": "Heure",
+	"admin.automation.atHint": "Heure locale de l'employé",
+	"admin.automation.after": "Après (minutes)",
+	"admin.automation.user": "Employé",
+	"admin.automation.allUsers": "tous les employés",
+	"admin.automation.add": "Ajouter une règle",
+	"admin.automation.empty": "Aucune règle pour l'instant.",
+	"admin.automation.runs": "Dernières exécutions"
 }

@@ -231,6 +231,12 @@ export interface ApiClient {
 	triggerRules(): Promise<TriggerRule[]>;
 	/** Replaces the whole table of trigger rules with the given one */
 	saveTriggerRules(rules: TriggerRule[]): Promise<TriggerRule[]>;
+	/** Rules the adapter follows on its own: clock out, missing punch, break reminder */
+	automationRules(): Promise<AutomationRule[]>;
+	/** Replaces the whole table of automation rules with the given one */
+	saveAutomationRules(rules: AutomationRule[]): Promise<AutomationRule[]>;
+	/** What the automation rules did lately (newest first) */
+	automationRuns(): Promise<AutomationRun[]>;
 	/** Figures of a date range, per employee and in total */
 	statistics(from: string, to: string, userId?: number): Promise<StatisticsResult>;
 	/** Redeems a scanned badge link (public, no session needed) */
@@ -400,6 +406,47 @@ export interface TriggerRule {
 	cooldownSec?: number;
 	/** Instant the rule fired last, `null` when it never fired */
 	lastFiredAt?: number | null;
+}
+
+/** What an automation rule does (`GET /automation-rules`). */
+export type AutomationKind = "clockOut" | "missingPunch" | "breakReminder";
+
+/**
+ * A rule the adapter follows on its own.
+ *
+ * `clockOut` punches an employee out at `atMinute` (minutes of the local day) when the day is still open,
+ * `missingPunch` only reports that, and `breakReminder` reminds after `afterMinutes` of working without a break.
+ * `userId` is empty for a rule that applies to every employee.
+ */
+export interface AutomationRule {
+	/** Id of an existing rule, omitted when a new one is created */
+	id?: number;
+	/** Free-form label */
+	label?: string | null;
+	/** What the rule does */
+	kind: AutomationKind;
+	/** Employee the rule applies to, empty for every employee */
+	userId?: number | null;
+	/** Minute of the local day (kinds `clockOut` and `missingPunch`) */
+	atMinute?: number | null;
+	/** Length of the running work block in minutes (kind `breakReminder`) */
+	afterMinutes?: number | null;
+	/** `false` disables the rule without deleting it */
+	isActive?: boolean;
+}
+
+/** One run of an automation rule (`GET /automation-rules/runs`). */
+export interface AutomationRun {
+	/** Rule that ran */
+	ruleId: number;
+	/** Employee it ran for */
+	userId: number;
+	/** Local date it ran on */
+	localDate: string;
+	/** Instant it ran */
+	firedAt: number;
+	/** Short description of what happened */
+	action: string;
 }
 
 /** One employee row of the statistics (`GET /reports/statistics`). */
@@ -986,6 +1033,24 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				body: { triggerRules: rules },
 			});
 			return result.triggerRules ?? [];
+		},
+
+		// automation rules of the instance: the adapter follows them on its own, the runs are its log
+		async automationRules(): Promise<AutomationRule[]> {
+			const result = await request<{ automationRules: AutomationRule[] }>("GET", "/automation-rules");
+			return result.automationRules ?? [];
+		},
+
+		async saveAutomationRules(rules): Promise<AutomationRule[]> {
+			const result = await request<{ automationRules: AutomationRule[] }>("PUT", "/automation-rules", {
+				body: { automationRules: rules },
+			});
+			return result.automationRules ?? [];
+		},
+
+		async automationRuns(): Promise<AutomationRun[]> {
+			const result = await request<{ runs: AutomationRun[] }>("GET", "/automation-rules/runs");
+			return result.runs ?? [];
 		},
 
 		async createTag(input) {

@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Aggiungi azione",
 	"admin.trigger.lastFired": "Ultima esecuzione",
 	"admin.trigger.empty": "Nessuna azione per ora.",
-	"admin.trigger.conditionHint": "Valore o `toggle` per reagire a ogni cambiamento"
+	"admin.trigger.conditionHint": "Valore o `toggle` per reagire a ogni cambiamento",
+	"admin.settings.automations": "Regole (automatiche)",
+	"admin.settings.automationsHint": "Cosa fa l'adattatore da solo: timbra l'uscita all'ora locale impostata, segnala una timbratura di uscita mancante o ricorda dopo troppo lavoro senza pausa. Una regola viene eseguita al massimo una volta per dipendente e giorno.",
+	"admin.automation.kind": "Tipo",
+	"admin.automation.kindClockOut": "Timbra l'uscita automaticamente",
+	"admin.automation.kindMissingPunch": "Segnala uscita mancante",
+	"admin.automation.kindBreakReminder": "Promemoria pausa",
+	"admin.automation.at": "Ora",
+	"admin.automation.atHint": "Ora locale del dipendente",
+	"admin.automation.after": "Dopo (minuti)",
+	"admin.automation.user": "Dipendente",
+	"admin.automation.allUsers": "tutti i dipendenti",
+	"admin.automation.add": "Aggiungi regola",
+	"admin.automation.empty": "Nessuna regola per ora.",
+	"admin.automation.runs": "Ultime esecuzioni"
 }

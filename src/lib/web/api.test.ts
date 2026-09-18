@@ -12,6 +12,7 @@ import { createHolidaysRepository, type HolidaysRepository } from "../db/reposit
 import { createPayoutsRepository, type PayoutsRepository } from "../db/repositories/payouts";
 import { createTerminalsRepository, type TerminalsRepository } from "../db/repositories/terminals";
 import { createTriggersRepository, type TriggersRepository } from "../db/repositories/triggers";
+import { createAutomationsRepository, type AutomationsRepository } from "../db/repositories/automations";
 import { createRfidRepository, type RfidRepository } from "../db/repositories/rfid";
 import { createRulesRepository, type RulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
@@ -40,6 +41,7 @@ describe("web api", () => {
 	let terminals: TerminalsRepository;
 	let rfid: RfidRepository;
 	let triggers: TriggersRepository;
+	let automations: AutomationsRepository;
 	/** How often the API told the adapter about a changed rule table. */
 	let hookCalls = 0;
 	let aggregation: AggregationService;
@@ -129,6 +131,7 @@ describe("web api", () => {
 		terminals = createTerminalsRepository(db);
 		rfid = createRfidRepository(db);
 		triggers = createTriggersRepository(db);
+		automations = createAutomationsRepository(db);
 		settings = createSettingsRepository(db);
 		auth = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3 });
 		aggregation = createAggregationService({
@@ -155,6 +158,7 @@ describe("web api", () => {
 			terminals,
 			rfid,
 			triggers,
+			automations,
 			aggregation,
 			sync,
 			settings,
@@ -806,6 +810,7 @@ describe("web api", () => {
 				terminals,
 				rfid,
 				triggers,
+				automations,
 				aggregation,
 				sync,
 				settings,
@@ -1848,6 +1853,7 @@ describe("web api", () => {
 				terminals,
 				rfid,
 				triggers,
+				automations,
 				aggregation,
 				sync,
 				settings,
@@ -1897,6 +1903,8 @@ describe("web api", () => {
 			expect(created.status).to.equal(201);
 			const payload = bodyOf<{ tag: { id: number; uid: string }; token: string; url: string }>(created);
 			expect(payload.url).to.contain(`/?tag=${payload.token}`);
+			// the link uses the scheme of the request: a fixed https pointed nowhere on a plain HTTP instance
+			expect(payload.url.startsWith("http://"), payload.url).to.equal(true);
 			expect(created.headers.location).to.equal(`/rfid/tags/${payload.tag.id}`);
 
 			// the list never contains the signature
@@ -1953,6 +1961,7 @@ describe("web api", () => {
 				terminals,
 				rfid,
 				triggers,
+				automations,
 				aggregation,
 				sync,
 				settings,
@@ -2731,6 +2740,71 @@ describe("web api", () => {
 			});
 			expect(noArray.status).to.equal(400);
 			expect(triggers.list({ includeInactive: true })).to.be.empty;
+		});
+	});
+
+	describe("automation rules", () => {
+		it("keeps the rules behind the settings permission and replaces the whole table", async () => {
+			expect((await send("GET", "/automation-rules", { headers: headers(annaToken) })).status).to.equal(403);
+
+			const created = await send("PUT", "/automation-rules", {
+				body: {
+					automationRules: [
+						{ kind: "clockOut", atMinute: 1200, label: "Feierabend" },
+						{ kind: "breakReminder", afterMinutes: 360, userId: annaId },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(200);
+			const saved = bodyOf<{
+				automationRules: { id: number; kind: string; atMinute: number | null; afterMinutes: number | null }[];
+			}>(created);
+			expect(saved.automationRules).to.have.length(2);
+			expect(saved.automationRules[0]).to.include({ kind: "clockOut", atMinute: 1200, afterMinutes: null });
+			expect(saved.automationRules[1]).to.include({ kind: "breakReminder", atMinute: null, afterMinutes: 360 });
+
+			// what a rule did shows up in the log the administration reads
+			automations.recordRun({
+				ruleId: saved.automationRules[0].id,
+				userId: annaId,
+				localDate: "2026-09-18",
+				action: "clocked out",
+				now: 5000,
+			});
+			const runs = await send("GET", "/automation-rules/runs", { headers: headers(adminToken) });
+			expect(
+				bodyOf<{ runs: { action: string; userId: number; localDate: string }[] }>(runs).runs[0],
+			).to.deep.include({
+				action: "clocked out",
+				userId: annaId,
+				localDate: "2026-09-18",
+			});
+
+			// the payload is the whole table: an empty list removes the rules again
+			const cleared = await send("PUT", "/automation-rules", {
+				body: { automationRules: [] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(bodyOf<{ automationRules: unknown[] }>(cleared).automationRules).to.be.empty;
+			expect(automations.list({ includeInactive: true })).to.be.empty;
+		});
+
+		it("refuses a rule that cannot work", async () => {
+			const withoutTime = await send("PUT", "/automation-rules", {
+				body: { automationRules: [{ kind: "clockOut" }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(withoutTime.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(withoutTime).detail).to.contain("atMinute");
+
+			const unknownUser = await send("PUT", "/automation-rules", {
+				body: { automationRules: [{ kind: "missingPunch", atMinute: 1200, userId: 999 }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(unknownUser.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(unknownUser).detail).to.contain("existing employee");
+			expect(automations.list({ includeInactive: true })).to.be.empty;
 		});
 	});
 });

@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Додати дію",
 	"admin.trigger.lastFired": "Останнє спрацювання",
 	"admin.trigger.empty": "Дій поки немає.",
-	"admin.trigger.conditionHint": "Значення або `toggle`, щоб реагувати на будь-яку зміну"
+	"admin.trigger.conditionHint": "Значення або `toggle`, щоб реагувати на будь-яку зміну",
+	"admin.settings.automations": "Правила (автоматика)",
+	"admin.settings.automationsHint": "Що адаптер робить сам: відмічає вихід у заданий місцевий час, повідомляє про відсутню відмітку виходу або нагадує про паузу після занадто довгої роботи. Правило спрацьовує щонайбільше раз на день на працівника.",
+	"admin.automation.kind": "Тип",
+	"admin.automation.kindClockOut": "Автоматично відмітити вихід",
+	"admin.automation.kindMissingPunch": "Повідомити про відсутній вихід",
+	"admin.automation.kindBreakReminder": "Нагадування про паузу",
+	"admin.automation.at": "Час",
+	"admin.automation.atHint": "Місцевий час працівника",
+	"admin.automation.after": "Через (хвилини)",
+	"admin.automation.user": "Працівник",
+	"admin.automation.allUsers": "усі працівники",
+	"admin.automation.add": "Додати правило",
+	"admin.automation.empty": "Правил поки немає.",
+	"admin.automation.runs": "Останні спрацювання"
 }

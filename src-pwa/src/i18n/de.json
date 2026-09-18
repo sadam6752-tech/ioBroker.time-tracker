@@ -297,5 +297,19 @@
 	"admin.trigger.add": "Aktion hinzufügen",
 	"admin.trigger.lastFired": "Zuletzt ausgelöst",
 	"admin.trigger.empty": "Noch keine Aktion angelegt.",
-	"admin.trigger.conditionHint": "Wert oder `toggle` — dann löst jeder Wechsel aus"
+	"admin.trigger.conditionHint": "Wert oder `toggle` — dann löst jeder Wechsel aus",
+	"admin.settings.automations": "Regeln (Automatik)",
+	"admin.settings.automationsHint": "Was der Adapter von selbst tut: zur eingestellten Ortszeit ausstempeln, eine fehlende Ausstempelung melden oder nach zu langer Arbeit ohne Pause erinnern. Jede Regel läuft höchstens einmal pro Mitarbeiter und Tag.",
+	"admin.automation.kind": "Art",
+	"admin.automation.kindClockOut": "Automatisch ausstempeln",
+	"admin.automation.kindMissingPunch": "Fehlende Ausstempelung melden",
+	"admin.automation.kindBreakReminder": "Pausenerinnerung",
+	"admin.automation.at": "Uhrzeit",
+	"admin.automation.atHint": "Ortszeit des Mitarbeiters",
+	"admin.automation.after": "Nach (Minuten)",
+	"admin.automation.user": "Mitarbeiter",
+	"admin.automation.allUsers": "alle Mitarbeiter",
+	"admin.automation.add": "Regel hinzufügen",
+	"admin.automation.empty": "Noch keine Regel angelegt.",
+	"admin.automation.runs": "Letzte Ausführungen"
 }

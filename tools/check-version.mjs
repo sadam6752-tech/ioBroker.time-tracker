@@ -1,5 +1,5 @@
 /**
- * Prüft die Versionierung des Repositories — die Regel aus `CONTRIBUTING.md`, Abschnitt 8.
+ * Prüft die Versionierung des Repositories — den Release-Ablauf in `CONTRIBUTING.md`.
  *
  * Der Adapter führt seine Version an zwei Stellen: `package.json` und `io-package.json` (`common.version`).
  * Veröffentlicht wird über einen Tag `vX.Y.Z`, den das Release-Werkzeug setzt; dabei wandert der Abschnitt

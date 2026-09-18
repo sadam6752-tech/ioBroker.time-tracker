@@ -8,7 +8,11 @@
  *   git config zt.requirePushApproval false     # dauerhaft ausschalten
  *
  * Vorher zeigt das Skript, welche Commits gepusht würden, damit die Freigabe informiert erfolgt. Die Freigabe gilt
- * nur für genau diesen Commit: der nächste Commit braucht wieder ein OK (siehe `CONTRIBUTING.md`, Abschnitt 8).
+ * nur für genau diesen Commit: der nächste Commit braucht wieder ein OK (siehe den Release-Ablauf in
+ * `CONTRIBUTING.md`).
+ *
+ * Für ein **Release** gilt zusätzlich: zuerst beim Auftraggeber fragen, ob gepusht werden darf oder ob es noch
+ * Anmerkungen gibt — die Freigabe hier ist nur der technische Schlüssel, nicht die Entscheidung.
  *
  * Verwendung:
  *   npm run push:approve
@@ -48,4 +52,5 @@ console.log("");
 console.log(`Freigegeben: ${head}`);
 console.log(`Marker: ${marker}`);
 console.log("Hinweis: der nächste Commit braucht wieder eine Freigabe (npm run push:approve).");
+console.log("Erinnerung: vor einem Release zuerst fragen, ob gepusht werden darf oder ob es Anmerkungen gibt.");
 process.exit(0);

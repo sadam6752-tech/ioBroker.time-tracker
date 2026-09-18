@@ -131,14 +131,17 @@ Regeln dazu:
    committen. Nach Skript-gestützten Änderungen immer `npm run lint` laufen lassen: eslint wertet Prettier-Regeln
    als Fehler, und ein einzelner zu langer Ausdruck lässt den CI-Job `check-and-lint` scheitern. `lint` und
    `lint:pwa` laufen mit `--max-warnings 0`, eine Warnung ist also genauso ein Fehler wie ein Fehler.
-3. Commit, **annotiertes** Tag (`git tag -a vX.Y.Z -m 'X.Y.Z'`) und Push mit Freigabe (`npm run push:approve`).
+3. **Vor dem Commit und dem Push fragen.** Der Versions-Commit und das Tag gehen nur raus, wenn der Auftraggeber
+   (Alex) „ok" sagt: unmittelbar vor dem Release wird gefragt, ob gepusht werden darf oder ob es noch Anmerkungen
+   gibt. Erst nach diesem „ok" wird committet, getaggt und gepusht.
+4. Commit, **annotiertes** Tag (`git tag -a vX.Y.Z -m 'X.Y.Z'`) und Push mit Freigabe (`npm run push:approve`).
    Die Commit-Nachricht des Versions-Commits wird zur **Release-Notiz** — der Workflow schreibt ihren Body auf die
    Release-Seite. Sie wird deshalb **auf Englisch** geschrieben (wie die Changelog-Einträge im README), damit die
    Release-Seite für alle lesbar ist.
-4. **Warten, bis der Workflow „Test and Release" für das Tag grün ist — und danach weitere 5 bis 10 Minuten:**
+5. **Warten, bis der Workflow „Test and Release" für das Tag grün ist — und danach weitere 5 bis 10 Minuten:**
    die Veröffentlichung auf npm läuft am Ende des Laufs und der Registry-Index zieht nach (gemessen: grüner Lauf
    17:37, `npm view … dist-tags` zeigt die Version 17:42). Erst dann prüfen.
-5. Ein Tag einer veröffentlichten Version wird **nie gelöscht und neu gepusht**. Das löscht das zugehörige
+6. Ein Tag einer veröffentlichten Version wird **nie gelöscht und neu gepusht**. Das löscht das zugehörige
    GitHub-Release, erzeugt einen roten Lauf (npm lehnt eine zweite Veröffentlichung derselben Version ab) und
    ändert am veröffentlichten Paket nichts. Fehlt ein Tag, wird nur das Tag neu gesetzt und das Release in der
    GitHub-Oberfläche daraus erstellt.

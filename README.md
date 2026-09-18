@@ -251,6 +251,10 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+- (Alex) internal: the release flow asks the owner before the version commit and the tag — the question “may I push,
+  or do you have remarks?” comes first and only a “go” leads to commit, tag and push; `CONTRIBUTING.md` documents
+  the step and `npm run push:approve` reminds of it
+
 ### 0.0.17 (2026-09-18)
 
 - (Alex) fix: the **background colour** of the branding is visible again when a background picture is set — the

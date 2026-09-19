@@ -3,6 +3,19 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.1.3 (2026-09-18)
+
+- (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open
+  with — scheme, host and port come from the browser, so the link works on a plain HTTP instance and behind a reverse
+  proxy alike, and no server side guess can point at a scheme the instance does not serve
+- (Alex) fix: the badge (RFID/NFC) tab shows the state of every badge — active, expired or revoked — and when it was
+  last used. A revoked badge now offers “Remove permanently” instead of failing with “not found”: the old entry
+  disappears from the list, while the audit trail keeps the trace of it
+- (Alex) translations: a technical review pass over the 11 languages — the punch, break, absence, badge and overtime
+  text families were compared with each other. Five wrong `reports.overtime` labels were corrected (`pt`, `fr`, `it`,
+  `es`, `zh-cn` said “over time” instead of overtime), and the Polish punch labels now use the same root as the badge
+  texts. `docs/i18n.md` records the method and what a native speaker still has to settle
+
 ### 0.1.2 (2026-09-18)
 
 - (Alex) fix: a badge (RFID/NFC) link points to the address the administration itself is reached with — the scheme

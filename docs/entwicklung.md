@@ -78,3 +78,9 @@ stehen in `src-pwa/package.json` und sind für den Adapter reine Entwicklungs-Ab
 in `e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
 Compact-Mode vor — der Adapter bringt einen eigenen HTTP-Port und eine SQLite-Datei mit und läuft bewusst **nicht** im
 Compact-Mode (`common.compact: false`).
+
+**Lizenzangaben:** `common.licenseInformation` (`{ type: "free", license: "MIT" }`) ist gesetzt — und daneben darf
+**kein** `common.license` stehen: der ioBroker-Pakettest (`npm run test:package`) lehnt beides zusammen ab
+(„common.license should not exist together with common.licenseInformation"). Die Lizenzangabe im `package.json`
+(`"license": "MIT"`) bleibt davon unberührt und muss dazu passen. Genau daran ist die 0.1.7-Pipeline gescheitert, und
+deshalb gehört `npm run test:package` zur Prüfliste vor jedem Release.

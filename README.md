@@ -305,11 +305,18 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.8 (2026-09-19)
+
+- (Alex) fix: the pipeline of 0.1.7 failed in the ioBroker package test — `common.license` was added next to the
+  existing `common.licenseInformation`, and the test refuses both together (“common.license should not exist together
+  with common.licenseInformation”). The field is removed again, `npm run test:package` is part of the release checklist
+  from now on, and `docs/entwicklung.md` records the rule
+
 ### 0.1.7 (2026-09-19)
 
-- (Alex) ioBroker repository: the two required fields `common.title` and `common.license` were missing in
-  `io-package.json` — they are set now, and `docs/entwicklung.md` explains the checker warnings that come from the web
-  app having its own `package.json` (the adapter itself does not load any of it)
+- (Alex) ioBroker repository: `common.title` was missing in `io-package.json` and is set now (“Time tracking”);
+  `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
+  adapter itself does not load any of it)
 
 ### 0.1.6 (2026-09-19)
 
@@ -347,19 +354,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   It found real gaps: `brandingHint` had lost its second sentence in nine languages, `brandColorHint` its “empty for
   the default” in seven, and `admin.user.pinTitle` was a Russian sentence in the Ukrainian file. `docs/i18n.md` lists
   what stays with a native speaker
-
-### 0.1.3 (2026-09-18)
-
-- (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open
-  with — scheme, host and port come from the browser, so the link works on a plain HTTP instance and behind a reverse
-  proxy alike, and no server side guess can point at a scheme the instance does not serve
-- (Alex) fix: the badge (RFID/NFC) tab shows the state of every badge — active, expired or revoked — and when it was
-  last used. A revoked badge now offers “Remove permanently” instead of failing with “not found”: the old entry
-  disappears from the list, while the audit trail keeps the trace of it
-- (Alex) translations: a technical review pass over the 11 languages — the punch, break, absence, badge and overtime
-  text families were compared with each other. Five wrong `reports.overtime` labels were corrected (`pt`, `fr`, `it`,
-  `es`, `zh-cn` said “over time” instead of overtime), and the Polish punch labels now use the same root as the badge
-  texts. `docs/i18n.md` records the method and what a native speaker still has to settle
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

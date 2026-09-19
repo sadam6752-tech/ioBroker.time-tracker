@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Інший працівник або нова тривалість дії видає нове посилання — видане раніше посилання одразу перестає працювати.",
 	"admin.tag.validityDays": "Термін дії (днів)",
 	"admin.tag.oldLinkDead": "Видане раніше посилання більше не працює.",
+	"admin.tag.qrAlt": "QR-код посилання перепустки",
 	"admin.tag.empty": "Перепустку ще не створено.",
 	"nav.statistics": "Статистика",
 	"statistics.from": "З",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "усі працівники",
 	"admin.automation.add": "Додати правило",
 	"admin.automation.empty": "Правил поки немає.",
-	"admin.automation.runs": "Останні спрацювання"
+	"admin.automation.runs": "Останні спрацювання",
+	"admin.automation.weekdays": "Дні тижня",
+	"admin.automation.repeat": "Повторення",
+	"admin.automation.repeatDay": "раз на день",
+	"admin.automation.repeatWeek": "раз на тиждень"
 }

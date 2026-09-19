@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "更换员工或设置新的有效期会生成新链接 —— 之前发出的链接会立即失效。",
 	"admin.tag.validityDays": "有效期（天）",
 	"admin.tag.oldLinkDead": "之前发出的链接已失效。",
+	"admin.tag.qrAlt": "证件链接的二维码",
 	"admin.tag.empty": "尚未创建工牌。",
 	"nav.statistics": "统计",
 	"statistics.from": "从",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "所有员工",
 	"admin.automation.add": "添加规则",
 	"admin.automation.empty": "尚未添加规则。",
-	"admin.automation.runs": "最近执行"
+	"admin.automation.runs": "最近执行",
+	"admin.automation.weekdays": "星期",
+	"admin.automation.repeat": "重复",
+	"admin.automation.repeatDay": "每天一次",
+	"admin.automation.repeatWeek": "每周一次"
 }

@@ -3,6 +3,16 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.1.0 (2026-09-18)
+
+- (Alex) fix: a trigger rule fires for **every change** when its value is `toggle` (or `*`) — a switch that goes
+  from `true` to `false` punches too, the fixed value only reacted in one direction. The field in the
+  administration names that now
+- (Alex) fix: the published figures follow a punch from the web app within a second — the API of the same process
+  reports every change (punch, correction, badge, absence) over the event bus and the adapter republishes the
+  states instead of waiting for the five minute timer. That is what made `users.<id>.present` and
+  `company.presentCount` lag behind
+
 ### 0.0.19 (2026-09-18)
 
 - internal: the browser tests wait longer for the slower runner of the pipeline and put the branding back when the

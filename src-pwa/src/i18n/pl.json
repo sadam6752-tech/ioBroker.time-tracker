@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Inny pracownik lub nowa ważność wydaje nowy link — wcześniej wydany link przestaje natychmiast działać.",
 	"admin.tag.validityDays": "Ważność (dni)",
 	"admin.tag.oldLinkDead": "Wcześniej wydany link nie działa już.",
+	"admin.tag.qrAlt": "Kod QR linku identyfikatora",
 	"admin.tag.empty": "Nie utworzono jeszcze karty.",
 	"nav.statistics": "Statystyki",
 	"statistics.from": "Od",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "wszyscy pracownicy",
 	"admin.automation.add": "Dodaj regułę",
 	"admin.automation.empty": "Nie ma jeszcze reguł.",
-	"admin.automation.runs": "Ostatnie wykonania"
+	"admin.automation.runs": "Ostatnie wykonania",
+	"admin.automation.weekdays": "Dni tygodnia",
+	"admin.automation.repeat": "Powtarzanie",
+	"admin.automation.repeatDay": "raz dziennie",
+	"admin.automation.repeatWeek": "raz w tygodniu"
 }

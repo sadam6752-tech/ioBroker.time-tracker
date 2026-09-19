@@ -1,7 +1,7 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
 import type { AutomationRuleRecord } from "../db/repositories/automations";
-import { evaluateAutomation, workBlock, type AutomationContext } from "./automation";
+import { evaluateAutomation, isoWeek, isoWeekday, runPeriod, workBlock, type AutomationContext } from "./automation";
 
 /**
  * Builds a rule with sensible defaults.
@@ -17,6 +17,8 @@ function rule(overrides: Partial<AutomationRuleRecord> = {}): AutomationRuleReco
 		userId: null,
 		atMinute: 1200,
 		afterMinutes: null,
+		weekdays: [1, 2, 3, 4, 5, 6, 7],
+		repeat: "day",
 		isActive: true,
 		...overrides,
 	};
@@ -31,6 +33,8 @@ function rule(overrides: Partial<AutomationRuleRecord> = {}): AutomationRuleReco
 function context(overrides: Partial<AutomationContext> = {}): AutomationContext {
 	return {
 		localDate: "2026-09-18",
+		// the 18th of September 2026 is a Friday
+		weekday: 5,
 		minuteOfDay: 1200,
 		hasOpenEntry: true,
 		blockMinutes: 480,
@@ -103,5 +107,37 @@ describe("automation rules", () => {
 			),
 		).to.deep.equal({ hasOpenEntry: false, blockMinutes: null });
 		expect(workBlock([], start)).to.deep.equal({ hasOpenEntry: false, blockMinutes: null });
+	});
+});
+
+describe("weekdays and periods of an automation rule", () => {
+	it("keeps quiet on a weekday the rule does not name", () => {
+		// the 19th of September 2026 is a Saturday
+		const saturday: Partial<AutomationContext> = { localDate: "2026-09-19", weekday: 6 };
+		const workdays = rule({ weekdays: [1, 2, 3, 4, 5] });
+		const decision = evaluateAutomation(workdays, context(saturday));
+		expect(decision.fire).to.equal(false);
+		expect(decision.reason).to.contain("weekday 6");
+		expect(evaluateAutomation(rule({ weekdays: [6] }), context(saturday)).fire).to.equal(true);
+	});
+
+	it("counts weekdays in ISO order", () => {
+		expect(isoWeekday("2026-09-18")).to.equal(5);
+		expect(isoWeekday("2026-09-19")).to.equal(6);
+		expect(isoWeekday("2026-09-20")).to.equal(7);
+		expect(isoWeekday("2026-09-21")).to.equal(1);
+	});
+
+	it("names the ISO week of a date", () => {
+		expect(isoWeek("2026-09-18")).to.equal("2026-W38");
+		expect(isoWeek("2026-01-01")).to.equal("2026-W01");
+		// the turn of the year: the 1st of January 2027 belongs to the last week of 2026
+		expect(isoWeek("2027-01-01")).to.equal("2026-W53");
+	});
+
+	it("guards a daily rule by date and a weekly one by week", () => {
+		expect(runPeriod("day", "2026-09-18")).to.equal("2026-09-18");
+		expect(runPeriod("week", "2026-09-18")).to.equal("2026-W38");
+		expect(runPeriod("week", "2026-09-19")).to.equal("2026-W38");
 	});
 });

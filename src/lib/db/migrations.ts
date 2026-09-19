@@ -529,4 +529,19 @@ export const migrations: Migration[] = [
 			CREATE INDEX idx_automation_runs_user ON automation_runs(user_id, local_date);
 		`,
 	},
+	{
+		version: 17,
+		name: "automation rules: weekdays and a weekly instead of a daily guard",
+		sql: `
+			-- A rule can be limited to certain weekdays: bit 0 is Monday … bit 6 is Sunday, 127 is every day.
+			ALTER TABLE automation_rules ADD COLUMN weekdays INTEGER NOT NULL DEFAULT 127;
+
+			-- 'day' keeps the guard of one run per employee and date, 'week' allows one run per ISO week.
+			ALTER TABLE automation_rules ADD COLUMN repeat TEXT NOT NULL DEFAULT 'day';
+
+			-- the guard column no longer holds a date only: for a weekly rule it is the ISO week (2026-W38), so the
+			-- name says what it keeps. Existing rows stay valid — a date is the period of a daily rule.
+			ALTER TABLE automation_runs RENAME COLUMN local_date TO period;
+		`,
+	},
 ];

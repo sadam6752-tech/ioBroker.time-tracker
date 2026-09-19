@@ -342,7 +342,7 @@ describe("web api", () => {
 				headers: headers(annaToken, annaCsrf),
 			});
 			expect(first.status).to.equal(201);
-			const stored = bodyOf<{ entry: { id: number; tsUtc: number; source: string; localDate: string } }>(first);
+			const stored = bodyOf<{ entry: { id: number; tsUtc: number; source: string; period: string } }>(first);
 			expect(stored.entry.tsUtc).to.equal(1000);
 			expect(stored.entry.source).to.equal("web");
 			expect(first.headers.location).to.equal(`/entries/${stored.entry.id}`);
@@ -2900,17 +2900,17 @@ describe("web api", () => {
 			automations.recordRun({
 				ruleId: saved.automationRules[0].id,
 				userId: annaId,
-				localDate: "2026-09-18",
+				period: "2026-09-18",
 				action: "clocked out",
 				now: 5000,
 			});
 			const runs = await send("GET", "/automation-rules/runs", { headers: headers(adminToken) });
 			expect(
-				bodyOf<{ runs: { action: string; userId: number; localDate: string }[] }>(runs).runs[0],
+				bodyOf<{ runs: { action: string; userId: number; period: string }[] }>(runs).runs[0],
 			).to.deep.include({
 				action: "clocked out",
 				userId: annaId,
-				localDate: "2026-09-18",
+				period: "2026-09-18",
 			});
 
 			// the payload is the whole table: an empty list removes the rules again
@@ -2920,6 +2920,31 @@ describe("web api", () => {
 			});
 			expect(bodyOf<{ automationRules: unknown[] }>(cleared).automationRules).to.be.empty;
 			expect(automations.list({ includeInactive: true })).to.be.empty;
+
+			// the days of the week and the repeat travel with the rule
+			const scheduled = await send("PUT", "/automation-rules", {
+				body: {
+					automationRules: [
+						{ kind: "clockOut", atMinute: 1200, weekdays: [1, 2, 3, 4, 5], repeat: "week" },
+						{ kind: "breakReminder", afterMinutes: 360 },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(scheduled.status).to.equal(200);
+			const withDays = bodyOf<{ automationRules: { weekdays: number[]; repeat: string }[] }>(scheduled);
+			expect(withDays.automationRules[0]).to.deep.include({ weekdays: [1, 2, 3, 4, 5], repeat: "week" });
+			// without a selection a rule runs every day, once a day
+			expect(withDays.automationRules[1]).to.deep.include({ weekdays: [1, 2, 3, 4, 5, 6, 7], repeat: "day" });
+
+			// a day that does not exist, an empty selection and an unknown repeat are refused
+			for (const broken of [{ weekdays: [0, 8] }, { weekdays: [] }, { repeat: "month" }]) {
+				const refused = await send("PUT", "/automation-rules", {
+					body: { automationRules: [{ kind: "clockOut", atMinute: 1200, ...broken }] },
+					headers: headers(adminToken, adminCsrf),
+				});
+				expect(refused.status, JSON.stringify(broken)).to.equal(400);
+			}
 		});
 
 		it("refuses a rule that cannot work", async () => {

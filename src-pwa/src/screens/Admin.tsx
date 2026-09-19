@@ -19,6 +19,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -42,7 +43,8 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import KeyIcon from "@mui/icons-material/Key";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TerminalIcon from "@mui/icons-material/Terminal";
-import { useRef, useState } from "react";
+import QRCode from "qrcode";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -60,6 +62,36 @@ import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
 import { saveBlob } from "../components/ReportDownloads";
 import { hasPermission, useSession } from "../state/session";
+
+/**
+ * Short weekday names of the display language.
+ *
+ * The names come from `Intl`, so a translation of “Mo”, “Tue”, … is not needed and every language gets its own
+ * spelling. The 1st of January 2024 was a Monday, so the year starts exactly with the day the mask starts with.
+ *
+ * @param language - language of the display
+ * @returns the seven days, ISO numbered 1..7
+ */
+function weekdayOptions(language: string): { value: number; label: string }[] {
+	const format = new Intl.DateTimeFormat(language, { weekday: "short" });
+	return [1, 2, 3, 4, 5, 6, 7].map(value => ({
+		value,
+		label: format.format(new Date(Date.UTC(2024, 0, value))),
+	}));
+}
+
+/**
+ * Turns one weekday of a rule on or off.
+ *
+ * @param weekdays - current selection
+ * @param day - ISO weekday to change
+ * @param checked - new state
+ * @returns the new selection, sorted
+ */
+function toggleWeekday(weekdays: number[], day: number, checked: boolean): number[] {
+	const next = checked ? [...weekdays, day] : weekdays.filter(value => value !== day);
+	return [...new Set(next)].sort((left, right) => left - right);
+}
 
 /**
  * Formats a byte count for the backup list.
@@ -1476,6 +1508,12 @@ function TagDialog({
 		onSuccess: onSaved,
 	});
 
+	// a new link for a badge that was lost, expired or revoked — the link handed out before stops working
+	const reissue = useMutation({
+		mutationFn: () => api.reissueTagLink(tag.id),
+		onSuccess: onSaved,
+	});
+
 	return (
 		<Dialog
 			open
@@ -1520,10 +1558,17 @@ function TagDialog({
 						value={ttlDays}
 						onChange={event => setTtlDays(event.target.value)}
 					/>
-					<ErrorAlert error={people.error ?? save.error} />
+					<ErrorAlert error={people.error ?? save.error ?? reissue.error} />
 				</Stack>
 			</DialogContent>
 			<DialogActions>
+				<Button
+					onClick={() => reissue.mutate()}
+					disabled={reissue.isPending}
+					sx={{ mr: "auto" }}
+				>
+					{t("admin.tag.reissue")}
+				</Button>
 				<Button onClick={onClose}>{t("common.cancel")}</Button>
 				<Button
 					variant="contained"
@@ -1552,6 +1597,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 	const [userId, setUserId] = useState("");
 	const [label, setLabel] = useState("");
 	const [issued, setIssued] = useState<{ token: string; url: string; reissued: boolean } | null>(null);
+	const [qr, setQr] = useState<string | null>(null);
 	const [editing, setEditing] = useState<RfidTagRecord | null>(null);
 
 	/** Refreshes the list of the badges. */
@@ -1579,6 +1625,29 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 		setIssued({ token, url: linkFor(token), reissued });
 	};
 
+	// The code is drawn in the browser: it works offline and no service sees the link.
+	useEffect(() => {
+		if (!issued) {
+			setQr(null);
+			return undefined;
+		}
+		let cancelled = false;
+		QRCode.toDataURL(issued.url, { margin: 1, width: 240 })
+			.then(dataUrl => {
+				if (!cancelled) {
+					setQr(dataUrl);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setQr(null);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [issued]);
+
 	const create = useMutation({
 		mutationFn: () => api.createTag({ userId: Number(userId), ...(label.trim() ? { label: label.trim() } : {}) }),
 		onSuccess: async created => {
@@ -1593,19 +1662,10 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 		onSuccess: reload,
 	});
 
-	// a revoked badge can be taken out of the list for good
+	// a badge that was revoked can be taken out of the list for good
 	const purge = useMutation({
 		mutationFn: (id: number) => api.deleteTagPermanently(id),
 		onSuccess: reload,
-	});
-
-	// gives a badge a new link: for one that was lost, expired or revoked and should work again
-	const reissue = useMutation({
-		mutationFn: (id: number) => api.reissueTagLink(id),
-		onSuccess: async created => {
-			showLink(created.token, true);
-			await reload();
-		},
 	});
 
 	/**
@@ -1618,7 +1678,7 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 
 	return (
 		<>
-			<ErrorAlert error={tags.error ?? create.error ?? remove.error ?? purge.error ?? reissue.error} />
+			<ErrorAlert error={tags.error ?? create.error ?? remove.error ?? purge.error} />
 
 			{issued && (
 				<Alert
@@ -1637,6 +1697,17 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 					>
 						{issued.url}
 					</Typography>
+					{qr && (
+						<Box sx={{ mt: 1.5 }}>
+							<img
+								src={qr}
+								alt={t("admin.tag.qrAlt")}
+								width={200}
+								height={200}
+								style={{ display: "block", borderRadius: 4 }}
+							/>
+						</Box>
+					)}
 					{issued.reissued && (
 						<Typography
 							variant="body2"
@@ -1711,13 +1782,6 @@ function TagsTab({ language }: { language: string }): React.JSX.Element {
 									onClick={() => setEditing(tag)}
 								>
 									{t("admin.tag.edit")}
-								</Button>
-								<Button
-									size="small"
-									disabled={reissue.isPending}
-									onClick={() => reissue.mutate(tag.id)}
-								>
-									{t("admin.tag.reissue")}
 								</Button>
 								{tag.isActive !== false && (
 									<Button
@@ -2128,99 +2192,153 @@ function AutomationRulesCard({
 					{rules.map((rule, index) => (
 						<Stack
 							key={rule.id ?? `new-${index}`}
-							direction="row"
-							spacing={1}
-							useFlexGap
-							sx={{ alignItems: "center", flexWrap: "wrap" }}
+							spacing={0.5}
+							sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1 }}
 						>
-							<TextField
-								size="small"
-								label={t("admin.trigger.label")}
-								value={rule.label ?? ""}
-								onChange={event => change(index, { label: event.target.value })}
-								disabled={disabled}
-								sx={{ minWidth: 150 }}
-							/>
-							<TextField
-								select
-								size="small"
-								label={t("admin.automation.kind")}
-								value={rule.kind}
-								onChange={event =>
-									change(index, { kind: event.target.value as AutomationRule["kind"] })
-								}
-								disabled={disabled}
-								sx={{ minWidth: 230 }}
+							<Stack
+								direction="row"
+								spacing={1}
+								useFlexGap
+								sx={{ alignItems: "center", flexWrap: "wrap" }}
 							>
-								<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
-								<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
-								<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
-							</TextField>
-							{rule.kind === "breakReminder" ? (
 								<TextField
 									size="small"
-									type="number"
-									label={t("admin.automation.after")}
-									value={String(rule.afterMinutes ?? 360)}
-									onChange={event => change(index, { afterMinutes: Number(event.target.value) })}
+									label={t("admin.trigger.label")}
+									value={rule.label ?? ""}
+									onChange={event => change(index, { label: event.target.value })}
 									disabled={disabled}
-									sx={{ maxWidth: 170 }}
+									sx={{ minWidth: 150 }}
 								/>
-							) : (
 								<TextField
+									select
 									size="small"
-									label={t("admin.automation.at")}
-									helperText={t("admin.automation.atHint")}
-									value={timeOf(rule.atMinute)}
-									onChange={event => {
-										const minute = minutesOf(event.target.value);
-										if (minute !== null) {
-											change(index, { atMinute: minute });
+									label={t("admin.automation.kind")}
+									value={rule.kind}
+									onChange={event =>
+										change(index, { kind: event.target.value as AutomationRule["kind"] })
+									}
+									disabled={disabled}
+									sx={{ minWidth: 230 }}
+								>
+									<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
+									<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
+									<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
+								</TextField>
+								{rule.kind === "breakReminder" ? (
+									<TextField
+										size="small"
+										type="number"
+										label={t("admin.automation.after")}
+										value={String(rule.afterMinutes ?? 360)}
+										onChange={event => change(index, { afterMinutes: Number(event.target.value) })}
+										disabled={disabled}
+										sx={{ maxWidth: 170 }}
+									/>
+								) : (
+									<TextField
+										size="small"
+										label={t("admin.automation.at")}
+										helperText={t("admin.automation.atHint")}
+										value={timeOf(rule.atMinute)}
+										onChange={event => {
+											const minute = minutesOf(event.target.value);
+											if (minute !== null) {
+												change(index, { atMinute: minute });
+											}
+										}}
+										disabled={disabled}
+										sx={{ maxWidth: 160 }}
+									/>
+								)}
+								<TextField
+									select
+									size="small"
+									label={t("admin.automation.user")}
+									value={rule.userId === null || rule.userId === undefined ? "" : String(rule.userId)}
+									onChange={event =>
+										change(index, {
+											userId: event.target.value === "" ? null : Number(event.target.value),
+										})
+									}
+									disabled={disabled}
+									sx={{ minWidth: 190 }}
+								>
+									<MenuItem value="">{t("admin.automation.allUsers")}</MenuItem>
+									{people.map(user => (
+										<MenuItem
+											key={user.id}
+											value={String(user.id)}
+										>
+											{user.displayName}
+										</MenuItem>
+									))}
+								</TextField>
+								<Button
+									size="small"
+									disabled={disabled}
+									color={rule.isActive === false ? "inherit" : "primary"}
+									onClick={() => change(index, { isActive: rule.isActive === false })}
+								>
+									{t("admin.trigger.active")}
+								</Button>
+								<IconButton
+									size="small"
+									title={t("admin.tag.delete")}
+									disabled={disabled}
+									onClick={() => onChange(rules.filter((_, position) => position !== index))}
+								>
+									<DeleteIcon fontSize="small" />
+								</IconButton>
+							</Stack>
+							<Stack
+								direction="row"
+								spacing={1}
+								useFlexGap
+								sx={{ alignItems: "center", flexWrap: "wrap" }}
+							>
+								<Typography
+									variant="body2"
+									color="text.secondary"
+								>
+									{t("admin.automation.weekdays")}
+								</Typography>
+								{weekdayOptions(language).map(option => (
+									<FormControlLabel
+										key={option.value}
+										control={
+											<Checkbox
+												size="small"
+												checked={rule.weekdays?.includes(option.value) ?? true}
+												onChange={event =>
+													change(index, {
+														weekdays: toggleWeekday(
+															rule.weekdays ?? [1, 2, 3, 4, 5, 6, 7],
+															option.value,
+															event.target.checked,
+														),
+													})
+												}
+												disabled={disabled}
+											/>
 										}
-									}}
-									disabled={disabled}
-									sx={{ maxWidth: 160 }}
-								/>
-							)}
-							<TextField
-								select
-								size="small"
-								label={t("admin.automation.user")}
-								value={rule.userId === null || rule.userId === undefined ? "" : String(rule.userId)}
-								onChange={event =>
-									change(index, {
-										userId: event.target.value === "" ? null : Number(event.target.value),
-									})
-								}
-								disabled={disabled}
-								sx={{ minWidth: 190 }}
-							>
-								<MenuItem value="">{t("admin.automation.allUsers")}</MenuItem>
-								{people.map(user => (
-									<MenuItem
-										key={user.id}
-										value={String(user.id)}
-									>
-										{user.displayName}
-									</MenuItem>
+										label={option.label}
+									/>
 								))}
-							</TextField>
-							<Button
-								size="small"
-								disabled={disabled}
-								color={rule.isActive === false ? "inherit" : "primary"}
-								onClick={() => change(index, { isActive: rule.isActive === false })}
-							>
-								{t("admin.trigger.active")}
-							</Button>
-							<IconButton
-								size="small"
-								title={t("admin.tag.delete")}
-								disabled={disabled}
-								onClick={() => onChange(rules.filter((_, position) => position !== index))}
-							>
-								<DeleteIcon fontSize="small" />
-							</IconButton>
+								<TextField
+									select
+									size="small"
+									label={t("admin.automation.repeat")}
+									value={rule.repeat ?? "day"}
+									onChange={event =>
+										change(index, { repeat: event.target.value as AutomationRule["repeat"] })
+									}
+									disabled={disabled}
+									sx={{ minWidth: 190 }}
+								>
+									<MenuItem value="day">{t("admin.automation.repeatDay")}</MenuItem>
+									<MenuItem value="week">{t("admin.automation.repeatWeek")}</MenuItem>
+								</TextField>
+							</Stack>
 						</Stack>
 					))}
 					<Stack
@@ -2236,7 +2354,14 @@ function AutomationRulesCard({
 							onClick={() =>
 								onChange([
 									...rules,
-									{ kind: "clockOut", atMinute: 20 * 60, userId: null, isActive: true },
+									{
+										kind: "clockOut",
+										atMinute: 20 * 60,
+										userId: null,
+										weekdays: [1, 2, 3, 4, 5, 6, 7],
+										repeat: "day",
+										isActive: true,
+									},
 								])
 							}
 						>
@@ -2271,7 +2396,7 @@ function AutomationRulesCard({
 						<List dense>
 							{runs.map((run, index) => (
 								<ListItem
-									key={`${run.ruleId}-${run.userId}-${run.localDate}-${index}`}
+									key={`${run.ruleId}-${run.userId}-${run.period}-${index}`}
 									disableGutters
 								>
 									<ListItemText

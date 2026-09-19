@@ -20,7 +20,12 @@ import * as fs from "node:fs";
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
-import type { AutomationKind, AutomationRuleRecord, AutomationsRepository } from "../db/repositories/automations";
+import type {
+	AutomationKind,
+	AutomationRepeat,
+	AutomationRuleRecord,
+	AutomationsRepository,
+} from "../db/repositories/automations";
 import type { EntriesRepository, EntryDirection, EntryRecord } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
@@ -1787,6 +1792,9 @@ export function createApi(deps: ApiDeps): Api {
 				userId: target,
 				atMinute: optionalNumber(rule, "atMinute"),
 				afterMinutes: optionalNumber(rule, "afterMinutes"),
+				// the repository validates the selection and the repeat: a wrong entry comes back as a 400
+				weekdays: Array.isArray(rule.weekdays) ? rule.weekdays.map(Number) : undefined,
+				repeat: optionalString(rule, "repeat") as AutomationRepeat | undefined,
 				isActive: optionalBoolean(rule, "isActive") ?? true,
 			};
 		});
@@ -1806,6 +1814,8 @@ export function createApi(deps: ApiDeps): Api {
 				userId: rule.userId,
 				atMinute: rule.atMinute,
 				afterMinutes: rule.afterMinutes,
+				...(rule.weekdays === undefined ? {} : { weekdays: rule.weekdays }),
+				...(rule.repeat === undefined ? {} : { repeat: rule.repeat }),
 				isActive: rule.isActive,
 				...actor,
 			}),

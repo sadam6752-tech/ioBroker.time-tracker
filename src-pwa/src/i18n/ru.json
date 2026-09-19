@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Другой сотрудник или новый срок действия выпускает новую ссылку — выданная ранее ссылка сразу перестаёт работать.",
 	"admin.tag.validityDays": "Срок действия (дней)",
 	"admin.tag.oldLinkDead": "Выданная ранее ссылка больше не работает.",
+	"admin.tag.qrAlt": "QR-код ссылки пропуска",
 	"admin.tag.empty": "Пропуск ещё не создан.",
 	"nav.statistics": "Статистика",
 	"statistics.from": "С",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "все сотрудники",
 	"admin.automation.add": "Добавить правило",
 	"admin.automation.empty": "Правил пока нет.",
-	"admin.automation.runs": "Последние срабатывания"
+	"admin.automation.runs": "Последние срабатывания",
+	"admin.automation.weekdays": "Дни недели",
+	"admin.automation.repeat": "Повтор",
+	"admin.automation.repeatDay": "раз в день",
+	"admin.automation.repeatWeek": "раз в неделю"
 }

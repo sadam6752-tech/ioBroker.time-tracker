@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Ein anderer Mitarbeiter oder eine neue Gültigkeit gibt einen neuen Link aus — der vorher ausgegebene Link funktioniert sofort nicht mehr.",
 	"admin.tag.validityDays": "Gültigkeit (Tage)",
 	"admin.tag.oldLinkDead": "Der vorher ausgegebene Link funktioniert nicht mehr.",
+	"admin.tag.qrAlt": "QR-Code des Ausweis-Links",
 	"admin.tag.empty": "Noch kein Ausweis angelegt.",
 	"nav.statistics": "Statistik",
 	"statistics.from": "Von",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "alle Mitarbeiter",
 	"admin.automation.add": "Regel hinzufügen",
 	"admin.automation.empty": "Noch keine Regel angelegt.",
-	"admin.automation.runs": "Letzte Ausführungen"
+	"admin.automation.runs": "Letzte Ausführungen",
+	"admin.automation.weekdays": "Wochentage",
+	"admin.automation.repeat": "Wiederholung",
+	"admin.automation.repeatDay": "einmal pro Tag",
+	"admin.automation.repeatWeek": "einmal pro Woche"
 }

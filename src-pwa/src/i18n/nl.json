@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Een andere medewerker of een nieuwe geldigheid geeft een nieuwe link — de eerder uitgegeven link werkt onmiddellijk niet meer.",
 	"admin.tag.validityDays": "Geldigheid (dagen)",
 	"admin.tag.oldLinkDead": "De eerder uitgegeven link werkt niet meer.",
+	"admin.tag.qrAlt": "QR-code van de badge-link",
 	"admin.tag.empty": "Nog geen pas aangemaakt.",
 	"nav.statistics": "Statistieken",
 	"statistics.from": "Van",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "alle medewerkers",
 	"admin.automation.add": "Regel toevoegen",
 	"admin.automation.empty": "Nog geen regels.",
-	"admin.automation.runs": "Laatste uitvoeringen"
+	"admin.automation.runs": "Laatste uitvoeringen",
+	"admin.automation.weekdays": "Dagen van de week",
+	"admin.automation.repeat": "Herhaling",
+	"admin.automation.repeatDay": "één keer per dag",
+	"admin.automation.repeatWeek": "één keer per week"
 }

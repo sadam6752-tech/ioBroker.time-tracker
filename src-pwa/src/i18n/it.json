@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Un altro dipendente o una nuova validità emette un nuovo link — il link precedente smette subito di funzionare.",
 	"admin.tag.validityDays": "Validità (giorni)",
 	"admin.tag.oldLinkDead": "Il link precedente non funziona più.",
+	"admin.tag.qrAlt": "Codice QR del link del badge",
 	"admin.tag.empty": "Nessun badge creato finora.",
 	"nav.statistics": "Statistiche",
 	"statistics.from": "Da",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "tutti i dipendenti",
 	"admin.automation.add": "Aggiungi regola",
 	"admin.automation.empty": "Nessuna regola per ora.",
-	"admin.automation.runs": "Ultime esecuzioni"
+	"admin.automation.runs": "Ultime esecuzioni",
+	"admin.automation.weekdays": "Giorni della settimana",
+	"admin.automation.repeat": "Ripetizione",
+	"admin.automation.repeatDay": "una volta al giorno",
+	"admin.automation.repeatWeek": "una volta a settimana"
 }

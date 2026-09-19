@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Otro empleado o una nueva validez emite un nuevo enlace — el enlace anterior deja de funcionar de inmediato.",
 	"admin.tag.validityDays": "Validez (días)",
 	"admin.tag.oldLinkDead": "El enlace anterior ya no funciona.",
+	"admin.tag.qrAlt": "Código QR del enlace de la credencial",
 	"admin.tag.empty": "Todavía no se ha creado ninguna tarjeta.",
 	"nav.statistics": "Estadísticas",
 	"statistics.from": "Desde",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "todos los empleados",
 	"admin.automation.add": "Añadir regla",
 	"admin.automation.empty": "Todavía no hay reglas.",
-	"admin.automation.runs": "Últimas ejecuciones"
+	"admin.automation.runs": "Últimas ejecuciones",
+	"admin.automation.weekdays": "Días de la semana",
+	"admin.automation.repeat": "Repetición",
+	"admin.automation.repeatDay": "una vez al día",
+	"admin.automation.repeatWeek": "una vez por semana"
 }

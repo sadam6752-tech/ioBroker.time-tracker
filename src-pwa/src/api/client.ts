@@ -447,6 +447,10 @@ export interface AutomationRule {
 	atMinute?: number | null;
 	/** Length of the running work block in minutes (kind `breakReminder`) */
 	afterMinutes?: number | null;
+	/** Days of the week the rule runs on, ISO 1 (Monday) to 7 (Sunday) */
+	weekdays?: number[];
+	/** Whether the rule may act once a day or once an ISO week */
+	repeat?: "day" | "week";
 	/** `false` disables the rule without deleting it */
 	isActive?: boolean;
 }
@@ -457,8 +461,8 @@ export interface AutomationRun {
 	ruleId: number;
 	/** Employee it ran for */
 	userId: number;
-	/** Local date it ran on */
-	localDate: string;
+	/** Period it ran in: the local date, or the ISO week (`2026-W38`) for a weekly rule */
+	period: string;
 	/** Instant it ran */
 	firedAt: number;
 	/** Short description of what happened */

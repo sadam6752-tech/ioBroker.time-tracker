@@ -305,6 +305,18 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.5 (2026-09-19)
+
+- (Alex) **rules (automatic)**: a rule can be limited to **weekdays** (Monday to Friday for a company rule, the
+  weekend for another) and it can be set to act **once a week** instead of once a day — the guard counts the ISO week
+  then, so a reminder that fires every Monday still fires next Monday. The days come from `Intl`, so their names are
+  spelled in the language of the display
+- (Alex) **badges (RFID/NFC)**: the link of a fresh badge is shown as a **QR code** next to the link itself, so it can
+  be scanned or copied onto a tag with a writer app. The code is drawn in the browser (the `qrcode` package is bundled
+  with the web app), so it works offline and no service ever sees the link
+- (Alex) docs: `docs/i18n.md` now records who settles the translations — German and Russian are kept by the owner, for
+  the other nine languages no native speaker is available, so they stay machine translation with the technical pass
+
 ### 0.1.4 (2026-09-18)
 
 - (Alex) **badges (RFID/NFC)**: a badge can be edited (employee, label, validity) and given a **new link** — for one
@@ -349,16 +361,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - internal: the automation rules are in place (migration 16 with `automation_rules` and `automation_runs`, the
   repository with its “once a day per employee” guard, the pure decision logic, the minute check in the adapter and
   the events `automation.clockOut`/`missingPunch`/`breakReminder`) — the administration, the API and the texts follow
-
-### 0.1.0 (2026-09-18)
-
-- (Alex) fix: a trigger rule fires for **every change** when its value is `toggle` (or `*`) — a switch that goes
-  from `true` to `false` punches too, the fixed value only reacted in one direction. The field in the
-  administration names that now
-- (Alex) fix: the published figures follow a punch from the web app within a second — the API of the same process
-  reports every change (punch, correction, badge, absence) over the event bus and the adapter republishes the
-  states instead of waiting for the five minute timer. That is what made `users.<id>.present` and
-  `company.presentCount` lag behind
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

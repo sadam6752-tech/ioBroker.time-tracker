@@ -58,7 +58,7 @@ import {
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
 import { handleCommand, punchEmployee } from "./lib/adapter/commands";
 import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
-import { evaluateAutomation, workBlock } from "./lib/adapter/automation";
+import { evaluateAutomation, isoWeekday, runPeriod, workBlock } from "./lib/adapter/automation";
 import { handleMessage } from "./lib/adapter/messages";
 import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
 import type { ApiEvent, EventBus } from "./lib/web/events";
@@ -885,7 +885,8 @@ class Zeiterfassung extends utils.Adapter {
 	/**
 	 * Runs the automation rules that are due.
 	 *
-	 * A rule acts at most once per employee and local date — `automation_runs` holds that decision, so a restart
+	 * A rule acts at most once per employee and period — the local date, or the ISO week for a weekly rule;
+	 * `automation_runs` holds that decision, so a restart
 	 * cannot punch twice. The run is noted **before** the action (a double punch would be worse than a missed
 	 * reminder) and taken back when the action fails, so the next minute retries it.
 	 */
@@ -920,7 +921,9 @@ class Zeiterfassung extends utils.Adapter {
 					continue;
 				}
 				const local = localDateTime(nowUtc, user.timezone);
-				if (services.automations.hasRun({ ruleId: rule.id, userId: user.id, localDate: local.date })) {
+				// a weekly rule is guarded per ISO week, a daily rule per local date
+				const period = runPeriod(rule.repeat, local.date);
+				if (services.automations.hasRun({ ruleId: rule.id, userId: user.id, period })) {
 					continue;
 				}
 
@@ -930,6 +933,7 @@ class Zeiterfassung extends utils.Adapter {
 				const block = workBlock(punches, nowUtc);
 				const decision = evaluateAutomation(rule, {
 					localDate: local.date,
+					weekday: isoWeekday(local.date),
 					minuteOfDay: local.minutes,
 					hasOpenEntry: block.hasOpenEntry,
 					blockMinutes: block.blockMinutes,
@@ -945,7 +949,7 @@ class Zeiterfassung extends utils.Adapter {
 					!services.automations.recordRun({
 						ruleId: rule.id,
 						userId: user.id,
-						localDate: local.date,
+						period,
 						action,
 						now: nowUtc,
 					})
@@ -976,8 +980,8 @@ class Zeiterfassung extends utils.Adapter {
 						data: { ruleId: rule.id, action, reason: decision.reason },
 					});
 				} catch (error) {
-					// give the next check a chance instead of losing the day
-					services.automations.forgetRun({ ruleId: rule.id, userId: user.id, localDate: local.date });
+					// give the next check a chance instead of losing the period
+					services.automations.forgetRun({ ruleId: rule.id, userId: user.id, period });
 					this.log.warn(`automation ${rule.id} for ${user.displayName} failed: ${(error as Error).message}`);
 				}
 			}

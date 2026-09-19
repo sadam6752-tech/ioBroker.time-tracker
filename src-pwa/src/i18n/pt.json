@@ -220,6 +220,7 @@
 	"admin.tag.editHint": "Outro funcionário ou uma nova validade emite uma nova ligação — a ligação anterior deixa de funcionar imediatamente.",
 	"admin.tag.validityDays": "Validade (dias)",
 	"admin.tag.oldLinkDead": "A ligação anterior já não funciona.",
+	"admin.tag.qrAlt": "Código QR da ligação do crachá",
 	"admin.tag.empty": "Ainda não foi criado nenhum cartão.",
 	"nav.statistics": "Estatísticas",
 	"statistics.from": "De",
@@ -322,5 +323,9 @@
 	"admin.automation.allUsers": "todos os funcionários",
 	"admin.automation.add": "Adicionar regra",
 	"admin.automation.empty": "Ainda não há regras.",
-	"admin.automation.runs": "Últimas execuções"
+	"admin.automation.runs": "Últimas execuções",
+	"admin.automation.weekdays": "Dias da semana",
+	"admin.automation.repeat": "Repetição",
+	"admin.automation.repeatDay": "uma vez por dia",
+	"admin.automation.repeatWeek": "uma vez por semana"
 }

@@ -3,7 +3,13 @@ import { expect } from "chai";
 import { openAndMigrate, type Db } from "../database";
 import { seed } from "../seed";
 import { createUsersRepository } from "./users";
-import { createAutomationsRepository, type AutomationKind, type AutomationsRepository } from "./automations";
+import {
+	createAutomationsRepository,
+	maskToWeekdays,
+	weekdaysToMask,
+	type AutomationKind,
+	type AutomationsRepository,
+} from "./automations";
 
 describe("automations repository", () => {
 	let db: Db;
@@ -60,28 +66,28 @@ describe("automations repository", () => {
 
 	it("asks before a rule runs twice on the same day", () => {
 		const rule = repo.save({ kind: "clockOut", atMinute: 1200, actorId: adminId });
-		expect(repo.hasRun({ ruleId: rule.id, userId: annaId, localDate: "2026-09-18" })).to.equal(false);
+		expect(repo.hasRun({ ruleId: rule.id, userId: annaId, period: "2026-09-18" })).to.equal(false);
 		expect(
 			repo.recordRun({
 				ruleId: rule.id,
 				userId: annaId,
-				localDate: "2026-09-18",
+				period: "2026-09-18",
 				action: "clocked out",
 				now: 5000,
 			}),
 		).to.equal(true);
 		// the second call changes nothing: a punch is never written twice
 		expect(
-			repo.recordRun({ ruleId: rule.id, userId: annaId, localDate: "2026-09-18", action: "clocked out" }),
+			repo.recordRun({ ruleId: rule.id, userId: annaId, period: "2026-09-18", action: "clocked out" }),
 		).to.equal(false);
-		expect(repo.hasRun({ ruleId: rule.id, userId: annaId, localDate: "2026-09-18" })).to.equal(true);
+		expect(repo.hasRun({ ruleId: rule.id, userId: annaId, period: "2026-09-18" })).to.equal(true);
 
 		// another day is another run
 		expect(
-			repo.recordRun({ ruleId: rule.id, userId: annaId, localDate: "2026-09-19", action: "clocked out" }),
+			repo.recordRun({ ruleId: rule.id, userId: annaId, period: "2026-09-19", action: "clocked out" }),
 		).to.equal(true);
 		expect(repo.runs({ ruleId: rule.id })).to.have.length(2);
-		expect(repo.runs({ ruleId: rule.id, localDate: "2026-09-18" })[0]).to.deep.include({
+		expect(repo.runs({ ruleId: rule.id, period: "2026-09-18" })[0]).to.deep.include({
 			userId: annaId,
 			action: "clocked out",
 		});
@@ -93,9 +99,95 @@ describe("automations repository", () => {
 		expect(same.id).to.equal(rule.id);
 		expect(repo.list({ includeInactive: true })).to.have.length(1);
 
-		repo.recordRun({ ruleId: rule.id, userId: annaId, localDate: "2026-09-18", action: "warned" });
+		repo.recordRun({ ruleId: rule.id, userId: annaId, period: "2026-09-18", action: "warned" });
 		expect(repo.remove({ id: rule.id, actorId: adminId })).to.equal(true);
 		expect(repo.list({ includeInactive: true })).to.be.empty;
 		expect(repo.runs({ ruleId: rule.id })).to.be.empty;
+	});
+});
+
+describe("weekdays and repeat of an automation rule", () => {
+	let db: Db;
+	let repo: AutomationsRepository;
+	let adminId: number;
+
+	beforeEach(() => {
+		db = openAndMigrate(":memory:");
+		seed(db, { holidayYears: [2026] });
+		repo = createAutomationsRepository(db);
+		adminId = createUsersRepository(db).create({ login: "admin", displayName: "Admin", roleKeys: ["admin"] }).id;
+	});
+
+	afterEach(() => {
+		db.close();
+	});
+
+	it("keeps the days of the week and the repeat", () => {
+		const rule = repo.save({
+			kind: "clockOut",
+			atMinute: 20 * 60,
+			weekdays: [1, 2, 3, 4, 5],
+			repeat: "week",
+			actorId: adminId,
+		});
+		expect(rule.weekdays).to.deep.equal([1, 2, 3, 4, 5]);
+		expect(rule.repeat).to.equal("week");
+		// reading it back gives the same selection
+		expect(repo.findById(rule.id)).to.deep.include({ weekdays: [1, 2, 3, 4, 5], repeat: "week" });
+
+		// a change of the days only is a change
+		const changed = repo.save({
+			id: rule.id,
+			kind: "clockOut",
+			atMinute: 20 * 60,
+			weekdays: [6, 7],
+			actorId: adminId,
+		});
+		expect(changed.weekdays).to.deep.equal([6, 7]);
+		expect(changed.repeat).to.equal("week");
+	});
+
+	it("runs every day once a day when nothing is chosen", () => {
+		const rule = repo.save({ kind: "clockOut", atMinute: 20 * 60, actorId: adminId });
+		expect(rule.weekdays).to.deep.equal([1, 2, 3, 4, 5, 6, 7]);
+		expect(rule.repeat).to.equal("day");
+	});
+
+	it("refuses a day that does not exist and an unknown repeat", () => {
+		expect(() => repo.save({ kind: "clockOut", atMinute: 1200, weekdays: [0], actorId: adminId })).to.throw(/1..7/);
+		expect(() => repo.save({ kind: "clockOut", atMinute: 1200, weekdays: [], actorId: adminId })).to.throw(
+			/at least one day/,
+		);
+		expect(() =>
+			repo.save({
+				kind: "clockOut",
+				atMinute: 1200,
+				repeat: "month" as unknown as "day",
+				actorId: adminId,
+			}),
+		).to.throw(/day.*week/);
+	});
+
+	it("keeps one run per period, so a weekly rule can run again next week", () => {
+		const rule = repo.save({ kind: "clockOut", atMinute: 1200, repeat: "week", actorId: adminId });
+		expect(
+			repo.recordRun({ ruleId: rule.id, userId: adminId, period: "2026-W38", action: "clocked out" }),
+		).to.equal(true);
+		// the same week is a second call, the week after is not
+		expect(
+			repo.recordRun({ ruleId: rule.id, userId: adminId, period: "2026-W38", action: "clocked out" }),
+		).to.equal(false);
+		expect(repo.hasRun({ ruleId: rule.id, userId: adminId, period: "2026-W38" })).to.equal(true);
+		expect(repo.hasRun({ ruleId: rule.id, userId: adminId, period: "2026-W39" })).to.equal(false);
+		expect(
+			repo.recordRun({ ruleId: rule.id, userId: adminId, period: "2026-W39", action: "clocked out" }),
+		).to.equal(true);
+	});
+
+	it("turns the stored mask into days and back", () => {
+		expect(maskToWeekdays(127)).to.deep.equal([1, 2, 3, 4, 5, 6, 7]);
+		expect(maskToWeekdays(weekdaysToMask([1, 3, 5]))).to.deep.equal([1, 3, 5]);
+		// an empty mask means every day, so a rule can never fall silent by accident
+		expect(maskToWeekdays(0)).to.deep.equal([1, 2, 3, 4, 5, 6, 7]);
 	});
 });

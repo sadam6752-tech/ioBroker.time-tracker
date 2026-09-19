@@ -64,3 +64,17 @@ npm run build
   (die nur Android-Chrome kann) löst jetzt jeder ioBroker-State eine Aktion aus (siehe README, „Actions"): der
   Adapter abonniert die States der Tabelle, feuert nur bei Wertwechsel und stempelt, rundet oder setzt die
   Anwesenheit.
+
+## Paketgrenzen (und was der ioBroker-Repochecker dazu sagt)
+
+Der Adapter hat **zwei** `package.json`: die Wurzel für den Adapter selbst (Laufzeit-Abhängigkeiten wie
+`better-sqlite3`, `pdfkit`, `exceljs`, `luxon`, `ws`) und `src-pwa/` für die Web-App (React, MUI, i18next, `qrcode`,
+…). Die Web-App wird mit `npm run build:pwa` **vorgebaut** und liegt danach als fertiges Bundle in `www/`; zur
+Laufzeit des Adapters wird davon nichts geladen.
+
+Deshalb meldet `npx @iobroker/repochecker … --local` das `W5042` („Package … is used in source file(s) but not found
+in dependencies of package.json") für die PWA-Pakete: bei dieser Aufteilung ist das **erwartet** — die Abhängigkeiten
+stehen in `src-pwa/package.json` und sind für den Adapter reine Entwicklungs-Abhängigkeiten. `W5049` (`process.env`
+in `e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
+Compact-Mode vor — der Adapter bringt einen eigenen HTTP-Port und eine SQLite-Datei mit und läuft bewusst **nicht** im
+Compact-Mode (`common.compact: false`).

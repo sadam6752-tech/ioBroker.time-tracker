@@ -3,6 +3,16 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.1.2 (2026-09-18)
+
+- (Alex) fix: a badge (RFID/NFC) link points to the address the administration itself is reached with — the scheme
+  comes from the request (and from a trusted reverse proxy) instead of a fixed `https://` that pointed nowhere on a
+  plain HTTP instance. A badge created before only needs the right prefix, the token in it stays valid
+- (Alex) **rules (automatic)**: the adapter can clock out at a local time, report a missing punch or remind about a
+  break — maintained in **Administration → Settings** (`GET`/`PUT /api/automation-rules` and the run log
+  `GET /api/automation-rules/runs`), at most once per employee and day, with the events `automation.*` in the state
+  tree so a notification can pick them up
+
 ### 0.1.1 (2026-09-18)
 
 - (Alex) fix: the tab “Badges (RFID/NFC)” creates a badge again — the HMAC secret that signs the links is generated

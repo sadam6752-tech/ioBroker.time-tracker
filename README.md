@@ -305,6 +305,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.7 (2026-09-19)
+
+- (Alex) ioBroker repository: the two required fields `common.title` and `common.license` were missing in
+  `io-package.json` — they are set now, and `docs/entwicklung.md` explains the checker warnings that come from the web
+  app having its own `package.json` (the adapter itself does not load any of it)
+
 ### 0.1.6 (2026-09-19)
 
 - (Alex) admin: the raw instance settings show a readable label now — in the language of the display — with the
@@ -354,16 +360,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   text families were compared with each other. Five wrong `reports.overtime` labels were corrected (`pt`, `fr`, `it`,
   `es`, `zh-cn` said “over time” instead of overtime), and the Polish punch labels now use the same root as the badge
   texts. `docs/i18n.md` records the method and what a native speaker still has to settle
-
-### 0.1.2 (2026-09-18)
-
-- (Alex) fix: a badge (RFID/NFC) link points to the address the administration itself is reached with — the scheme
-  comes from the request (and from a trusted reverse proxy) instead of a fixed `https://` that pointed nowhere on a
-  plain HTTP instance. A badge created before only needs the right prefix, the token in it stays valid
-- (Alex) **rules (automatic)**: the adapter can clock out at a local time, report a missing punch or remind about a
-  break — maintained in **Administration → Settings** (`GET`/`PUT /api/automation-rules` and the run log
-  `GET /api/automation-rules/runs`), at most once per employee and day, with the events `automation.*` in the state
-  tree so a notification can pick them up
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

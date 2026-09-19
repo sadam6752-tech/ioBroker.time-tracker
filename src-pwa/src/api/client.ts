@@ -367,6 +367,8 @@ export interface HolidayRecord {
 	name: string;
 	/** Region it belongs to, `null` for all */
 	region: string | null;
+	/** Key of a seeded holiday, `null` for one that was added by hand */
+	key: string | null;
 }
 
 /** A signed badge/NFC tag (`GET /rfid/tags`). */
@@ -425,7 +427,7 @@ export interface TriggerRule {
 }
 
 /** What an automation rule does (`GET /automation-rules`). */
-export type AutomationKind = "clockOut" | "missingPunch" | "breakReminder";
+export type AutomationKind = "clockIn" | "clockOut" | "missingPunch" | "breakReminder";
 
 /**
  * A rule the adapter follows on its own.

@@ -958,7 +958,7 @@ class Zeiterfassung extends utils.Adapter {
 				}
 
 				try {
-					if (rule.kind === "clockOut") {
+					if (rule.kind === "clockOut" || rule.kind === "clockIn") {
 						const result = punchEmployee(
 							{
 								entries: services.entries,
@@ -1003,6 +1003,9 @@ class Zeiterfassung extends utils.Adapter {
 	private automationAction(rule: AutomationRuleRecord, blockMinutes: number | null): string {
 		if (rule.kind === "clockOut") {
 			return "clocked out";
+		}
+		if (rule.kind === "clockIn") {
+			return "clocked in";
 		}
 		if (rule.kind === "breakReminder") {
 			return `reminded after ${blockMinutes ?? 0} min without a break`;

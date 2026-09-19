@@ -179,11 +179,11 @@ export function seed(db: Db, options: SeedOptions = {}): { permissions: number; 
  * @returns number of inserted holiday rows
  */
 export function ensureHolidaysForYear(db: Db, country: HolidayCountry, year: number): number {
-	const insert = db.prepare("INSERT OR IGNORE INTO holidays (region, year, date, name) VALUES (?, ?, ?, ?)");
+	const insert = db.prepare("INSERT OR IGNORE INTO holidays (region, year, date, name, key) VALUES (?, ?, ?, ?, ?)");
 	let inserted = 0;
 	const run = db.transaction((): void => {
 		for (const holiday of holidaysForYear(year, country)) {
-			inserted += insert.run(country, year, holiday.date, holiday.name).changes;
+			inserted += insert.run(country, year, holiday.date, holiday.name, holiday.key).changes;
 		}
 	});
 	run();

@@ -305,6 +305,20 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.6 (2026-09-19)
+
+- (Alex) admin: the raw instance settings show a readable label now — in the language of the display — with the
+  technical name in the small line below it, which is what the block promises. The labels are kept short enough that
+  the fields do not cut them off
+- (Alex) admin: the block “All instance settings” is much shorter — three fields per line on a wide screen (two on a
+  tablet, one on a phone) and the time zone on a line of its own, because its value is the longest
+- (Alex) **rules (automatic)**: the kind **“Clock in automatically”** joins them — an employee who is still missing at
+  the configured time gets a punch in (the rule keeps quiet when somebody is clocked in already). Migration 18 rebuilds
+  the rule table for the new kind and copies the run log first, because dropping the parent would take it with it
+- (Alex) **holidays**: the seeded days are shown in the language of the display — each one carries a stable key
+  (`newYear`, `goodFriday`, …) and the app translates it; a day somebody added by hand keeps its own name
+- (Alex) admin: the two “first start” hints are easier to read — they are rendered as HTML with a larger font
+
 ### 0.1.5 (2026-09-19)
 
 - (Alex) **rules (automatic)**: a rule can be limited to **weekdays** (Monday to Friday for a company rule, the
@@ -350,17 +364,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   break — maintained in **Administration → Settings** (`GET`/`PUT /api/automation-rules` and the run log
   `GET /api/automation-rules/runs`), at most once per employee and day, with the events `automation.*` in the state
   tree so a notification can pick them up
-
-### 0.1.1 (2026-09-18)
-
-- (Alex) fix: the tab “Badges (RFID/NFC)” creates a badge again — the HMAC secret that signs the links is generated
-  on the first start and stored next to the database (like the session secret) instead of refusing the request with
-  “not configured”
-- (Alex) the hint above the actions names `toggle` now: with that value a rule fires on **every** change, so a
-  switch that goes on and off again works too
-- internal: the automation rules are in place (migration 16 with `automation_rules` and `automation_runs`, the
-  repository with its “once a day per employee” guard, the pure decision logic, the minute check in the adapter and
-  the events `automation.clockOut`/`missingPunch`/`breakReminder`) — the administration, the API and the texts follow
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

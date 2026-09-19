@@ -3,6 +3,17 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.1.1 (2026-09-18)
+
+- (Alex) fix: the tab “Badges (RFID/NFC)” creates a badge again — the HMAC secret that signs the links is generated
+  on the first start and stored next to the database (like the session secret) instead of refusing the request with
+  “not configured”
+- (Alex) the hint above the actions names `toggle` now: with that value a rule fires on **every** change, so a
+  switch that goes on and off again works too
+- internal: the automation rules are in place (migration 16 with `automation_rules` and `automation_runs`, the
+  repository with its “once a day per employee” guard, the pure decision logic, the minute check in the adapter and
+  the events `automation.clockOut`/`missingPunch`/`breakReminder`) — the administration, the API and the texts follow
+
 ### 0.1.0 (2026-09-18)
 
 - (Alex) fix: a trigger rule fires for **every change** when its value is `toggle` (or `*`) — a switch that goes

@@ -21,7 +21,7 @@ import { NotFoundError, ValidationError } from "../../errors";
 import { diffFields, writeAuditLog } from "./audit";
 
 /** Kinds an automation rule can have. */
-export type AutomationKind = "clockOut" | "missingPunch" | "breakReminder";
+export type AutomationKind = "clockIn" | "clockOut" | "missingPunch" | "breakReminder";
 
 /** How often a rule may act for one employee. */
 export type AutomationRepeat = "day" | "week";
@@ -152,10 +152,10 @@ const AUDITED_FIELDS: (keyof AutomationRuleRecord)[] = [
 ];
 
 /** Kinds a rule may use. */
-const KINDS: AutomationKind[] = ["clockOut", "missingPunch", "breakReminder"];
+const KINDS: AutomationKind[] = ["clockIn", "clockOut", "missingPunch", "breakReminder"];
 
 /** Kinds that act at a fixed local time. */
-const TIMED_KINDS: AutomationKind[] = ["clockOut", "missingPunch"];
+const TIMED_KINDS: AutomationKind[] = ["clockIn", "clockOut", "missingPunch"];
 
 /**
  * Maps a database row to a rule record.
@@ -323,6 +323,8 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 		 WHERE id = ?`,
 	);
 	const deleteRule = db.prepare("DELETE FROM automation_rules WHERE id = ?");
+	// the runs are deleted with their rule: the rebuilt table of migration 18 has no foreign key for that
+	const deleteRunsOfRule = db.prepare("DELETE FROM automation_runs WHERE rule_id = ?");
 	const selectRuns = db.prepare(
 		`SELECT ${RUN_COLUMNS} FROM automation_runs
 		 WHERE rule_id = ? AND (? IS NULL OR period = ?)
@@ -470,6 +472,7 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 			}
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			const run = db.transaction((): void => {
+				deleteRunsOfRule.run(input.id);
 				deleteRule.run(input.id);
 				writeAuditLog(db, {
 					atUtc: now,

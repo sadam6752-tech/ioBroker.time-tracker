@@ -1444,7 +1444,9 @@ function HolidaysTab({ language }: { language: string }): React.JSX.Element {
 					{(holidays.data ?? []).map(holiday => (
 						<ActionRow
 							key={holiday.id}
-							primary={`${formatDate(holiday.date, language)} · ${holiday.name}`}
+							primary={`${formatDate(holiday.date, language)} · ${
+								holiday.key ? t(`holiday.${holiday.key}`, { defaultValue: holiday.name }) : holiday.name
+							}`}
 							secondary={holiday.region ?? t("common.none")}
 						>
 							<Button
@@ -2220,6 +2222,7 @@ function AutomationRulesCard({
 									disabled={disabled}
 									sx={{ minWidth: 230 }}
 								>
+									<MenuItem value="clockIn">{t("admin.automation.kindClockIn")}</MenuItem>
 									<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
 									<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
 									<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
@@ -2577,6 +2580,54 @@ function BrandImageField({
 }
 
 /**
+ * Settings whose label already exists somewhere else, so the raw editor does not repeat the text.
+ */
+const RAW_SETTING_LABEL_KEYS: Record<string, string> = {
+	pause_mode: "admin.settings.pauseModeTitle",
+};
+
+/**
+ * One raw instance setting: a readable label with the technical name in the small line below it.
+ *
+ * @param props - setting, value, write state and layout
+ * @param props.settingKey - technical name of the setting
+ * @param props.value - current value
+ * @param props.disabled - true when the caller may not write
+ * @param props.onChange - called with the new value
+ * @param props.fullLine - true to run over the whole line (the time zone needs the room)
+ * @returns the field
+ */
+function RawSettingField({
+	settingKey,
+	value,
+	disabled,
+	onChange,
+	fullLine = false,
+}: {
+	settingKey: string;
+	value: string;
+	disabled: boolean;
+	onChange: (value: string) => void;
+	fullLine?: boolean;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	const labelKey = RAW_SETTING_LABEL_KEYS[settingKey] ?? `admin.settings.setting.${settingKey}`;
+	return (
+		<TextField
+			label={t(labelKey, { defaultValue: settingKey })}
+			// the technical name stays visible: this block is the raw editor of the instance settings
+			helperText={settingKey}
+			value={value}
+			onChange={event => onChange(event.target.value)}
+			disabled={disabled}
+			size="small"
+			fullWidth
+			{...(fullLine ? { sx: { gridColumn: { xs: "auto", md: "1 / -1" } } } : {})}
+		/>
+	);
+}
+
+/**
  * Instance settings: the font for the PDF statements and a technical editor for the rest.
  *
  * @returns the settings tab
@@ -2791,22 +2842,44 @@ function SettingsTab(): React.JSX.Element {
 					>
 						{t("admin.settings.advanced")}
 					</Typography>
-					<Stack spacing={2}>
+					<Box
+						sx={{
+							display: "grid",
+							gap: 2,
+							// three settings per line on a wide screen — the values are short — and one on a phone
+							gridTemplateColumns: {
+								xs: "1fr",
+								sm: "repeat(2, minmax(0, 1fr))",
+								md: "repeat(3, minmax(0, 1fr))",
+							},
+						}}
+					>
 						{Object.keys(values)
-							.filter(key => !key.startsWith("brand_"))
+							.filter(key => !key.startsWith("brand_") && !key.endsWith("timezone"))
 							.sort()
 							.map(key => (
-								<TextField
+								<RawSettingField
 									key={key}
-									label={key}
+									settingKey={key}
 									value={draft[key] ?? values[key] ?? ""}
-									onChange={event => change(key, event.target.value)}
 									disabled={!mayEdit}
-									size="small"
-									fullWidth
+									onChange={next => change(key, next)}
 								/>
 							))}
-					</Stack>
+						{/* the time zone carries the longest value and gets a line of its own */}
+						{Object.keys(values)
+							.filter(key => key.endsWith("timezone"))
+							.map(key => (
+								<RawSettingField
+									key={key}
+									settingKey={key}
+									value={draft[key] ?? values[key] ?? ""}
+									disabled={!mayEdit}
+									onChange={next => change(key, next)}
+									fullLine
+								/>
+							))}
+					</Box>
 				</CardContent>
 			</Card>
 

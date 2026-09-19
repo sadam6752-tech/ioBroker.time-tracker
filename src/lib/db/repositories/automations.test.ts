@@ -191,3 +191,40 @@ describe("weekdays and repeat of an automation rule", () => {
 		expect(maskToWeekdays(0)).to.deep.equal([1, 2, 3, 4, 5, 6, 7]);
 	});
 });
+
+describe("the kind clockIn in the repository", () => {
+	let db: Db;
+	let repo: AutomationsRepository;
+	let adminId: number;
+
+	beforeEach(() => {
+		db = openAndMigrate(":memory:");
+		seed(db, { holidayYears: [2026] });
+		repo = createAutomationsRepository(db);
+		adminId = createUsersRepository(db).create({ login: "admin", displayName: "Admin", roleKeys: ["admin"] }).id;
+	});
+
+	afterEach(() => {
+		db.close();
+	});
+
+	it("accepts the kind and keeps it", () => {
+		const rule = repo.save({ kind: "clockIn", atMinute: 8 * 60, label: "Arbeitsbeginn", actorId: adminId });
+		expect(rule).to.deep.include({ kind: "clockIn", atMinute: 480, afterMinutes: null });
+		expect(repo.findById(rule.id)?.kind).to.equal("clockIn");
+
+		// the other kinds still work, and a wrong one is refused
+		expect(repo.save({ kind: "clockOut", atMinute: 1200, actorId: adminId }).kind).to.equal("clockOut");
+		expect(() => repo.save({ kind: "quatsch" as unknown as "clockIn", atMinute: 1200, actorId: adminId })).to.throw(
+			/kind must be one of/,
+		);
+	});
+
+	it("takes the runs of a deleted rule with it", () => {
+		const rule = repo.save({ kind: "clockIn", atMinute: 480, actorId: adminId });
+		repo.recordRun({ ruleId: rule.id, userId: adminId, period: "2026-09-18", action: "clocked in" });
+		expect(repo.runs({ limit: 10 })).to.have.length(1);
+		repo.remove({ id: rule.id, actorId: adminId });
+		expect(repo.runs({ limit: 10 })).to.be.empty;
+	});
+});

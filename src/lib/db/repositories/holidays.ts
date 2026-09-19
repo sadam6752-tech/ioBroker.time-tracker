@@ -24,6 +24,8 @@ export interface HolidayRecord {
 	date: string;
 	/** Display name */
 	name: string;
+	/** Key of a seeded holiday (`null` for one that was added by hand) */
+	key: string | null;
 }
 
 /** Holiday storage operations. */
@@ -60,12 +62,13 @@ interface HolidayRow {
 	year: number;
 	date: string;
 	name: string;
+	key: string | null;
 }
 
 /** Default region used when the caller does not pass one. */
 const DEFAULT_REGION = "DE";
 
-const COLUMNS = "id, region, year, date, name";
+const COLUMNS = "id, region, year, date, name, key";
 
 /**
  * Checks and normalises a holiday date.
@@ -93,8 +96,8 @@ export function createHolidaysRepository(db: Db): HolidaysRepository {
 	const selectYears = db.prepare("SELECT DISTINCT year FROM holidays ORDER BY year");
 	const selectById = db.prepare(`SELECT ${COLUMNS} FROM holidays WHERE id = ?`);
 	const insertHoliday = db.prepare(
-		`INSERT INTO holidays (region, year, date, name) VALUES (?, ?, ?, ?)
-		 ON CONFLICT(region, date) DO UPDATE SET name = excluded.name, year = excluded.year`,
+		`INSERT INTO holidays (region, year, date, name, key) VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(region, date) DO UPDATE SET name = excluded.name, year = excluded.year, key = excluded.key`,
 	);
 	const deleteHoliday = db.prepare("DELETE FROM holidays WHERE id = ?");
 
@@ -130,10 +133,16 @@ export function createHolidaysRepository(db: Db): HolidaysRepository {
 
 			const run = db.transaction((): void => {
 				const insertMissing = db.prepare(
-					"INSERT OR IGNORE INTO holidays (region, year, date, name) VALUES (?, ?, ?, ?)",
+					"INSERT OR IGNORE INTO holidays (region, year, date, name, key) VALUES (?, ?, ?, ?, ?)",
 				);
 				for (const holiday of holidaysForYear(input.year, input.country)) {
-					inserted += insertMissing.run(input.country, input.year, holiday.date, holiday.name).changes;
+					inserted += insertMissing.run(
+						input.country,
+						input.year,
+						holiday.date,
+						holiday.name,
+						holiday.key,
+					).changes;
 				}
 			});
 			run();
@@ -170,7 +179,8 @@ export function createHolidaysRepository(db: Db): HolidaysRepository {
 			const existing = selectByDate.get(date, region) as HolidayRow | undefined;
 
 			const run = db.transaction((): void => {
-				insertHoliday.run(region, year, date, name);
+				// a day somebody adds by hand has no key: it keeps the name it was given
+				insertHoliday.run(region, year, date, name, null);
 				writeAuditLog(db, {
 					atUtc: now,
 					actorId: input.actorId,

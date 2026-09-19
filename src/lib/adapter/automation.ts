@@ -74,6 +74,12 @@ export function evaluateAutomation(rule: AutomationRuleRecord, context: Automati
 	if (context.minuteOfDay < wanted) {
 		return { fire: false, reason: `waiting for minute ${wanted} of the day` };
 	}
+	// the mirror image of the clock out: somebody who is still missing gets a punch in
+	if (rule.kind === "clockIn") {
+		return context.hasOpenEntry
+			? { fire: false, reason: "the employee is already clocked in" }
+			: { fire: true, reason: "not clocked in yet, punching in" };
+	}
 	if (!context.hasOpenEntry) {
 		return { fire: false, reason: "the employee is not clocked in" };
 	}

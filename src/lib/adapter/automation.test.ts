@@ -141,3 +141,26 @@ describe("weekdays and periods of an automation rule", () => {
 		expect(runPeriod("week", "2026-09-19")).to.equal("2026-W38");
 	});
 });
+
+describe("the kind clockIn", () => {
+	it("punches in somebody who is still missing", () => {
+		const ruleIn = rule({ kind: "clockIn", atMinute: 8 * 60 });
+		// nobody is clocked in, and the time has come: it fires
+		const due = evaluateAutomation(
+			ruleIn,
+			context({ minuteOfDay: 8 * 60, hasOpenEntry: false, blockMinutes: null }),
+		);
+		expect(due).to.deep.include({ fire: true });
+		expect(due.reason).to.contain("punching in");
+
+		// already clocked in: nothing to do
+		const already = evaluateAutomation(ruleIn, context({ minuteOfDay: 8 * 60 }));
+		expect(already.fire).to.equal(false);
+		expect(already.reason).to.contain("already clocked in");
+
+		// before the time it waits
+		expect(
+			evaluateAutomation(ruleIn, context({ minuteOfDay: 7 * 60, hasOpenEntry: false, blockMinutes: null })).fire,
+		).to.equal(false);
+	});
+});

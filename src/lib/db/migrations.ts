@@ -544,4 +544,80 @@ export const migrations: Migration[] = [
 			ALTER TABLE automation_runs RENAME COLUMN local_date TO period;
 		`,
 	},
+	{
+		version: 18,
+		name: "automation rules: the kind clockIn (punch in somebody who is missing)",
+		sql: `
+			-- A fourth kind joins the rules: 'clockIn' punches an employee in who is still missing at the configured
+			-- time (the decision makes sure nobody is clocked in already). SQLite cannot change a CHECK constraint in
+			-- place, so the table is rebuilt — and because automation_runs belongs to it with ON DELETE CASCADE, the
+			-- run log is copied first: dropping the parent would take it with it.
+			CREATE TABLE automation_runs_copy (
+				rule_id    INTEGER NOT NULL,
+				user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+				period     TEXT    NOT NULL,
+				fired_at   INTEGER NOT NULL,
+				action     TEXT    NOT NULL,
+				PRIMARY KEY (rule_id, user_id, period)
+			);
+			INSERT INTO automation_runs_copy (rule_id, user_id, period, fired_at, action)
+				SELECT rule_id, user_id, period, fired_at, action FROM automation_runs;
+
+			CREATE TABLE automation_rules_new (
+				id            INTEGER PRIMARY KEY AUTOINCREMENT,
+				label         TEXT,
+				kind          TEXT    NOT NULL
+					CHECK (kind IN ('clockIn','clockOut','missingPunch','breakReminder')),
+				user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+				at_minute     INTEGER,
+				after_minutes INTEGER,
+				weekdays      INTEGER NOT NULL DEFAULT 127,
+				repeat        TEXT    NOT NULL DEFAULT 'day',
+				is_active     INTEGER NOT NULL DEFAULT 1,
+				created_at    INTEGER NOT NULL,
+				updated_at    INTEGER NOT NULL
+			);
+			INSERT INTO automation_rules_new
+				(id, label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active, created_at, updated_at)
+				SELECT id, label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active, created_at, updated_at
+				FROM automation_rules;
+
+			DROP TABLE automation_runs;
+			DROP TABLE automation_rules;
+			ALTER TABLE automation_rules_new RENAME TO automation_rules;
+			-- the runs keep their user reference; the reference to the rule is kept by the repository, which deletes
+			-- the runs of a rule together with it
+			ALTER TABLE automation_runs_copy RENAME TO automation_runs;
+
+			CREATE INDEX idx_automation_rules_kind ON automation_rules(kind);
+			CREATE INDEX idx_automation_runs_user ON automation_runs(user_id, period);
+		`,
+	},
+	{
+		version: 19,
+		name: "holidays: a stable key next to the name, so the app can translate the seeded days",
+		sql: `
+			-- The seeded holidays carry an English name. The key says which day it is, so the web app shows it in the
+			-- language of the display; a day somebody added by hand has no key and keeps its own name.
+			ALTER TABLE holidays ADD COLUMN key TEXT;
+
+			-- the days that are already stored get their key from the date
+			UPDATE holidays SET key = 'newYear'    WHERE key IS NULL AND date LIKE '%-01-01';
+			UPDATE holidays SET key = 'epiphany'   WHERE key IS NULL AND date LIKE '%-01-06';
+			UPDATE holidays SET key = 'labourDay'  WHERE key IS NULL AND date LIKE '%-05-01';
+			UPDATE holidays SET key = 'nationalDay' WHERE key IS NULL AND (date LIKE '%-08-01' OR date LIKE '%-10-26');
+			UPDATE holidays SET key = 'assumption' WHERE key IS NULL AND date LIKE '%-08-15';
+			UPDATE holidays SET key = 'germanUnity' WHERE key IS NULL AND date LIKE '%-10-03';
+			UPDATE holidays SET key = 'allSaints'  WHERE key IS NULL AND date LIKE '%-11-01';
+			UPDATE holidays SET key = 'immaculateConception' WHERE key IS NULL AND date LIKE '%-12-08';
+			UPDATE holidays SET key = 'christmas'  WHERE key IS NULL AND date LIKE '%-12-25';
+			UPDATE holidays SET key = 'boxingDay'  WHERE key IS NULL AND date LIKE '%-12-26';
+			-- the movable feasts carry their English name, which is unique enough to find them again
+			UPDATE holidays SET key = 'goodFriday'   WHERE key IS NULL AND name = 'Good Friday';
+			UPDATE holidays SET key = 'easterMonday' WHERE key IS NULL AND name = 'Easter Monday';
+			UPDATE holidays SET key = 'ascension'    WHERE key IS NULL AND name = 'Ascension Day';
+			UPDATE holidays SET key = 'whitMonday'   WHERE key IS NULL AND name = 'Whit Monday';
+			UPDATE holidays SET key = 'corpusChristi' WHERE key IS NULL AND name = 'Corpus Christi';
+		`,
+	},
 ];

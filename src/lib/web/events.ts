@@ -18,6 +18,7 @@ export type EventType =
 	| "terminal.punch"
 	| "rfid.scan"
 	| "backup.create"
+	| "automation.clockIn"
 	| "automation.clockOut"
 	| "automation.missingPunch"
 	| "automation.breakReminder";

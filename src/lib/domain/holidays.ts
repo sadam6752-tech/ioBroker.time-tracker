@@ -17,8 +17,10 @@ export type HolidayCountry = "CH" | "DE" | "AT";
 export interface Holiday {
 	/** Local date, `YYYY-MM-DD` */
 	date: string;
-	/** Display name (translated in the UI) */
+	/** English display name (fallback for a day somebody added by hand) */
 	name: string;
+	/** Stable key for the translations, e.g. `newYear` */
+	key: string;
 }
 
 /**
@@ -90,52 +92,53 @@ export function addDays(date: CalendarDate, days: number): CalendarDate {
  */
 export function holidaysForYear(year: number, country: HolidayCountry): Holiday[] {
 	const easter = easterSunday(year);
-	const movable = (offset: number, name: string): Holiday => ({
+	const movable = (offset: number, name: string, key: string): Holiday => ({
 		date: formatDate(addDays(easter, offset)),
 		name,
+		key,
 	});
 
-	const fixed: Holiday[] = [{ date: `${year}-01-01`, name: "New Year" }];
+	const fixed: Holiday[] = [{ date: `${year}-01-01`, name: "New Year", key: "newYear" }];
 	const easterBased: Holiday[] = [];
 
 	switch (country) {
 		case "CH":
-			easterBased.push(movable(-2, "Good Friday"), movable(39, "Ascension Day"));
+			easterBased.push(movable(-2, "Good Friday", "goodFriday"), movable(39, "Ascension Day", "ascension"));
 			fixed.push(
-				{ date: `${year}-08-01`, name: "National Day" },
-				{ date: `${year}-12-25`, name: "Christmas Day" },
+				{ date: `${year}-08-01`, name: "National Day", key: "nationalDay" },
+				{ date: `${year}-12-25`, name: "Christmas Day", key: "christmas" },
 			);
 			break;
 		case "DE":
 			easterBased.push(
-				movable(-2, "Good Friday"),
-				movable(1, "Easter Monday"),
-				movable(39, "Ascension Day"),
-				movable(50, "Whit Monday"),
+				movable(-2, "Good Friday", "goodFriday"),
+				movable(1, "Easter Monday", "easterMonday"),
+				movable(39, "Ascension Day", "ascension"),
+				movable(50, "Whit Monday", "whitMonday"),
 			);
 			fixed.push(
-				{ date: `${year}-05-01`, name: "Labour Day" },
-				{ date: `${year}-10-03`, name: "German Unity Day" },
-				{ date: `${year}-12-25`, name: "Christmas Day" },
-				{ date: `${year}-12-26`, name: "Boxing Day" },
+				{ date: `${year}-05-01`, name: "Labour Day", key: "labourDay" },
+				{ date: `${year}-10-03`, name: "German Unity Day", key: "germanUnity" },
+				{ date: `${year}-12-25`, name: "Christmas Day", key: "christmas" },
+				{ date: `${year}-12-26`, name: "Boxing Day", key: "boxingDay" },
 			);
 			break;
 		case "AT":
 			easterBased.push(
-				movable(1, "Easter Monday"),
-				movable(39, "Ascension Day"),
-				movable(50, "Whit Monday"),
-				movable(60, "Corpus Christi"),
+				movable(1, "Easter Monday", "easterMonday"),
+				movable(39, "Ascension Day", "ascension"),
+				movable(50, "Whit Monday", "whitMonday"),
+				movable(60, "Corpus Christi", "corpusChristi"),
 			);
 			fixed.push(
-				{ date: `${year}-01-06`, name: "Epiphany" },
-				{ date: `${year}-05-01`, name: "Labour Day" },
-				{ date: `${year}-08-15`, name: "Assumption Day" },
-				{ date: `${year}-10-26`, name: "National Day" },
-				{ date: `${year}-11-01`, name: "All Saints' Day" },
-				{ date: `${year}-12-08`, name: "Immaculate Conception" },
-				{ date: `${year}-12-25`, name: "Christmas Day" },
-				{ date: `${year}-12-26`, name: "Boxing Day" },
+				{ date: `${year}-01-06`, name: "Epiphany", key: "epiphany" },
+				{ date: `${year}-05-01`, name: "Labour Day", key: "labourDay" },
+				{ date: `${year}-08-15`, name: "Assumption Day", key: "assumption" },
+				{ date: `${year}-10-26`, name: "National Day", key: "nationalDay" },
+				{ date: `${year}-11-01`, name: "All Saints' Day", key: "allSaints" },
+				{ date: `${year}-12-08`, name: "Immaculate Conception", key: "immaculateConception" },
+				{ date: `${year}-12-25`, name: "Christmas Day", key: "christmas" },
+				{ date: `${year}-12-26`, name: "Boxing Day", key: "boxingDay" },
 			);
 			break;
 	}

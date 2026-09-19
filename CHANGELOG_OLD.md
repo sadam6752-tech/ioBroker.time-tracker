@@ -3,6 +3,12 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+### 0.1.7 (2026-09-19)
+
+- (Alex) ioBroker repository: `common.title` was missing in `io-package.json` and is set now (“Time tracking”);
+  `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
+  adapter itself does not load any of it)
+
 ### 0.1.3 (2026-09-18)
 
 - (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open

@@ -23,6 +23,7 @@
  * Rückgabewert: 0 = alles in Ordnung, 1 = mindestens ein Befund.
  */
 
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
@@ -191,6 +192,65 @@ export function checkVersioning(directory) {
 		}
 	}
 
+	// Der ioBroker-Repochecker lehnt `common.title` ab (E1084): `common.titleLang` hat es ersetzt.
+	if (io.common && "title" in io.common) {
+		problems.push(
+			"io-package.json hat `common.title` — das ist veraltet (Repochecker E1084), `common.titleLang` ersetzt es",
+		);
+	}
+
+	return problems;
+}
+
+/**
+ * Prüft, ob jede Version der `common.news`-Liste wirklich auf npm veröffentlicht ist (Repochecker E2004).
+ *
+ * Eine Version, deren Pipeline rot war, liegt nicht auf npm — sie darf dann auch nicht im Changelog stehen. Gefragt
+ * wird die npm-CLI (so macht es der ioBroker-Repochecker auch); ohne Netz oder ohne npm wird der Punkt übersprungen,
+ * der Rest der Prüfung läuft weiter offline.
+ *
+ * @param directory - Wurzel des Adapters
+ * @returns gefundene Probleme, leer wenn alles veröffentlicht ist
+ */
+function checkNewsOnNpm(directory) {
+	const problems = [];
+	const io = readJson(join(directory, "io-package.json"), []);
+	const name = io?.common?.name;
+	const versions = Object.keys(io?.common?.news ?? {});
+	if (!name || versions.length === 0) {
+		return problems;
+	}
+
+	let published = [];
+	try {
+		const result = spawnSync("npm", ["view", `iobroker.${name.replace(/^iobroker\./, "")}`, "versions", "--json"], {
+			encoding: "utf8",
+			shell: true,
+			timeout: 30000,
+		});
+		if (result.status !== 0 || !result.stdout) {
+			return problems;
+		}
+		const parsed = JSON.parse(result.stdout);
+		published = Array.isArray(parsed) ? parsed : [parsed];
+	} catch {
+		// ohne Netz oder ohne npm ist die Online-Prüfung nicht möglich
+		return problems;
+	}
+
+	// Die laufende Version wird von diesem Release selbst veröffentlicht und darf darum noch fehlen.
+	const current = readJson(join(directory, "package.json"), [])?.version;
+	for (const version of versions) {
+		if (version === current) {
+			continue;
+		}
+		if (!published.includes(version)) {
+			problems.push(
+				`io-package.json nennt ${version} in common.news, aber diese Version liegt nicht auf npm ` +
+					"(Repochecker E2004) — sie gehört aus der News-Liste entfernt",
+			);
+		}
+	}
 	return problems;
 }
 
@@ -199,7 +259,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 	const args = process.argv.slice(2);
 	const index = args.indexOf("--repo");
 	const repo = resolve(index >= 0 ? (args[index + 1] ?? ".") : ".");
-	const problems = checkVersioning(repo);
+	const problems = [...checkVersioning(repo), ...checkNewsOnNpm(repo)];
 
 	if (problems.length === 0) {
 		console.log(`Version in Ordnung (${repo})`);

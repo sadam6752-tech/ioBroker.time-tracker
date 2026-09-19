@@ -305,18 +305,19 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.1.9 (2026-09-19)
+
+- (Alex) ioBroker repository: two findings of the repository checker are fixed — `common.title` is removed (it is
+  deprecated, `common.titleLang` replaced it, E1084) and the `common.news` entry of 0.1.7 is gone, because that version
+  never reached npm (E2004, its pipeline was red). `npm run version:check` watches both rules from now on: it refuses
+  `common.title` and every version in the news list has to exist on npm
+
 ### 0.1.8 (2026-09-19)
 
 - (Alex) fix: the pipeline of 0.1.7 failed in the ioBroker package test — `common.license` was added next to the
   existing `common.licenseInformation`, and the test refuses both together (“common.license should not exist together
   with common.licenseInformation”). The field is removed again, `npm run test:package` is part of the release checklist
   from now on, and `docs/entwicklung.md` records the rule
-
-### 0.1.7 (2026-09-19)
-
-- (Alex) ioBroker repository: `common.title` was missing in `io-package.json` and is set now (“Time tracking”);
-  `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
-  adapter itself does not load any of it)
 
 ### 0.1.6 (2026-09-19)
 

@@ -1,0 +1,527 @@
+/**
+ * Names of the adapter's objects, in the eleven languages ioBroker recommends (checker `E6001`).
+ *
+ * `states.ts` creates the tree; this module is the single place that carries the texts, so every name has the same
+ * set of languages. `states.test.ts` walks the whole tree and fails when a name misses one of the eleven keys —
+ * that is how the recommendation stays satisfied without anyone remembering it.
+ */
+
+/** One object name: the eleven languages the ioBroker checker recommends. */
+export interface StateName {
+	/** English */
+	en: string;
+	/** German */
+	de: string;
+	/** Russian */
+	ru: string;
+	/** Portuguese */
+	pt: string;
+	/** Dutch */
+	nl: string;
+	/** French */
+	fr: string;
+	/** Italian */
+	it: string;
+	/** Spanish */
+	es: string;
+	/** Polish */
+	pl: string;
+	/** Ukrainian */
+	uk: string;
+	/** Chinese (simplified) */
+	"zh-cn": string;
+}
+
+/** Object names of the adapter, grouped like the state tree. */
+export const STATE_NAMES = {
+	/** Channel holding the employees */
+	usersChannel: {
+		en: "Employees",
+		de: "Mitarbeiter",
+		ru: "Сотрудники",
+		pt: "Funcionários",
+		nl: "Medewerkers",
+		fr: "Employés",
+		it: "Dipendenti",
+		es: "Empleados",
+		pl: "Pracownicy",
+		uk: "Співробітники",
+		"zh-cn": "员工",
+	},
+	/** Channel of one employee */
+	employeeChannel: {
+		en: "Employee",
+		de: "Mitarbeiter",
+		ru: "Сотрудник",
+		pt: "Funcionário",
+		nl: "Medewerker",
+		fr: "Employé",
+		it: "Dipendente",
+		es: "Empleado",
+		pl: "Pracownik",
+		uk: "Співробітник",
+		"zh-cn": "员工",
+	},
+	/** Channel of the writable commands */
+	commandsChannel: {
+		en: "Commands",
+		de: "Befehle",
+		ru: "Команды",
+		pt: "Comandos",
+		nl: "Opdrachten",
+		fr: "Commandes",
+		it: "Comandi",
+		es: "Comandos",
+		pl: "Polecenia",
+		uk: "Команди",
+		"zh-cn": "命令",
+	},
+	/** Channel with the figures of the instance */
+	infoChannel: {
+		en: "Information",
+		de: "Information",
+		ru: "Информация",
+		pt: "Informação",
+		nl: "Informatie",
+		fr: "Informations",
+		it: "Informazioni",
+		es: "Información",
+		pl: "Informacje",
+		uk: "Інформація",
+		"zh-cn": "信息",
+	},
+	/** Channel with the figures of the whole company */
+	companyChannel: {
+		en: "Company",
+		de: "Firma",
+		ru: "Компания",
+		pt: "Empresa",
+		nl: "Bedrijf",
+		fr: "Entreprise",
+		it: "Azienda",
+		es: "Empresa",
+		pl: "Firma",
+		uk: "Компанія",
+		"zh-cn": "公司",
+	},
+	/** Channel with the newest event of the instance */
+	eventsChannel: {
+		en: "Events",
+		de: "Ereignisse",
+		ru: "События",
+		pt: "Eventos",
+		nl: "Gebeurtenissen",
+		fr: "Événements",
+		it: "Eventi",
+		es: "Eventos",
+		pl: "Zdarzenia",
+		uk: "Події",
+		"zh-cn": "事件",
+	},
+	/** Shown name of the employee */
+	displayName: {
+		en: "Name",
+		de: "Name",
+		ru: "Имя",
+		pt: "Nome",
+		nl: "Naam",
+		fr: "Nom",
+		it: "Nome",
+		es: "Nombre",
+		pl: "Nazwa",
+		uk: "Ім'я",
+		"zh-cn": "姓名",
+	},
+	/** Writable presence of the employee (working time runs) */
+	userPresent: {
+		en: "Present (working time is running)",
+		de: "Anwesenheit (Arbeitszeit läuft)",
+		ru: "Присутствие (рабочее время идёт)",
+		pt: "Presente (o tempo de trabalho corre)",
+		nl: "Aanwezig (werktijd loopt)",
+		fr: "Présent (temps de travail en cours)",
+		it: "Presente (tempo di lavoro in corso)",
+		es: "Presente (tiempo de trabajo en curso)",
+		pl: "Obecność (czas pracy trwa)",
+		uk: "Присутність (робочий час іде)",
+		"zh-cn": "在岗（工作时间计时中）",
+	},
+	/** True while the last punch of the day has no counterpart */
+	hasOpenEntry: {
+		en: "Punched in",
+		de: "Eingestempelt",
+		ru: "Приход отмечен",
+		pt: "Entrada registada",
+		nl: "Ingeklokt",
+		fr: "Pointage d'arrivée",
+		it: "Entrata registrata",
+		es: "Entrada registrada",
+		pl: "Zarejestrowane wejście",
+		uk: "Відмічено прихід",
+		"zh-cn": "已签到",
+	},
+	/** Instant of the last punch */
+	lastPunch: {
+		en: "Last punch",
+		de: "Letzte Buchung",
+		ru: "Последняя отметка",
+		pt: "Último registo",
+		nl: "Laatste stempeling",
+		fr: "Dernier pointage",
+		it: "Ultima timbratura",
+		es: "Último registro",
+		pl: "Ostatni wpis",
+		uk: "Остання відмітка",
+		"zh-cn": "最后打卡",
+	},
+	/** Net working time of today */
+	todayWorkedMinutes: {
+		en: "Worked today",
+		de: "Heute gearbeitet",
+		ru: "Отработано сегодня",
+		pt: "Trabalhado hoje",
+		nl: "Vandaag gewerkt",
+		fr: "Travaillé aujourd'hui",
+		it: "Lavorato oggi",
+		es: "Trabajado hoy",
+		pl: "Przepracowane dziś",
+		uk: "Відпрацьовано сьогодні",
+		"zh-cn": "今日已工作",
+	},
+	/** Balance of today */
+	todayBalanceMinutes: {
+		en: "Balance today",
+		de: "Saldo heute",
+		ru: "Баланс за сегодня",
+		pt: "Saldo de hoje",
+		nl: "Saldo vandaag",
+		fr: "Solde du jour",
+		it: "Saldo di oggi",
+		es: "Saldo de hoy",
+		pl: "Saldo dzisiaj",
+		uk: "Баланс за сьогодні",
+		"zh-cn": "今日余额",
+	},
+	/** Net working time of the current month */
+	monthWorkedMinutes: {
+		en: "Worked this month",
+		de: "Diesen Monat gearbeitet",
+		ru: "Отработано за месяц",
+		pt: "Trabalhado este mês",
+		nl: "Deze maand gewerkt",
+		fr: "Travaillé ce mois",
+		it: "Lavorato questo mese",
+		es: "Trabajado este mes",
+		pl: "Przepracowane w tym miesiącu",
+		uk: "Відпрацьовано цього місяця",
+		"zh-cn": "本月已工作",
+	},
+	/** Balance of the current month */
+	monthBalanceMinutes: {
+		en: "Balance this month",
+		de: "Saldo diesen Monat",
+		ru: "Баланс за месяц",
+		pt: "Saldo deste mês",
+		nl: "Saldo deze maand",
+		fr: "Solde du mois",
+		it: "Saldo di questo mese",
+		es: "Saldo de este mes",
+		pl: "Saldo w tym miesiącu",
+		uk: "Баланс за цей місяць",
+		"zh-cn": "本月余额",
+	},
+	/** Balance of the current year */
+	yearBalanceMinutes: {
+		en: "Balance this year",
+		de: "Saldo dieses Jahr",
+		ru: "Баланс за год",
+		pt: "Saldo deste ano",
+		nl: "Saldo dit jaar",
+		fr: "Solde de l'année",
+		it: "Saldo di quest'anno",
+		es: "Saldo de este año",
+		pl: "Saldo w tym roku",
+		uk: "Баланс за цей рік",
+		"zh-cn": "本年余额",
+	},
+	/** Punches waiting for a decision */
+	openConflicts: {
+		en: "Open conflicts",
+		de: "Offene Konflikte",
+		ru: "Открытые конфликты",
+		pt: "Conflitos em aberto",
+		nl: "Openstaande conflicten",
+		fr: "Conflits en attente",
+		it: "Conflitti aperti",
+		es: "Conflictos abiertos",
+		pl: "Otwarte konflikty",
+		uk: "Відкриті конфлікти",
+		"zh-cn": "未解决的冲突",
+	},
+	/** Employee the punch commands apply to */
+	punchUserId: {
+		en: "Employee id for punch commands",
+		de: "Mitarbeiter-Id für Stempelbefehle",
+		ru: "Идентификатор сотрудника для команд",
+		pt: "ID do funcionário para comandos",
+		nl: "Medewerker-id voor opdrachten",
+		fr: "Identifiant de l'employé pour les commandes",
+		it: "ID del dipendente per i comandi",
+		es: "ID del empleado para comandos",
+		pl: "Identyfikator pracownika dla poleceń",
+		uk: "Ідентифікатор співробітника для команд",
+		"zh-cn": "打卡命令的员工 ID",
+	},
+	/** Button: punch in or out */
+	punch: {
+		en: "Punch in or out",
+		de: "Ein- oder ausstempeln",
+		ru: "Отметиться (приход или уход)",
+		pt: "Marcar entrada ou saída",
+		nl: "In- of uitklokken",
+		fr: "Pointer l'arrivée ou le départ",
+		it: "Timbrare entrata o uscita",
+		es: "Fichar entrada o salida",
+		pl: "Zarejestruj wejście lub wyjście",
+		uk: "Відмітити прихід або вихід",
+		"zh-cn": "上班或下班打卡",
+	},
+	/** Button: punch and round the time */
+	quickPunch: {
+		en: "Punch with quick rounding",
+		de: "Stempeln mit Schnellrundung",
+		ru: "Отметиться с быстрым округлением",
+		pt: "Marcar com arredondamento rápido",
+		nl: "Klokken met snelle afronding",
+		fr: "Pointer avec arrondi rapide",
+		it: "Timbrare con arrotondamento rapido",
+		es: "Fichar con redondeo rápido",
+		pl: "Zarejestruj z szybkim zaokrągleniem",
+		uk: "Відмітити зі швидким округленням",
+		"zh-cn": "快速取整打卡",
+	},
+	/** Month to close */
+	closeMonth: {
+		en: "Close month (YYYY-MM)",
+		de: "Monat abschließen (JJJJ-MM)",
+		ru: "Закрыть месяц (ГГГГ-ММ)",
+		pt: "Fechar mês (AAAA-MM)",
+		nl: "Maand afsluiten (JJJJ-MM)",
+		fr: "Clôturer le mois (AAAA-MM)",
+		it: "Chiudere il mese (AAAA-MM)",
+		es: "Cerrar mes (AAAA-MM)",
+		pl: "Zamknij miesiąc (RRRR-MM)",
+		uk: "Закрити місяць (РРРР-ММ)",
+		"zh-cn": "关闭月份（YYYY-MM）",
+	},
+	/** Period to recalculate */
+	recalc: {
+		en: "Recalculate period (YYYY-MM or YYYY)",
+		de: "Zeitraum neu berechnen (JJJJ-MM oder JJJJ)",
+		ru: "Пересчитать период (ГГГГ-ММ или ГГГГ)",
+		pt: "Recalcular período (AAAA-MM ou AAAA)",
+		nl: "Periode opnieuw berekenen (JJJJ-MM of JJJJ)",
+		fr: "Recalculer la période (AAAA-MM ou AAAA)",
+		it: "Ricalcolare il periodo (AAAA-MM o AAAA)",
+		es: "Recalcular periodo (AAAA-MM o AAAA)",
+		pl: "Przelicz okres (RRRR-MM lub RRRR)",
+		uk: "Перерахувати період (РРРР-ММ або РРРР)",
+		"zh-cn": "重新计算期间（YYYY-MM 或 YYYY）",
+	},
+	/** Button: write a database backup */
+	backupCommand: {
+		en: "Write a database backup",
+		de: "Datenbank-Sicherung schreiben",
+		ru: "Создать резервную копию базы",
+		pt: "Criar cópia de segurança da base de dados",
+		nl: "Databasback-up maken",
+		fr: "Créer une sauvegarde de la base",
+		it: "Creare un backup del database",
+		es: "Crear copia de seguridad de la base",
+		pl: "Utwórz kopię zapasową bazy",
+		uk: "Створити резервну копію бази",
+		"zh-cn": "写入数据库备份",
+	},
+	/** Version of the adapter */
+	version: {
+		en: "Adapter version",
+		de: "Adapter-Version",
+		ru: "Версия адаптера",
+		pt: "Versão do adaptador",
+		nl: "Adapterversie",
+		fr: "Version de l'adaptateur",
+		it: "Versione dell'adattatore",
+		es: "Versión del adaptador",
+		pl: "Wersja adaptera",
+		uk: "Версія адаптера",
+		"zh-cn": "适配器版本",
+	},
+	/** Version of the database schema */
+	schemaVersion: {
+		en: "Database schema version",
+		de: "Datenbank-Schemaversion",
+		ru: "Версия схемы базы данных",
+		pt: "Versão do esquema da base de dados",
+		nl: "Schemaversie van de database",
+		fr: "Version du schéma de la base",
+		it: "Versione dello schema del database",
+		es: "Versión del esquema de la base",
+		pl: "Wersja schematu bazy",
+		uk: "Версія схеми бази даних",
+		"zh-cn": "数据库架构版本",
+	},
+	/** Size of the database file */
+	dbSizeBytes: {
+		en: "Database size",
+		de: "Datenbank-Größe",
+		ru: "Размер базы данных",
+		pt: "Tamanho da base de dados",
+		nl: "Grootte van de database",
+		fr: "Taille de la base",
+		it: "Dimensione del database",
+		es: "Tamaño de la base",
+		pl: "Rozmiar bazy",
+		uk: "Розмір бази даних",
+		"zh-cn": "数据库大小",
+	},
+	/** Last error of the instance */
+	lastError: {
+		en: "Last error",
+		de: "Letzter Fehler",
+		ru: "Последняя ошибка",
+		pt: "Último erro",
+		nl: "Laatste fout",
+		fr: "Dernière erreur",
+		it: "Ultimo errore",
+		es: "Último error",
+		pl: "Ostatni błąd",
+		uk: "Остання помилка",
+		"zh-cn": "最后的错误",
+	},
+	/** Instant of the last backup */
+	lastBackup: {
+		en: "Last backup",
+		de: "Letzte Sicherung",
+		ru: "Последняя резервная копия",
+		pt: "Última cópia de segurança",
+		nl: "Laatste back-up",
+		fr: "Dernière sauvegarde",
+		it: "Ultimo backup",
+		es: "Última copia de seguridad",
+		pl: "Ostatnia kopia zapasowa",
+		uk: "Остання резервна копія",
+		"zh-cn": "最后的备份",
+	},
+	/** Number of employees that are present */
+	companyPresentCount: {
+		en: "Present employees",
+		de: "Anwesende Mitarbeiter",
+		ru: "Присутствующие сотрудники",
+		pt: "Funcionários presentes",
+		nl: "Aanwezige medewerkers",
+		fr: "Employés présents",
+		it: "Dipendenti presenti",
+		es: "Empleados presentes",
+		pl: "Obecni pracownicy",
+		uk: "Присутні співробітники",
+		"zh-cn": "在岗员工",
+	},
+	/** Names of the employees that are present */
+	companyPresent: {
+		en: "Who is present",
+		de: "Wer ist anwesend",
+		ru: "Кто присутствует",
+		pt: "Quem está presente",
+		nl: "Wie is aanwezig",
+		fr: "Qui est présent",
+		it: "Chi è presente",
+		es: "Quién está presente",
+		pl: "Kto jest obecny",
+		uk: "Хто присутній",
+		"zh-cn": "谁在岗",
+	},
+	/** Instant of the newest punch of the company */
+	companyLastPunch: {
+		en: "Last punch",
+		de: "Letzte Buchung",
+		ru: "Последняя отметка",
+		pt: "Último registo",
+		nl: "Laatste stempeling",
+		fr: "Dernier pointage",
+		it: "Ultima timbratura",
+		es: "Último registro",
+		pl: "Ostatni wpis",
+		uk: "Остання відмітка",
+		"zh-cn": "最后打卡",
+	},
+	/** Instant of the newest event */
+	lastAt: {
+		en: "Last event at",
+		de: "Letztes Ereignis um",
+		ru: "Время последнего события",
+		pt: "Hora do último evento",
+		nl: "Tijdstip laatste gebeurtenis",
+		fr: "Heure du dernier événement",
+		it: "Ora dell'ultimo evento",
+		es: "Hora del último evento",
+		pl: "Czas ostatniego zdarzenia",
+		uk: "Час останньої події",
+		"zh-cn": "最后事件时间",
+	},
+	/** Kind of the newest event */
+	lastType: {
+		en: "Kind of the last event",
+		de: "Art des letzten Ereignisses",
+		ru: "Тип последнего события",
+		pt: "Tipo do último evento",
+		nl: "Soort laatste gebeurtenis",
+		fr: "Type du dernier événement",
+		it: "Tipo dell'ultimo evento",
+		es: "Tipo del último evento",
+		pl: "Rodzaj ostatniego zdarzenia",
+		uk: "Тип останньої події",
+		"zh-cn": "最后事件类型",
+	},
+	/** Employee of the newest event */
+	lastUser: {
+		en: "Employee of the last event",
+		de: "Mitarbeiter des letzten Ereignisses",
+		ru: "Сотрудник последнего события",
+		pt: "Funcionário do último evento",
+		nl: "Medewerker van de laatste gebeurtenis",
+		fr: "Employé du dernier événement",
+		it: "Dipendente dell'ultimo evento",
+		es: "Empleado del último evento",
+		pl: "Pracownik ostatniego zdarzenia",
+		uk: "Співробітник останньої події",
+		"zh-cn": "最后事件的员工",
+	},
+	/** Direction of the newest punch */
+	lastDirection: {
+		en: "Direction of the last punch",
+		de: "Richtung der letzten Buchung",
+		ru: "Направление последней отметки",
+		pt: "Direção do último registo",
+		nl: "Richting van de laatste stempeling",
+		fr: "Sens du dernier pointage",
+		it: "Direzione dell'ultima timbratura",
+		es: "Dirección del último registro",
+		pl: "Kierunek ostatniego wpisu",
+		uk: "Напрямок останньої відмітки",
+		"zh-cn": "最后打卡的方向",
+	},
+	/** Source of the newest event */
+	lastSource: {
+		en: "Source of the last event",
+		de: "Quelle des letzten Ereignisses",
+		ru: "Источник последнего события",
+		pt: "Origem do último evento",
+		nl: "Bron van de laatste gebeurtenis",
+		fr: "Source du dernier événement",
+		it: "Origine dell'ultimo evento",
+		es: "Origen del último evento",
+		pl: "Źródło ostatniego zdarzenia",
+		uk: "Джерело останньої події",
+		"zh-cn": "最后事件的来源",
+	},
+} satisfies Record<string, StateName>;

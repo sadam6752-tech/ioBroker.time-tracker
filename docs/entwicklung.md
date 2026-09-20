@@ -85,7 +85,7 @@ Compact-Mode (`common.compact: false`).
 (`"license": "MIT"`) bleibt davon unberührt und muss dazu passen. Genau daran ist die 0.1.7-Pipeline gescheitert, und
 deshalb gehört `npm run test:package` zur Prüfliste vor jedem Release.
 
-## Objektstruktur (E3009)
+## Objektstruktur (E3009, E1011, E6001)
 
 Der ioBroker-Bot prüft die Objektliste eines laufenden Systems („Object Structure Check – `time-tracker.0.json`").
 Er verlangt zu **jedem** State die übergeordneten Objekte: `users.<id>.todayWorkedMinutes` braucht den Kanal
@@ -95,6 +95,19 @@ für jedes betroffene Objekt — im PR #6697 waren das **126 Meldungen aus einem
 Deshalb legt `createUserChannel` (`src/lib/adapter/states.ts`) den Wurzelkanal `users` mit an, idempotent über
 `setObjectNotExists`; die übrigen Kanäle (`info`, `company`, `events`, `commands`) entstehen in ihren jeweiligen
 `create…States`-Funktionen.
+
+Zwei weitere Befunde desselben Checks:
+
+- **`E1011`** — `common.write` muss zur Rolle passen: `value` ist eine **lesende** Rolle, deshalb trägt der
+  schreibbare `commands.punchUserId` jetzt `level`.
+- **`E6001`** — jeder Objektname soll die **elf** Sprachen tragen, die `common.titleLang` und die News bereits haben.
+  Die Texte liegen an **einer** Stelle (`src/lib/adapter/stateNames.ts`), und `src/lib/adapter/states.test.ts`
+  schlägt fehl, sobald einem Namen eine Sprache fehlt.
+
+Weil `setObjectNotExists` bestehende Objekte unangetastet lässt, aktualisiert `ensureObject` in `states.ts` nach dem
+Anlegen zusätzlich `common.name` per `extendObject`. Ohne das behielten laufende Installationen — und damit auch der
+Objekt-Dump, den der Checker liest — die alten `en`/`de`-Namen. Der Merge betrifft nur den Namen, Verknüpfungen
+(etwa in `vis`) bleiben unberührt.
 
 ## Nach der Umbenennung: zwei Regeln mehr
 

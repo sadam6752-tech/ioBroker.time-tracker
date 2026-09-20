@@ -28,6 +28,8 @@ import { handlePresenceState, parsePresenceStateId, readPresenceValue, type Pres
 import {
 	COMMAND_IDS,
 	createCommandStates,
+	createCompanyStates,
+	createEventStates,
 	createInfoStates,
 	createUserChannel,
 	publishAllUserStates,
@@ -51,6 +53,20 @@ class Recorder implements StatePort {
 	 */
 	public setObjectNotExists(id: string, object: ioBroker.SettableObject): void {
 		this.objects.set(id, object);
+	}
+
+	/**
+	 * Remembers the fields that were merged into an existing object.
+	 *
+	 * @param id - object id
+	 * @param object - fields to merge
+	 */
+	public extendObject(id: string, object: ioBroker.PartialObject): void {
+		const existing = this.objects.get(id);
+		this.objects.set(id, {
+			...existing,
+			common: { ...(existing?.common ?? {}), ...(object.common ?? {}) },
+		} as ioBroker.SettableObject);
 	}
 
 	/**
@@ -154,6 +170,25 @@ describe("adapter states and commands", () => {
 
 			expect(recorder.values.get(`users.${annaId}.displayName`)).to.equal("Anna");
 			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
+		});
+
+		it("gives every object name all eleven languages (checker E6001)", async () => {
+			await createCommandStates(recorder);
+			await createInfoStates(recorder);
+			await createCompanyStates(recorder);
+			await createEventStates(recorder);
+			await publishAllUserStates({ port: recorder, aggregation, users, sync, now });
+
+			const languages = ["en", "de", "ru", "pt", "nl", "fr", "it", "es", "pl", "uk", "zh-cn"];
+			expect(recorder.objects.size).to.be.greaterThan(20);
+			for (const [id, object] of recorder.objects) {
+				const name = object.common?.name as Record<string, string> | undefined;
+				expect(name, `name of ${id}`).to.be.an("object");
+				expect(Object.keys(name ?? {}).sort(), `languages of ${id}`).to.deep.equal([...languages].sort());
+				for (const language of languages) {
+					expect(name?.[language], `${id} in ${language}`).to.be.a("string").and.not.equal("");
+				}
+			}
 		});
 
 		it("creates the parent channel of the employees (object structure check E3009)", async () => {

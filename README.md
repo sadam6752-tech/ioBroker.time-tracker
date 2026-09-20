@@ -305,6 +305,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.2 (2026-09-20)
+
+- (Alex) object structure check: every object name carries all **eleven languages** now (`E6001`) and the employee-id
+  command uses the role **`level`** instead of `value` (`E1011`). The names live in one place
+  (`src/lib/adapter/stateNames.ts`), a unit test keeps them complete, and existing installations receive the new
+  names on the next start (`extendObject`)
+
 ### 0.2.1 (2026-09-20)
 
 - (Alex) `common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0,
@@ -333,20 +340,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   existing `common.licenseInformation`, and the test refuses both together (“common.license should not exist together
   with common.licenseInformation”). The field is removed again, `npm run test:package` is part of the release checklist
   from now on, and `docs/entwicklung.md` records the rule
-
-### 0.1.6 (2026-09-19)
-
-- (Alex) admin: the raw instance settings show a readable label now — in the language of the display — with the
-  technical name in the small line below it, which is what the block promises. The labels are kept short enough that
-  the fields do not cut them off
-- (Alex) admin: the block “All instance settings” is much shorter — three fields per line on a wide screen (two on a
-  tablet, one on a phone) and the time zone on a line of its own, because its value is the longest
-- (Alex) **rules (automatic)**: the kind **“Clock in automatically”** joins them — an employee who is still missing at
-  the configured time gets a punch in (the rule keeps quiet when somebody is clocked in already). Migration 18 rebuilds
-  the rule table for the new kind and copies the run log first, because dropping the parent would take it with it
-- (Alex) **holidays**: the seeded days are shown in the language of the display — each one carries a stable key
-  (`newYear`, `goodFriday`, …) and the app translates it; a day somebody added by hand keeps its own name
-- (Alex) admin: the two “first start” hints are easier to read — they are rendered as HTML with a larger font
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

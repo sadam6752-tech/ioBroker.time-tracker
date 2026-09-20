@@ -17,6 +17,7 @@
 import type { UsersRepository } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { SyncService } from "../services/sync";
+import { STATE_NAMES, type StateName } from "./stateNames";
 import { localDate as resolveLocalDate } from "../util/time";
 
 /** Subset of the adapter API the state layer needs. */
@@ -28,6 +29,13 @@ export interface StatePort {
 	 * @param object - object definition
 	 */
 	setObjectNotExists(id: string, object: ioBroker.SettableObject): Promise<unknown> | void;
+	/**
+	 * Merges fields into an object that already exists.
+	 *
+	 * @param id - full state id (including the instance prefix)
+	 * @param object - fields to merge
+	 */
+	extendObject(id: string, object: ioBroker.PartialObject): Promise<unknown> | void;
 	/**
 	 * Writes a state value.
 	 *
@@ -119,7 +127,7 @@ export const COMMAND_IDS = {
  * @returns object definition
  */
 function stateObject(
-	name: { en: string; de: string },
+	name: StateName,
 	type: ioBroker.CommonType,
 	role: string,
 	options: { read?: boolean; write?: boolean; unit?: string } = {},
@@ -146,8 +154,24 @@ function stateObject(
  * @param name.de - German name
  * @returns object definition
  */
-function channelObject(name: { en: string; de: string }): ioBroker.SettableObject {
+function channelObject(name: StateName): ioBroker.SettableObject {
 	return { type: "channel", common: { name }, native: {} };
+}
+
+/**
+ * Creates an object when it is missing and keeps its name current.
+ *
+ * `setObjectNotExists` alone would leave the names of existing installations untouched — the ioBroker object
+ * structure check (`E6001`) reads them from the running instance, so the name is refreshed on every start. The
+ * merge only touches `common.name`, existing links (for example in `vis`) stay as they are.
+ *
+ * @param port - state port
+ * @param id - full state id (including the instance prefix)
+ * @param object - object definition
+ */
+async function ensureObject(port: StatePort, id: string, object: ioBroker.SettableObject): Promise<void> {
+	await port.setObjectNotExists(id, object);
+	await port.extendObject(id, { common: { name: object.common?.name } });
 }
 
 /**
@@ -266,52 +290,48 @@ export async function publishAllUserStates(args: {
  */
 export async function createUserChannel(port: StatePort, userId: number): Promise<string> {
 	const id = `users.${userId}`;
-	await port.setObjectNotExists("users", channelObject({ en: "Employees", de: "Mitarbeiter" }));
-	await port.setObjectNotExists(id, channelObject({ en: "Employee", de: "Mitarbeiter" }));
-	await port.setObjectNotExists(`${id}.displayName`, stateObject({ en: "Name", de: "Name" }, "string", "info.name"));
+	await ensureObject(port, "users", channelObject(STATE_NAMES.usersChannel));
+	await ensureObject(port, id, channelObject(STATE_NAMES.employeeChannel));
+	await ensureObject(port, `${id}.displayName`, stateObject(STATE_NAMES.displayName, "string", "info.name"));
 	// the writable twin of `hasOpenEntry`: a script, a fingerprint reader or a dashboard writes it to say that
 	// somebody arrived (`true`) or left (`false`) — see `presence.ts` for what the adapter does with it
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.present`,
-		stateObject(
-			{ en: "Present (working time is running)", de: "Anwesenheit (Arbeitszeit läuft)" },
-			"boolean",
-			"switch",
-			{ write: true },
-		),
+		stateObject(STATE_NAMES.userPresent, "boolean", "switch", { write: true }),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.hasOpenEntry`,
-		stateObject({ en: "Punched in", de: "Eingestempelt" }, "boolean", "indicator.working"),
+		stateObject(STATE_NAMES.hasOpenEntry, "boolean", "indicator.working"),
 	);
-	await port.setObjectNotExists(
-		`${id}.lastPunch`,
-		stateObject({ en: "Last punch", de: "Letzte Buchung" }, "number", "value.time"),
-	);
-	await port.setObjectNotExists(
+	await ensureObject(port, `${id}.lastPunch`, stateObject(STATE_NAMES.lastPunch, "number", "value.time"));
+	await ensureObject(
+		port,
 		`${id}.todayWorkedMinutes`,
-		stateObject({ en: "Worked today", de: "Heute gearbeitet" }, "number", "value", { unit: "min" }),
+		stateObject(STATE_NAMES.todayWorkedMinutes, "number", "value", { unit: "min" }),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.todayBalanceMinutes`,
-		stateObject({ en: "Balance today", de: "Saldo heute" }, "number", "value", { unit: "min" }),
+		stateObject(STATE_NAMES.todayBalanceMinutes, "number", "value", { unit: "min" }),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.monthWorkedMinutes`,
-		stateObject({ en: "Worked this month", de: "Diesen Monat gearbeitet" }, "number", "value", { unit: "min" }),
+		stateObject(STATE_NAMES.monthWorkedMinutes, "number", "value", { unit: "min" }),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.monthBalanceMinutes`,
-		stateObject({ en: "Balance this month", de: "Saldo diesen Monat" }, "number", "value", { unit: "min" }),
+		stateObject(STATE_NAMES.monthBalanceMinutes, "number", "value", { unit: "min" }),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		`${id}.yearBalanceMinutes`,
-		stateObject({ en: "Balance this year", de: "Saldo dieses Jahr" }, "number", "value", { unit: "min" }),
+		stateObject(STATE_NAMES.yearBalanceMinutes, "number", "value", { unit: "min" }),
 	);
-	await port.setObjectNotExists(
-		`${id}.openConflicts`,
-		stateObject({ en: "Open conflicts", de: "Offene Konflikte" }, "number", "value"),
-	);
+	await ensureObject(port, `${id}.openConflicts`, stateObject(STATE_NAMES.openConflicts, "number", "value"));
 	return id;
 }
 
@@ -321,50 +341,42 @@ export async function createUserChannel(port: StatePort, userId: number): Promis
  * @param port - state port
  */
 export async function createCommandStates(port: StatePort): Promise<void> {
-	await port.setObjectNotExists("commands", channelObject({ en: "Commands", de: "Befehle" }));
-	await port.setObjectNotExists(
+	await ensureObject(port, "commands", channelObject(STATE_NAMES.commandsChannel));
+	await ensureObject(
+		port,
 		COMMAND_IDS.punchUserId,
-		stateObject(
-			{ en: "Employee id for punch commands", de: "Mitarbeiter-Id für Stempelbefehle" },
-			"number",
-			"value",
-			{
-				write: true,
-			},
-		),
+		stateObject(STATE_NAMES.punchUserId, "number", "level", {
+			write: true,
+		}),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		COMMAND_IDS.punch,
-		stateObject({ en: "Punch in or out", de: "Ein- oder ausstempeln" }, "boolean", "button", {
+		stateObject(STATE_NAMES.punch, "boolean", "button", {
 			read: false,
 			write: true,
 		}),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		COMMAND_IDS.quickPunch,
-		stateObject({ en: "Punch with quick rounding", de: "Stempeln mit Schnellrundung" }, "boolean", "button", {
+		stateObject(STATE_NAMES.quickPunch, "boolean", "button", {
 			read: false,
 			write: true,
 		}),
 	);
-	await port.setObjectNotExists(
+	await ensureObject(
+		port,
 		COMMAND_IDS.closeMonth,
-		stateObject({ en: "Close month (YYYY-MM)", de: "Monat abschließen (JJJJ-MM)" }, "string", "text", {
+		stateObject(STATE_NAMES.closeMonth, "string", "text", {
 			write: true,
 		}),
 	);
-	await port.setObjectNotExists(
-		COMMAND_IDS.recalc,
-		stateObject(
-			{ en: "Recalculate period (YYYY-MM or YYYY)", de: "Zeitraum neu berechnen (JJJJ-MM oder JJJJ)" },
-			"string",
-			"text",
-			{ write: true },
-		),
-	);
-	await port.setObjectNotExists(
+	await ensureObject(port, COMMAND_IDS.recalc, stateObject(STATE_NAMES.recalc, "string", "text", { write: true }));
+	await ensureObject(
+		port,
 		COMMAND_IDS.backup,
-		stateObject({ en: "Write a database backup", de: "Datenbank-Sicherung schreiben" }, "boolean", "button", {
+		stateObject(STATE_NAMES.backupCommand, "boolean", "button", {
 			read: false,
 			write: true,
 		}),
@@ -377,27 +389,16 @@ export async function createCommandStates(port: StatePort): Promise<void> {
  * @param port - state port
  */
 export async function createInfoStates(port: StatePort): Promise<void> {
-	await port.setObjectNotExists("info", channelObject({ en: "Information", de: "Information" }));
-	await port.setObjectNotExists(
-		"info.version",
-		stateObject({ en: "Adapter version", de: "Adapter-Version" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"info.schemaVersion",
-		stateObject({ en: "Database schema version", de: "Datenbank-Schemaversion" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
+	await ensureObject(port, "info", channelObject(STATE_NAMES.infoChannel));
+	await ensureObject(port, "info.version", stateObject(STATE_NAMES.version, "string", "text"));
+	await ensureObject(port, "info.schemaVersion", stateObject(STATE_NAMES.schemaVersion, "string", "text"));
+	await ensureObject(
+		port,
 		"info.dbSizeBytes",
-		stateObject({ en: "Database size", de: "Datenbank-Größe" }, "number", "value", { unit: "bytes" }),
+		stateObject(STATE_NAMES.dbSizeBytes, "number", "value", { unit: "bytes" }),
 	);
-	await port.setObjectNotExists(
-		"info.lastError",
-		stateObject({ en: "Last error", de: "Letzter Fehler" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"info.lastBackup",
-		stateObject({ en: "Last backup", de: "Letzte Sicherung" }, "number", "value.time"),
-	);
+	await ensureObject(port, "info.lastError", stateObject(STATE_NAMES.lastError, "string", "text"));
+	await ensureObject(port, "info.lastBackup", stateObject(STATE_NAMES.lastBackup, "number", "value.time"));
 }
 
 /**
@@ -406,23 +407,11 @@ export async function createInfoStates(port: StatePort): Promise<void> {
  * @param port - state port
  */
 export async function createCompanyStates(port: StatePort): Promise<void> {
-	await port.setObjectNotExists("company", channelObject({ en: "Company", de: "Firma" }));
-	await port.setObjectNotExists(
-		"company.presentCount",
-		stateObject({ en: "Present employees", de: "Anwesende Mitarbeiter" }, "number", "value"),
-	);
-	await port.setObjectNotExists(
-		"company.present",
-		stateObject({ en: "Who is present", de: "Wer ist anwesend" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"company.openConflicts",
-		stateObject({ en: "Open conflicts", de: "Offene Konflikte" }, "number", "value"),
-	);
-	await port.setObjectNotExists(
-		"company.lastPunch",
-		stateObject({ en: "Last punch", de: "Letzte Buchung" }, "number", "value.time"),
-	);
+	await ensureObject(port, "company", channelObject(STATE_NAMES.companyChannel));
+	await ensureObject(port, "company.presentCount", stateObject(STATE_NAMES.companyPresentCount, "number", "value"));
+	await ensureObject(port, "company.present", stateObject(STATE_NAMES.companyPresent, "string", "text"));
+	await ensureObject(port, "company.openConflicts", stateObject(STATE_NAMES.openConflicts, "number", "value"));
+	await ensureObject(port, "company.lastPunch", stateObject(STATE_NAMES.companyLastPunch, "number", "value.time"));
 }
 
 /**
@@ -466,27 +455,12 @@ export async function publishCompanySnapshot(port: StatePort, snapshot: CompanyS
  * @param port - state port
  */
 export async function createEventStates(port: StatePort): Promise<void> {
-	await port.setObjectNotExists("events", channelObject({ en: "Events", de: "Ereignisse" }));
-	await port.setObjectNotExists(
-		"events.lastAt",
-		stateObject({ en: "Last event at", de: "Letztes Ereignis um" }, "number", "value.time"),
-	);
-	await port.setObjectNotExists(
-		"events.lastType",
-		stateObject({ en: "Kind of the last event", de: "Art des letzten Ereignisses" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"events.lastUser",
-		stateObject({ en: "Employee of the last event", de: "Mitarbeiter des letzten Ereignisses" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"events.lastDirection",
-		stateObject({ en: "Direction of the last punch", de: "Richtung der letzten Buchung" }, "string", "text"),
-	);
-	await port.setObjectNotExists(
-		"events.lastSource",
-		stateObject({ en: "Source of the last event", de: "Quelle des letzten Ereignisses" }, "string", "text"),
-	);
+	await ensureObject(port, "events", channelObject(STATE_NAMES.eventsChannel));
+	await ensureObject(port, "events.lastAt", stateObject(STATE_NAMES.lastAt, "number", "value.time"));
+	await ensureObject(port, "events.lastType", stateObject(STATE_NAMES.lastType, "string", "text"));
+	await ensureObject(port, "events.lastUser", stateObject(STATE_NAMES.lastUser, "string", "text"));
+	await ensureObject(port, "events.lastDirection", stateObject(STATE_NAMES.lastDirection, "string", "text"));
+	await ensureObject(port, "events.lastSource", stateObject(STATE_NAMES.lastSource, "string", "text"));
 }
 
 /**

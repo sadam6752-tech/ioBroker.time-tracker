@@ -14,6 +14,20 @@ NPM”), as they only exist under the former package name.
   `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
   adapter itself does not load any of it)
 
+### 0.1.6 (2026-09-19)
+
+- (Alex) admin: the raw instance settings show a readable label now — in the language of the display — with the
+  technical name in the small line below it, which is what the block promises. The labels are kept short enough that
+  the fields do not cut them off
+- (Alex) admin: the block “All instance settings” is much shorter — three fields per line on a wide screen (two on a
+  tablet, one on a phone) and the time zone on a line of its own, because its value is the longest
+- (Alex) **rules (automatic)**: the kind **“Clock in automatically”** joins them — an employee who is still missing at
+  the configured time gets a punch in (the rule keeps quiet when somebody is clocked in already). Migration 18 rebuilds
+  the rule table for the new kind and copies the run log first, because dropping the parent would take it with it
+- (Alex) **holidays**: the seeded days are shown in the language of the display — each one carries a stable key
+  (`newYear`, `goodFriday`, …) and the app translates it; a day somebody added by hand keeps its own name
+- (Alex) admin: the two “first start” hints are easier to read — they are rendered as HTML with a larger font
+
 ### 0.1.5 (2026-09-19)
 
 - (Alex) **rules (automatic)**: a rule can be limited to **weekdays** (Monday to Friday for a company rule, the

@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.2.1",
+		"version": "0.2.2",
 		"nogit": true,
 		"news": {
+			"0.2.2": {
+				"en": "the object structure check is satisfied: every object name carries all eleven languages (`E6001`) and the employee-id command uses the role `level` instead of `value` (`E1011`). The names live in one place and existing installations receive them on the next start",
+				"de": "die Objektstruktur-Prüfung ist erfüllt: jeder Objektname trägt jetzt alle elf Sprachen (`E6001`) und der Mitarbeiter-Id-Befehl nutzt die Rolle `level` statt `value` (`E1011`). Die Namen liegen an einer Stelle, bestehende Installationen erhalten sie beim nächsten Start",
+				"ru": "проверка структуры объектов пройдена: каждое имя объекта теперь содержит все одиннадцать языков (`E6001`), а команда с идентификатором сотрудника использует роль `level` вместо `value` (`E1011`). Имена хранятся в одном месте, существующие установки получат их при следующем запуске",
+				"pt": "a verificação da estrutura dos objetos está satisfeita: cada nome de objeto passa a ter os onze idiomas (`E6001`) e o comando do ID do funcionário usa a função `level` em vez de `value` (`E1011`). Os nomes ficam num único lugar e as instalações existentes recebem-nos no próximo arranque",
+				"nl": "de objectstructuurcontrole is voldaan: elke objectnaam heeft nu alle elf talen (`E6001`) en de opdracht met het medewerker-id gebruikt de rol `level` in plaats van `value` (`E1011`). De namen staan op één plek en bestaande installaties krijgen ze bij de volgende start",
+				"fr": "le contrôle de la structure des objets est satisfait : chaque nom d'objet porte désormais les onze langues (`E6001`) et la commande d'identifiant d'employé utilise le rôle `level` au lieu de `value` (`E1011`). Les noms sont au même endroit et les installations existantes les reçoivent au prochain démarrage",
+				"it": "il controllo della struttura degli oggetti è soddisfatto: ogni nome di oggetto ora porta tutte e undici le lingue (`E6001`) e il comando con l'ID del dipendente usa il ruolo `level` invece di `value` (`E1011`). I nomi stanno in un unico posto e le installazioni esistenti li ricevono al prossimo avvio",
+				"es": "la comprobación de la estructura de objetos está satisfecha: cada nombre de objeto lleva ahora los once idiomas (`E6001`) y el comando del ID del empleado usa el rol `level` en lugar de `value` (`E1011`). Los nombres están en un solo lugar y las instalaciones existentes los reciben en el próximo arranque",
+				"pl": "kontrola struktury obiektów jest spełniona: każda nazwa obiektu ma teraz wszystkie jedenaście języków (`E6001`), a polecenie z identyfikatorem pracownika używa roli `level` zamiast `value` (`E1011`). Nazwy są w jednym miejscu, a istniejące instalacje otrzymają je przy następnym starcie",
+				"uk": "перевірку структури об'єктів пройдено: кожна назва об'єкта тепер містить усі одинадцять мов (`E6001`), а команда з ідентифікатором співробітника використовує роль `level` замість `value` (`E1011`). Назви лежать в одному місці, наявні установки отримають їх під час наступного запуску",
+				"zh-cn": "对象结构检查已满足：每个对象名称现在都包含全部十一种语言（`E6001`），员工 ID 命令使用角色 `level` 而不是 `value`（`E1011`）。名称集中在一个地方，现有安装会在下次启动时获得它们"
+			},
 			"0.2.1": {
 				"en": "`common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0, so the entries of 0.1.3 to 0.1.9 are removed again — the repository checker reported them as `E2004` (“do not exist at NPM”). The release notes of those versions stay in the changelog",
 				"de": "`common.news` beginnt nach der Umbenennung neu: das neue npm-Paket `iobroker.time-tracker` führt nur die 0.2.0, deshalb sind die Einträge 0.1.3 bis 0.1.9 wieder entfernt — der Repository-Checker meldete sie als `E2004` („do not exist at NPM“). Die Release-Notizen dieser Versionen bleiben im Changelog",

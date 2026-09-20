@@ -254,12 +254,58 @@ function checkNewsOnNpm(directory) {
 	return problems;
 }
 
+/**
+ * Meldet, ob der ioBroker-Betreuer `bluefox` als Eigentümer des npm-Pakets eingetragen ist (Repochecker E2001).
+ *
+ * Die ioBroker-Repositories verlangen, dass `bluefox` Miteigentümer jedes Adapter-Pakets ist; ohne ihn wird der
+ * Adapter nicht in `latest` aufgenommen. Eine fehlende Eintragung blockiert den Push **nicht** — die Einladung muss
+ * `bluefox` selbst annehmen —, sie wird als Warnung ausgegeben. Ohne Netz oder ohne npm entfällt der Hinweis.
+ *
+ * @param directory - Wurzel des Adapters
+ * @returns immer eine leere Liste; der Hinweis geht auf die Warnausgabe
+ */
+function checkNpmOwner(directory) {
+	const problems = [];
+	const io = readJson(join(directory, "io-package.json"), []);
+	const name = io?.common?.name;
+	if (!name) {
+		return problems;
+	}
+	const packageName = `iobroker.${name.replace(/^iobroker\./, "")}`;
+
+	let owners = "";
+	try {
+		const result = spawnSync("npm", ["owner", "ls", packageName], {
+			encoding: "utf8",
+			shell: true,
+			timeout: 30000,
+		});
+		if (result.status !== 0 || !result.stdout) {
+			return problems;
+		}
+		owners = result.stdout.toLowerCase();
+	} catch {
+		// ohne Netz oder ohne npm ist die Online-Prüfung nicht möglich
+		return problems;
+	}
+
+	if (!owners.includes("bluefox")) {
+		// Warnung statt Fehler: die Einladung muss bluefox selbst annehmen — das liegt nicht in unserer Hand. Der
+		// ioBroker-Repochecker meldet es als E2001, solange er nicht als Eigentümer eingetragen ist.
+		console.warn(
+			`WARNUNG (Repochecker E2001): der Betreuer "bluefox" fehlt als Eigentümer von ${packageName} — ` +
+				`"npm owner add bluefox ${packageName}" ausführen oder ihn auf npmjs.com einladen`,
+		);
+	}
+	return problems;
+}
+
 // Aufruf über die Kommandozeile (der Pre-Push-Hook nutzt denselben Weg)
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const args = process.argv.slice(2);
 	const index = args.indexOf("--repo");
 	const repo = resolve(index >= 0 ? (args[index + 1] ?? ".") : ".");
-	const problems = [...checkVersioning(repo), ...checkNewsOnNpm(repo)];
+	const problems = [...checkVersioning(repo), ...checkNewsOnNpm(repo), ...checkNpmOwner(repo)];
 
 	if (problems.length === 0) {
 		console.log(`Version in Ordnung (${repo})`);

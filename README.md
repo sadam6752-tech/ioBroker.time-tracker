@@ -305,6 +305,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.1 (2026-09-20)
+
+- (Alex) `common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0,
+  so the entries of 0.1.3 … 0.1.9 are removed again (the repository checker reports them as `E2004` — “do not exist
+  at NPM”). The old release notes stay in this changelog; the history of the versions published under the former
+  package name is noted in `CHANGELOG_OLD.md`
+
 ### 0.2.0 (2026-09-20)
 
 - (Alex) **renamed to `ioBroker.time-tracker`**: ioBroker requires English adapter names, so the adapter, its npm
@@ -340,18 +347,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) **holidays**: the seeded days are shown in the language of the display — each one carries a stable key
   (`newYear`, `goodFriday`, …) and the app translates it; a day somebody added by hand keeps its own name
 - (Alex) admin: the two “first start” hints are easier to read — they are rendered as HTML with a larger font
-
-### 0.1.5 (2026-09-19)
-
-- (Alex) **rules (automatic)**: a rule can be limited to **weekdays** (Monday to Friday for a company rule, the
-  weekend for another) and it can be set to act **once a week** instead of once a day — the guard counts the ISO week
-  then, so a reminder that fires every Monday still fires next Monday. The days come from `Intl`, so their names are
-  spelled in the language of the display
-- (Alex) **badges (RFID/NFC)**: the link of a fresh badge is shown as a **QR code** next to the link itself, so it can
-  be scanned or copied onto a tag with a writer app. The code is drawn in the browser (the `qrcode` package is bundled
-  with the web app), so it works offline and no service ever sees the link
-- (Alex) docs: `docs/i18n.md` now records who settles the translations — German and Russian are kept by the owner, for
-  the other nine languages no native speaker is available, so they stay machine translation with the technical pass
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

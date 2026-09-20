@@ -3,11 +3,28 @@
 The README keeps the last five versions; everything older is listed here — the published versions from 0.0.4 on
 as well as the development milestones before the first npm publication.
 
+Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`. Since 0.2.0 the adapter is called
+`ioBroker.time-tracker`, because ioBroker requires English adapter names (see the 0.2.0 entry in the README). The
+`common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
+NPM”), as they only exist under the former package name.
+
 ### 0.1.7 (2026-09-19)
 
 - (Alex) ioBroker repository: `common.title` was missing in `io-package.json` and is set now (“Time tracking”);
   `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
   adapter itself does not load any of it)
+
+### 0.1.5 (2026-09-19)
+
+- (Alex) **rules (automatic)**: a rule can be limited to **weekdays** (Monday to Friday for a company rule, the
+  weekend for another) and it can be set to act **once a week** instead of once a day — the guard counts the ISO week
+  then, so a reminder that fires every Monday still fires next Monday. The days come from `Intl`, so their names are
+  spelled in the language of the display
+- (Alex) **badges (RFID/NFC)**: the link of a fresh badge is shown as a **QR code** next to the link itself, so it can
+  be scanned or copied onto a tag with a writer app. The code is drawn in the browser (the `qrcode` package is bundled
+  with the web app), so it works offline and no service ever sees the link
+- (Alex) docs: `docs/i18n.md` now records who settles the translations — German and Russian are kept by the owner, for
+  the other nine languages no native speaker is available, so they stay machine translation with the technical pass
 
 ### 0.1.4 (2026-09-18)
 

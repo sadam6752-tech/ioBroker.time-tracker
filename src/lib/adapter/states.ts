@@ -159,11 +159,12 @@ function channelObject(name: StateName): ioBroker.SettableObject {
 }
 
 /**
- * Creates an object when it is missing and keeps its name current.
+ * Creates an object when it is missing and keeps the definition of an existing one current.
  *
- * `setObjectNotExists` alone would leave the names of existing installations untouched — the ioBroker object
- * structure check (`E6001`) reads them from the running instance, so the name is refreshed on every start. The
- * merge only touches `common.name`, existing links (for example in `vis`) stay as they are.
+ * `setObjectNotExists` alone would leave existing installations on the definition they were created with — a later
+ * correction (for example the role of `commands.punchUserId`, checker `E1011`) would never arrive. So the fields the
+ * adapter owns are merged on every start; `common.custom` is left out, that is where the user configures `history`
+ * and similar integrations.
  *
  * @param port - state port
  * @param id - full state id (including the instance prefix)
@@ -171,7 +172,9 @@ function channelObject(name: StateName): ioBroker.SettableObject {
  */
 async function ensureObject(port: StatePort, id: string, object: ioBroker.SettableObject): Promise<void> {
 	await port.setObjectNotExists(id, object);
-	await port.extendObject(id, { common: { name: object.common?.name } });
+	const common: Record<string, unknown> = { ...(object.common ?? {}) };
+	delete common.custom;
+	await port.extendObject(id, { common });
 }
 
 /**

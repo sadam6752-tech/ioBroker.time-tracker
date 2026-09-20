@@ -172,6 +172,21 @@ describe("adapter states and commands", () => {
 			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
 		});
 
+		it("updates the definition of an existing object (checker E1011)", async () => {
+			// an installation that still carries the old definition of the command
+			recorder.objects.set(COMMAND_IDS.punchUserId, {
+				type: "state",
+				common: { name: { en: "old" }, type: "number", role: "value", read: true, write: true },
+				native: {},
+			});
+
+			await createCommandStates(recorder);
+
+			const command = recorder.objects.get(COMMAND_IDS.punchUserId);
+			expect(command?.common).to.deep.include({ role: "level", write: true });
+			expect(command?.common?.name).to.be.an("object");
+		});
+
 		it("gives every object name all eleven languages (checker E6001)", async () => {
 			await createCommandStates(recorder);
 			await createInfoStates(recorder);

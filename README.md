@@ -305,6 +305,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.3 (2026-09-20)
+
+- (Alex) fix: a corrected object definition really reaches existing installations now — `ensureObject` merges the
+  fields the adapter owns (`name`, `type`, `role`, `read`, `write`, `unit`) instead of only the name. An installation
+  created before 0.2.2 kept its old `role: "value"` on `commands.punchUserId`, so the object structure check still
+  reported `E1011`
+
 ### 0.2.2 (2026-09-20)
 
 - (Alex) object structure check: every object name carries all **eleven languages** now (`E6001`) and the employee-id
@@ -333,13 +340,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   deprecated, `common.titleLang` replaced it, E1084) and the `common.news` entry of 0.1.7 is gone, because that version
   never reached npm (E2004, its pipeline was red). `npm run version:check` watches both rules from now on: it refuses
   `common.title` and every version in the news list has to exist on npm
-
-### 0.1.8 (2026-09-19)
-
-- (Alex) fix: the pipeline of 0.1.7 failed in the ioBroker package test — `common.license` was added next to the
-  existing `common.licenseInformation`, and the test refuses both together (“common.license should not exist together
-  with common.licenseInformation”). The field is removed again, `npm run test:package` is part of the release checklist
-  from now on, and `docs/entwicklung.md` records the rule
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

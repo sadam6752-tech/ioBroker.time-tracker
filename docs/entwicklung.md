@@ -105,9 +105,10 @@ Zwei weitere Befunde desselben Checks:
   schlägt fehl, sobald einem Namen eine Sprache fehlt.
 
 Weil `setObjectNotExists` bestehende Objekte unangetastet lässt, aktualisiert `ensureObject` in `states.ts` nach dem
-Anlegen zusätzlich `common.name` per `extendObject`. Ohne das behielten laufende Installationen — und damit auch der
-Objekt-Dump, den der Checker liest — die alten `en`/`de`-Namen. Der Merge betrifft nur den Namen, Verknüpfungen
-(etwa in `vis`) bleiben unberührt.
+Anlegen die **adapter-eigenen** Felder per `extendObject` (`name`, `type`, `role`, `read`, `write`, `unit`) — ohne das
+behielten laufende Installationen ihre alte Definition: der Objekt-Dump, den der Checker liest, zeigte dann weiter
+`role: "value"` (`E1011`) und die alten `en`/`de`-Namen (`E6001`). `common.custom` bleibt ausgespart, dort stehen die
+Einstellungen des Nutzers (etwa für `history`).
 
 ## Nach der Umbenennung: zwei Regeln mehr
 

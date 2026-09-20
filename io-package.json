@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.2.2",
+		"version": "0.2.3",
 		"nogit": true,
 		"news": {
+			"0.2.3": {
+				"en": "fix: a corrected object definition reaches existing installations now — `ensureObject` merges the fields the adapter owns (`name`, `type`, `role`, `read`, `write`, `unit`) instead of only the name, so `commands.punchUserId` receives the role `level` on the next start (checker `E1011`)",
+				"de": "fix: eine korrigierte Objektdefinition erreicht jetzt auch bestehende Installationen — `ensureObject` mischt die adapter-eigenen Felder (`name`, `type`, `role`, `read`, `write`, `unit`) statt nur den Namen zusammen, deshalb erhält `commands.punchUserId` beim nächsten Start die Rolle `level` (Checker `E1011`)",
+				"ru": "исправление: исправленное определение объекта теперь доходит и до существующих установок — `ensureObject` объединяет поля, которыми владеет адаптер (`name`, `type`, `role`, `read`, `write`, `unit`), а не только имя, поэтому `commands.punchUserId` получит роль `level` при следующем запуске (проверка `E1011`)",
+				"pt": "correção: uma definição de objeto corrigida chega agora também às instalações existentes — `ensureObject` junta os campos do adaptador (`name`, `type`, `role`, `read`, `write`, `unit`) em vez de apenas o nome, por isso `commands.punchUserId` recebe a função `level` no próximo arranque (verificação `E1011`)",
+				"nl": "fix: een gecorrigeerde objectdefinitie bereikt nu ook bestaande installaties — `ensureObject` voegt de velden van de adapter samen (`name`, `type`, `role`, `read`, `write`, `unit`) in plaats van alleen de naam, daarom krijgt `commands.punchUserId` bij de volgende start de rol `level` (controle `E1011`)",
+				"fr": "correctif : une définition d'objet corrigée parvient désormais aussi aux installations existantes — `ensureObject` fusionne les champs propres à l'adaptateur (`name`, `type`, `role`, `read`, `write`, `unit`) au lieu du seul nom, `commands.punchUserId` reçoit donc le rôle `level` au prochain démarrage (contrôle `E1011`)",
+				"it": "correzione: una definizione di oggetto corretta raggiunge ora anche le installazioni esistenti — `ensureObject` unisce i campi dell'adattatore (`name`, `type`, `role`, `read`, `write`, `unit`) invece del solo nome, quindi `commands.punchUserId` riceve il ruolo `level` al prossimo avvio (controllo `E1011`)",
+				"es": "corrección: una definición de objeto corregida llega ahora también a las instalaciones existentes — `ensureObject` combina los campos propios del adaptador (`name`, `type`, `role`, `read`, `write`, `unit`) en lugar de solo el nombre, por eso `commands.punchUserId` recibe el rol `level` en el próximo arranque (comprobación `E1011`)",
+				"pl": "poprawka: skorygowana definicja obiektu dociera teraz także do istniejących instalacji — `ensureObject` scala pola należące do adaptera (`name`, `type`, `role`, `read`, `write`, `unit`), a nie tylko nazwę, dlatego `commands.punchUserId` otrzyma rolę `level` przy następnym starcie (kontrola `E1011`)",
+				"uk": "виправлення: виправлене визначення об'єкта тепер доходить і до наявних установок — `ensureObject` об'єднує поля, якими володіє адаптер (`name`, `type`, `role`, `read`, `write`, `unit`), а не лише назву, тому `commands.punchUserId` отримає роль `level` під час наступного запуску (перевірка `E1011`)",
+				"zh-cn": "修复：修正后的对象定义现在也会到达已有安装 —— `ensureObject` 合并适配器拥有的字段（`name`、`type`、`role`、`read`、`write`、`unit`），而不仅是名称，因此 `commands.punchUserId` 会在下次启动时获得角色 `level`（检查 `E1011`）"
+			},
 			"0.2.2": {
 				"en": "the object structure check is satisfied: every object name carries all eleven languages (`E6001`) and the employee-id command uses the role `level` instead of `value` (`E1011`). The names live in one place and existing installations receive them on the next start",
 				"de": "die Objektstruktur-Prüfung ist erfüllt: jeder Objektname trägt jetzt alle elf Sprachen (`E6001`) und der Mitarbeiter-Id-Befehl nutzt die Rolle `level` statt `value` (`E1011`). Die Namen liegen an einer Stelle, bestehende Installationen erhalten sie beim nächsten Start",

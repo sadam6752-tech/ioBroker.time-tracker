@@ -2,7 +2,7 @@
  * Messages of the adapter (`sendTo`).
  *
  * A script adapter, Blockly or another adapter can drive the time tracking without HTTP and without a session:
- * `sendTo("zeiterfassung.0", "punch", { user: "anna" }, callback)`. Every command answers with an object, so the
+ * `sendTo("time-tracker.0", "punch", { user: "anna" }, callback)`. Every command answers with an object, so the
  * caller can react on the outcome.
  *
  * | Command   | Payload                                   | Answer                                |
@@ -179,7 +179,7 @@ function statementInput(
 			hours: absence.hours,
 		})),
 		generatedAt: timestamp,
-		generator: `zeiterfassung ${deps.version ?? ""}`.trim(),
+		generator: `time-tracker ${deps.version ?? ""}`.trim(),
 	};
 }
 

@@ -38,7 +38,7 @@ import { Keypad } from "../components/Keypad";
 import { useBranding } from "../state/branding";
 
 /** Where the device token of this device is remembered. */
-const STORAGE_KEY = "zeiterfassung.presence";
+const STORAGE_KEY = "time-tracker.presence";
 
 /** How often the tiles are refreshed, so the screen also shows punches made elsewhere (milliseconds). */
 const REFRESH_MILLISECONDS = 60_000;

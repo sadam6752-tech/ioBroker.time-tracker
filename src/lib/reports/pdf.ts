@@ -22,7 +22,7 @@ import type { ReportInput } from "./types";
 
 /** Input of the PDF statement. */
 export type PdfStatementInput = ReportInput & {
-	/** Name of the generator, e.g. `zeiterfassung 0.0.1` */
+	/** Name of the generator, e.g. `time-tracker 0.0.1` */
 	generator: string;
 	/** Path of a Unicode font (`.ttf`/`.otf`), `null`/empty to use the built-in fonts */
 	fontPath?: string | null;

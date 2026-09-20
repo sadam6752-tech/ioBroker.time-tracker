@@ -30,5 +30,5 @@
 	"Time rules": "Правила рабочего времени",
 	"Trust the reverse proxy (X-Forwarded-*)": "Доверять обратному прокси (X-Forwarded-*)",
 	"used once: the account is created when the instance has no administrator yet": "используется однократно: учётная запись создаётся, когда у экземпляра ещё нет администратора",
-	"zeiterfassung adapter settings": "Настройки адаптера для zeiterfassung"
+	"time-tracker adapter settings": "Настройки адаптера для time-tracker"
 }

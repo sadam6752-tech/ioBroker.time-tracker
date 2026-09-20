@@ -110,7 +110,7 @@ tests.integration(path.join(__dirname, ".."), {
 				this.timeout(testTimeout);
 				harness = getHarness();
 				// a port of our own, so a running development instance of the adapter cannot block the tests
-				await harness.changeAdapterConfig("zeiterfassung", { native: { port: await freePort() } });
+				await harness.changeAdapterConfig("time-tracker", { native: { port: await freePort() } });
 				// wait for info.connection so database and API are ready
 				await harness.startAdapterAndWait(true);
 			});
@@ -135,36 +135,36 @@ tests.integration(path.join(__dirname, ".."), {
 
 			it("publishes the command states and the connection indicator", async function () {
 				this.timeout(testTimeout);
-				const punch = await harness.objects.getObject("zeiterfassung.0.commands.punch");
+				const punch = await harness.objects.getObject("time-tracker.0.commands.punch");
 				expect(punch?.common).to.include({ type: "boolean", role: "button", read: false, write: true });
-				const closeMonth = await harness.objects.getObject("zeiterfassung.0.commands.closeMonth");
+				const closeMonth = await harness.objects.getObject("time-tracker.0.commands.closeMonth");
 				expect(closeMonth?.common).to.include({ type: "string", write: true });
-				const backup = await harness.objects.getObject("zeiterfassung.0.commands.backup");
+				const backup = await harness.objects.getObject("time-tracker.0.commands.backup");
 				expect(backup?.common).to.include({ type: "boolean", role: "button", read: false, write: true });
 
-				const connection = await harness.states.getState("zeiterfassung.0.info.connection");
+				const connection = await harness.states.getState("time-tracker.0.info.connection");
 				expect(connection?.val).to.equal(true);
 
 				// the instance information of specification 5.1 is published as well
 				for (const id of ["info.version", "info.schemaVersion", "info.dbSizeBytes", "info.lastError"]) {
-					const object = await harness.objects.getObject(`zeiterfassung.0.${id}`);
+					const object = await harness.objects.getObject(`time-tracker.0.${id}`);
 					expect(object, id).to.not.equal(null);
 				}
-				const version = await harness.states.getState("zeiterfassung.0.info.version");
+				const version = await harness.states.getState("time-tracker.0.info.version");
 				expect(version?.val).to.equal(expectedVersion);
-				const schema = await harness.states.getState("zeiterfassung.0.info.schemaVersion");
+				const schema = await harness.states.getState("time-tracker.0.info.schemaVersion");
 				expect(Number(schema?.val)).to.be.greaterThan(0);
-				const size = await harness.states.getState("zeiterfassung.0.info.dbSizeBytes");
+				const size = await harness.states.getState("time-tracker.0.info.dbSizeBytes");
 				expect(Number(size?.val)).to.be.greaterThan(0);
 			});
 
 			it("writes a backup when the command state is triggered", async function () {
 				this.timeout(testTimeout);
-				await harness.states.setState("zeiterfassung.0.commands.backup", { val: true, ack: false });
-				await waitForLog(/backup zeiterfassung-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.sqlite written/);
+				await harness.states.setState("time-tracker.0.commands.backup", { val: true, ack: false });
+				await waitForLog(/backup time-tracker-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.sqlite written/);
 
 				// the instant of the newest backup is published for dashboards
-				const lastBackup = await waitForState("zeiterfassung.0.info.lastBackup", val => Number(val) > 0);
+				const lastBackup = await waitForState("time-tracker.0.info.lastBackup", val => Number(val) > 0);
 				expect(lastBackup.val).to.be.a("number");
 				expect(Number(lastBackup.val)).to.be.greaterThan(0);
 			});
@@ -238,7 +238,7 @@ tests.integration(path.join(__dirname, ".."), {
 
 			it("reacts to a command state", async function () {
 				this.timeout(testTimeout);
-				await harness.states.setState("zeiterfassung.0.commands.punch", { val: true, ack: false });
+				await harness.states.setState("time-tracker.0.commands.punch", { val: true, ack: false });
 				// the adapter creates the first administrator while starting, so the punch has an employee
 				await waitForLog(/command commands\.punch: .*(punched|no employee exists yet)/);
 				expect(harness.hasLog(/command commands\.punch: .*punched/)).to.equal(true);
@@ -258,14 +258,14 @@ tests.integration(path.join(__dirname, ".."), {
 				this.timeout(testTimeout);
 				// the switch is created with the channel of the employee and is writable, so a fingerprint
 				// reader or a script can drive it
-				const definition = await harness.objects.getObject("zeiterfassung.0.users.1.present");
+				const definition = await harness.objects.getObject("time-tracker.0.users.1.present");
 				expect(definition?.common).to.include({ type: "boolean", role: "switch", write: true });
 
 				// whatever the day looks like right now: the state flips it
-				const before = await harness.states.getState("zeiterfassung.0.users.1.hasOpenEntry");
+				const before = await harness.states.getState("time-tracker.0.users.1.hasOpenEntry");
 				const want = before?.val !== true;
 
-				await harness.states.setState("zeiterfassung.0.users.1.present", { val: want, ack: false });
+				await harness.states.setState("time-tracker.0.users.1.present", { val: want, ack: false });
 
 				await waitForLog(new RegExp(`presence users\\.1\\.present: .*punched ${want ? "in" : "out"}`));
 
@@ -274,7 +274,7 @@ tests.integration(path.join(__dirname, ".."), {
 				// previous one as a double scan, so the new punch is not counted by the day and `hasOpenEntry` keeps
 				// its previous value. That 30 second window is a rule of the adapter (it keeps a reader that fires
 				// twice harmless), so it is documented here instead of being worked around.
-				const published = await harness.states.getState("zeiterfassung.0.users.1.present");
+				const published = await harness.states.getState("time-tracker.0.users.1.present");
 				expect(published, "the presence switch exists and was written back").to.not.equal(null);
 			});
 

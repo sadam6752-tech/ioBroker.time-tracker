@@ -84,3 +84,15 @@ Compact-Mode (`common.compact: false`).
 („common.license should not exist together with common.licenseInformation"). Die Lizenzangabe im `package.json`
 (`"license": "MIT"`) bleibt davon unberührt und muss dazu passen. Genau daran ist die 0.1.7-Pipeline gescheitert, und
 deshalb gehört `npm run test:package` zur Prüfliste vor jedem Release.
+
+## Objektstruktur (E3009)
+
+Der ioBroker-Bot prüft die Objektliste eines laufenden Systems („Object Structure Check – `time-tracker.0.json`").
+Er verlangt zu **jedem** State die übergeordneten Objekte: `users.<id>.todayWorkedMinutes` braucht den Kanal
+`users.<id>` **und** den Kanal `users`. Fehlt einer davon, meldet der Check `E3009` („missing intermediate object")
+für jedes betroffene Objekt — im PR #6697 waren das **126 Meldungen aus einem einzigen fehlenden Kanal** (`users`).
+
+Deshalb legt `createUserChannel` (`src/lib/adapter/states.ts`) den Wurzelkanal `users` mit an, idempotent über
+`setObjectNotExists`; die übrigen Kanäle (`info`, `company`, `events`, `commands`) entstehen in ihren jeweiligen
+`create…States`-Funktionen. Der Unit-Test „creates the parent channel of the employees" in
+`src/lib/adapter/states.test.ts` hält die Struktur fest — er läuft in der CI mit `npm run test:ts`.

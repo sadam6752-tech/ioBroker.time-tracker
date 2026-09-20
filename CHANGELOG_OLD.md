@@ -9,6 +9,17 @@ as well as the development milestones before the first npm publication.
   `docs/entwicklung.md` explains the checker warnings that come from the web app having its own `package.json` (the
   adapter itself does not load any of it)
 
+### 0.1.4 (2026-09-18)
+
+- (Alex) **badges (RFID/NFC)**: a badge can be edited (employee, label, validity) and given a **new link** — for one
+  that was lost, expired or revoked and should work again. A new employee or a new validity re-signs the link, so the
+  answer carries it and the link handed out before stops working immediately (a label on its own leaves it alone)
+- (Alex) translations: a second technical pass, this time with a helper (`tools/check-i18n-review.mjs`) that looks for
+  what `check:i18n` cannot see — wrong script, copies between languages, texts much longer or shorter than English.
+  It found real gaps: `brandingHint` had lost its second sentence in nine languages, `brandColorHint` its “empty for
+  the default” in seven, and `admin.user.pinTitle` was a Russian sentence in the Ukrainian file. `docs/i18n.md` lists
+  what stays with a native speaker
+
 ### 0.1.3 (2026-09-18)
 
 - (Alex) fix: the badge (RFID/NFC) tab builds the link from the address the administration is **currently** open

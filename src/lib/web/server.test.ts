@@ -118,11 +118,11 @@ describe("web server", () => {
 		users.create({ login: "anna", displayName: "Anna", passwordHash: hash, roleKeys: ["employee"] });
 
 		// a small web interface on disk plus a file outside of it (for the traversal test)
-		www = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-www-"));
+		www = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-www-"));
 		fs.writeFileSync(path.join(www, "index.html"), "<!doctype html><title>Zeiterfassung</title>");
 		fs.writeFileSync(path.join(www, "app.js"), "console.log('app');");
 		fs.writeFileSync(path.join(www, "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
-		fs.writeFileSync(path.join(os.tmpdir(), "zeiterfassung-secret.txt"), "streng geheim");
+		fs.writeFileSync(path.join(os.tmpdir(), "time-tracker-secret.txt"), "streng geheim");
 
 		// port 0 lets the operating system pick a free port
 		server = await startWebServer({
@@ -238,10 +238,10 @@ describe("web server", () => {
 				request.end();
 			});
 
-		const literal = await raw("/../zeiterfassung-secret.txt");
+		const literal = await raw("/../time-tracker-secret.txt");
 		expect(literal.body).to.not.contain("streng geheim");
 
-		const encoded = await raw("/%2e%2e%2fzeiterfassung-secret.txt");
+		const encoded = await raw("/%2e%2e%2ftime-tracker-secret.txt");
 		expect(encoded.status).to.equal(404);
 		expect(encoded.body).to.not.contain("streng geheim");
 

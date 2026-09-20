@@ -30,5 +30,5 @@
 	"Time rules": "Zeitregeln",
 	"Trust the reverse proxy (X-Forwarded-*)": "Reverse-Proxy vertrauen (X-Forwarded-*)",
 	"used once: the account is created when the instance has no administrator yet": "wird einmalig genutzt: das Konto entsteht, wenn die Instanz noch keinen Administrator hat",
-	"zeiterfassung adapter settings": "Adaptereinstellungen für Zeiterfassung"
+	"time-tracker adapter settings": "Adaptereinstellungen für Zeiterfassung"
 }

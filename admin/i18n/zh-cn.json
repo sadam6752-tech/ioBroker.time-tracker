@@ -30,5 +30,5 @@
 	"Time rules": "时间规则",
 	"Trust the reverse proxy (X-Forwarded-*)": "信任反向代理（X-Forwarded-*）",
 	"used once: the account is created when the instance has no administrator yet": "仅使用一次：当实例还没有管理员时会创建该账户",
-	"zeiterfassung adapter settings": "zeiterfassung 的适配器设置"
+	"time-tracker adapter settings": "time-tracker 的适配器设置"
 }

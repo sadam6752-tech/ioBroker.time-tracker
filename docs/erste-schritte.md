@@ -18,18 +18,18 @@ jeder Stelle, woran man erkennt, dass der Schritt geklappt hat. Der vollständig
 npm install
 npm run build          # Adapter (build/)
 npm run build:pwa      # Web-App (www/)
-npm pack               # erzeugt iobroker.zeiterfassung-0.0.1.tgz
+npm pack               # erzeugt iobroker.time-tracker-0.0.1.tgz
 ```
 
 Danach das Paket in die ioBroker-Installation bringen:
 
 ```bash
-iobroker install ./iobroker.zeiterfassung-0.0.1.tgz
-iobroker add zeiterfassung        # legt die Instanz zeiterfassung.0 an
+iobroker install ./iobroker.time-tracker-0.0.1.tgz
+iobroker add time-tracker        # legt die Instanz time-tracker.0 an
 ```
 
 **Erfolgskontrolle:** im Log steht `web interface found at …/www`, `API listening on http://127.0.0.1:8092/api`
-und `API routes: …`; der Zustand `zeiterfassung.0.info.connection` ist `true`.
+und `API routes: …`; der Zustand `time-tracker.0.info.connection` ist `true`.
 
 ## 3. Instanz einstellen
 
@@ -89,7 +89,7 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   Was es bewusst auslässt (weil es eine Einstellung braucht), sagt es am Ende selbst: Kiosk-Terminal und
   Ausweis-Link prüft der Testplan von Hand.
 - **Anwesenheit aus ioBroker steuern:** jeder Mitarbeiter hat den schreibbaren State
-  `zeiterfassung.0.users.<id>.present` (Rolle `switch`). `true` stempelt ein (bezahlte Arbeitszeit läuft), `false`
+  `time-tracker.0.users.<id>.present` (Rolle `switch`). `true` stempelt ein (bezahlte Arbeitszeit läuft), `false`
   stempelt aus — gedacht für einen Fingerabdruck-Reader, eine RFID-Brücke, ein Dashboard oder ein Skript. Der
   Schreibvorgang ist idempotent (ein zweites `true` erzeugt keinen zweiten Stempel) und erscheint als normaler
   Stempel mit der Notiz `state.present`. `users.<id>.hasOpenEntry` bleibt die reine Anzeige dazu.
@@ -98,7 +98,7 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   „sofort wieder ausstempeln“ muss der Abstand größer als 30 Sekunden sein. Das gilt für alle Wege (Web-App, Kiosk,
   Badge, ioBroker-Objekt).
 - Offline-Probe: WLAN trennen, stempeln, wieder verbinden — der Stempel wird nachgereicht (`Sync`-Ansicht).
-- Verwaltung → **Backups**: „create now" drücken; der Zustand `zeiterfassung.0.info.lastBackup` springt an.
+- Verwaltung → **Backups**: „create now" drücken; der Zustand `time-tracker.0.info.lastBackup` springt an.
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des
   Adapterverzeichnisses kopieren, Instanz starten.
 

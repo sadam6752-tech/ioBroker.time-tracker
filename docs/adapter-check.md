@@ -32,16 +32,19 @@ Nicht in dieser Stufe enthalten, weil der Checker dafür die **Dateiliste des Re
 und die Struktur der `objects`/`instanceObjects`. Deshalb bleibt die zweite Stufe verbindlich.
 
 Button-States (`role: "button"` mit `read: false`, `write: true`) prüft der Checker strukturell; im Projekt
-übernehmen das die Unit-Tests in `src/lib/adapter/states.test.ts`.
+übernehmen das die Unit-Tests in `src/lib/adapter/states.test.ts` — dort ist auch die **Objektstruktur** abgesichert:
+jeder State braucht seine übergeordneten Kanäle. Der „Object Structure Check" des ioBroker-Bots prüft das gegen die
+Objektliste eines laufenden Systems und meldet sonst `E3009` („missing intermediate object") — im PR #6697 waren das
+**126 Meldungen aus einem einzigen fehlenden Kanal** (`users`). Der Wurzelkanal entsteht jetzt in `createUserChannel`.
 
 ## 2. Offizieller Checker (mit veröffentlichtem Repository)
 
 Der Checker liest immer Projektdaten über die GitHub-API und bricht ohne Repository mit
 `[E0000] FATAL: cannot access repository https://api.github.com/repos/…` ab — lokal allein mit `--local`
-funktioniert er daher nicht. Sobald `https://github.com/sadam6752-tech/ioBroker.zeiterfassung` existiert:
+funktioniert er daher nicht. Sobald `https://github.com/sadam6752-tech/ioBroker.time-tracker` existiert:
 
 ```powershell
-npx @iobroker/repochecker@latest https://github.com/sadam6752-tech/ioBroker.zeiterfassung --local
+npx @iobroker/repochecker@latest https://github.com/sadam6752-tech/ioBroker.time-tracker --local
 ```
 
 `--local` liest dabei die Dateien aus dem Arbeitsverzeichnis (also den lokalen Stand statt des gepushten),

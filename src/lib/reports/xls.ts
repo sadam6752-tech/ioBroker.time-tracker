@@ -19,7 +19,7 @@ export type { ReportAbsence };
 
 /** Input of the monthly statement. */
 export type MonthReportInput = ReportInput & {
-	/** Name of the generator, e.g. `zeiterfassung 0.0.1` */
+	/** Name of the generator, e.g. `time-tracker 0.0.1` */
 	generator: string;
 };
 

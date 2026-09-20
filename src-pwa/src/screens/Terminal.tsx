@@ -34,7 +34,7 @@ import { useBranding } from "../state/branding";
 import { Keypad } from "../components/Keypad";
 
 /** Where the device token of this kiosk is remembered. */
-const STORAGE_KEY = "zeiterfassung.terminal";
+const STORAGE_KEY = "time-tracker.terminal";
 
 /** How long the confirmation of a punch stays on the screen (milliseconds). */
 const RESULT_MILLISECONDS = 8000;

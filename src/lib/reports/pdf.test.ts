@@ -140,7 +140,7 @@ describe("monthly report (pdf)", () => {
 		year: 2026,
 		month: 9,
 		generatedAt,
-		generator: "zeiterfassung test",
+		generator: "time-tracker test",
 		absences: [],
 	};
 
@@ -188,7 +188,7 @@ describe("monthly report (pdf)", () => {
 		// totals and the footer with the page counter
 		expect(text).to.contain("Summe");
 		expect(text).to.contain("Tage: 2");
-		expect(text).to.contain("zeiterfassung test");
+		expect(text).to.contain("time-tracker test");
 		expect(text).to.contain("1/1");
 	});
 

@@ -103,12 +103,12 @@ describe("adapter messages", () => {
 			typeof data?.base64 === "string" ? data.base64 : "";
 
 		const pdf = await handleMessage(deps, "report", { user: "anna", period: "2026-09" });
-		expect(pdf.data).to.deep.include({ fileName: "zeiterfassung-anna-2026-09.pdf", mimeType: "application/pdf" });
+		expect(pdf.data).to.deep.include({ fileName: "time-tracker-anna-2026-09.pdf", mimeType: "application/pdf" });
 		const bytes = Buffer.from(base64Of(pdf.data), "base64");
 		expect(bytes.subarray(0, 4).toString("latin1")).to.equal("%PDF");
 
 		const xls = await handleMessage(deps, "report", { user: "anna", period: "2026-09", format: "xlsx" });
-		expect(xls.data).to.deep.include({ fileName: "zeiterfassung-anna-2026-09.xlsx" });
+		expect(xls.data).to.deep.include({ fileName: "time-tracker-anna-2026-09.xlsx" });
 		expect(Buffer.from(base64Of(xls.data), "base64").length).to.be.greaterThan(0);
 
 		expect(await failure("report", { user: "anna", period: "September" })).to.match(/YYYY-MM/);
@@ -119,7 +119,7 @@ describe("adapter messages", () => {
 		const created = await handleMessage(deps, "backup", {});
 		expect(created.ok).to.equal(true);
 		const name = typeof created.data?.name === "string" ? created.data.name : "";
-		expect(name).to.contain("zeiterfassung-");
+		expect(name).to.contain("time-tracker-");
 
 		const withoutBackup = await handleMessage({ ...deps, backup: undefined }, "backup", {}).then(
 			() => "",

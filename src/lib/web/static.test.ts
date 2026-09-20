@@ -12,7 +12,7 @@ describe("static files", () => {
 	let handler: ReturnType<typeof createStaticHandler>;
 
 	beforeEach(() => {
-		outer = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-static-"));
+		outer = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-static-"));
 		root = path.join(outer, "www");
 		fs.mkdirSync(root);
 		fs.writeFileSync(path.join(root, "index.html"), "<h1>Zeiterfassung</h1>");

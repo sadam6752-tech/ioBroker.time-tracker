@@ -8,7 +8,7 @@
  */
 
 /** Storage key of the queue. */
-const STORAGE_KEY = "zeiterfassung.queue";
+const STORAGE_KEY = "time-tracker.queue";
 
 /** A punch waiting to be sent. */
 export interface QueuedPunch {

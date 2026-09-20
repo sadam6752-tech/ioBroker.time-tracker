@@ -8,7 +8,7 @@ declare global {
 			port: number;
 			/** Bind address, e.g. 0.0.0.0 for all interfaces */
 			bind: string;
-			/** Database file; empty = <adapter data dir>/zeiterfassung.sqlite */
+			/** Database file; empty = <adapter data dir>/time-tracker.sqlite */
 			dbPath: string;
 			/** Time zone used as instance fallback (IANA name) */
 			timezone: string;

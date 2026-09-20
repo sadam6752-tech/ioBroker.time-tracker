@@ -1,18 +1,18 @@
 {
-	"name": "iobroker.zeiterfassung",
-	"version": "0.1.9",
+	"name": "iobroker.time-tracker",
+	"version": "0.2.0",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"author": {
 		"name": "Alex",
 		"email": "sadam6752@gmail.com"
 	},
 	"contributors": [],
-	"homepage": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung",
+	"homepage": "https://github.com/sadam6752-tech/ioBroker.time-tracker",
 	"license": "MIT",
 	"keywords": [
 		"ioBroker",
 		"time tracking",
-		"zeiterfassung",
+		"time-tracker",
 		"clock in",
 		"attendance",
 		"working time",
@@ -21,7 +21,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung.git"
+		"url": "https://github.com/sadam6752-tech/ioBroker.time-tracker.git"
 	},
 	"engines": {
 		"node": ">= 22"
@@ -125,7 +125,7 @@
 		"instrument": true
 	},
 	"bugs": {
-		"url": "https://github.com/sadam6752-tech/ioBroker.zeiterfassung/issues"
+		"url": "https://github.com/sadam6752-tech/ioBroker.time-tracker/issues"
 	},
 	"readmeFilename": "README.md"
 }

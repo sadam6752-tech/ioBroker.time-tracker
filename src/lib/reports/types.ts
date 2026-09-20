@@ -58,5 +58,5 @@ export interface ReportInput {
 export function reportFileName(login: string, year: number, month: number, extension: string): string {
 	// a login may contain characters a file name cannot carry
 	const safe = (login || "user").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "user";
-	return `zeiterfassung-${safe}-${year}-${String(month).padStart(2, "0")}.${extension}`;
+	return `time-tracker-${safe}-${year}-${String(month).padStart(2, "0")}.${extension}`;
 }

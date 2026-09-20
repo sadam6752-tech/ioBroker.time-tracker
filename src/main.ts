@@ -1,5 +1,5 @@
 /*
- * ioBroker adapter "zeiterfassung" – time tracking
+ * ioBroker adapter "time-tracker" – time tracking
  * Scaffolded with @iobroker/create-adapter v3.1.5
  */
 
@@ -105,7 +105,7 @@ interface AdapterServices {
 	automations: AutomationsRepository;
 }
 
-class Zeiterfassung extends utils.Adapter {
+class TimeTracker extends utils.Adapter {
 	private db: Db | null = null;
 	private webServer: WebServer | null = null;
 	private services: AdapterServices | null = null;
@@ -121,7 +121,7 @@ class Zeiterfassung extends utils.Adapter {
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
 			...options,
-			name: "zeiterfassung",
+			name: "time-tracker",
 		});
 		this.on("ready", this.onReady.bind(this));
 		this.on("stateChange", this.onStateChange.bind(this));
@@ -131,7 +131,7 @@ class Zeiterfassung extends utils.Adapter {
 		this.on("unload", this.onUnload.bind(this));
 	}
 
-	/** Database file: configured path or `<adapter instance data dir>/zeiterfassung.sqlite`. */
+	/** Database file: configured path or `<adapter instance data dir>/time-tracker.sqlite`. */
 	private databaseFile(): string {
 		const configured = (this.config.dbPath ?? "").trim();
 		if (configured) {
@@ -140,7 +140,7 @@ class Zeiterfassung extends utils.Adapter {
 
 		const dir = utils.getAbsoluteInstanceDataDir(this);
 		fs.mkdirSync(dir, { recursive: true });
-		return path.join(dir, "zeiterfassung.sqlite");
+		return path.join(dir, "time-tracker.sqlite");
 	}
 
 	/** Configured holiday country, falling back to Switzerland. */
@@ -424,7 +424,7 @@ class Zeiterfassung extends utils.Adapter {
 		const automations = createAutomationsRepository(db);
 		const sync = createSyncService({ db, entries, users, aggregation });
 		const closing = createClosingService({ db, aggregation, payouts });
-		// backups live next to the database file: `<data dir>/backups/zeiterfassung-<timestamp>.sqlite`
+		// backups live next to the database file: `<data dir>/backups/time-tracker-<timestamp>.sqlite`
 		const backup = createBackupService({
 			db,
 			dir: path.join(path.dirname(this.databaseFile()), "backups"),
@@ -1142,8 +1142,8 @@ class Zeiterfassung extends utils.Adapter {
 
 if (require.main !== module) {
 	// Export the constructor in compact mode
-	module.exports = (options: Partial<utils.AdapterOptions> | undefined) => new Zeiterfassung(options);
+	module.exports = (options: Partial<utils.AdapterOptions> | undefined) => new TimeTracker(options);
 } else {
 	// otherwise start the instance directly
-	(() => new Zeiterfassung())();
+	(() => new TimeTracker())();
 }

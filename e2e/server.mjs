@@ -50,8 +50,8 @@ const now = () => Math.floor(Date.now() / 1000);
  * A queued restore needs a database *file* to swap — an in-memory database cannot be restored at all, and the
  * suite hands an uploaded backup back in. The directory is thrown away with the process.
  */
-const dataDir = require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "zeiterfassung-e2e-data-"));
-const db = openAndMigrate(join(dataDir, "zeiterfassung.sqlite"));
+const dataDir = require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "time-tracker-e2e-data-"));
+const db = openAndMigrate(join(dataDir, "time-tracker.sqlite"));
 seed(db, { holidayYears: [2026] });
 
 const users = createUsersRepository(db);

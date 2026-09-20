@@ -1,15 +1,15 @@
-![Logo](admin/zeiterfassung.png)
+![Logo](admin/time-tracker.png)
 
-# ioBroker.zeiterfassung
+# ioBroker.time-tracker
 
-[![NPM version](https://img.shields.io/npm/v/iobroker.zeiterfassung.svg)](https://www.npmjs.com/package/iobroker.zeiterfassung)
-[![Downloads](https://img.shields.io/npm/dm/iobroker.zeiterfassung.svg)](https://www.npmjs.com/package/iobroker.zeiterfassung)
-![Number of Installations](https://iobroker.live/badges/zeiterfassung-installed.svg)
-![Current version in stable repository](https://iobroker.live/badges/zeiterfassung-stable.svg)
+[![NPM version](https://img.shields.io/npm/v/iobroker.time-tracker.svg)](https://www.npmjs.com/package/iobroker.time-tracker)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.time-tracker.svg)](https://www.npmjs.com/package/iobroker.time-tracker)
+![Number of Installations](https://iobroker.live/badges/time-tracker-installed.svg)
+![Current version in stable repository](https://iobroker.live/badges/time-tracker-stable.svg)
 
-[![NPM](https://nodei.co/npm/iobroker.zeiterfassung.png?downloads=true)](https://nodei.co/npm/iobroker.zeiterfassung/)
+[![NPM](https://nodei.co/npm/iobroker.time-tracker.png?downloads=true)](https://nodei.co/npm/iobroker.time-tracker/)
 
-**Tests:** ![Test and Release](https://github.com/sadam6752-tech/ioBroker.zeiterfassung/workflows/Test%20and%20Release/badge.svg)
+**Tests:** ![Test and Release](https://github.com/sadam6752-tech/ioBroker.time-tracker/workflows/Test%20and%20Release/badge.svg)
 
 A punch clock for ioBroker. Employees clock in and out, the adapter calculates target time and balance, absences and
 vacation are managed, and the monthly statement is downloaded as PDF or Excel. Everything runs in the browser —
@@ -36,7 +36,7 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 
 ## Installation
 
-1. In the ioBroker admin: **Adapters → zeiterfassung → Install** (or `iobroker install iobroker.zeiterfassung`).
+1. In the ioBroker admin: **Adapters → time-tracker → Install** (or `iobroker install iobroker.time-tracker`).
    An installation from Git does not work on its own: the web app in `www/` is built, so it is not part of the
    repository — either install the npm package or build it once in the adapter directory
    (`npm ci && npm run install:pwa && npm run build:pwa && npm run build`).
@@ -151,26 +151,26 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 
 | State                                                                                          | Type    | Purpose                                    |
 | ---------------------------------------------------------------------------------------------- | ------- | ------------------------------------------ |
-| `zeiterfassung.0.info.connection`                                                              | boolean | adapter/service ready                      |
-| `zeiterfassung.0.info.lastBackup`                                                              | number  | instant of the newest database backup      |
-| `zeiterfassung.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                       |
-| `zeiterfassung.0.users.<id>.displayName`                                                       | string  | name of the employee                       |
-| `zeiterfassung.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                     |
-| `zeiterfassung.0.users.<id>.lastPunch`                                                         | number  | instant of the last punch of today         |
-| `zeiterfassung.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                       |
-| `zeiterfassung.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                |
-| `zeiterfassung.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision             |
-| `zeiterfassung.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to       |
-| `zeiterfassung.0.commands.punch`                                                               | boolean | punch in or out (button)                   |
-| `zeiterfassung.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding   |
-| `zeiterfassung.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`             |
-| `zeiterfassung.0.commands.recalc`                                                              | string  | recalculate a period, `YYYY-MM` or `YYYY`  |
-| `zeiterfassung.0.commands.backup`                                                              | boolean | write a database backup (button)           |
-| `zeiterfassung.0.users.<id>.monthWorkedMinutes` / `monthBalanceMinutes` / `yearBalanceMinutes` | number  | month and year figures                     |
-| `zeiterfassung.0.company.presentCount`                                                         | number  | employees clocked in right now             |
-| `zeiterfassung.0.company.present`                                                              | string  | their names, separated by a comma          |
-| `zeiterfassung.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
-| `zeiterfassung.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
+| `time-tracker.0.info.connection`                                                              | boolean | adapter/service ready                      |
+| `time-tracker.0.info.lastBackup`                                                              | number  | instant of the newest database backup      |
+| `time-tracker.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                       |
+| `time-tracker.0.users.<id>.displayName`                                                       | string  | name of the employee                       |
+| `time-tracker.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                     |
+| `time-tracker.0.users.<id>.lastPunch`                                                         | number  | instant of the last punch of today         |
+| `time-tracker.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                       |
+| `time-tracker.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                |
+| `time-tracker.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision             |
+| `time-tracker.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to       |
+| `time-tracker.0.commands.punch`                                                               | boolean | punch in or out (button)                   |
+| `time-tracker.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding   |
+| `time-tracker.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`             |
+| `time-tracker.0.commands.recalc`                                                              | string  | recalculate a period, `YYYY-MM` or `YYYY`  |
+| `time-tracker.0.commands.backup`                                                              | boolean | write a database backup (button)           |
+| `time-tracker.0.users.<id>.monthWorkedMinutes` / `monthBalanceMinutes` / `yearBalanceMinutes` | number  | month and year figures                     |
+| `time-tracker.0.company.presentCount`                                                         | number  | employees clocked in right now             |
+| `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma          |
+| `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
+| `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
 
 ### Actions (trigger rules)
 
@@ -209,13 +209,13 @@ the log shown below the table. The events `automation.clockOut`, `automation.mis
 A script, a Blockly block or another adapter drives the instance without HTTP:
 
 ```js
-sendTo("zeiterfassung.0", "punch", { user: "anna", quick: true }, answer => log(answer.message));
-sendTo("zeiterfassung.0", "present", { user: 2, present: false });
-sendTo("zeiterfassung.0", "status", { user: "anna" }, answer => log(JSON.stringify(answer.data)));
-sendTo("zeiterfassung.0", "report", { user: "anna", period: "2026-09", format: "pdf" }, answer =>
+sendTo("time-tracker.0", "punch", { user: "anna", quick: true }, answer => log(answer.message));
+sendTo("time-tracker.0", "present", { user: 2, present: false });
+sendTo("time-tracker.0", "status", { user: "anna" }, answer => log(JSON.stringify(answer.data)));
+sendTo("time-tracker.0", "report", { user: "anna", period: "2026-09", format: "pdf" }, answer =>
 	writeFile("statement.pdf", Buffer.from(answer.data.base64, "base64")),
 );
-sendTo("zeiterfassung.0", "backup");
+sendTo("time-tracker.0", "backup");
 ```
 
 `user` is a user id, a login or the shown name. `report` answers with the file name, the MIME type and the file
@@ -297,13 +297,21 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ## Links
 
-- Repository: https://github.com/sadam6752-tech/ioBroker.zeiterfassung
-- Issues: https://github.com/sadam6752-tech/ioBroker.zeiterfassung/issues
+- Repository: https://github.com/sadam6752-tech/ioBroker.time-tracker
+- Issues: https://github.com/sadam6752-tech/ioBroker.time-tracker/issues
 - ioBroker forum: https://forum.iobroker.net/
 
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+### 0.2.0 (2026-09-20)
+
+- (Alex) **renamed to `ioBroker.time-tracker`**: ioBroker requires English adapter names, so the adapter, its npm
+  package and the GitHub repository are called `time-tracker` from now on. The instance id becomes `time-tracker.0`
+  and the database is created as `time-tracker.sqlite` — existing installations keep their data by pointing
+  “Database file” at the old file or by renaming it (before 0.2.0 it was `zeiterfassung.sqlite`). German UI texts
+  stay German; `common.titleLang` keeps all 11 languages
 
 ### 0.1.9 (2026-09-19)
 
@@ -344,17 +352,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   with the web app), so it works offline and no service ever sees the link
 - (Alex) docs: `docs/i18n.md` now records who settles the translations — German and Russian are kept by the owner, for
   the other nine languages no native speaker is available, so they stay machine translation with the technical pass
-
-### 0.1.4 (2026-09-18)
-
-- (Alex) **badges (RFID/NFC)**: a badge can be edited (employee, label, validity) and given a **new link** — for one
-  that was lost, expired or revoked and should work again. A new employee or a new validity re-signs the link, so the
-  answer carries it and the link handed out before stops working immediately (a label on its own leaves it alone)
-- (Alex) translations: a second technical pass, this time with a helper (`tools/check-i18n-review.mjs`) that looks for
-  what `check:i18n` cannot see — wrong script, copies between languages, texts much longer or shorter than English.
-  It found real gaps: `brandingHint` had lost its second sentence in nine languages, `brandColorHint` its “empty for
-  the default” in seven, and `admin.user.pinTitle` was a Russian sentence in the Ukrainian file. `docs/i18n.md` lists
-  what stays with a native speaker
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

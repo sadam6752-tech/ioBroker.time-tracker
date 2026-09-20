@@ -45,7 +45,7 @@ test("survives a reload on the cookie alone and can still punch", async ({ page 
 	await signIn(page);
 
 	// the session token lives in an httpOnly cookie; only the CSRF token and the user are stored in the page
-	const stored = await page.evaluate(() => window.localStorage.getItem("zeiterfassung.session") ?? "");
+	const stored = await page.evaluate(() => window.localStorage.getItem("time-tracker.session") ?? "");
 	expect(stored).not.toContain('"token"');
 
 	await page.reload();
@@ -147,7 +147,7 @@ test("hands the statement of an employee to the administration", async ({ page }
 	// the statement of the selected employee is handed over as a file and named after her login
 	const download = page.waitForEvent("download");
 	await page.getByRole("button", { name: "Excel" }).first().click();
-	expect((await download).suggestedFilename()).toMatch(/zeiterfassung-anna-\d{4}-\d{2}\.xlsx$/i);
+	expect((await download).suggestedFilename()).toMatch(/time-tracker-anna-\d{4}-\d{2}\.xlsx$/i);
 
 	// and her month can be opened from the list: the name of the month is the link
 	const currentMonth = new Intl.DateTimeFormat("de", { month: "long" }).format(new Date());
@@ -168,7 +168,7 @@ test("lets the administration download a backup", async ({ page }) => {
 
 	const download = page.waitForEvent("download");
 	await downloadButton.click();
-	expect((await download).suggestedFilename()).toMatch(/zeiterfassung-.*\.sqlite$/i);
+	expect((await download).suggestedFilename()).toMatch(/time-tracker-.*\.sqlite$/i);
 });
 
 test("uploads a downloaded backup again and deletes a backup", async ({ page }, testInfo) => {

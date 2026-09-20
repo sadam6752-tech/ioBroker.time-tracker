@@ -144,7 +144,7 @@ describe("web api", () => {
 			settings,
 		});
 		sync = createSyncService({ db, entries, users, aggregation });
-		backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-api-backup-"));
+		backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-api-backup-"));
 		backup = createBackupService({ db, dir: backupDir, now: () => 1000 });
 		api = createApi({
 			db,
@@ -1083,7 +1083,7 @@ describe("web api", () => {
 		it("reports the adapter version without a session", async () => {
 			const version = await send("GET", "/version");
 			expect(version.status).to.equal(200);
-			expect(bodyOf(version)).to.deep.equal({ name: "iobroker.zeiterfassung", version: "9.9.9" });
+			expect(bodyOf(version)).to.deep.equal({ name: "iobroker.time-tracker", version: "9.9.9" });
 		});
 	});
 
@@ -2254,9 +2254,7 @@ describe("web api", () => {
 			});
 			expect(own.status).to.equal(200);
 			expect(own.headers["content-type"]).to.equal("text/csv; charset=utf-8");
-			expect(own.headers["content-disposition"]).to.equal(
-				'attachment; filename="zeiterfassung-anna-1970-01.csv"',
-			);
+			expect(own.headers["content-disposition"]).to.equal('attachment; filename="time-tracker-anna-1970-01.csv"');
 			const text = own.body.toString("utf8");
 			expect(text.startsWith("\uFEFFdate;time;direction;source;note")).to.equal(true);
 			// a header line and one row per punch
@@ -2340,7 +2338,7 @@ describe("web api", () => {
 				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			);
 			expect(response.headers["content-disposition"]).to.equal(
-				'attachment; filename="zeiterfassung-anna-1970-01.xlsx"',
+				'attachment; filename="time-tracker-anna-1970-01.xlsx"',
 			);
 			expect(response.headers["cache-control"]).to.equal("no-store");
 
@@ -2373,7 +2371,7 @@ describe("web api", () => {
 			expect(response.status).to.equal(200);
 			expect(response.headers["content-type"]).to.equal("application/pdf");
 			expect(response.headers["content-disposition"]).to.equal(
-				'attachment; filename="zeiterfassung-anna-1970-01.pdf"',
+				'attachment; filename="time-tracker-anna-1970-01.pdf"',
 			);
 			expect(response.headers["cache-control"]).to.equal("no-store");
 			expect(response.body.toString("latin1").startsWith("%PDF-1.")).to.equal(true);
@@ -2472,7 +2470,7 @@ describe("web api", () => {
 				removed: string[];
 			}>(created);
 			expect(payload.removed).to.deep.equal([]);
-			expect(payload.backup.name).to.equal("zeiterfassung-1970-01-01T00-16-40.sqlite");
+			expect(payload.backup.name).to.equal("time-tracker-1970-01-01T00-16-40.sqlite");
 			expect(payload.backup.sizeBytes).to.be.greaterThan(0);
 			expect(payload.backup.users).to.be.greaterThan(0);
 			expect(payload.backup.schemaVersion).to.be.greaterThan(0);

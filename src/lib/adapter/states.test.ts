@@ -156,6 +156,14 @@ describe("adapter states and commands", () => {
 			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
 		});
 
+		it("creates the parent channel of the employees (object structure check E3009)", async () => {
+			await createUserChannel(recorder, annaId);
+
+			// without the root channel the ioBroker bot reports "missing intermediate object users" for every state
+			expect(recorder.objects.get("users")?.type).to.equal("channel");
+			expect(recorder.objects.get(`users.${annaId}`)?.type).to.equal("channel");
+		});
+
 		it("reports an open punch and the worked minutes", async () => {
 			entries.insert({ userId: annaId, tsUtc: now - 3600, timeZone: "Europe/Berlin" });
 
@@ -251,14 +259,14 @@ describe("adapter states and commands", () => {
 		});
 
 		it("writes a backup on the button state", () => {
-			const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-command-backup-"));
+			const dir = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-command-backup-"));
 			try {
 				const backup = createBackupService({ db, dir, now: () => now });
 
 				expect(handleCommand(deps(), COMMAND_IDS.backup, false).ok).to.equal(false);
 				const result = handleCommand({ ...deps(), backup }, COMMAND_IDS.backup, true);
 				expect(result.ok).to.equal(true);
-				expect(result.message).to.contain("backup zeiterfassung-");
+				expect(result.message).to.contain("backup time-tracker-");
 				expect(backup.list()).to.have.lengthOf(1);
 
 				// an instance without the service refuses instead of doing nothing silently

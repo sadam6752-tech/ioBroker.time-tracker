@@ -254,7 +254,11 @@ export async function publishAllUserStates(args: {
 }
 
 /**
- * Creates the channel of one employee.
+ * Creates the channel of one employee, including the shared parent channel `users`.
+ *
+ * The parent channel matters: the ioBroker object structure check (`E3009`) requires every state to have its
+ * parents, so `users.<userId>.*` below a missing `users` produced 126 findings in the repository check
+ * (PR #6697). `setObjectNotExists` keeps the call idempotent.
  *
  * @param port - state port
  * @param userId - database id of the employee
@@ -262,6 +266,7 @@ export async function publishAllUserStates(args: {
  */
 export async function createUserChannel(port: StatePort, userId: number): Promise<string> {
 	const id = `users.${userId}`;
+	await port.setObjectNotExists("users", channelObject({ en: "Employees", de: "Mitarbeiter" }));
 	await port.setObjectNotExists(id, channelObject({ en: "Employee", de: "Mitarbeiter" }));
 	await port.setObjectNotExists(`${id}.displayName`, stateObject({ en: "Name", de: "Name" }, "string", "info.name"));
 	// the writable twin of `hasOpenEntry`: a script, a fingerprint reader or a dashboard writes it to say that

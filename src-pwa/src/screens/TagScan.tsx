@@ -22,7 +22,7 @@ import { api, formatTime, type ScanResult } from "../api/client";
 import { errorKey } from "../components/feedback";
 
 /** Where the scanned token is remembered for the running browser session. */
-const STORAGE_KEY = "zeiterfassung.scan";
+const STORAGE_KEY = "time-tracker.scan";
 
 /**
  * Reads the token of the scanned tag: from the URL or from this browser session.

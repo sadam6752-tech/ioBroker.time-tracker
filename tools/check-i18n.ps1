@@ -34,7 +34,7 @@
     pwsh -NoProfile -File tools/check-i18n.ps1 -FailOnIssue
 
 .EXAMPLE
-    pwsh -NoProfile -File tools/check-i18n.ps1 -Languages en,de,ru -RepoPath C:\src\ioBroker.zeiterfassung
+    pwsh -NoProfile -File tools/check-i18n.ps1 -Languages en,de,ru -RepoPath C:\src\ioBroker.time-tracker
 #>
 [CmdletBinding()]
 param(

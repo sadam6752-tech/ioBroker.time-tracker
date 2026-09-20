@@ -42,7 +42,7 @@ npm run dev-server     # startet den Adapter in einem Wegwerf-js-controller
 Alternativ in eine vorhandene Installation (nach Veröffentlichung auf npm):
 
 ```bash
-iobroker url https://github.com/sadam6752-tech/ioBroker.zeiterfassung
+iobroker url https://github.com/sadam6752-tech/ioBroker.time-tracker
 ```
 
 Nach dem Start: Instanz öffnen, **Port** und **Bind-Adresse** prüfen, `report_font_path` nur setzen, wenn
@@ -97,7 +97,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 | T11 | Live-Ereignisse                 | PWA in zwei Browsern öffnen (`admin` + `anna`), in einem stempeln                                                                                                                                                                                                                                                                             | der andere Browser aktualisiert sofort; ein Mitarbeiter sieht **keine** fremden Ereignisse                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | T12 | Korrektur und Audit             | Eintrag in der Monatsansicht ändern/löschen (Recht vorausgesetzt)                                                                                                                                                                                                                                                                             | Änderung erscheint im Audit mit Feldänderungen und Begründung                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | T13 | Sicherheit                      | (a) 20× falsches Passwort; (b) Anfrage ohne CSRF-Token; (c) `../../etc/passwd` im Pfad; (d) Anfrage ohne Token                                                                                                                                                                                                                                | (a) **423** Sperre, läuft nach Ablauf aus; (b) 403; (c) 400/404; (d) 401                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| T14 | ioBroker-States und Befehle     | States unter `zeiterfassung.0.*` prüfen, `commands.punch` setzen                                                                                                                                                                                                                                                                              | Werte plausibel, `info.connection` true, Button-States `read: false`, gelöschter Benutzer hinterlässt keine States                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| T14 | ioBroker-States und Befehle     | States unter `time-tracker.0.*` prüfen, `commands.punch` setzen                                                                                                                                                                                                                                                                              | Werte plausibel, `info.connection` true, Button-States `read: false`, gelöschter Benutzer hinterlässt keine States                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | T15 | Sprachen                        | Oberfläche auf `de`, dann `ru`, dann `zh-cn`; Berichte in derselben Sprache                                                                                                                                                                                                                                                                   | keine abgeschnittenen Texte, Datum/Zahlen lokal formatiert, Bericht in der Sprache des Nutzers                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | T16 | PWA-Installation                | Adapter-URL über **HTTPS** öffnen, „Zum Startbildschirm hinzufügen", App starten, neu bauen und neu laden                                                                                                                                                                                                                                     | App läuft im eigenen Fenster, Icon ist das Logo, Update ohne hängenden Alt-Cache                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | T17 | Last (Stichprobe)               | `npm run load-smoke -- --login <Benutzer> --password '<Passwort>'` (Standard: 5 Stempel parallel; `--count 10 --base http://…` möglich, Passwort alternativ in `ZT_PASSWORD`)                                                                                                                                                                 | keine Fehler, alle 5 Stempel vorhanden, Antwortzeiten im Sekundenbereich — das Skript prüft beides selbst und endet nur dann mit Code 0                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -144,7 +144,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 
 - Der Adapter schreibt **nur** in sein Datenverzeichnis (SQLite-Datei) und in seine eigenen ioBroker-Objekte.
   Eine bestehende Altanwendung bleibt unberührt und kann weiterlaufen.
-- Rückfall: `iobroker stop zeiterfassung`, Datenbankdatei sichern, Altanwendung weiter betreiben.
+- Rückfall: `iobroker stop time-tracker`, Datenbankdatei sichern, Altanwendung weiter betreiben.
 - Vor jedem Testlauf eine Sicherung anlegen (T10) und die Datei **außerhalb** des Adapterverzeichnisses kopieren.
 
 ## 10. Ergebnis und nächste Schritte (nach dem Test)
@@ -199,7 +199,7 @@ Admin-Oberfläche unter `http://127.0.0.1:8081`. Ohne Startpasswort in den Insta
 und **einmalig** ins Log geschrieben:
 
 ```text
-warn: zeiterfassung.0 administrator "admin" created with the start password "Zf-…" - change it at the first login
+warn: time-tracker.0 administrator "admin" created with the start password "Zf-…" - change it at the first login
 ```
 
 > **Windows 11 ohne `wmic`:** `dev-server watch` bricht dort mit `spawn wmic.exe ENOENT` ab — das Werkzeug liest die
@@ -210,11 +210,11 @@ warn: zeiterfassung.0 administrator "admin" created with the start password "Zf-
 > ```powershell
 > cd .dev-server\default
 > node node_modules\iobroker.js-controller\controller.js                     # läuft im Vordergrund
-> node node_modules\iobroker.js-controller\iobroker.js start zeiterfassung.0  # zweite Konsole
+> node node_modules\iobroker.js-controller\iobroker.js start time-tracker.0  # zweite Konsole
 > node node_modules\iobroker.js-controller\iobroker.js start admin.0          # optional: Admin-Oberfläche
 > ```
 >
-> Beenden mit `iobroker.js stop zeiterfassung.0` beziehungsweise Strg+C im Controller-Fenster. Auf diesem Weg gibt es
+> Beenden mit `iobroker.js stop time-tracker.0` beziehungsweise Strg+C im Controller-Fenster. Auf diesem Weg gibt es
 > keinen Hot-Reload: nach Änderungen `npm run build` (Adapter) beziehungsweise `npm run build:pwa` (Web-App)
 > ausführen und die Instanz einmal neu starten.
 
@@ -222,7 +222,7 @@ Damit Änderungen an der Web-App ohne Neuinstallation ankommen, kann der ausgeli
 Repositories zeigen (der Adapter liest die Dateien bei jeder Anfrage von der Platte):
 
 ```powershell
-cd .dev-server\default\node_modules\iobroker.zeiterfassung
+cd .dev-server\default\node_modules\iobroker.time-tracker
 cmd /c rmdir www                     # entfernt nur die Verknüpfung, nicht das Ziel
 New-Item -ItemType Junction -Path www -Target <Repository>\www
 ```
@@ -238,7 +238,7 @@ New-Item -ItemType Junction -Path www -Target <Repository>\www
 >
 > ```powershell
 > npm run build
-> Copy-Item build .dev-server\default\node_modules\iobroker.zeiterfassung\build -Recurse -Force
+> Copy-Item build .dev-server\default\node_modules\iobroker.time-tracker\build -Recurse -Force
 > ```
 
 `.dev-server/` und `iobroker.*.tgz` sind bereits in `.gitignore` abgedeckt.
@@ -246,4 +246,4 @@ New-Item -ItemType Junction -Path www -Target <Repository>\www
 > **Beim Testen auf den Port achten:** `npm run test:integration` startet eine eigene ioBroker-Instanz und bindet
 > denselben Port wie der Adapter (Standard `8092`). Läuft die eigene Instanz dabei, kann die Testinstanz ihre API
 > nicht öffnen und die Prüfung scheitert mit „starts the HTTP API on the configured port“ — die eigene Instanz also
-> vorher stoppen (`iobroker.js stop zeiterfassung.0`).
+> vorher stoppen (`iobroker.js stop time-tracker.0`).

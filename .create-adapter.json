@@ -1,7 +1,7 @@
 {
 	"cli": true,
 	"target": "directory",
-	"adapterName": "zeiterfassung",
+	"adapterName": "time-tracker",
 	"description": "Time tracking (clock-in/out) for ioBroker with web app, badge terminal and reports",
 	"authorName": "Alex",
 	"authorGithub": "sadam6752-tech",

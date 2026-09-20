@@ -117,7 +117,7 @@ describe("monthly report (xlsx)", () => {
 		year: 2026,
 		month: 9,
 		generatedAt,
-		generator: "zeiterfassung test",
+		generator: "time-tracker test",
 		absences: [] as ReportAbsence[],
 	};
 
@@ -254,9 +254,9 @@ describe("monthly report (xlsx)", () => {
 	});
 
 	it("builds a safe file name", () => {
-		expect(reportFileName("anna", 2026, 9, "xlsx")).to.equal("zeiterfassung-anna-2026-09.xlsx");
-		expect(reportFileName("anna/müller", 2026, 12, "xlsx")).to.equal("zeiterfassung-anna-m-ller-2026-12.xlsx");
-		expect(reportFileName("", 2026, 1, "pdf")).to.equal("zeiterfassung-user-2026-01.pdf");
+		expect(reportFileName("anna", 2026, 9, "xlsx")).to.equal("time-tracker-anna-2026-09.xlsx");
+		expect(reportFileName("anna/müller", 2026, 12, "xlsx")).to.equal("time-tracker-anna-m-ller-2026-12.xlsx");
+		expect(reportFileName("", 2026, 1, "pdf")).to.equal("time-tracker-user-2026-01.pdf");
 	});
 
 	it("names the labels of every supported language", () => {

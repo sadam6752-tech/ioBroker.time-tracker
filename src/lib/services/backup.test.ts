@@ -50,8 +50,8 @@ describe("backup service", () => {
 	}
 
 	beforeEach(() => {
-		root = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-backup-"));
-		dbFile = path.join(root, "zeiterfassung.sqlite");
+		root = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-backup-"));
+		dbFile = path.join(root, "time-tracker.sqlite");
 		backupDir = path.join(root, "backups");
 		clock = 1_800_000_000;
 		open();
@@ -71,7 +71,7 @@ describe("backup service", () => {
 		const file = service.create({ actorId: users.list()[0].id, reason: "test" });
 
 		expect(file.removed).to.deep.equal([]);
-		expect(file.backup.name).to.equal("zeiterfassung-2027-01-15T08-00-00.sqlite");
+		expect(file.backup.name).to.equal("time-tracker-2027-01-15T08-00-00.sqlite");
 		expect(file.backup.createdAt).to.equal(clock);
 		expect(file.backup.sizeBytes).to.be.greaterThan(0);
 		expect(file.backup.schemaVersion).to.equal(currentSchemaVersion(db));
@@ -115,7 +115,7 @@ describe("backup service", () => {
 		expect(() => service.verify(path.join(backupDir, "gibt-es-nicht.sqlite"))).to.throw(ValidationError);
 
 		fs.mkdirSync(backupDir, { recursive: true });
-		const garbage = path.join(backupDir, "zeiterfassung-2027-01-15T08-00-00.sqlite");
+		const garbage = path.join(backupDir, "time-tracker-2027-01-15T08-00-00.sqlite");
 		fs.writeFileSync(garbage, "kein sqlite");
 		expect(() => service.verify(garbage)).to.throw(/not a readable database/);
 	});
@@ -209,7 +209,7 @@ describe("backup service", () => {
 		expect(audit.entityId).to.equal(first.backup.name);
 
 		// a name that is not in the list never reaches the file system
-		expect(() => service.remove("../zeiterfassung.sqlite")).to.throw(ValidationError);
+		expect(() => service.remove("../time-tracker.sqlite")).to.throw(ValidationError);
 		expect(fs.existsSync(dbFile)).to.equal(true);
 	});
 
@@ -258,8 +258,8 @@ describe("backup service", () => {
 		expect(service.list()).to.deep.equal([]);
 
 		fs.mkdirSync(backupDir, { recursive: true });
-		fs.writeFileSync(path.join(backupDir, "zeiterfassung-halb-fertig.sqlite.part"), "abgebrochen");
-		fs.writeFileSync(path.join(backupDir, "zeiterfassung-kein-datum.sqlite"), "kein Datum");
+		fs.writeFileSync(path.join(backupDir, "time-tracker-halb-fertig.sqlite.part"), "abgebrochen");
+		fs.writeFileSync(path.join(backupDir, "time-tracker-kein-datum.sqlite"), "kein Datum");
 		expect(service.list()).to.deep.equal([]);
 	});
 

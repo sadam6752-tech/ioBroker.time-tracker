@@ -17,7 +17,7 @@ describe("session secret", () => {
 	let file: string;
 
 	beforeEach(() => {
-		dir = fs.mkdtempSync(path.join(os.tmpdir(), "zeiterfassung-secret-"));
+		dir = fs.mkdtempSync(path.join(os.tmpdir(), "time-tracker-secret-"));
 		file = path.join(dir, SECRET_FILE_NAME);
 	});
 

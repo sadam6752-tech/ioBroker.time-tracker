@@ -166,15 +166,15 @@ Regeln, in dieser Reihenfolge wichtig:
 
     ```powershell
     node node_modules/iobroker.js-controller/iobroker.js list instances
-    node node_modules/iobroker.js-controller/iobroker.js object set system.adapter.zeiterfassung.0 common.enabled=false
+    node node_modules/iobroker.js-controller/iobroker.js object set system.adapter.time-tracker.0 common.enabled=false
     ```
 
-    Im Log steht dann `Do not restart adapter system.adapter.zeiterfassung.0 because disabled or deleted`, und der
+    Im Log steht dann `Do not restart adapter system.adapter.time-tracker.0 because disabled or deleted`, und der
     Adapter läuft weiter, weil der Dev-Server ihn hält.
 
 2. **Den Adapter nie in `ioBroker.admin` starten oder neu starten**, solange `dev-server watch` läuft — ein Start
    aus der Oberfläche aktiviert die Instanz wieder und erzeugt genau die Schleife aus Regel 1. Im Log sieht das so
-   aus: `"system.adapter.zeiterfassung.0" enabled` → `started with pid …` → `terminated with code 7
+   aus: `"system.adapter.time-tracker.0" enabled` → `started with pid …` → `terminated with code 7
 (ADAPTER_ALREADY_RUNNING)` → `Restart adapter … because enabled`, alle 30 Sekunden. Die Doku des Dev-Servers
    weist ausdrücklich darauf hin. Einen Neustart erzwingt man, indem man eine Quelldatei speichert (der Watcher
    übernimmt) oder die ganze Kette neu startet.
@@ -186,7 +186,7 @@ Regeln, in dieser Reihenfolge wichtig:
     - `npm run dev-server watch --noStart` — der Dev-Server baut und synchronisiert weiterhin automatisch, startet
       den Adapter aber nicht. Er deaktiviert die Instanz bei jedem eigenen Start (`adapter.common.enabled = false`,
       im Log `Stop <adapter>.0`), deshalb den Adapter danach **einmal** starten — in der Admin-Oberfläche oder mit
-      `node .dev-server/default/node_modules/iobroker.js-controller/iobroker.js start zeiterfassung.0`.
+      `node .dev-server/default/node_modules/iobroker.js-controller/iobroker.js start time-tracker.0`.
       Danach hält der Controller ihn; Start, Stopp und Neustart in der Oberfläche sind unproblematisch. Nach einer
       Codeänderung den Adapter dort neu starten, damit die synchronisierte Fassung geladen wird.
 4. **Nur ein Dev-Server gleichzeitig** und **kein zusätzliches `npm run build`** daneben: der Dev-Server baut
@@ -199,7 +199,7 @@ Regeln, in dieser Reihenfolge wichtig:
    startenden Admin gescheitert (`ECONNREFUSED 127.0.0.1:20426`) und hat den Dev-Server mitgerissen. Der Preis ist
    nur, dass Änderungen an der ioBroker-Admin-Oberfläche nicht mehr automatisch nachgeladen werden.
 
-Die Daten der Dev-Instanz liegen unter `.dev-server/default/iobroker-data/zeiterfassung.0/` (Datenbank,
+Die Daten der Dev-Instanz liegen unter `.dev-server/default/iobroker-data/time-tracker.0/` (Datenbank,
 `session-secret`, `backups/`) und werden nicht versioniert.
 
 ## 8. Versionierung und Release

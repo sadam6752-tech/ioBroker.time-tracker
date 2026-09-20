@@ -284,7 +284,7 @@ Write-Host "Geprüft: $($script:Problems.Count) Befund(e) – $($errors.Count) F
 if ($errors.Count -eq 0) {
     Write-Host 'ERGEBNIS: keine Fehler in den lokal prüfbaren Adapter-Regeln.' -ForegroundColor Green
     Write-Host 'Hinweis: der vollständige Checker benötigt ein veröffentlichtes GitHub-Repository:'
-    Write-Host '  npx @iobroker/repochecker https://github.com/sadam6752-tech/ioBroker.zeiterfassung --local'
+    Write-Host '  npx @iobroker/repochecker https://github.com/sadam6752-tech/ioBroker.time-tracker --local'
 }
 else {
     Write-Host "ERGEBNIS: $($errors.Count) Fehler – siehe Liste oben." -ForegroundColor Red

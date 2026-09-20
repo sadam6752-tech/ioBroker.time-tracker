@@ -12,9 +12,9 @@ import pkg from "../package.json";
 
 describe("adapter scaffolding", () => {
 	it("uses the ioBroker naming convention", () => {
-		// GitHub repository: ioBroker.zeiterfassung, npm package: iobroker.zeiterfassung (lower case)
-		expect(pkg.name).to.equal("iobroker.zeiterfassung");
-		expect(ioPackage.common.name).to.equal("zeiterfassung");
+		// GitHub repository: ioBroker.time-tracker, npm package: iobroker.time-tracker (lower case)
+		expect(pkg.name).to.equal("iobroker.time-tracker");
+		expect(ioPackage.common.name).to.equal("time-tracker");
 	});
 
 	it("declares the required ioBroker package metadata", () => {

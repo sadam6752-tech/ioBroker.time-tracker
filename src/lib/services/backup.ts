@@ -29,7 +29,7 @@ export interface BackupDeps {
 	db: Db;
 	/** Directory the backups are written to (created when missing) */
 	dir: string;
-	/** File name prefix, default `zeiterfassung-` */
+	/** File name prefix, default `time-tracker-` */
 	prefix?: string;
 	/** Days a backup is kept, default 30; `0` keeps only the newest one */
 	retentionDays?: number;
@@ -101,7 +101,7 @@ export interface BackupService {
 }
 
 /** Default prefix of the backup files. */
-const DEFAULT_PREFIX = "zeiterfassung-";
+const DEFAULT_PREFIX = "time-tracker-";
 
 /** Name of a backup that waits for the next start of the adapter. */
 export const RESTORE_PENDING_FILE = "restore-pending.sqlite";

@@ -38,7 +38,7 @@ import type {
 export const API_PREFIX = "/api";
 
 /** Storage key of the session. */
-const STORAGE_KEY = "zeiterfassung.session";
+const STORAGE_KEY = "time-tracker.session";
 
 /** An error as the API reports it. */
 export class ApiError extends Error {

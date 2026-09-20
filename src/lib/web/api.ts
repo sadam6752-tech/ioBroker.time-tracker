@@ -1899,7 +1899,7 @@ export function createApi(deps: ApiDeps): Api {
 	});
 
 	route("GET", "/version", { public: true }, () =>
-		json(200, { name: "iobroker.zeiterfassung", version: deps.version ?? "0.0.0" }),
+		json(200, { name: "iobroker.time-tracker", version: deps.version ?? "0.0.0" }),
 	);
 
 	// corrections
@@ -3235,7 +3235,7 @@ export function createApi(deps: ApiDeps): Api {
 					hours: absence.hours,
 				})),
 				generatedAt: timestamp,
-				generator: `zeiterfassung ${deps.version ?? ""}`.trim(),
+				generator: `time-tracker ${deps.version ?? ""}`.trim(),
 			},
 		};
 	};

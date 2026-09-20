@@ -254,12 +254,56 @@ function checkNewsOnNpm(directory) {
 	return problems;
 }
 
+/**
+ * Prüft, ob der ioBroker-Betreuer `bluefox` als Eigentümer des npm-Pakets eingetragen ist (Repochecker E2001).
+ *
+ * Die ioBroker-Repositories verlangen, dass `bluefox` Miteigentümer jedes Adapter-Pakets ist; ohne ihn wird der
+ * Adapter nicht in `latest` aufgenommen. Ohne Netz oder ohne npm wird der Punkt übersprungen, damit die Prüfung
+ * offline weiterläuft.
+ *
+ * @param directory - Wurzel des Adapters
+ * @returns gefundene Probleme, leer wenn `bluefox` Eigentümer ist
+ */
+function checkNpmOwner(directory) {
+	const problems = [];
+	const io = readJson(join(directory, "io-package.json"), []);
+	const name = io?.common?.name;
+	if (!name) {
+		return problems;
+	}
+	const packageName = `iobroker.${name.replace(/^iobroker\./, "")}`;
+
+	let owners = "";
+	try {
+		const result = spawnSync("npm", ["owner", "ls", packageName], {
+			encoding: "utf8",
+			shell: true,
+			timeout: 30000,
+		});
+		if (result.status !== 0 || !result.stdout) {
+			return problems;
+		}
+		owners = result.stdout.toLowerCase();
+	} catch {
+		// ohne Netz oder ohne npm ist die Online-Prüfung nicht möglich
+		return problems;
+	}
+
+	if (!owners.includes("bluefox")) {
+		problems.push(
+			`der Betreuer "bluefox" fehlt als Eigentümer von ${packageName} (Repochecker E2001) — ` +
+				`"npm owner add bluefox ${packageName}" ausführen oder ihn auf npmjs.com einladen`,
+		);
+	}
+	return problems;
+}
+
 // Aufruf über die Kommandozeile (der Pre-Push-Hook nutzt denselben Weg)
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const args = process.argv.slice(2);
 	const index = args.indexOf("--repo");
 	const repo = resolve(index >= 0 ? (args[index + 1] ?? ".") : ".");
-	const problems = [...checkVersioning(repo), ...checkNewsOnNpm(repo)];
+	const problems = [...checkVersioning(repo), ...checkNewsOnNpm(repo), ...checkNpmOwner(repo)];
 
 	if (problems.length === 0) {
 		console.log(`Version in Ordnung (${repo})`);

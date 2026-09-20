@@ -94,5 +94,18 @@ für jedes betroffene Objekt — im PR #6697 waren das **126 Meldungen aus einem
 
 Deshalb legt `createUserChannel` (`src/lib/adapter/states.ts`) den Wurzelkanal `users` mit an, idempotent über
 `setObjectNotExists`; die übrigen Kanäle (`info`, `company`, `events`, `commands`) entstehen in ihren jeweiligen
-`create…States`-Funktionen. Der Unit-Test „creates the parent channel of the employees" in
-`src/lib/adapter/states.test.ts` hält die Struktur fest — er läuft in der CI mit `npm run test:ts`.
+`create…States`-Funktionen.
+
+## Nach der Umbenennung: zwei Regeln mehr
+
+Der Wechsel auf `ioBroker.time-tracker` hat zwei Dinge sichtbar gemacht, die vorher nicht greifen konnten:
+
+- **`common.news` gilt je npm-Paket** (Repochecker `E2004`): jede dort genannte Version muss unter **diesem** Namen
+  auf npm liegen. Die 0.1.x-Versionen liegen nur unter dem früheren Paket `iobroker.zeiterfassung`, deshalb beginnt
+  die News-Liste mit 0.2.0 — die Vorgeschichte erklärt `CHANGELOG_OLD.md`.
+- **`bluefox` muss Miteigentümer des npm-Pakets sein** (Repochecker `E2001`):
+  `npm owner add bluefox iobroker.time-tracker` bzw. auf npmjs.com einladen. Ohne ihn wird kein Adapter in `latest`
+  aufgenommen.
+
+`npm run version:check` prüft beides ab jetzt mit: die News-Versionen gegen npm und die Eigentümerliste des Pakets
+(offline werden beide Punkte übersprungen, damit die Prüfung weiterläuft).

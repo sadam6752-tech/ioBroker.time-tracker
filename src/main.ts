@@ -659,6 +659,9 @@ class TimeTracker extends utils.Adapter {
 			this.log.debug(`published ${snapshots.length} employee state(s)`);
 			// the company figures are derived from the same snapshots, so they never disagree
 			await publishCompanySnapshot(this, readCompanySnapshot(snapshots));
+			// the target employee of the punch commands is mirrored into the state the user writes (acknowledged, so
+			// the adapter ignores its own write — see `onStateChange`). `0` means "the only employee".
+			await this.setState(COMMAND_IDS.punchUserId, services.settings.getNumber("command_punch_user_id", 0), true);
 		} catch (error) {
 			this.log.warn(`states could not be published: ${(error as Error).message}`);
 		}

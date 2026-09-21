@@ -172,6 +172,28 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const timestamp = now();
 
+	if (id === COMMAND_IDS.punchUserId) {
+		// The state chooses the employee the punch commands apply to (`0` = take the only employee again).
+		const userId = Number(value ?? Number.NaN);
+		if (!Number.isInteger(userId) || userId < 0) {
+			throw new ValidationError(`expected the id of an employee or 0 (got "${String(value ?? "")}")`);
+		}
+		if (userId === 0) {
+			deps.settings.set("command_punch_user_id", 0, 0, timestamp);
+			return { ok: true, message: "punch commands use the only employee again", recalculated: [] };
+		}
+		const chosen = deps.users.findById(userId);
+		if (!chosen) {
+			throw new ValidationError(`employee ${userId} does not exist`);
+		}
+		deps.settings.set("command_punch_user_id", userId, 0, timestamp);
+		return {
+			ok: true,
+			message: `punch commands now apply to ${chosen.displayName}`,
+			recalculated: [],
+		};
+	}
+
 	if (id === COMMAND_IDS.closeMonth || id === COMMAND_IDS.recalc) {
 		const period = parsePeriod(String(value ?? ""));
 		const target = targetUser(deps);

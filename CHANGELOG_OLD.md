@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.1.9 (2026-09-19)
+
+- (Alex) ioBroker repository: two findings of the repository checker are fixed — `common.title` is removed (it is
+  deprecated, `common.titleLang` replaced it, E1084) and the `common.news` entry of 0.1.7 is gone, because that version
+  never reached npm (E2004, its pipeline was red). `npm run version:check` watches both rules from now on: it refuses
+  `common.title` and every version in the news list has to exist on npm
+
 ### 0.1.8 (2026-09-19)
 
 - (Alex) fix: the pipeline of 0.1.7 failed in the ioBroker package test — `common.license` was added next to the

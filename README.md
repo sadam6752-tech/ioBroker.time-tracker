@@ -160,7 +160,7 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 | `time-tracker.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                       |
 | `time-tracker.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                |
 | `time-tracker.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision             |
-| `time-tracker.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to       |
+| `time-tracker.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to (`0` = the only one) |
 | `time-tracker.0.commands.punch`                                                               | boolean | punch in or out (button)                   |
 | `time-tracker.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding   |
 | `time-tracker.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`             |
@@ -171,6 +171,47 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 | `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma          |
 | `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
 | `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
+
+### Commands (states)
+
+A script, a Blockly block, a dashboard or another adapter drives the instance through states — no HTTP and no login
+involved. The adapter writes such actions into the audit log as *system* (`actorId: 0`) and the log line says what
+happened.
+
+| State | Value | Effect |
+| --- | --- | --- |
+| `commands.punchUserId` | employee id, `0` = automatic | the employee the two punch buttons apply to |
+| `commands.punch` | `true` | punches in or out — the direction comes from the punches of the day |
+| `commands.quickPunch` | `true` | same, but the instant is rounded with *Round quick punches to minutes* |
+| `commands.closeMonth` | `YYYY-MM` | closes the month (the log line reports balance and overtime) |
+| `commands.recalc` | `YYYY-MM` or `YYYY` | recalculates the aggregates of that period |
+| `commands.backup` | `true` | writes a database backup |
+
+```js
+setState("time-tracker.0.commands.punchUserId", 3);          // target employee (0 = the only one)
+setState("time-tracker.0.commands.punch", true);             // punch in or out
+setState("time-tracker.0.commands.quickPunch", true);        // punch with quick rounding
+setState("time-tracker.0.commands.recalc", "2026-08");       // a month, or "2026" for a year
+setState("time-tracker.0.commands.closeMonth", "2026-08");   // closing needs YYYY-MM
+setState("time-tracker.0.commands.backup", true);            // write a backup now
+```
+
+Two things to know:
+
+- **The buttons are stateless:** only `true` triggers them (every other value is ignored), and the adapter sets
+  them back to `false` immediately — so never write `false` to “clock out”, use `punch` and let the adapter decide
+  the direction.
+- **Which employee?** The punch commands use the employee written into `commands.punchUserId`; the adapter mirrors
+  the current choice back into that state on every refresh, and `0` means “the only employee”. With several
+  employees and no choice the command refuses instead of guessing — the log then says
+  `several employees exist - set command_punch_user_id or write users.<id> commands`.
+
+Per employee, without any target: write `users.<id>.present` (`true` = clock in, `false` = clock out, idempotent —
+see *First start*) or send a message (see *Messages (`sendTo`)* below).
+
+Every command ends with a refreshed state tree (`users.*`, `company.*`, `events.*`), so a dashboard follows along.
+A wrong period, an unknown or deactivated employee is answered with a warning in the adapter log — never with a
+broken instance.
 
 ### Actions (trigger rules)
 
@@ -305,6 +346,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.4 (2026-09-21)
+
+- (Alex) `commands.punchUserId` does what it promises now: writing an employee id selects the employee the punch
+  buttons apply to (`0` = the only employee again), and the adapter mirrors the current choice back into the state.
+  For the user the README has a new *Commands (states)* section and `docs/erste-schritte.md` explains all six command
+  states — both with copy-ready examples and the two traps (buttons act on `true` only, a wrong period answers in the
+  log)
+
 ### 0.2.3 (2026-09-20)
 
 - (Alex) fix: a corrected object definition really reaches existing installations now — `ensureObject` merges the
@@ -333,13 +382,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   and the database is created as `time-tracker.sqlite` — existing installations keep their data by pointing
   “Database file” at the old file or by renaming it (before 0.2.0 it was `zeiterfassung.sqlite`). German UI texts
   stay German; `common.titleLang` keeps all 11 languages
-
-### 0.1.9 (2026-09-19)
-
-- (Alex) ioBroker repository: two findings of the repository checker are fixed — `common.title` is removed (it is
-  deprecated, `common.titleLang` replaced it, E1084) and the `common.news` entry of 0.1.7 is gone, because that version
-  never reached npm (E2004, its pipeline was red). `npm run version:check` watches both rules from now on: it refuses
-  `common.title` and every version in the news list has to exist on npm
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

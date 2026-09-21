@@ -19,6 +19,7 @@ import { createPayoutsRepository } from "../db/repositories/payouts";
 import { createRulesRepository } from "../db/repositories/rules";
 import { createSettingsRepository, type SettingsRepository } from "../db/repositories/settings";
 import { createUsersRepository, type UsersRepository } from "../db/repositories/users";
+import { ValidationError } from "../errors";
 import { createAggregationService, type AggregationService } from "../services/aggregation";
 import { createBackupService } from "../services/backup";
 import { createClosingService, type ClosingService } from "../services/closing";
@@ -170,6 +171,26 @@ describe("adapter states and commands", () => {
 
 			expect(recorder.values.get(`users.${annaId}.displayName`)).to.equal("Anna");
 			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
+		});
+
+		it("takes the target employee from the punchUserId state (documented behaviour)", () => {
+			// with two employees the punch command refuses to guess
+			const berndId = users.create({ login: "bernd", displayName: "Bernd", roleKeys: ["employee"] }).id;
+
+			expect(() => handleCommand(deps(), COMMAND_IDS.punch, true)).to.throw(ValidationError);
+
+			const chosen = handleCommand(deps(), COMMAND_IDS.punchUserId, berndId);
+			expect(chosen.ok).to.equal(true);
+			expect(chosen.message).to.contain("Bernd");
+			expect(settings.get("command_punch_user_id")).to.equal(String(berndId));
+
+			const punched = handleCommand(deps(), COMMAND_IDS.punch, true);
+			expect(punched.message).to.contain("Bernd");
+			expect(entries.listByDate(berndId, punched.recalculated[0])).to.have.lengthOf(1);
+
+			// `0` gives the choice back to the adapter
+			const cleared = handleCommand(deps(), COMMAND_IDS.punchUserId, 0);
+			expect(cleared.message).to.contain("the only employee");
 		});
 
 		it("updates the definition of an existing object (checker E1011)", async () => {

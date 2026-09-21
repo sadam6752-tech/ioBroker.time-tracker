@@ -93,6 +93,33 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   stempelt aus — gedacht für einen Fingerabdruck-Reader, eine RFID-Brücke, ein Dashboard oder ein Skript. Der
   Schreibvorgang ist idempotent (ein zweites `true` erzeugt keinen zweiten Stempel) und erscheint als normaler
   Stempel mit der Notiz `state.present`. `users.<id>.hasOpenEntry` bleibt die reine Anzeige dazu.
+- **Befehle aus ioBroker (Skript, Blockly, Dashboard):** unter `time-tracker.0.commands.*` liegen sechs schreibbare
+  States — damit steuerst du den Adapter ohne Web-Oberfläche. Was du schreibst, steht danach im Adapter-Log (und im
+  Audit-Log als *System*):
+
+  ```js
+  setState("time-tracker.0.commands.punchUserId", 3);          // Ziel-Mitarbeiter (0 = der einzige)
+  setState("time-tracker.0.commands.punch", true);             // ein- oder ausstempeln
+  setState("time-tracker.0.commands.quickPunch", true);        // mit Schnellrundung
+  setState("time-tracker.0.commands.recalc", "2026-08");       // Monat, oder "2026" fürs Jahr
+  setState("time-tracker.0.commands.closeMonth", "2026-08");   // Monatsabschluss braucht JJJJ-MM
+  setState("time-tracker.0.commands.backup", true);            // Sicherung jetzt schreiben
+  ```
+
+  **Die beiden Stempel-Buttons reagieren nur auf `true`** (jeder andere Wert wird ignoriert), und der Adapter setzt
+  sie sofort wieder auf `false` — also **nie** `false` schreiben, um auszustempeln: `punch` nimmt automatisch die
+  passende Richtung.
+
+  **Welcher Mitarbeiter?** Die Stempelbefehle nehmen den Mitarbeiter, der in `commands.punchUserId` steht (der
+  Adapter spiegelt die aktuelle Wahl dort hinein, `0` = „der einzige Mitarbeiter“). Gibt es mehrere Mitarbeiter und
+  keine Wahl, verweigert der Befehl und sagt es im Log. Die Mitarbeiter-Id siehst du in der Instanz unter
+  `users.<id>` (die Zahl hinter `users.`).
+
+  Ohne Ziel-Mitarbeiter geht es auch **pro Mitarbeiter**: `time-tracker.0.users.<id>.present` (siehe oben) oder eine
+  Nachricht per `sendTo("time-tracker.0", "punch", { user: "anna" }, antwort => …)`.
+
+  Fehler (falscher Zeitraum, unbekannter oder deaktivierter Mitarbeiter) erscheinen als **Warnung im Log** — die
+  Instanz läuft weiter.
 - **Dublettenschutz (wichtig für Lesegeräte):** zwei Stempel innerhalb von **30 Sekunden** gelten als Doppelscan —
   der zweite wird nicht gezählt. Ein Fingerabdruck- oder RFID-Leser, der mehrfach auslöst, ist dadurch harmlos; für
   „sofort wieder ausstempeln“ muss der Abstand größer als 30 Sekunden sein. Das gilt für alle Wege (Web-App, Kiosk,

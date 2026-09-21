@@ -12,24 +12,31 @@ jeder Stelle, woran man erkennt, dass der Schritt geklappt hat. Der vollständig
   README, Abschnitt „Reverse proxy and HTTPS". Für den reinen Funktionstest genügt `http://<host>:8092`
 - optional: Tablet/Handy für das Kiosk-Terminal, NFC-Tag für T14/T15
 
-## 2. Bauen und installieren
+## 2. Installieren
 
-```bash
-npm install
-npm run build          # Adapter (build/)
-npm run build:pwa      # Web-App (www/)
-npm pack               # erzeugt iobroker.time-tracker-0.0.1.tgz
-```
+Der Adapter liegt auf **npm** — der normale Weg ist die Installation aus dem ioBroker-Admin bzw. von npm. **Die
+Instanz `time-tracker.0` wird dabei automatisch angelegt.**
 
-Danach das Paket in die ioBroker-Installation bringen:
-
-```bash
-iobroker install ./iobroker.time-tracker-0.0.1.tgz
-iobroker add time-tracker        # legt die Instanz time-tracker.0 an
-```
+- **Admin:** Reiter *Adapter* → das Symbol **„Installieren aus eigener URL“** → `iobroker.time-tracker` → *Installieren*.
+- **Kommandozeile:** `iobroker install iobroker.time-tracker` (legt die Instanz ebenfalls an — wer sie getrennt
+  anlegen will: `iobroker add time-tracker`).
 
 **Erfolgskontrolle:** im Log steht `web interface found at …/www`, `API listening on http://127.0.0.1:8092/api`
 und `API routes: …`; der Zustand `time-tracker.0.info.connection` ist `true`.
+
+> **Nur für Entwickler:** eine Installation **aus GitHub oder aus dem geklonten Ordner** funktioniert nicht ohne
+> Bauen: `build/` und `www/` sind **nicht** im Repository (die Web-App wird vorgebaut), ohne sie meldet ioBroker
+> `cannot find start file!`. Wer das braucht, baut einmal — sonst einfach npm nehmen:
+>
+> ```bash
+> npm ci
+> npm run install:pwa    # Abhängigkeiten der Web-App
+> npm run build:pwa      # Web-App → www/
+> npm run build          # Adapter   → build/
+> iobroker install .     # Ordner installieren (Instanz wird automatisch angelegt)
+> ```
+>
+> Für die Entwicklung ist der **Dev-Server** des Projekts bequemer: `npm run dev-server`.
 
 ## 3. Instanz einstellen
 

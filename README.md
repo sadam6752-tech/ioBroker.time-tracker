@@ -36,10 +36,12 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 
 ## Installation
 
-1. In the ioBroker admin: **Adapters → time-tracker → Install** (or `iobroker install iobroker.time-tracker`).
-   An installation from Git does not work on its own: the web app in `www/` is built, so it is not part of the
-   repository — either install the npm package or build it once in the adapter directory
-   (`npm ci && npm run install:pwa && npm run build:pwa && npm run build`).
+1. In the ioBroker admin: *Adapters* → **“Install from custom URL”** → `iobroker.time-tracker`, or
+   `iobroker install iobroker.time-tracker` on the command line. **The instance `time-tracker.0` is created
+   automatically** — `iobroker add time-tracker` is only needed if you want the instance on its own.
+   An installation from Git or from a checkout does not work on its own: `build/` and `www/` are built and not
+   part of the repository. Either use the npm package, or build once in the adapter directory
+   (`npm ci && npm run install:pwa && npm run build:pwa && npm run build`, then `iobroker install .`).
 2. Start the instance and open the web app on the port of the instance settings (default **8092**):
    `http://<ioBroker host>:8092/`
 3. Log in with the start password (see [First start](#first-start)) and create your employees.
@@ -346,6 +348,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.5 (2026-09-21)
+
+- (Alex) docs: the installation chapter leads with the normal way now — install the npm package (`iobroker install
+  iobroker.time-tracker` or the admin’s “Install from custom URL”), which creates the instance `time-tracker.0`
+  automatically. Building from a checkout is only the developer path, and the chapter explains why a Git install
+  reports `cannot find start file!` (`build/` and `www/` are not part of the repository)
+
 ### 0.2.4 (2026-09-21)
 
 - (Alex) `commands.punchUserId` does what it promises now: writing an employee id selects the employee the punch
@@ -374,14 +383,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   so the entries of 0.1.3 … 0.1.9 are removed again (the repository checker reports them as `E2004` — “do not exist
   at NPM”). The old release notes stay in this changelog; the history of the versions published under the former
   package name is noted in `CHANGELOG_OLD.md`
-
-### 0.2.0 (2026-09-20)
-
-- (Alex) **renamed to `ioBroker.time-tracker`**: ioBroker requires English adapter names, so the adapter, its npm
-  package and the GitHub repository are called `time-tracker` from now on. The instance id becomes `time-tracker.0`
-  and the database is created as `time-tracker.sqlite` — existing installations keep their data by pointing
-  “Database file” at the old file or by renaming it (before 0.2.0 it was `zeiterfassung.sqlite`). German UI texts
-  stay German; `common.titleLang` keeps all 11 languages
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

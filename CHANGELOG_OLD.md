@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.0 (2026-09-20)
+
+- (Alex) **renamed to `ioBroker.time-tracker`**: ioBroker requires English adapter names, so the adapter, its npm
+  package and the GitHub repository are called `time-tracker` from now on. The instance id becomes `time-tracker.0`
+  and the database is created as `time-tracker.sqlite` — existing installations keep their data by pointing
+  “Database file” at the old file or by renaming it (before 0.2.0 it was `zeiterfassung.sqlite`). German UI texts
+  stay German; `common.titleLang` keeps all 11 languages
+
 ### 0.1.9 (2026-09-19)
 
 - (Alex) ioBroker repository: two findings of the repository checker are fixed — `common.title` is removed (it is

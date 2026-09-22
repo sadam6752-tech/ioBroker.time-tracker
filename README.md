@@ -348,6 +348,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.7 (2026-09-22)
+
+- (Alex) fix: **every** punch path reaches `events.*` and the web app now. Besides the presence state (0.2.6) the
+  `commands.punch`/`quickPunch` buttons, a `sendTo` message (`punch`, `present`) and the trigger rules (Actions) wrote
+  the punch and refreshed the figures but never published an event — the event states kept the punch before. The
+  results carry `userId` and `direction` now, and `punchEvent` (like `presenceEvent`) builds the bus event for them;
+  the automation rules send the direction with their `automation.*` event
+- (Alex) test: the end-to-end suite is deterministic again — the correction spec anchors its “forgotten day” inside the
+  local day (`now - 8h` fell on the day before when the suite ran shortly after midnight and left the employee
+  present for the specs that follow), and the presence spec puts its employee into a known state before it asserts
+
 ### 0.2.6 (2026-09-22)
 
 - (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows
@@ -375,13 +386,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   fields the adapter owns (`name`, `type`, `role`, `read`, `write`, `unit`) instead of only the name. An installation
   created before 0.2.2 kept its old `role: "value"` on `commands.punchUserId`, so the object structure check still
   reported `E1011`
-
-### 0.2.2 (2026-09-20)
-
-- (Alex) object structure check: every object name carries all **eleven languages** now (`E6001`) and the employee-id
-  command uses the role **`level`** instead of `value` (`E1011`). The names live in one place
-  (`src/lib/adapter/stateNames.ts`), a unit test keeps them complete, and existing installations receive the new
-  names on the next start (`extendObject`)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -13,6 +13,7 @@ import type { UsersRepository } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
 import type { ClosingService } from "../services/closing";
 import type { BackupService } from "../services/backup";
+import type { ApiEvent } from "../web/events";
 import { ValidationError } from "../errors";
 import { buildDayPunches, nextDirection, roundToStep, type PunchEntry } from "../domain/punch";
 import { localDate as resolveLocalDate } from "../util/time";
@@ -46,6 +47,10 @@ export interface CommandResult {
 	message: string;
 	/** Local dates that were recalculated */
 	recalculated: string[];
+	/** Employee a written punch belongs to — unset for every other command */
+	userId?: number;
+	/** Direction of a written punch — unset for every other command */
+	direction?: "in" | "out";
 }
 
 /** A period taken from a command value. */
@@ -157,6 +162,32 @@ export function punchEmployee(
 		ok: true,
 		message: `${target.displayName} punched ${direction} (${day.workedMin} min today, open: ${day.hasOpenEntry})`,
 		recalculated: [stored.entry.localDate],
+		userId: target.id,
+		direction,
+	};
+}
+
+/**
+ * Builds the event a written punch publishes.
+ *
+ * `punchEmployee` stays pure — the caller feeds the result into the event bus, exactly like the REST API does it.
+ * That is what makes a punch from a command state, a script (`sendTo`) or a trigger rule show up in `events.*`
+ * (`lastType`, `lastUser`, …) and in the web app. `null` means: no punch was written.
+ *
+ * @param result - result of the punch
+ * @param source - where the punch came from (`commands.punch`, `sendTo.punch`, `trigger.<id>`, …)
+ * @param atUtc - instant of the punch, UTC epoch seconds
+ * @returns the event for the bus, or `null` when nothing was written
+ */
+export function punchEvent(result: CommandResult, source: string, atUtc: number): ApiEvent | null {
+	if (!result.ok || !result.direction || result.userId === undefined) {
+		return null;
+	}
+	return {
+		type: "punch",
+		atUtc,
+		userId: result.userId,
+		data: { direction: result.direction, source },
 	};
 }
 

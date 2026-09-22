@@ -117,10 +117,12 @@ aus dem **Event-Bus** der API: `onReady` abonniert ihn (`api.events.subscribe`) 
 `publishEventState` in den Objektbaum — zusätzlich frischt es die Figuren auf, wenn das Ereignis die Zahlen betrifft
 (`FIGURES_EVENT_TYPES`).
 
-**Jeder** Weg muss deshalb auf den Bus veröffentlichen: die REST-API, das Kiosk-Terminal und seit 0.2.6 auch der
-Anwesenheits-State (`presenceEvent` in `presence.ts` erzeugt das Ereignis, `runPresence` gibt es weiter). Ein neuer
-Weg ohne `publish` fällt genau hier auf: die Buchung ist in der Datenbank, aber `events.*` bleibt beim vorigen
-Ereignis stehen.
+**Jeder** Weg veröffentlicht deshalb auf den Bus: die REST-API, das Kiosk-Terminal, die Befehls-States
+(`commands.*`), eine `sendTo`-Nachricht (`punch`, `present`), die Actions-/Trigger-Regeln, die Automatik-Regeln und
+der Anwesenheits-State (`users.<id>.present`). Die reinen Schichten liefern dafür das Ergebnis, und die Adapter-
+Schicht baut daraus das Event (`punchEvent` in `commands.ts`, `presenceEvent` in `presence.ts`) — ein neuer Weg ohne
+diesen Schritt fällt genau hier auf: die Buchung ist in der Datenbank, aber `events.*` bleibt beim vorigen Ereignis
+stehen.
 
 ## Nach der Umbenennung: zwei Regeln mehr
 

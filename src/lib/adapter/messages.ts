@@ -206,7 +206,11 @@ export async function handleMessage(deps: MessageDeps, command: string, payload:
 				now: now(),
 			},
 		);
-		return { ok: true, message: result.message, data: { userId: user.id, message: result.message } };
+		return {
+			ok: true,
+			message: result.message,
+			data: { userId: user.id, direction: result.direction, message: result.message },
+		};
 	}
 
 	if (command === "present") {
@@ -223,7 +227,12 @@ export async function handleMessage(deps: MessageDeps, command: string, payload:
 		return {
 			ok: result.ok,
 			message: result.message,
-			data: { userId: user.id, present: result.present, changed: result.changed },
+			data: {
+				userId: user.id,
+				present: result.present,
+				changed: result.changed,
+				direction: result.changed ? (result.present ? "in" : "out") : null,
+			},
 		};
 	}
 

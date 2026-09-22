@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.2 (2026-09-20)
+
+- (Alex) object structure check: every object name carries all **eleven languages** now (`E6001`) and the employee-id
+  command uses the role **`level`** instead of `value` (`E1011`). The names live in one place
+  (`src/lib/adapter/stateNames.ts`), a unit test keeps them complete, and existing installations receive the new
+  names on the next start (`extendObject`)
+
 ### 0.2.1 (2026-09-20)
 
 - (Alex) `common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0,

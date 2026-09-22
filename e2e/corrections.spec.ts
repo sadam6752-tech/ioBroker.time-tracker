@@ -48,11 +48,13 @@ test("an administrator adds a forgotten day and finds it in the correction list"
 	const users = ((await list.json()) as { users: { id: number; login: string }[] }).users;
 	const annaId = users.find(user => user.login === "anna")!.id;
 
-	// a forgotten day: both punches are added for the employee, with a reason for the audit trail
-	const now = Math.floor(Date.now() / 1000);
+	// a forgotten day: both punches are added for the employee, with a reason for the audit trail. The pair is
+	// anchored inside the local day — “eight hours ago” would land on the day before when the suite runs shortly
+	// after midnight, and the day of the employee would stay open for the specs that follow.
+	const dayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
 	for (const [tsUtc, direction] of [
-		[now - 8 * 3600, "in"],
-		[now - 0.5 * 3600, "out"],
+		[dayStart + 6 * 3600, "in"],
+		[dayStart + 14 * 3600, "out"],
 	] as const) {
 		const created = await request.post(`/api/entries?userId=${annaId}`, {
 			headers: {

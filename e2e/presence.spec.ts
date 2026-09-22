@@ -107,6 +107,18 @@ test("shows who is present, uses the stored picture and the placeholder otherwis
 	// the tiles come from the terminal API: every employee with the state of the day
 	const tile = page.getByRole("button", { name: /Anna Muster/ }).first();
 	await expect(tile).toBeVisible();
+
+	// The suite shares one server, so another spec may have punched for Anna already. The screen is put into a
+	// known state first: the tile toggles with every punch (tap, PIN, stamp), exactly like the kiosk does it.
+	if ((await tile.innerText()).includes("Anwesend")) {
+		await tile.click();
+		for (const digit of "1234") {
+			await page.getByRole("button", { name: digit, exact: true }).click();
+		}
+		await page.getByRole("button", { name: "Stempeln" }).click();
+		await expect(tile).toContainText("Abwesend");
+	}
+
 	await expect(tile).toContainText("Abwesend");
 	// the stored picture is used …
 	await expect(tile.locator("img")).toHaveAttribute("src", new RegExp(`/api/users/${annaId}/avatar`));

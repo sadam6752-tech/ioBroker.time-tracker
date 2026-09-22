@@ -56,7 +56,7 @@ import {
 	readCompanySnapshot,
 } from "./lib/adapter/states";
 import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId, presenceEvent } from "./lib/adapter/presence";
-import { handleCommand, punchEmployee } from "./lib/adapter/commands";
+import { handleCommand, punchEmployee, punchEvent, type CommandResult } from "./lib/adapter/commands";
 import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
 import { evaluateAutomation, isoWeekday, runPeriod, workBlock } from "./lib/adapter/automation";
 import { handleMessage } from "./lib/adapter/messages";
@@ -701,6 +701,8 @@ class TimeTracker extends utils.Adapter {
 				value,
 			);
 			this.log.info(`command ${id}: ${result.message}`);
+			// a punch written by a command state lands in `events.*` and in the web app like every other one
+			this.publishPunch(punchEvent(result, `commands.${id}`, Math.floor(Date.now() / 1000)));
 			// a closing is triggered from a state, not from a request: tell the connected clients about it
 			// (only the period is published, never the figures of the employee it belongs to)
 			if (id === COMMAND_IDS.closeMonth) {
@@ -849,6 +851,14 @@ class TimeTracker extends utils.Adapter {
 								{ userId, quick: rule.action === "quickPunch", note: `trigger.${rule.id}` },
 							);
 				this.log.info(`trigger ${rule.id} (${rule.sourceState}) → ${result.message}`);
+				// a punch written by a rule lands in `events.*` too; a presence write that changed nothing has no
+				// event (the builder answers `null` then)
+				const atUtc = Math.floor(Date.now() / 1000);
+				if ("changed" in result) {
+					this.publishPunch(presenceEvent(result, atUtc));
+				} else {
+					this.publishPunch(punchEvent(result, `trigger.${rule.id}`, atUtc));
+				}
 				services.triggers.markFired({ id: rule.id });
 				await this.refreshStates();
 			} catch (error) {
@@ -967,8 +977,9 @@ class TimeTracker extends utils.Adapter {
 				}
 
 				try {
+					let punched: CommandResult | null = null;
 					if (rule.kind === "clockOut" || rule.kind === "clockIn") {
-						const result = punchEmployee(
+						punched = punchEmployee(
 							{
 								entries: services.entries,
 								users: services.users,
@@ -977,7 +988,7 @@ class TimeTracker extends utils.Adapter {
 							},
 							{ userId: user.id, note: `auto.${rule.kind}`, now: nowUtc },
 						);
-						this.log.info(`automation ${rule.id} for ${user.displayName}: ${result.message}`);
+						this.log.info(`automation ${rule.id} for ${user.displayName}: ${punched.message}`);
 					} else {
 						this.log.info(`automation ${rule.id} for ${user.displayName}: ${action}`);
 					}
@@ -986,7 +997,8 @@ class TimeTracker extends utils.Adapter {
 						type: `automation.${rule.kind}`,
 						atUtc: nowUtc,
 						userId: user.id,
-						data: { ruleId: rule.id, action, reason: decision.reason },
+						// the direction belongs into the event when the rule wrote a punch (checker: `events.lastDirection`)
+						data: { ruleId: rule.id, action, reason: decision.reason, direction: punched?.direction },
 					});
 				} catch (error) {
 					// give the next check a chance instead of losing the period
@@ -1069,6 +1081,21 @@ class TimeTracker extends utils.Adapter {
 	}
 
 	/**
+	 * Publishes a punch on the event bus, so it reaches `events.*` and the connected web clients.
+	 *
+	 * A punch can be written from several places — the command states, a `sendTo` message, a trigger rule, an
+	 * automation rule and the presence state. Every one of them passes its result through here; a path that forgets
+	 * it leaves the event states (`lastType`, `lastUser`, …) on the punch before.
+	 *
+	 * @param event - event built from the punch, `null` when nothing was written
+	 */
+	private publishPunch(event: ApiEvent | null): void {
+		if (event) {
+			this.events?.publish(event);
+		}
+	}
+
+	/**
 	 * Is called when another adapter sends a message (`sendTo`).
 	 *
 	 * @param obj - message object of the adapter framework
@@ -1095,6 +1122,17 @@ class TimeTracker extends utils.Adapter {
 					obj.message,
 				);
 				this.log.info(`message ${obj.command}: ${answer.message}`);
+				// a punch answered by a message reaches `events.*` and the web app like every other one
+				const direction = answer.data?.direction;
+				const userId = answer.data?.userId;
+				if (typeof direction === "string" && typeof userId === "number") {
+					this.publishPunch({
+						type: "punch",
+						atUtc: Math.floor(Date.now() / 1000),
+						userId,
+						data: { direction, source: `sendTo.${obj.command}` },
+					});
+				}
 				if (obj.callback) {
 					this.sendTo(obj.from, obj.command, answer, obj.callback);
 				}

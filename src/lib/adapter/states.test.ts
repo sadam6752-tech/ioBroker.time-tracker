@@ -24,7 +24,7 @@ import { createAggregationService, type AggregationService } from "../services/a
 import { createBackupService } from "../services/backup";
 import { createClosingService, type ClosingService } from "../services/closing";
 import { createSyncService, type SyncService } from "../services/sync";
-import { handleCommand, type CommandDeps } from "./commands";
+import { handleCommand, punchEvent, type CommandDeps } from "./commands";
 import {
 	handlePresenceState,
 	parsePresenceStateId,
@@ -177,6 +177,18 @@ describe("adapter states and commands", () => {
 
 			expect(recorder.values.get(`users.${annaId}.displayName`)).to.equal("Anna");
 			expect(recorder.values.get(`users.${annaId}.openConflicts`)).to.equal(0);
+		});
+
+		it("builds a punch event for the event stream (commands, sendTo, trigger)", () => {
+			const punched = handleCommand(deps(), COMMAND_IDS.punch, true);
+
+			const event = punchEvent(punched, "commands.punch", now);
+			expect(event).to.deep.include({ type: "punch", userId: annaId, atUtc: now });
+			expect(event?.data).to.deep.include({ direction: "in", source: "commands.punch" });
+
+			// a command that does not punch answers nothing to publish
+			const recalculated = handleCommand(deps(), COMMAND_IDS.recalc, "1970-01");
+			expect(punchEvent(recalculated, "commands.recalc", now)).to.equal(null);
 		});
 
 		it("takes the target employee from the punchUserId state (documented behaviour)", () => {

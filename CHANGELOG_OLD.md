@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.3.1 (2026-09-22)
+
+- (Alex) fix: the presence board shows the **real running** time of the day now. Two things kept it frozen:
+  `/terminal/users` answered with the stored day aggregate, which only changes on a punch (it counts finished
+  pairs), and the tile “ticker” measured the seconds since the last server answer — a refresh every 60 s never let
+  it grow beyond 0. The API adds the minutes of an open punch to its answer now, the tile shows that value directly,
+  and the board refreshes every 20 s (was 60 s). The API test moves the clock ten minutes and expects the open punch
+  in the answer
+
 ### 0.3.0 (2026-09-22)
 
 - (Alex) new: the presence board can show the working time of today on the employee tiles — `1:23` next to

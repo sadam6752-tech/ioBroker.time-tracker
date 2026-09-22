@@ -44,10 +44,6 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
    `http://<ioBroker host>:8092/`
 3. Log in with the start password (see [First start](#first-start)) and create your employees.
 
-> **For work on the sources** the adapter is built in the repository: `npm ci && npm run install:pwa &&
-> npm run build:pwa && npm run build`, then `iobroker install .`. `build/` and `www/` are built and not part of the
-> repository, so a plain Git installation does not work on its own.
-
 ## First start
 
 The first start creates the database, the roles and the settings — and **one administrator account**, because
@@ -355,6 +351,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.4.1 (2026-09-22)
+
+- (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in
+  `CONTRIBUTING.md` and `docs/entwicklung.md`, so the README stays a manual for users
+
 ### 0.4.0 (2026-09-22)
 
 - (Alex) new: the administration decides about absences. A request of an employee waits as `requested` and counts for
@@ -371,11 +372,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### 0.3.3 (2026-09-22)
 
-- (Alex) fix: the installation chapter no longer points to the “Install from custom URL” dialog — the repository
-  checker reports that as `E6013` (“suggests to install the adapter directly from GitHub, directly from npm or using
-  npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the registry
-  for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources. The
-  troubleshooting row for a missing web app no longer carries npm commands either
+- (Alex) fix: the installation chapter no longer points to the dialog that installs an adapter from a URL — the
+  repository checker reports that as `E6013` (“suggests to install the adapter directly from GitHub, directly from npm
+  or using npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the
+  registry for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources.
+  The troubleshooting row for a missing web app no longer carries npm commands either
 
 ### 0.3.2 (2026-09-22)
 
@@ -384,15 +385,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   new or an edited rule, so the list stays readable. The save button of the card says “**Regeln speichern**” (it
   carried the caption of the break rules before). New texts in all 11 languages, and an end-to-end test keeps both
   findings
-
-### 0.3.1 (2026-09-22)
-
-- (Alex) fix: the presence board shows the **real running** time of the day now. Two things kept it frozen:
-  `/terminal/users` answered with the stored day aggregate, which only changes on a punch (it counts finished
-  pairs), and the tile “ticker” measured the seconds since the last server answer — a refresh every 60 s never let
-  it grow beyond 0. The API adds the minutes of an open punch to its answer now, the tile shows that value directly,
-  and the board refreshes every 20 s (was 60 s). The API test moves the clock ten minutes and expects the open punch
-  in the answer
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

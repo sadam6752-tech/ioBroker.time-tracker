@@ -358,5 +358,9 @@
 	"admin.settings.setting.report_font_path": "Czcionka do PDF",
 	"presence.workedToday": "Przepracowane dzisiaj",
 	"admin.user.workedTime": "Czas pracy na karcie obecności",
-	"admin.user.workedTimeHint": "Pokazuje na karcie obecności czas przepracowany dzisiaj (np. 1:23). Bez rejestracji jest tam 0:00; bez tej zgody karta pozostaje przy obecny/nieobecny i nazwisku."
+	"admin.user.workedTimeHint": "Pokazuje na karcie obecności czas przepracowany dzisiaj (np. 1:23). Bez rejestracji jest tam 0:00; bez tej zgody karta pozostaje przy obecny/nieobecny i nazwisku.",
+	"admin.automation.save": "Zapisz reguły",
+	"admin.automation.edit": "Edytuj",
+	"admin.automation.editTitle": "Edytuj regułę",
+	"admin.automation.newTitle": "Nowa reguła"
 }

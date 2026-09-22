@@ -353,6 +353,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.3.2 (2026-09-22)
+
+- (Alex) fix: the automation rules are a **list** now — one row per rule with its caption, kind, time, target and
+  weekdays, plus the buttons for *active*, *edit* and *delete* on the right. The form only opens in a dialog, for a
+  new or an edited rule, so the list stays readable. The save button of the card says “**Regeln speichern**” (it
+  carried the caption of the break rules before). New texts in all 11 languages, and an end-to-end test keeps both
+  findings
+
 ### 0.3.1 (2026-09-22)
 
 - (Alex) fix: the presence board shows the **real running** time of the day now. Two things kept it frozen:
@@ -387,13 +395,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows
   up in `events.*` (`lastType`, `lastUser`, `lastDirection`, `lastSource`) and reaches the web app live. The punch was
   stored in the database but never sent to the event bus, so the event states kept the previous punch
-
-### 0.2.5 (2026-09-21)
-
-- (Alex) docs: the installation chapter leads with the normal way now — install the npm package (`iobroker install
-  iobroker.time-tracker` or the admin’s “Install from custom URL”), which creates the instance `time-tracker.0`
-  automatically. Building from a checkout is only the developer path, and the chapter explains why a Git install
-  reports `cannot find start file!` (`build/` and `www/` are not part of the repository)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

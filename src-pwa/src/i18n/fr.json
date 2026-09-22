@@ -358,5 +358,9 @@
 	"admin.settings.setting.report_font_path": "Police pour PDF",
 	"presence.workedToday": "Travaillé aujourd'hui",
 	"admin.user.workedTime": "Temps de travail sur la carte de présence",
-	"admin.user.workedTimeHint": "Affiche sur la carte de présence le temps travaillé aujourd'hui (par exemple 1:23). Sans pointage, il y a 0:00 ; sans cette autorisation, la carte reste sur présent/absent et le nom."
+	"admin.user.workedTimeHint": "Affiche sur la carte de présence le temps travaillé aujourd'hui (par exemple 1:23). Sans pointage, il y a 0:00 ; sans cette autorisation, la carte reste sur présent/absent et le nom.",
+	"admin.automation.save": "Enregistrer les règles",
+	"admin.automation.edit": "Modifier",
+	"admin.automation.editTitle": "Modifier la règle",
+	"admin.automation.newTitle": "Nouvelle règle"
 }

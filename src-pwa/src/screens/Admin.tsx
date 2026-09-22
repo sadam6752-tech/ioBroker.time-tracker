@@ -2110,10 +2110,11 @@ function TriggersTab({ language }: { language: string }): React.JSX.Element {
 }
 
 /**
- * Table of the automation rules: what the adapter does on its own.
+ * List of the automation rules: what the adapter does on its own.
  *
- * The table is edited and saved as a whole, like the break rules of the company. Below it the last runs are
- * listed, so the administration can see whether a rule works the way it is meant to.
+ * Every rule is one row — caption, kind, time, target and weekdays at a glance, with the actions on the right. The
+ * rows are edited in a dialog, so the list stays readable and the form only appears for the rule that is worked on.
+ * Below the list the last runs are shown, so the administration can see whether a rule works the way it is meant to.
  *
  * @param props - rules, runs, employees, permission and handlers
  * @param props.rules - rules as they are shown
@@ -2147,6 +2148,48 @@ function AutomationRulesCard({
 }): React.JSX.Element {
 	const { t } = useTranslation();
 
+	/** Position of the rule the dialog edits, `null` while the dialog is closed. */
+	const [editing, setEditing] = useState<number | null>(null);
+	/** Copy the dialog works on, so closing it without saving changes nothing. */
+	const [draft, setDraft] = useState<AutomationRule | null>(null);
+	/** True while the dialog shows a rule that was just added to the list. */
+	const [isNew, setIsNew] = useState(false);
+
+	/**
+	 * Opens the dialog for one rule.
+	 *
+	 * @param index - position of the rule in the table
+	 * @param rule - rule to edit; taken from the table when it is left out
+	 */
+	const openEditor = (index: number, rule?: AutomationRule): void => {
+		setDraft(rule ? { ...rule } : { ...rules[index] });
+		setIsNew(rule !== undefined);
+		setEditing(index);
+	};
+
+	/**
+	 * Name of the kind of a rule, as a row shows it.
+	 *
+	 * @param kind - kind of the rule
+	 * @returns translated name
+	 */
+	const kindLabel = (kind: AutomationRule["kind"]): string =>
+		t(`admin.automation.kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`);
+
+	/**
+	 * Weekdays of a rule as a short text.
+	 *
+	 * @param weekdays - weekdays the rule runs on
+	 * @returns the names of the days, or the `daily` hint for all seven
+	 */
+	const weekdaySummary = (weekdays: number[]): string => {
+		const names = weekdayOptions(language);
+		if (weekdays.length >= 7) {
+			return t("admin.automation.repeatDay");
+		}
+		return weekdays.map(value => names.find(option => option.value === value)?.label ?? String(value)).join(", ");
+	};
+
 	/**
 	 * Merges a change into one rule.
 	 *
@@ -2155,6 +2198,15 @@ function AutomationRulesCard({
 	 */
 	const change = (index: number, patch: Partial<AutomationRule>): void =>
 		onChange(rules.map((rule, position) => (position === index ? { ...rule, ...patch } : rule)));
+
+	/** Writes the draft back into the table and closes the dialog. */
+	const applyDraft = (): void => {
+		if (editing !== null && draft) {
+			change(editing, draft);
+		}
+		setEditing(null);
+		setDraft(null);
+	};
 
 	/**
 	 * Writes a minute of the day as a time.
@@ -2192,7 +2244,10 @@ function AutomationRulesCard({
 	const nameOf = (id: number): string => people.find(user => user.id === id)?.displayName ?? `#${id}`;
 
 	return (
-		<Card sx={{ mb: 2 }}>
+		<Card
+			sx={{ mb: 2 }}
+			data-testid="automation-rules"
+		>
 			<CardContent>
 				<Typography
 					variant="subtitle1"
@@ -2207,159 +2262,51 @@ function AutomationRulesCard({
 				>
 					{t("admin.settings.automationsHint")}
 				</Typography>
-				<Stack spacing={2}>
+				<Stack spacing={1}>
 					{rules.map((rule, index) => (
-						<Stack
+						<ActionRow
 							key={rule.id ?? `new-${index}`}
-							spacing={0.5}
-							sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1 }}
+							primary={rule.label?.trim() ? rule.label : kindLabel(rule.kind)}
+							secondary={[
+								kindLabel(rule.kind),
+								rule.kind === "breakReminder"
+									? `${t("admin.automation.after")} ${rule.afterMinutes ?? 360}`
+									: timeOf(rule.atMinute),
+								rule.userId === null || rule.userId === undefined
+									? t("admin.automation.allUsers")
+									: nameOf(rule.userId),
+								weekdaySummary(rule.weekdays ?? [1, 2, 3, 4, 5, 6, 7]),
+								t(
+									rule.repeat === "week"
+										? "admin.automation.repeatWeek"
+										: "admin.automation.repeatDay",
+								),
+							].join(" · ")}
 						>
-							<Stack
-								direction="row"
-								spacing={1}
-								useFlexGap
-								sx={{ alignItems: "center", flexWrap: "wrap" }}
+							<Button
+								size="small"
+								disabled={disabled}
+								color={rule.isActive === false ? "inherit" : "primary"}
+								onClick={() => change(index, { isActive: rule.isActive === false })}
 							>
-								<TextField
-									size="small"
-									label={t("admin.trigger.label")}
-									value={rule.label ?? ""}
-									onChange={event => change(index, { label: event.target.value })}
-									disabled={disabled}
-									sx={{ minWidth: 150 }}
-								/>
-								<TextField
-									select
-									size="small"
-									label={t("admin.automation.kind")}
-									value={rule.kind}
-									onChange={event =>
-										change(index, { kind: event.target.value as AutomationRule["kind"] })
-									}
-									disabled={disabled}
-									sx={{ minWidth: 230 }}
-								>
-									<MenuItem value="clockIn">{t("admin.automation.kindClockIn")}</MenuItem>
-									<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
-									<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
-									<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
-								</TextField>
-								{rule.kind === "breakReminder" ? (
-									<TextField
-										size="small"
-										type="number"
-										label={t("admin.automation.after")}
-										value={String(rule.afterMinutes ?? 360)}
-										onChange={event => change(index, { afterMinutes: Number(event.target.value) })}
-										disabled={disabled}
-										sx={{ maxWidth: 170 }}
-									/>
-								) : (
-									<TextField
-										size="small"
-										label={t("admin.automation.at")}
-										helperText={t("admin.automation.atHint")}
-										value={timeOf(rule.atMinute)}
-										onChange={event => {
-											const minute = minutesOf(event.target.value);
-											if (minute !== null) {
-												change(index, { atMinute: minute });
-											}
-										}}
-										disabled={disabled}
-										sx={{ maxWidth: 160 }}
-									/>
-								)}
-								<TextField
-									select
-									size="small"
-									label={t("admin.automation.user")}
-									value={rule.userId === null || rule.userId === undefined ? "" : String(rule.userId)}
-									onChange={event =>
-										change(index, {
-											userId: event.target.value === "" ? null : Number(event.target.value),
-										})
-									}
-									disabled={disabled}
-									sx={{ minWidth: 190 }}
-								>
-									<MenuItem value="">{t("admin.automation.allUsers")}</MenuItem>
-									{people.map(user => (
-										<MenuItem
-											key={user.id}
-											value={String(user.id)}
-										>
-											{user.displayName}
-										</MenuItem>
-									))}
-								</TextField>
-								<Button
-									size="small"
-									disabled={disabled}
-									color={rule.isActive === false ? "inherit" : "primary"}
-									onClick={() => change(index, { isActive: rule.isActive === false })}
-								>
-									{t("admin.trigger.active")}
-								</Button>
-								<IconButton
-									size="small"
-									title={t("admin.tag.delete")}
-									disabled={disabled}
-									onClick={() => onChange(rules.filter((_, position) => position !== index))}
-								>
-									<DeleteIcon fontSize="small" />
-								</IconButton>
-							</Stack>
-							<Stack
-								direction="row"
-								spacing={1}
-								useFlexGap
-								sx={{ alignItems: "center", flexWrap: "wrap" }}
+								{t("admin.trigger.active")}
+							</Button>
+							<Button
+								size="small"
+								disabled={disabled}
+								onClick={() => openEditor(index)}
 							>
-								<Typography
-									variant="body2"
-									color="text.secondary"
-								>
-									{t("admin.automation.weekdays")}
-								</Typography>
-								{weekdayOptions(language).map(option => (
-									<FormControlLabel
-										key={option.value}
-										control={
-											<Checkbox
-												size="small"
-												checked={rule.weekdays?.includes(option.value) ?? true}
-												onChange={event =>
-													change(index, {
-														weekdays: toggleWeekday(
-															rule.weekdays ?? [1, 2, 3, 4, 5, 6, 7],
-															option.value,
-															event.target.checked,
-														),
-													})
-												}
-												disabled={disabled}
-											/>
-										}
-										label={option.label}
-									/>
-								))}
-								<TextField
-									select
-									size="small"
-									label={t("admin.automation.repeat")}
-									value={rule.repeat ?? "day"}
-									onChange={event =>
-										change(index, { repeat: event.target.value as AutomationRule["repeat"] })
-									}
-									disabled={disabled}
-									sx={{ minWidth: 190 }}
-								>
-									<MenuItem value="day">{t("admin.automation.repeatDay")}</MenuItem>
-									<MenuItem value="week">{t("admin.automation.repeatWeek")}</MenuItem>
-								</TextField>
-							</Stack>
-						</Stack>
+								{t("admin.automation.edit")}
+							</Button>
+							<IconButton
+								size="small"
+								title={t("admin.tag.delete")}
+								disabled={disabled}
+								onClick={() => onChange(rules.filter((_, position) => position !== index))}
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</ActionRow>
 					))}
 					<Stack
 						direction="row"
@@ -2371,19 +2318,19 @@ function AutomationRulesCard({
 							size="small"
 							startIcon={<AddIcon />}
 							disabled={disabled}
-							onClick={() =>
-								onChange([
-									...rules,
-									{
-										kind: "clockOut",
-										atMinute: 20 * 60,
-										userId: null,
-										weekdays: [1, 2, 3, 4, 5, 6, 7],
-										repeat: "day",
-										isActive: true,
-									},
-								])
-							}
+							onClick={() => {
+								// the new rule opens right away, so it can be filled in without a second click
+								const created: AutomationRule = {
+									kind: "clockOut",
+									atMinute: 20 * 60,
+									userId: null,
+									weekdays: [1, 2, 3, 4, 5, 6, 7],
+									repeat: "day",
+									isActive: true,
+								};
+								onChange([...rules, created]);
+								openEditor(rules.length, created);
+							}}
 						>
 							{t("admin.automation.add")}
 						</Button>
@@ -2393,7 +2340,7 @@ function AutomationRulesCard({
 							disabled={disabled || saving}
 							onClick={onSave}
 						>
-							{t("admin.settings.pauseSave")}
+							{t("admin.automation.save")}
 						</Button>
 					</Stack>
 					{rules.length === 0 && (
@@ -2405,6 +2352,192 @@ function AutomationRulesCard({
 						</Typography>
 					)}
 				</Stack>
+				{/* The dialog edits one rule; the list behind it stays visible and unchanged until it is saved. */}
+				<Dialog
+					open={draft !== null}
+					onClose={() => {
+						setEditing(null);
+						setDraft(null);
+					}}
+					fullWidth
+					maxWidth="sm"
+				>
+					<DialogTitle>{t(isNew ? "admin.automation.newTitle" : "admin.automation.editTitle")}</DialogTitle>
+					<DialogContent>
+						{draft && (
+							<Stack
+								spacing={1.5}
+								sx={{ mt: 1 }}
+							>
+								<TextField
+									size="small"
+									label={t("admin.trigger.label")}
+									value={draft.label ?? ""}
+									onChange={event => setDraft({ ...draft, label: event.target.value })}
+									disabled={disabled}
+									fullWidth
+								/>
+								<TextField
+									select
+									size="small"
+									label={t("admin.automation.kind")}
+									value={draft.kind}
+									onChange={event =>
+										setDraft({ ...draft, kind: event.target.value as AutomationRule["kind"] })
+									}
+									disabled={disabled}
+									fullWidth
+								>
+									<MenuItem value="clockIn">{t("admin.automation.kindClockIn")}</MenuItem>
+									<MenuItem value="clockOut">{t("admin.automation.kindClockOut")}</MenuItem>
+									<MenuItem value="missingPunch">{t("admin.automation.kindMissingPunch")}</MenuItem>
+									<MenuItem value="breakReminder">{t("admin.automation.kindBreakReminder")}</MenuItem>
+								</TextField>
+								{draft.kind === "breakReminder" ? (
+									<TextField
+										size="small"
+										type="number"
+										label={t("admin.automation.after")}
+										value={String(draft.afterMinutes ?? 360)}
+										onChange={event =>
+											setDraft({ ...draft, afterMinutes: Number(event.target.value) })
+										}
+										disabled={disabled}
+										fullWidth
+									/>
+								) : (
+									<TextField
+										size="small"
+										label={t("admin.automation.at")}
+										helperText={t("admin.automation.atHint")}
+										value={timeOf(draft.atMinute)}
+										onChange={event => {
+											const minute = minutesOf(event.target.value);
+											if (minute !== null) {
+												setDraft({ ...draft, atMinute: minute });
+											}
+										}}
+										disabled={disabled}
+										fullWidth
+									/>
+								)}
+								<TextField
+									select
+									size="small"
+									label={t("admin.automation.user")}
+									value={
+										draft.userId === null || draft.userId === undefined ? "" : String(draft.userId)
+									}
+									onChange={event =>
+										setDraft({
+											...draft,
+											userId: event.target.value === "" ? null : Number(event.target.value),
+										})
+									}
+									disabled={disabled}
+									fullWidth
+								>
+									<MenuItem value="">{t("admin.automation.allUsers")}</MenuItem>
+									{people.map(user => (
+										<MenuItem
+											key={user.id}
+											value={String(user.id)}
+										>
+											{user.displayName}
+										</MenuItem>
+									))}
+								</TextField>
+								<Box>
+									<Typography
+										variant="body2"
+										color="text.secondary"
+									>
+										{t("admin.automation.weekdays")}
+									</Typography>
+									<Stack
+										direction="row"
+										spacing={1}
+										useFlexGap
+										sx={{ alignItems: "center", flexWrap: "wrap" }}
+									>
+										{weekdayOptions(language).map(option => (
+											<FormControlLabel
+												key={option.value}
+												control={
+													<Checkbox
+														size="small"
+														checked={draft.weekdays?.includes(option.value) ?? true}
+														onChange={event =>
+															setDraft({
+																...draft,
+																weekdays: toggleWeekday(
+																	draft.weekdays ?? [1, 2, 3, 4, 5, 6, 7],
+																	option.value,
+																	event.target.checked,
+																),
+															})
+														}
+														disabled={disabled}
+													/>
+												}
+												label={option.label}
+											/>
+										))}
+									</Stack>
+								</Box>
+								<Stack
+									direction="row"
+									spacing={1}
+									useFlexGap
+									sx={{ alignItems: "center", flexWrap: "wrap" }}
+								>
+									<TextField
+										select
+										size="small"
+										label={t("admin.automation.repeat")}
+										value={draft.repeat ?? "day"}
+										onChange={event =>
+											setDraft({
+												...draft,
+												repeat: event.target.value as AutomationRule["repeat"],
+											})
+										}
+										disabled={disabled}
+										sx={{ minWidth: 190 }}
+									>
+										<MenuItem value="day">{t("admin.automation.repeatDay")}</MenuItem>
+										<MenuItem value="week">{t("admin.automation.repeatWeek")}</MenuItem>
+									</TextField>
+									<Button
+										size="small"
+										color={draft.isActive === false ? "inherit" : "primary"}
+										onClick={() => setDraft({ ...draft, isActive: draft.isActive === false })}
+										disabled={disabled}
+									>
+										{t("admin.trigger.active")}
+									</Button>
+								</Stack>
+							</Stack>
+						)}
+					</DialogContent>
+					<DialogActions>
+						<Button
+							onClick={() => {
+								setEditing(null);
+								setDraft(null);
+							}}
+						>
+							{t("common.cancel")}
+						</Button>
+						<Button
+							variant="contained"
+							onClick={applyDraft}
+							disabled={draft === null}
+						>
+							{t("common.save")}
+						</Button>
+					</DialogActions>
+				</Dialog>
 				{runs.length > 0 && (
 					<>
 						<Typography

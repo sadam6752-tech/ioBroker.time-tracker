@@ -358,5 +358,9 @@
 	"admin.settings.setting.report_font_path": "PDF 字体",
 	"presence.workedToday": "今日已工作",
 	"admin.user.workedTime": "在岗卡片上的工作时间",
-	"admin.user.workedTimeHint": "在在岗卡片上显示今天的工作时间（例如 1:23）。未打卡时显示 0:00；未授权时卡片只显示在岗/缺勤和姓名。"
+	"admin.user.workedTimeHint": "在在岗卡片上显示今天的工作时间（例如 1:23）。未打卡时显示 0:00；未授权时卡片只显示在岗/缺勤和姓名。",
+	"admin.automation.save": "保存规则",
+	"admin.automation.edit": "编辑",
+	"admin.automation.editTitle": "编辑规则",
+	"admin.automation.newTitle": "新规则"
 }

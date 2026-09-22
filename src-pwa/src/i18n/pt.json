@@ -358,5 +358,9 @@
 	"admin.settings.setting.report_font_path": "Fonte para PDF",
 	"presence.workedToday": "Trabalhado hoje",
 	"admin.user.workedTime": "Tempo de trabalho no cartão de presença",
-	"admin.user.workedTimeHint": "Mostra no cartão de presença o tempo trabalhado hoje (por exemplo, 1:23). Sem marcação lê-se 0:00; sem esta permissão o cartão mantém presente/ausente e o nome."
+	"admin.user.workedTimeHint": "Mostra no cartão de presença o tempo trabalhado hoje (por exemplo, 1:23). Sem marcação lê-se 0:00; sem esta permissão o cartão mantém presente/ausente e o nome.",
+	"admin.automation.save": "Guardar regras",
+	"admin.automation.edit": "Editar",
+	"admin.automation.editTitle": "Editar regra",
+	"admin.automation.newTitle": "Nova regra"
 }

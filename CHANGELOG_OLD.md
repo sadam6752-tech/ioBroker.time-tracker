@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.5 (2026-09-21)
+
+- (Alex) docs: the installation chapter leads with the normal way now — install the npm package (`iobroker install
+  iobroker.time-tracker` or the admin’s “Install from custom URL”), which creates the instance `time-tracker.0`
+  automatically. Building from a checkout is only the developer path, and the chapter explains why a Git install
+  reports `cannot find start file!` (`build/` and `www/` are not part of the repository)
+
 ### 0.2.4 (2026-09-21)
 
 - (Alex) `commands.punchUserId` does what it promises now: writing an employee id selects the employee the punch

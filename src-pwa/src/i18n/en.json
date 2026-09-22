@@ -358,5 +358,9 @@
 	"admin.settings.setting.report_font_path": "PDF font file",
 	"presence.workedToday": "Worked today",
 	"admin.user.workedTime": "Working time on the presence card",
-	"admin.user.workedTimeHint": "Shows the time worked today on the presence card (for example 1:23). Without a punch it reads 0:00; without this permission the card keeps present/absent and the name only."
+	"admin.user.workedTimeHint": "Shows the time worked today on the presence card (for example 1:23). Without a punch it reads 0:00; without this permission the card keeps present/absent and the name only.",
+	"admin.automation.save": "Save rules",
+	"admin.automation.edit": "Edit",
+	"admin.automation.editTitle": "Edit rule",
+	"admin.automation.newTitle": "New rule"
 }

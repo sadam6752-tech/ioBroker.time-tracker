@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.1 (2026-09-20)
+
+- (Alex) `common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0,
+  so the entries of 0.1.3 … 0.1.9 are removed again (the repository checker reports them as `E2004` — “do not exist
+  at NPM”). The old release notes stay in this changelog; the history of the versions published under the former
+  package name is noted in `CHANGELOG_OLD.md`
+
 ### 0.2.0 (2026-09-20)
 
 - (Alex) **renamed to `ioBroker.time-tracker`**: ioBroker requires English adapter names, so the adapter, its npm

@@ -13,6 +13,7 @@
 import type { EntriesRepository } from "../db/repositories/entries";
 import type { UsersRepository } from "../db/repositories/users";
 import type { AggregationService } from "../services/aggregation";
+import type { ApiEvent } from "../web/events";
 import { buildDayPunches, nextDirection, type PunchEntry } from "../domain/punch";
 import { localDate as resolveLocalDate } from "../util/time";
 
@@ -83,6 +84,29 @@ export function readPresenceValue(value: ioBroker.StateValue): boolean | null {
 		}
 	}
 	return null;
+}
+
+/**
+ * Builds the event a punch from the presence state publishes.
+ *
+ * `handlePresenceState` stays pure: the caller feeds the result into the event bus, exactly like the REST API does
+ * it. That is what makes a presence punch show up in `events.*` (`lastType`, `lastUser`, …) and in the web app —
+ * and `null` means “nothing changed, so there is no event”.
+ *
+ * @param result - result of the presence write
+ * @param atUtc - instant of the punch, UTC epoch seconds
+ * @returns the event for the bus, or `null` when the write changed nothing
+ */
+export function presenceEvent(result: PresenceResult, atUtc: number): ApiEvent | null {
+	if (!result.ok || !result.changed || result.userId === null) {
+		return null;
+	}
+	return {
+		type: "punch",
+		atUtc,
+		userId: result.userId,
+		data: { direction: result.present ? "in" : "out", source: "state.present" },
+	};
 }
 
 /**

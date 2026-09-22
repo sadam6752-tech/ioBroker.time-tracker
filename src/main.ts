@@ -55,7 +55,7 @@ import {
 	publishEventSnapshot,
 	readCompanySnapshot,
 } from "./lib/adapter/states";
-import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId } from "./lib/adapter/presence";
+import { PRESENCE_SUFFIX, handlePresenceState, parsePresenceStateId, presenceEvent } from "./lib/adapter/presence";
 import { handleCommand, punchEmployee } from "./lib/adapter/commands";
 import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
 import { evaluateAutomation, isoWeekday, runPeriod, workBlock } from "./lib/adapter/automation";
@@ -631,6 +631,12 @@ class TimeTracker extends utils.Adapter {
 			);
 			if (result.ok) {
 				this.log.info(`presence ${id}: ${result.message}`);
+				// A punch from the presence state is published like every other one: the subscription in `onReady`
+				// mirrors it into `events.*` and tells the connected web clients.
+				const event = presenceEvent(result, Math.floor(Date.now() / 1000));
+				if (event) {
+					this.events?.publish(event);
+				}
 			} else {
 				// a value the state does not understand, an unknown employee: worth a warning, not an error
 				this.log.warn(`presence ${id}: ${result.message}`);

@@ -348,6 +348,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.2.6 (2026-09-22)
+
+- (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows
+  up in `events.*` (`lastType`, `lastUser`, `lastDirection`, `lastSource`) and reaches the web app live. The punch was
+  stored in the database but never sent to the event bus, so the event states kept the previous punch
+
 ### 0.2.5 (2026-09-21)
 
 - (Alex) docs: the installation chapter leads with the normal way now — install the npm package (`iobroker install
@@ -376,13 +382,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   command uses the role **`level`** instead of `value` (`E1011`). The names live in one place
   (`src/lib/adapter/stateNames.ts`), a unit test keeps them complete, and existing installations receive the new
   names on the next start (`extendObject`)
-
-### 0.2.1 (2026-09-20)
-
-- (Alex) `common.news` starts fresh after the rename: the new npm package `iobroker.time-tracker` only carries 0.2.0,
-  so the entries of 0.1.3 … 0.1.9 are removed again (the repository checker reports them as `E2004` — “do not exist
-  at NPM”). The old release notes stay in this changelog; the history of the versions published under the former
-  package name is noted in `CHANGELOG_OLD.md`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

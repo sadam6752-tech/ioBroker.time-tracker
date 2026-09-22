@@ -110,6 +110,18 @@ behielten laufende Installationen ihre alte Definition: der Objekt-Dump, den der
 `role: "value"` (`E1011`) und die alten `en`/`de`-Namen (`E6001`). `common.custom` bleibt ausgespart, dort stehen die
 Einstellungen des Nutzers (etwa für `history`).
 
+## Ereignisse (`events.*`)
+
+`events.lastType`, `lastUser`, `lastDirection` und `lastSource` spiegeln das **neueste** Ereignis. Gefüllt wird das
+aus dem **Event-Bus** der API: `onReady` abonniert ihn (`api.events.subscribe`) und schreibt jedes Ereignis über
+`publishEventState` in den Objektbaum — zusätzlich frischt es die Figuren auf, wenn das Ereignis die Zahlen betrifft
+(`FIGURES_EVENT_TYPES`).
+
+**Jeder** Weg muss deshalb auf den Bus veröffentlichen: die REST-API, das Kiosk-Terminal und seit 0.2.6 auch der
+Anwesenheits-State (`presenceEvent` in `presence.ts` erzeugt das Ereignis, `runPresence` gibt es weiter). Ein neuer
+Weg ohne `publish` fällt genau hier auf: die Buchung ist in der Datenbank, aber `events.*` bleibt beim vorigen
+Ereignis stehen.
+
 ## Nach der Umbenennung: zwei Regeln mehr
 
 Der Wechsel auf `ioBroker.time-tracker` hat zwei Dinge sichtbar gemacht, die vorher nicht greifen konnten:

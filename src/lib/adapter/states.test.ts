@@ -25,7 +25,13 @@ import { createBackupService } from "../services/backup";
 import { createClosingService, type ClosingService } from "../services/closing";
 import { createSyncService, type SyncService } from "../services/sync";
 import { handleCommand, type CommandDeps } from "./commands";
-import { handlePresenceState, parsePresenceStateId, readPresenceValue, type PresenceDeps } from "./presence";
+import {
+	handlePresenceState,
+	parsePresenceStateId,
+	presenceEvent,
+	readPresenceValue,
+	type PresenceDeps,
+} from "./presence";
 import {
 	COMMAND_IDS,
 	createCommandStates,
@@ -402,6 +408,23 @@ describe("adapter states and commands", () => {
 			expect(again.changed).to.equal(false);
 			expect(again.message).to.contain("already present");
 			expect(entries.listByRange(annaId, "1970-01-01", "1970-12-31")).to.have.lengthOf(1);
+		});
+
+		it("publishes a punch from the presence state into the event stream", () => {
+			const arrived = handlePresenceState(presenceDeps(), `users.${annaId}.present`, true);
+
+			const event = presenceEvent(arrived, now);
+			expect(event).to.deep.include({ type: "punch", userId: annaId, atUtc: now });
+			expect(event?.data).to.deep.include({ direction: "in", source: "state.present" });
+
+			// leaving publishes an "out" …
+			now += 120;
+			const left = handlePresenceState(presenceDeps(), `users.${annaId}.present`, false);
+			expect(presenceEvent(left, now)?.data).to.deep.include({ direction: "out", source: "state.present" });
+
+			// … and a write that changes nothing publishes nothing (the reader fired twice)
+			const again = handlePresenceState(presenceDeps(), `users.${annaId}.present`, false);
+			expect(presenceEvent(again, now)).to.equal(null);
 		});
 
 		it("refuses unknown employees and unusable values", () => {

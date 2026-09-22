@@ -362,5 +362,20 @@
 	"admin.automation.save": "Guardar regras",
 	"admin.automation.edit": "Editar",
 	"admin.automation.editTitle": "Editar regra",
-	"admin.automation.newTitle": "Nova regra"
+	"admin.automation.newTitle": "Nova regra",
+	"absences.vacationTag": "férias",
+	"admin.absenceTypes.title": "Tipos de ausência",
+	"admin.absenceTypes.hint": "Código, designação e efeito das ausências. «Férias» marca o tipo que consome o direito a férias.",
+	"admin.absenceTypes.code": "Código",
+	"admin.absenceTypes.name": "Designação",
+	"admin.absenceTypes.paid": "Pago",
+	"admin.absenceTypes.factor": "Fator (%)",
+	"admin.absenceTypes.reduceVacation": "Reduz as férias",
+	"admin.absenceTypes.active": "Ativo",
+	"admin.absenceTypes.add": "Adicionar tipo",
+	"admin.absenceTypes.edit": "Editar",
+	"admin.absenceTypes.editTitle": "Editar tipo",
+	"admin.absenceTypes.newTitle": "Novo tipo",
+	"admin.absenceTypes.empty": "Nenhum tipo de ausência definido.",
+	"admin.absenceTypes.note": "As ausências existentes mantêm o seu tipo — uma designação alterada aparece logo em toda a interface."
 }

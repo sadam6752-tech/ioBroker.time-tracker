@@ -34,6 +34,8 @@ import type {
 	YearAggregate,
 } from "./types";
 
+export type { Absence, AbsenceType } from "./types";
+
 /** Prefix the API is mounted on. */
 export const API_PREFIX = "/api";
 
@@ -147,6 +149,15 @@ export interface ApiClient {
 	absences(year: number): Promise<Absence[]>;
 	/** Absence types the caller may use */
 	absenceTypes(): Promise<AbsenceType[]>;
+	/** Creates or changes an absence type (needs `absence.manage_types`) */
+	saveAbsenceType(input: {
+		code: string;
+		name: string;
+		paid?: boolean;
+		factor?: number;
+		reduceVacation?: boolean;
+		isActive?: boolean;
+	}): Promise<AbsenceType>;
 	/** Requests an absence */
 	createAbsence(input: {
 		typeCode: string;
@@ -902,6 +913,11 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async absenceTypes(): Promise<AbsenceType[]> {
 			const result = await request<{ types: AbsenceType[] }>("GET", "/absence-types");
 			return result.types ?? [];
+		},
+
+		async saveAbsenceType(input): Promise<AbsenceType> {
+			const result = await request<{ type: AbsenceType }>("POST", "/absence-types", { body: input });
+			return result.type;
 		},
 
 		async createAbsence(input): Promise<Absence> {

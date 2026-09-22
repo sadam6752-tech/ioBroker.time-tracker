@@ -362,5 +362,20 @@
 	"admin.automation.save": "Сохранить правила",
 	"admin.automation.edit": "Изменить",
 	"admin.automation.editTitle": "Изменить правило",
-	"admin.automation.newTitle": "Новое правило"
+	"admin.automation.newTitle": "Новое правило",
+	"absences.vacationTag": "отпуск",
+	"admin.absenceTypes.title": "Виды отсутствия",
+	"admin.absenceTypes.hint": "Код, название и действие отсутствий. «Отпуск» отмечает вид, который расходует отпускной лимит.",
+	"admin.absenceTypes.code": "Код",
+	"admin.absenceTypes.name": "Название",
+	"admin.absenceTypes.paid": "Оплачивается",
+	"admin.absenceTypes.factor": "Коэффициент (%)",
+	"admin.absenceTypes.reduceVacation": "Уменьшает отпуск",
+	"admin.absenceTypes.active": "Активно",
+	"admin.absenceTypes.add": "Добавить вид",
+	"admin.absenceTypes.edit": "Изменить",
+	"admin.absenceTypes.editTitle": "Изменить вид",
+	"admin.absenceTypes.newTitle": "Новый вид",
+	"admin.absenceTypes.empty": "Виды отсутствия не заданы.",
+	"admin.absenceTypes.note": "Существующие отсутствия сохраняют свой вид — изменённое название сразу видно везде."
 }

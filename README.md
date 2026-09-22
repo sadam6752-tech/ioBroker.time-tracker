@@ -355,6 +355,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.3.4 (2026-09-22)
+
+- (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with
+  code, name, paid, factor and the vacation deduction. The type that uses up the vacation allowance is marked in the
+  lists and in the picker, so “F – Ferien” reads as vacation at one glance
+
 ### 0.3.3 (2026-09-22)
 
 - (Alex) fix: the installation chapter no longer points to the “Install from custom URL” dialog — the repository
@@ -388,17 +394,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   the board is visible before the PIN is entered — the decision is made on the server, the API only sends the minutes
   for employees who agreed (`/terminal/users` and `/terminal/punch`). The new column
   `work_profiles.show_worked_time` arrives with migration 20
-
-### 0.2.7 (2026-09-22)
-
-- (Alex) fix: **every** punch path reaches `events.*` and the web app now. Besides the presence state (0.2.6) the
-  `commands.punch`/`quickPunch` buttons, a `sendTo` message (`punch`, `present`) and the trigger rules (Actions) wrote
-  the punch and refreshed the figures but never published an event — the event states kept the punch before. The
-  results carry `userId` and `direction` now, and `punchEvent` (like `presenceEvent`) builds the bus event for them;
-  the automation rules send the direction with their `automation.*` event
-- (Alex) test: the end-to-end suite is deterministic again — the correction spec anchors its “forgotten day” inside the
-  local day (`now - 8h` fell on the day before when the suite ran shortly after midnight and left the employee
-  present for the specs that follow), and the presence spec puts its employee into a known state before it asserts
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -362,5 +362,20 @@
 	"admin.automation.save": "Guardar reglas",
 	"admin.automation.edit": "Editar",
 	"admin.automation.editTitle": "Editar regla",
-	"admin.automation.newTitle": "Nueva regla"
+	"admin.automation.newTitle": "Nueva regla",
+	"absences.vacationTag": "vacaciones",
+	"admin.absenceTypes.title": "Tipos de ausencia",
+	"admin.absenceTypes.hint": "Código, denominación y efecto de las ausencias. «Vacaciones» marca el tipo que consume el derecho a vacaciones.",
+	"admin.absenceTypes.code": "Código",
+	"admin.absenceTypes.name": "Denominación",
+	"admin.absenceTypes.paid": "Pagado",
+	"admin.absenceTypes.factor": "Factor de tiempo (%)",
+	"admin.absenceTypes.reduceVacation": "Reduce las vacaciones",
+	"admin.absenceTypes.active": "Activo",
+	"admin.absenceTypes.add": "Añadir tipo",
+	"admin.absenceTypes.edit": "Editar",
+	"admin.absenceTypes.editTitle": "Editar tipo",
+	"admin.absenceTypes.newTitle": "Nuevo tipo",
+	"admin.absenceTypes.empty": "Ningún tipo de ausencia definido.",
+	"admin.absenceTypes.note": "Las ausencias existentes mantienen su tipo — una denominación modificada aparece enseguida en toda la interfaz."
 }

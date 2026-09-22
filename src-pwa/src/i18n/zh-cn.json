@@ -362,5 +362,20 @@
 	"admin.automation.save": "保存规则",
 	"admin.automation.edit": "编辑",
 	"admin.automation.editTitle": "编辑规则",
-	"admin.automation.newTitle": "新规则"
+	"admin.automation.newTitle": "新规则",
+	"absences.vacationTag": "休假",
+	"admin.absenceTypes.title": "缺勤类型",
+	"admin.absenceTypes.hint": "缺勤的代号、名称与作用。「休假」标记会消耗休假额度的类型。",
+	"admin.absenceTypes.code": "代号",
+	"admin.absenceTypes.name": "名称",
+	"admin.absenceTypes.paid": "带薪",
+	"admin.absenceTypes.factor": "系数（%）",
+	"admin.absenceTypes.reduceVacation": "扣减休假",
+	"admin.absenceTypes.active": "启用",
+	"admin.absenceTypes.add": "添加类型",
+	"admin.absenceTypes.edit": "编辑",
+	"admin.absenceTypes.editTitle": "编辑类型",
+	"admin.absenceTypes.newTitle": "新类型",
+	"admin.absenceTypes.empty": "尚未定义缺勤类型。",
+	"admin.absenceTypes.note": "已有的缺勤保留其类型 —— 修改后的名称会立即在全界面显示。"
 }

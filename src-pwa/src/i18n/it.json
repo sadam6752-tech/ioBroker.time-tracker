@@ -362,5 +362,20 @@
 	"admin.automation.save": "Salva regole",
 	"admin.automation.edit": "Modifica",
 	"admin.automation.editTitle": "Modifica regola",
-	"admin.automation.newTitle": "Nuova regola"
+	"admin.automation.newTitle": "Nuova regola",
+	"absences.vacationTag": "ferie",
+	"admin.absenceTypes.title": "Tipi di assenza",
+	"admin.absenceTypes.hint": "Codice, denominazione ed effetto delle assenze. «Ferie» contrassegna il tipo che consuma il diritto alle ferie.",
+	"admin.absenceTypes.code": "Codice",
+	"admin.absenceTypes.name": "Denominazione",
+	"admin.absenceTypes.paid": "Pagato",
+	"admin.absenceTypes.factor": "Fattore (%)",
+	"admin.absenceTypes.reduceVacation": "Riduce le ferie",
+	"admin.absenceTypes.active": "Attivo",
+	"admin.absenceTypes.add": "Aggiungi tipo",
+	"admin.absenceTypes.edit": "Modifica",
+	"admin.absenceTypes.editTitle": "Modifica tipo",
+	"admin.absenceTypes.newTitle": "Nuovo tipo",
+	"admin.absenceTypes.empty": "Nessun tipo di assenza definito.",
+	"admin.absenceTypes.note": "Le assenze esistenti mantengono il loro tipo — una denominazione modificata appare subito ovunque."
 }

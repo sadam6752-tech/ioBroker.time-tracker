@@ -8,6 +8,17 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.7 (2026-09-22)
+
+- (Alex) fix: **every** punch path reaches `events.*` and the web app now. Besides the presence state (0.2.6) the
+  `commands.punch`/`quickPunch` buttons, a `sendTo` message (`punch`, `present`) and the trigger rules (Actions) wrote
+  the punch and refreshed the figures but never published an event — the event states kept the punch before. The
+  results carry `userId` and `direction` now, and `punchEvent` (like `presenceEvent`) builds the bus event for them;
+  the automation rules send the direction with their `automation.*` event
+- (Alex) test: the end-to-end suite is deterministic again — the correction spec anchors its “forgotten day” inside the
+  local day (`now - 8h` fell on the day before when the suite ran shortly after midnight and left the employee
+  present for the specs that follow), and the presence spec puts its employee into a known state before it asserts
+
 ### 0.2.6 (2026-09-22)
 
 - (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows

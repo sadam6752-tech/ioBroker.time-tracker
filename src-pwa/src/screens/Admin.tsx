@@ -38,6 +38,7 @@ import BackupIcon from "@mui/icons-material/Backup";
 import DownloadIcon from "@mui/icons-material/Download";
 import RestoreIcon from "@mui/icons-material/Restore";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import KeyIcon from "@mui/icons-material/Key";
@@ -50,6 +51,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	api,
 	formatDate,
+	type AbsenceType,
 	type AdminTerminal,
 	type AutomationRule,
 	type AutomationRun,
@@ -2782,6 +2784,256 @@ function RawSettingField({
  *
  * @returns the settings tab
  */
+/**
+ * Shows and changes the absence types: code, name, pay, factor and whether the type uses up the vacation.
+ *
+ * @param props - types, permission and the save callback
+ * @param props.types - types as they are shown
+ * @param props.disabled - true when the caller may not change types
+ * @param props.onSaved - called after a type was stored
+ * @returns the card with the list of types
+ */
+function AbsenceTypesCard({
+	types,
+	disabled,
+	onSaved,
+}: {
+	types: AbsenceType[];
+	disabled: boolean;
+	onSaved: () => void;
+}): React.JSX.Element {
+	const { t } = useTranslation();
+	/** Copy the dialog works on; `null` while the dialog is closed. */
+	const [draft, setDraft] = useState<AbsenceType | null>(null);
+	/** True while the dialog shows a type that the server does not know yet. */
+	const [isNew, setIsNew] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const save = useMutation({
+		mutationFn: (type: AbsenceType) =>
+			api.saveAbsenceType({
+				code: type.code.trim(),
+				name: type.name.trim(),
+				paid: type.paid,
+				factor: type.factor,
+				reduceVacation: type.reduceVacation,
+				isActive: type.isActive,
+			}),
+		onSuccess: () => {
+			setDraft(null);
+			onSaved();
+		},
+		onError: (problem: Error) => setError(problem.message),
+	});
+
+	/**
+	 * Opens the dialog.
+	 *
+	 * @param type - the type to change; left out to add a new one
+	 */
+	const open = (type?: AbsenceType): void => {
+		setError(null);
+		setIsNew(type === undefined);
+		setDraft(
+			type
+				? { ...type }
+				: {
+						id: 0,
+						userId: null,
+						code: "",
+						name: "",
+						paid: true,
+						factor: 100,
+						reduceVacation: false,
+						isActive: true,
+					},
+		);
+	};
+
+	/**
+	 * The facts of a type in one line.
+	 *
+	 * @param type - the type
+	 * @returns text like `Bezahlt · Faktor (%): 100 · Zieht vom Urlaub ab`
+	 */
+	const summary = (type: AbsenceType): string => {
+		const parts = [
+			type.paid ? t("admin.absenceTypes.paid") : `– ${t("admin.absenceTypes.paid")}`,
+			`${t("admin.absenceTypes.factor")}: ${type.factor}`,
+		];
+		if (type.reduceVacation) {
+			parts.push(t("admin.absenceTypes.reduceVacation"));
+		}
+		if (!type.isActive) {
+			parts.push(`– ${t("admin.absenceTypes.active")}`);
+		}
+		return parts.join(" · ");
+	};
+
+	/**
+	 * The draft with a few fields replaced.
+	 *
+	 * @param type - the draft
+	 * @param patch - fields to replace
+	 * @returns a new draft
+	 */
+	const changed = (type: AbsenceType, patch: Partial<AbsenceType>): AbsenceType => ({ ...type, ...patch });
+
+	return (
+		<Card sx={{ mb: 2 }}>
+			<CardContent>
+				<Stack
+					direction="row"
+					spacing={1}
+					sx={{ alignItems: "center" }}
+				>
+					<Typography
+						variant="subtitle1"
+						sx={{ flexGrow: 1 }}
+					>
+						{t("admin.absenceTypes.title")}
+					</Typography>
+					<Button
+						size="small"
+						startIcon={<AddIcon />}
+						disabled={disabled}
+						onClick={() => open()}
+					>
+						{t("admin.absenceTypes.add")}
+					</Button>
+				</Stack>
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					sx={{ mb: 1 }}
+				>
+					{t("admin.absenceTypes.hint")}
+				</Typography>
+
+				<List
+					dense
+					data-testid="absence-types"
+				>
+					{types.map(type => (
+						<ActionRow
+							key={type.id}
+							primary={`${type.code} – ${type.name}${
+								type.reduceVacation ? ` (${t("absences.vacationTag")})` : ""
+							}`}
+							secondary={summary(type)}
+						>
+							<IconButton
+								size="small"
+								disabled={disabled}
+								aria-label={t("admin.absenceTypes.edit")}
+								onClick={() => open(type)}
+							>
+								<EditIcon fontSize="small" />
+							</IconButton>
+						</ActionRow>
+					))}
+				</List>
+				{types.length === 0 && (
+					<Typography
+						variant="body2"
+						color="text.secondary"
+					>
+						{t("admin.absenceTypes.empty")}
+					</Typography>
+				)}
+				<Typography
+					variant="caption"
+					color="text.secondary"
+				>
+					{t("admin.absenceTypes.note")}
+				</Typography>
+			</CardContent>
+
+			<Dialog
+				open={draft !== null}
+				onClose={() => setDraft(null)}
+				fullWidth
+				maxWidth="xs"
+			>
+				<DialogTitle>
+					{isNew ? t("admin.absenceTypes.newTitle") : t("admin.absenceTypes.editTitle")}
+				</DialogTitle>
+				<DialogContent>
+					{draft && (
+						<Stack
+							spacing={2}
+							sx={{ mt: 1 }}
+						>
+							<ErrorAlert error={error} />
+							<TextField
+								label={t("admin.absenceTypes.code")}
+								value={draft.code}
+								size="small"
+								inputProps={{ maxLength: 8 }}
+								onChange={event => setDraft(changed(draft, { code: event.target.value }))}
+							/>
+							<TextField
+								label={t("admin.absenceTypes.name")}
+								value={draft.name}
+								size="small"
+								onChange={event => setDraft(changed(draft, { name: event.target.value }))}
+							/>
+							<TextField
+								label={t("admin.absenceTypes.factor")}
+								value={String(draft.factor)}
+								size="small"
+								type="number"
+								inputProps={{ min: 0, max: 100, step: 10 }}
+								onChange={event => setDraft(changed(draft, { factor: Number(event.target.value) }))}
+							/>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={draft.paid}
+										onChange={event => setDraft(changed(draft, { paid: event.target.checked }))}
+									/>
+								}
+								label={t("admin.absenceTypes.paid")}
+							/>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={draft.reduceVacation}
+										onChange={event =>
+											setDraft(changed(draft, { reduceVacation: event.target.checked }))
+										}
+									/>
+								}
+								label={t("admin.absenceTypes.reduceVacation")}
+							/>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={draft.isActive}
+										onChange={event => setDraft(changed(draft, { isActive: event.target.checked }))}
+									/>
+								}
+								label={t("admin.absenceTypes.active")}
+							/>
+						</Stack>
+					)}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setDraft(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						data-testid="absence-type-save"
+						disabled={save.isPending || !draft || draft.code.trim() === "" || draft.name.trim() === ""}
+						onClick={() => draft && save.mutate(draft)}
+					>
+						{t("common.save")}
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</Card>
+	);
+}
+
 function SettingsTab(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
 	const { permissions } = useSession();
@@ -2808,6 +3060,7 @@ function SettingsTab(): React.JSX.Element {
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
 	const automations = useQuery({ queryKey: ["admin", "automations"], queryFn: () => api.automationRules() });
 	const automationRuns = useQuery({ queryKey: ["admin", "automationRuns"], queryFn: () => api.automationRuns() });
+	const absenceTypes = useQuery({ queryKey: ["absence-types"], queryFn: () => api.absenceTypes() });
 	const [automationDraft, setAutomationDraft] = useState<AutomationRule[] | null>(null);
 	const shownAutomations = automationDraft ?? automations.data ?? [];
 
@@ -3067,6 +3320,12 @@ function SettingsTab(): React.JSX.Element {
 				onChange={setAutomationDraft}
 				onSave={() => saveAutomations.mutate(shownAutomations)}
 				language={i18n.language}
+			/>
+
+			<AbsenceTypesCard
+				types={absenceTypes.data ?? []}
+				disabled={!hasPermission(permissions, "absence.manage_types")}
+				onSaved={() => void queryClient.invalidateQueries({ queryKey: ["absence-types"] })}
 			/>
 
 			<Card sx={{ mb: 2 }}>

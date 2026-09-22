@@ -362,5 +362,20 @@
 	"admin.automation.save": "Enregistrer les règles",
 	"admin.automation.edit": "Modifier",
 	"admin.automation.editTitle": "Modifier la règle",
-	"admin.automation.newTitle": "Nouvelle règle"
+	"admin.automation.newTitle": "Nouvelle règle",
+	"absences.vacationTag": "vacances",
+	"admin.absenceTypes.title": "Types d'absence",
+	"admin.absenceTypes.hint": "Code, libellé et effet des absences. « Vacances » marque le type qui consomme le droit aux vacances.",
+	"admin.absenceTypes.code": "Abréviation",
+	"admin.absenceTypes.name": "Libellé",
+	"admin.absenceTypes.paid": "Payé",
+	"admin.absenceTypes.factor": "Facteur (%)",
+	"admin.absenceTypes.reduceVacation": "Réduit les vacances",
+	"admin.absenceTypes.active": "Actif",
+	"admin.absenceTypes.add": "Ajouter un type",
+	"admin.absenceTypes.edit": "Modifier",
+	"admin.absenceTypes.editTitle": "Modifier le type",
+	"admin.absenceTypes.newTitle": "Nouveau type",
+	"admin.absenceTypes.empty": "Aucun type d'absence défini.",
+	"admin.absenceTypes.note": "Les absences existantes gardent leur type — un libellé modifié apparaît aussitôt partout."
 }

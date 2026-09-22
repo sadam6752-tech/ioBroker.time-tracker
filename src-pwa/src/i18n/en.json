@@ -362,5 +362,20 @@
 	"admin.automation.save": "Save rules",
 	"admin.automation.edit": "Edit",
 	"admin.automation.editTitle": "Edit rule",
-	"admin.automation.newTitle": "New rule"
+	"admin.automation.newTitle": "New rule",
+	"absences.vacationTag": "vacation",
+	"admin.absenceTypes.title": "Absence types",
+	"admin.absenceTypes.hint": "Code, name and effect of the absences. “Vacation” marks the type that uses up the vacation allowance.",
+	"admin.absenceTypes.code": "Code",
+	"admin.absenceTypes.name": "Name",
+	"admin.absenceTypes.paid": "Paid",
+	"admin.absenceTypes.factor": "Factor (%)",
+	"admin.absenceTypes.reduceVacation": "Reduces vacation",
+	"admin.absenceTypes.active": "Active",
+	"admin.absenceTypes.add": "Add type",
+	"admin.absenceTypes.edit": "Edit",
+	"admin.absenceTypes.editTitle": "Edit type",
+	"admin.absenceTypes.newTitle": "New type",
+	"admin.absenceTypes.empty": "No absence type yet.",
+	"admin.absenceTypes.note": "Existing absences keep their type — a changed name shows up everywhere right away."
 }

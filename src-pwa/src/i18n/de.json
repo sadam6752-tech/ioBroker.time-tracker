@@ -362,5 +362,20 @@
 	"admin.automation.save": "Regeln speichern",
 	"admin.automation.edit": "Bearbeiten",
 	"admin.automation.editTitle": "Regel bearbeiten",
-	"admin.automation.newTitle": "Neue Regel"
+	"admin.automation.newTitle": "Neue Regel",
+	"absences.vacationTag": "Urlaub",
+	"admin.absenceTypes.title": "Abwesenheitsarten",
+	"admin.absenceTypes.hint": "Kürzel, Bezeichnung und Wirkung der Abwesenheiten. „Urlaub“ markiert die Art, die das Urlaubskontingent verbraucht.",
+	"admin.absenceTypes.code": "Kürzel",
+	"admin.absenceTypes.name": "Bezeichnung",
+	"admin.absenceTypes.paid": "Bezahlt",
+	"admin.absenceTypes.factor": "Faktor (%)",
+	"admin.absenceTypes.reduceVacation": "Zieht vom Urlaub ab",
+	"admin.absenceTypes.active": "Aktiv",
+	"admin.absenceTypes.add": "Art hinzufügen",
+	"admin.absenceTypes.edit": "Bearbeiten",
+	"admin.absenceTypes.editTitle": "Art bearbeiten",
+	"admin.absenceTypes.newTitle": "Neue Art",
+	"admin.absenceTypes.empty": "Keine Abwesenheitsart angelegt.",
+	"admin.absenceTypes.note": "Bestehende Abwesenheiten behalten ihre Art — eine geänderte Bezeichnung wirkt sofort in der ganzen Oberfläche."
 }

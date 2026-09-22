@@ -362,5 +362,20 @@
 	"admin.automation.save": "Regels opslaan",
 	"admin.automation.edit": "Bewerken",
 	"admin.automation.editTitle": "Regel bewerken",
-	"admin.automation.newTitle": "Nieuwe regel"
+	"admin.automation.newTitle": "Nieuwe regel",
+	"absences.vacationTag": "vakantie",
+	"admin.absenceTypes.title": "Afwezigheidstypes",
+	"admin.absenceTypes.hint": "Code, naam en werking van de afwezigheden. “Vakantie” markeert het type dat het vakantietegoed opgebruikt.",
+	"admin.absenceTypes.code": "Afkorting",
+	"admin.absenceTypes.name": "Naam",
+	"admin.absenceTypes.paid": "Betaald",
+	"admin.absenceTypes.factor": "Rekenfactor (%)",
+	"admin.absenceTypes.reduceVacation": "Verlaagt vakantie",
+	"admin.absenceTypes.active": "Actief",
+	"admin.absenceTypes.add": "Type toevoegen",
+	"admin.absenceTypes.edit": "Bewerken",
+	"admin.absenceTypes.editTitle": "Type bewerken",
+	"admin.absenceTypes.newTitle": "Nieuw type",
+	"admin.absenceTypes.empty": "Nog geen afwezigheidstype.",
+	"admin.absenceTypes.note": "Bestaande afwezigheden houden hun type — een gewijzigde naam is direct overal zichtbaar."
 }

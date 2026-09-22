@@ -44,10 +44,25 @@ export function Absences(): React.JSX.Element {
 	const types = useQuery({
 		queryKey: ["absence-types"],
 		queryFn: () => api.absenceTypes(),
-		enabled: mayRequest,
+		// the list shows the names of the types even to people who may not request absences
+		enabled: true,
 		staleTime: 5 * 60_000,
 	});
 	const availableTypes = types.data ?? [];
+
+	/**
+	 * Names a type for the list, marking the one that uses up the vacation allowance.
+	 *
+	 * @param code - the type code of an absence
+	 * @returns the suffix for the row, empty when the type is unknown
+	 */
+	const typeSuffix = (code: string): string => {
+		const type = availableTypes.find(candidate => candidate.code === code);
+		if (!type) {
+			return "";
+		}
+		return ` · ${type.name}${type.reduceVacation ? ` (${t("absences.vacationTag")})` : ""}`;
+	};
 
 	const create = useMutation({
 		mutationFn: () =>
@@ -114,7 +129,7 @@ export function Absences(): React.JSX.Element {
 									absence.dateTo && absence.dateTo !== absence.dateFrom
 										? ` – ${formatDate(absence.dateTo, i18n.language)}`
 										: ""
-								}`}
+								}${typeSuffix(absence.typeCode)}`}
 								secondary={`${t("absences.portion")}: ${absence.dayPortion}`}
 							>
 								<Typography
@@ -170,6 +185,7 @@ export function Absences(): React.JSX.Element {
 												value={type.code}
 											>
 												{type.code} – {type.name}
+												{type.reduceVacation ? ` (${t("absences.vacationTag")})` : ""}
 											</MenuItem>
 										))}
 									</TextField>

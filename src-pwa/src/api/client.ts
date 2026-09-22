@@ -147,8 +147,10 @@ export interface ApiClient {
 	entryAudit(id: number): Promise<EntryAuditRow[]>;
 	/** Absences of a year */
 	absences(year: number): Promise<Absence[]>;
-	/** Absence types the caller may use */
-	absenceTypes(): Promise<AbsenceType[]>;
+	/** Absence types the caller may use; the administration sees the inactive ones as well */
+	absenceTypes(includeInactive?: boolean): Promise<AbsenceType[]>;
+	/** Removes an absence type that no absence uses (needs `absence.manage_types`) */
+	deleteAbsenceType(id: number): Promise<void>;
 	/** Creates or changes an absence type (needs `absence.manage_types`) */
 	saveAbsenceType(input: {
 		code: string;
@@ -915,9 +917,17 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 			return result.absences ?? [];
 		},
 
-		async absenceTypes(): Promise<AbsenceType[]> {
-			const result = await request<{ types: AbsenceType[] }>("GET", "/absence-types");
+		async absenceTypes(includeInactive): Promise<AbsenceType[]> {
+			const result = await request<{ types: AbsenceType[] }>(
+				"GET",
+				"/absence-types",
+				includeInactive ? { query: { includeInactive: "true" } } : {},
+			);
 			return result.types ?? [];
+		},
+
+		async deleteAbsenceType(id): Promise<void> {
+			await request("DELETE", `/absence-types/${id}`);
 		},
 
 		async saveAbsenceType(input): Promise<AbsenceType> {

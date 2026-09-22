@@ -191,7 +191,7 @@ function CreateUserDialog({
 								key={role.key}
 								value={role.key}
 							>
-								{role.name}
+								{t(`role.${role.key}`, role.name)}
 							</MenuItem>
 						))}
 					</TextField>
@@ -696,7 +696,7 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 										<Chip
 											key={role}
 											size="small"
-											label={role}
+											label={t(`role.${role}`, role)}
 										/>
 									))}
 									{!user.isActive && (
@@ -1346,7 +1346,7 @@ function RolesDialog({
 								checked={chosen.includes(role.key)}
 								onChange={(_event, checked) => toggle(role.key, checked)}
 							/>
-							<Typography>{role.name}</Typography>
+							<Typography>{t(`role.${role.key}`, role.name)}</Typography>
 						</Stack>
 					))}
 				</Stack>
@@ -2808,6 +2808,8 @@ function AbsenceTypesCard({
 	const [draft, setDraft] = useState<AbsenceType | null>(null);
 	/** True while the dialog shows a type that the server does not know yet. */
 	const [isNew, setIsNew] = useState(false);
+	/** The type the confirmation asks about, `null` while nothing is asked. */
+	const [removing, setRemoving] = useState<AbsenceType | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	const save = useMutation({
@@ -2822,6 +2824,15 @@ function AbsenceTypesCard({
 			}),
 		onSuccess: () => {
 			setDraft(null);
+			onSaved();
+		},
+		onError: (problem: Error) => setError(problem.message),
+	});
+
+	const remove = useMutation({
+		mutationFn: (type: AbsenceType) => api.deleteAbsenceType(type.id),
+		onSuccess: () => {
+			setRemoving(null);
 			onSaved();
 		},
 		onError: (problem: Error) => setError(problem.message),
@@ -2931,6 +2942,18 @@ function AbsenceTypesCard({
 							>
 								<EditIcon fontSize="small" />
 							</IconButton>
+							<IconButton
+								size="small"
+								disabled={disabled}
+								aria-label={t("admin.absenceTypes.remove")}
+								data-testid={`absence-type-remove-${type.id}`}
+								onClick={() => {
+									setError(null);
+									setRemoving(type);
+								}}
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
 						</ActionRow>
 					))}
 				</List>
@@ -3031,6 +3054,40 @@ function AbsenceTypesCard({
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			<Dialog
+				open={removing !== null}
+				onClose={() => setRemoving(null)}
+				fullWidth
+				maxWidth="xs"
+			>
+				<DialogTitle>{t("admin.absenceTypes.removeTitle")}</DialogTitle>
+				<DialogContent>
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<ErrorAlert error={error} />
+						<DialogContentText>
+							{removing
+								? t("admin.absenceTypes.removeConfirm", { name: `${removing.code} – ${removing.name}` })
+								: ""}
+						</DialogContentText>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setRemoving(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						color="error"
+						data-testid="absence-type-remove-save"
+						disabled={remove.isPending}
+						onClick={() => removing && remove.mutate(removing)}
+					>
+						{t("admin.absenceTypes.remove")}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Card>
 	);
 }
@@ -3061,7 +3118,7 @@ function SettingsTab(): React.JSX.Element {
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
 	const automations = useQuery({ queryKey: ["admin", "automations"], queryFn: () => api.automationRules() });
 	const automationRuns = useQuery({ queryKey: ["admin", "automationRuns"], queryFn: () => api.automationRuns() });
-	const absenceTypes = useQuery({ queryKey: ["absence-types"], queryFn: () => api.absenceTypes() });
+	const absenceTypes = useQuery({ queryKey: ["absence-types", "all"], queryFn: () => api.absenceTypes(true) });
 	const [automationDraft, setAutomationDraft] = useState<AutomationRule[] | null>(null);
 	const shownAutomations = automationDraft ?? automations.data ?? [];
 

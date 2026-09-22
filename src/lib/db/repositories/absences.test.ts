@@ -372,6 +372,23 @@ describe("absences repository", () => {
 				"absence 999 not found",
 			);
 		});
+
+		it("removes a type that nobody uses and refuses a used one", () => {
+			const created = repo.upsertType({ code: "S", name: "Sabbatical", actorId: adminId, now: 1000 });
+			expect(repo.removeType({ id: created.type.id, actorId: adminId, now: 2000 })).to.equal(true);
+			expect(repo.findType(created.type.id)).to.equal(null);
+			expect(countAudit("absence.type.remove")).to.equal(1);
+			expect(lastDetail("absence.type.remove")).to.deep.equal({ code: "S", name: "Sabbatical" });
+			expect(repo.removeType({ id: 9999, actorId: adminId })).to.equal(false);
+
+			// a type that an absence uses stays: the absence would lose its meaning
+			const used = repo.upsertType({ code: "S2", name: "Sabbatical 2", actorId: adminId, now: 3000 });
+			repo.create({ userId: annaId, typeCode: "S2", dateFrom: "2026-09-01", actorId: adminId, now: 4000 });
+			expect(() => repo.removeType({ id: used.type.id, actorId: adminId, now: 5000 })).to.throw(
+				"still used by 1 absence",
+			);
+			expect(repo.findType(used.type.id)).to.not.equal(null);
+		});
 	});
 
 	describe("queries", () => {

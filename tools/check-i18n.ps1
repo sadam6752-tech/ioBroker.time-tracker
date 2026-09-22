@@ -103,7 +103,9 @@ $AllowedIdentical = @(
     'Excel', 'PDF', 'PIN', '–', '{{date}} · {{time}}',
     'Terminal', 'Terminals', 'Menu', 'Status', 'Login', 'Name', 'Label', 'Type', 'Badge',
     'Badges (RFID/NFC)', 'Note', 'Date', 'Photo', 'Administration', 'Synchronisation',
-    'Absence', 'Absences', 'Password', 'Roles', 'open', 'Port', 'General', 'Region (optional)'
+    'Absence', 'Absences', 'Password', 'Roles', 'open', 'Port', 'General', 'Region (optional)',
+    # Rollen heißen in mehreren Sprachen tatsächlich so
+    'Administrator', 'Manager'
 )
 
 $issues = [System.Collections.Generic.List[string]]::new()

@@ -402,5 +402,11 @@
 	"absences.state.requested": "запитано",
 	"absences.state.approved": "схвалено",
 	"absences.state.rejected": "відхилено",
-	"absences.reason": "Причина"
+	"absences.reason": "Причина",
+	"role.admin": "Адміністратор",
+	"role.manager": "Керівник",
+	"role.employee": "Працівник",
+	"admin.absenceTypes.remove": "Видалити",
+	"admin.absenceTypes.removeTitle": "Видалити вид",
+	"admin.absenceTypes.removeConfirm": "Справді видалити «{{name}}»? Відсутності, які ще використовують цей вид, потрібно спочатку видалити або змінити."
 }

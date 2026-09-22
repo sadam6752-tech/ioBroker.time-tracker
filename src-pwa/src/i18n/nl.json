@@ -402,5 +402,11 @@
 	"absences.state.requested": "aangevraagd",
 	"absences.state.approved": "goedgekeurd",
 	"absences.state.rejected": "afgewezen",
-	"absences.reason": "Reden"
+	"absences.reason": "Reden",
+	"role.admin": "Beheerder",
+	"role.manager": "Leidinggevende",
+	"role.employee": "Medewerker",
+	"admin.absenceTypes.remove": "Verwijderen",
+	"admin.absenceTypes.removeTitle": "Het type verwijderen",
+	"admin.absenceTypes.removeConfirm": "“{{name}}” echt verwijderen? Afwezigheden die dit type nog gebruiken moeten eerst worden verwijderd of gewijzigd."
 }

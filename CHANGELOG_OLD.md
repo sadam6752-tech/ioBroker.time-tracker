@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.3.2 (2026-09-22)
+
+- (Alex) fix: the automation rules are a **list** now — one row per rule with its caption, kind, time, target and
+  weekdays, plus the buttons for *active*, *edit* and *delete* on the right. The form only opens in a dialog, for a
+  new or an edited rule, so the list stays readable. The save button of the card says “**Regeln speichern**” (it
+  carried the caption of the break rules before). New texts in all 11 languages, and an end-to-end test keeps both
+  findings
+
 ### 0.3.1 (2026-09-22)
 
 - (Alex) fix: the presence board shows the **real running** time of the day now. Two things kept it frozen:

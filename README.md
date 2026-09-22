@@ -351,6 +351,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.4.2 (2026-09-22)
+
+- (Alex) fix: the roles appear in the language of the display (the database keeps “Administrator”, “Manager” and
+  “Employee”, the app translates them now), the two date fields of “enter an absence” no longer overlap with their
+  label, an absence type can be removed again as long as no absence uses it (new `DELETE /absence-types/:id` with a
+  confirmation that names the type), and an inactive type stays in the lists of the administration while the employees
+  no longer see it in their picker (`GET /absence-types?includeInactive=true`)
+
 ### 0.4.1 (2026-09-22)
 
 - (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in
@@ -377,14 +385,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   or using npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the
   registry for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources.
   The troubleshooting row for a missing web app no longer carries npm commands either
-
-### 0.3.2 (2026-09-22)
-
-- (Alex) fix: the automation rules are a **list** now — one row per rule with its caption, kind, time, target and
-  weekdays, plus the buttons for *active*, *edit* and *delete* on the right. The form only opens in a dialog, for a
-  new or an edited rule, so the list stays readable. The save button of the card says “**Regeln speichern**” (it
-  carried the caption of the break rules before). New texts in all 11 languages, and an end-to-end test keeps both
-  findings
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

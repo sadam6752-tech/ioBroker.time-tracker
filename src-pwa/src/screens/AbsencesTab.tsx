@@ -402,6 +402,8 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 							type="date"
 							value={draft.dateFrom}
 							size="small"
+							// a date field shows its own placeholder, so the label has to shrink or it overlaps it
+							InputLabelProps={{ shrink: true }}
 							onChange={event => setDraft({ ...draft, dateFrom: event.target.value })}
 						/>
 						<TextField
@@ -409,6 +411,7 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 							type="date"
 							value={draft.dateTo}
 							size="small"
+							InputLabelProps={{ shrink: true }}
 							onChange={event => setDraft({ ...draft, dateTo: event.target.value })}
 						/>
 						<TextField

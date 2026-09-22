@@ -204,6 +204,8 @@ export interface AbsencesRepository {
 	findType(reference: number | string, userId?: number | null): AbsenceTypeRecord | null;
 	/** Creates an absence type or updates the existing one with the same code */
 	upsertType(input: UpsertAbsenceTypeInput): { type: AbsenceTypeRecord; created: boolean };
+	/** Removes an absence type that no absence uses */
+	removeType(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 	/** Reads an absence by id */
 	findById(id: number): AbsenceRecord | null;
 	/** Creates an absence and audits it */
@@ -415,6 +417,8 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	const updateType = db.prepare(
 		`UPDATE absence_types SET name = ?, paid = ?, factor = ?, reduce_vacation = ?, is_active = ? WHERE id = ?`,
 	);
+	const deleteType = db.prepare("DELETE FROM absence_types WHERE id = ?");
+	const countAbsencesOfType = db.prepare("SELECT COUNT(*) AS count FROM absences WHERE type_id = ?");
 
 	const read = (id: number): AbsenceRecord | null => {
 		const row = selectAbsenceById.get(id) as AbsenceRow | undefined;
@@ -545,6 +549,35 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 						isActive,
 					};
 			return { type, created: existing === null };
+		},
+
+		removeType(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean {
+			const existing = resolveType(input.id);
+			if (!existing) {
+				return false;
+			}
+			// A type that absences use cannot go: they would lose their meaning (and the foreign key would refuse the
+			// delete anyway). The caller turns this into a message the administration can act on.
+			const used = (countAbsencesOfType.get(input.id) as { count: number }).count;
+			if (used > 0) {
+				throw new ValidationError(`absence type ${existing.code} is still used by ${used} absence(s)`);
+			}
+
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				deleteType.run(input.id);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "absence.type.remove",
+					entity: "absence_type",
+					entityId: input.id,
+					detail: { code: existing.code, name: existing.name },
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+			return true;
 		},
 
 		findById: read,

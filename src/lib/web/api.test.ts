@@ -706,6 +706,41 @@ describe("web api", () => {
 			expect(invalid.status).to.equal(400);
 			expect(bodyOf(invalid).detail).to.contain("approval must be requested, approved or rejected");
 		});
+
+		it("removes an unused absence type and lists the inactive ones for the administration", async () => {
+			// the administration creates a type and switches it off: employees do not see it any more
+			const created = await send("POST", "/absence-types", {
+				body: { code: "S", name: "Sabbatical", isActive: false },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const typeId = bodyOf<{ type: { id: number } }>(created).type.id;
+
+			const forEmployee = await send("GET", "/absence-types", { headers: headers(annaToken, annaCsrf) });
+			const hidden = bodyOf<{ types: { id: number }[] }>(forEmployee).types;
+			expect(hidden.some(type => type.id === typeId)).to.equal(false);
+
+			const forAdmin = await send("GET", "/absence-types", {
+				query: { includeInactive: "true" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			const seen = bodyOf<{ types: { id: number; isActive: boolean }[] }>(forAdmin).types;
+			expect(seen.some(type => type.id === typeId && type.isActive === false)).to.equal(true);
+
+			// an employee may not remove a type
+			const denied = await send("DELETE", `/absence-types/${typeId}`, { headers: headers(annaToken, annaCsrf) });
+			expect(denied.status).to.equal(403);
+
+			const removed = await send("DELETE", `/absence-types/${typeId}`, {
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(removed.status).to.equal(204);
+			const gone = await send("GET", "/absence-types", {
+				query: { includeInactive: "true" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(bodyOf<{ types: { id: number }[] }>(gone).types.some(type => type.id === typeId)).to.equal(false);
+		});
 	});
 
 	describe("field validation and negative cases", () => {

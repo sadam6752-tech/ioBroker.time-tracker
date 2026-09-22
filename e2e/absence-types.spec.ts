@@ -46,4 +46,13 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 	await expect(editDialog.getByLabel("Kürzel")).toHaveValue("T");
 	await editDialog.getByRole("button", { name: "Abbrechen" }).click();
 	await expect(editDialog).toBeHidden();
+
+	// a type that nothing uses can be removed again
+	await testRow.getByRole("button", { name: "Löschen" }).click();
+	const confirm = page.getByRole("dialog");
+	await expect(confirm.getByText("Art löschen")).toBeVisible();
+	await expect(confirm.getByText("T – Testart", { exact: false })).toBeVisible();
+	await confirm.getByTestId("absence-type-remove-save").click();
+	await expect(confirm).toBeHidden();
+	await expect(card.getByText("T – Testart")).toHaveCount(0);
 });

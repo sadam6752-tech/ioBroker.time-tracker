@@ -402,5 +402,11 @@
 	"absences.state.requested": "solicitado",
 	"absences.state.approved": "aprobado",
 	"absences.state.rejected": "rechazado",
-	"absences.reason": "Motivo"
+	"absences.reason": "Motivo",
+	"role.admin": "Administrador",
+	"role.manager": "Responsable",
+	"role.employee": "Empleado",
+	"admin.absenceTypes.remove": "Eliminar",
+	"admin.absenceTypes.removeTitle": "Eliminar el tipo",
+	"admin.absenceTypes.removeConfirm": "¿Eliminar «{{name}}» de verdad? Las ausencias que aún usan este tipo deben borrarse o cambiarse primero."
 }

@@ -1540,9 +1540,16 @@ export function createApi(deps: ApiDeps): Api {
 
 	// master data: absence types, holidays and instance settings
 
-	route("GET", "/absence-types", {}, context =>
-		json(200, { types: absences.types({ userId: context.auth?.user.id ?? null }) }),
-	);
+	// The administration sees the types that are switched off as well — that is what “active” is for: an inactive type
+	// stays out of the picker of the employees, while the administration can still book it for somebody.
+	route("GET", "/absence-types", {}, context => {
+		const includeInactive =
+			context.query("includeInactive") === "true" &&
+			(context.auth?.permissions.includes("absence.manage_types") ?? false);
+		return json(200, {
+			types: absences.types({ userId: context.auth?.user.id ?? null, includeInactive }),
+		});
+	});
 
 	route("POST", "/absence-types", { permission: "absence.manage_types", csrf: true }, context => {
 		if (!context.auth) {
@@ -1562,6 +1569,22 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		return json(result.created ? 201 : 200, { type: result.type, created: result.created });
+	});
+
+	route("DELETE", "/absence-types/:id", { permission: "absence.manage_types", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const removed = absences.removeType({
+			id: numberParam(context, "id"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		if (!removed) {
+			throw new NotFoundError(`absence type ${context.params.id} not found`);
+		}
+		return noContent();
 	});
 
 	route("GET", "/holidays", { permission: "report.view_own" }, context => {

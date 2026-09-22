@@ -402,5 +402,11 @@
 	"absences.state.requested": "złożony",
 	"absences.state.approved": "zatwierdzony",
 	"absences.state.rejected": "odrzucony",
-	"absences.reason": "Powód"
+	"absences.reason": "Powód",
+	"role.admin": "Administrator systemu",
+	"role.manager": "Kierownik",
+	"role.employee": "Pracownik",
+	"admin.absenceTypes.remove": "Usuń",
+	"admin.absenceTypes.removeTitle": "Usuń rodzaj",
+	"admin.absenceTypes.removeConfirm": "Naprawdę usunąć „{{name}}”? Nieobecności, które nadal używają tego rodzaju, trzeba najpierw usunąć lub zmienić."
 }

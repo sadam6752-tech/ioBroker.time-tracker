@@ -402,5 +402,11 @@
 	"absences.state.requested": "beantragt",
 	"absences.state.approved": "genehmigt",
 	"absences.state.rejected": "abgelehnt",
-	"absences.reason": "Begründung"
+	"absences.reason": "Begründung",
+	"role.admin": "Administrator",
+	"role.manager": "Manager",
+	"role.employee": "Mitarbeiter",
+	"admin.absenceTypes.remove": "Löschen",
+	"admin.absenceTypes.removeTitle": "Art löschen",
+	"admin.absenceTypes.removeConfirm": "„{{name}}“ wirklich entfernen? Abwesenheiten, die diese Art noch nutzen, müssen zuerst gelöscht oder umgestellt werden."
 }

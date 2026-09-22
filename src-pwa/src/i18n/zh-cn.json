@@ -402,5 +402,11 @@
 	"absences.state.requested": "已申请",
 	"absences.state.approved": "已批准",
 	"absences.state.rejected": "已拒绝",
-	"absences.reason": "原因"
+	"absences.reason": "原因",
+	"role.admin": "管理员",
+	"role.manager": "主管",
+	"role.employee": "员工",
+	"admin.absenceTypes.remove": "删除",
+	"admin.absenceTypes.removeTitle": "删除类型",
+	"admin.absenceTypes.removeConfirm": "确实要删除「{{name}}」吗？仍在使用该类型的缺勤必须先删除或更改。"
 }

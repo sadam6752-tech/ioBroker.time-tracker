@@ -1377,6 +1377,25 @@ export function createApi(deps: ApiDeps): Api {
 		const mayDecide = context.auth.permissions.includes("absence.edit_other");
 		const approval: AbsenceApproval = mayDecide ? "approved" : "requested";
 
+		// An employee may only pick a type the administration released for everybody: a sickness note, an accident or
+		// military service are things the company books itself, nobody requests them.
+		if (!mayDecide) {
+			const wanted = absences.findType(
+				optionalNumber(body, "typeId") ?? optionalString(body, "typeCode") ?? "",
+				userId,
+			);
+			if (!wanted) {
+				throw new ValidationError("unknown absence type");
+			}
+			if (!wanted.isActive) {
+				throw problem(
+					403,
+					"permission_denied",
+					"request rejected (permission_denied: absence type is not public)",
+				);
+			}
+		}
+
 		const created = absences.create({
 			userId,
 			typeCode: optionalString(body, "typeCode") ?? undefined,
@@ -1483,6 +1502,25 @@ export function createApi(deps: ApiDeps): Api {
 			...(Object.prototype.hasOwnProperty.call(body, "note") ? { note: optionalString(body, "note") } : {}),
 		};
 		const hasFields = Object.values(patch).some(value => value !== undefined);
+
+		// The same guard as in POST /absences: an employee may not move an absence to a type that is not public.
+		if (
+			hasFields &&
+			!context.auth?.permissions.includes("absence.edit_other") &&
+			(patch.typeId !== undefined || patch.typeCode !== undefined)
+		) {
+			const wanted = absences.findType(patch.typeId ?? patch.typeCode ?? "", absence.userId);
+			if (!wanted) {
+				throw new ValidationError("unknown absence type");
+			}
+			if (!wanted.isActive) {
+				throw problem(
+					403,
+					"permission_denied",
+					"request rejected (permission_denied: absence type is not public)",
+				);
+			}
+		}
 
 		if (status !== null) {
 			absences.setStatus({

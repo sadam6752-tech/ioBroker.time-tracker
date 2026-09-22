@@ -59,7 +59,10 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 	const to = localDate(183);
 
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
-	const types = useQuery({ queryKey: ["absence-types"], queryFn: () => api.absenceTypes() });
+	const types = useQuery({
+		queryKey: ["absence-types", "all"],
+		queryFn: () => api.absenceTypes(true),
+	});
 	const list = useQuery({
 		queryKey: ["absences", "overview", from, to],
 		queryFn: () => api.absencesOverview(from, to),

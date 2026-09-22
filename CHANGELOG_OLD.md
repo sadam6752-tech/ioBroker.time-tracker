@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.3.3 (2026-09-22)
+
+- (Alex) fix: the installation chapter no longer points to the dialog that installs an adapter from a URL — the
+  repository checker reports that as `E6013` (“suggests to install the adapter directly from GitHub, directly from npm
+  or using npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the
+  registry for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources.
+  The troubleshooting row for a missing web app no longer carries npm commands either
+
 ### 0.3.2 (2026-09-22)
 
 - (Alex) fix: the automation rules are a **list** now — one row per rule with its caption, kind, time, target and

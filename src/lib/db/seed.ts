@@ -59,15 +59,27 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 	employee: ["time.punch", "time.edit_own", "absence.request", "report.view_own"],
 };
 
-/** Default absence types of the time tracking: code, name, factor, reduces vacation. */
-export const ABSENCE_TYPES: { code: string; name: string; factor: number; reduceVacation: boolean }[] = [
-	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true },
-	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false },
-	{ code: "U", name: "Unfall", factor: 100, reduceVacation: false },
-	{ code: "M", name: "Militär", factor: 100, reduceVacation: false },
-	{ code: "I", name: "Intern", factor: 100, reduceVacation: false },
-	{ code: "W", name: "Weiterbildung", factor: 50, reduceVacation: false },
-	{ code: "E", name: "Extern", factor: 50, reduceVacation: false },
+/**
+ * Default absence types of the time tracking: code, name, factor, reduces vacation, visible for everybody.
+ *
+ * “Visible for everybody” (`active`) says whether an employee may pick the type in the app. Sickness, accident and
+ * military service start switched off: a company gets those notes on the same day and books them itself, while
+ * vacation, further training and the like are requested by the employee.
+ */
+export const ABSENCE_TYPES: {
+	code: string;
+	name: string;
+	factor: number;
+	reduceVacation: boolean;
+	active: boolean;
+}[] = [
+	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true, active: true },
+	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false, active: false },
+	{ code: "U", name: "Unfall", factor: 100, reduceVacation: false, active: false },
+	{ code: "M", name: "Militär", factor: 100, reduceVacation: false, active: false },
+	{ code: "I", name: "Intern", factor: 100, reduceVacation: false, active: true },
+	{ code: "W", name: "Weiterbildung", factor: 50, reduceVacation: false, active: true },
+	{ code: "E", name: "Extern", factor: 50, reduceVacation: false, active: true },
 ];
 
 /** Default instance settings (specification section 2.9.9); existing values are never overwritten. */
@@ -146,10 +158,10 @@ export function seed(db: Db, options: SeedOptions = {}): { permissions: number; 
 
 		const insertAbsenceType = db.prepare(
 			`INSERT OR IGNORE INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active)
-			 VALUES (NULL, ?, ?, 1, ?, ?, 1)`,
+			 VALUES (NULL, ?, ?, 1, ?, ?, ?)`,
 		);
 		for (const type of ABSENCE_TYPES) {
-			insertAbsenceType.run(type.code, type.name, type.factor, type.reduceVacation ? 1 : 0);
+			insertAbsenceType.run(type.code, type.name, type.factor, type.reduceVacation ? 1 : 0, type.active ? 1 : 0);
 		}
 
 		const insertSetting = db.prepare(

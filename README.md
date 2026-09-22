@@ -351,6 +351,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.4.3 (2026-09-22)
+
+- (Alex) change: “active” of an absence type now reads “**visible for everybody**” and means exactly that. Switched on,
+  the employees pick the type in the app and request it (vacation, further training); switched off, the type belongs to
+  the administration alone (sickness, accident, military service — such a note reaches a company on the same day and is
+  booked, not requested). The server refuses an employee a type that is not public (`403`), the administration sees
+  every type in its own lists, and sickness, accident and military service start switched off (migration 22)
+
 ### 0.4.2 (2026-09-22)
 
 - (Alex) fix: the roles appear in the language of the display (the database keeps “Administrator”, “Manager” and
@@ -377,14 +385,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with
   code, name, paid, factor and the vacation deduction. The type that uses up the vacation allowance is marked in the
   lists and in the picker, so “F – Ferien” reads as vacation at one glance
-
-### 0.3.3 (2026-09-22)
-
-- (Alex) fix: the installation chapter no longer points to the dialog that installs an adapter from a URL — the
-  repository checker reports that as `E6013` (“suggests to install the adapter directly from GitHub, directly from npm
-  or using npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the
-  registry for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources.
-  The troubleshooting row for a missing web app no longer carries npm commands either
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

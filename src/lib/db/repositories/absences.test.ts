@@ -53,9 +53,15 @@ describe("absences repository", () => {
 
 	describe("types", () => {
 		it("lists the seeded global types sorted by code", () => {
-			const types = repo.types();
+			// the card of the administration sees every type, the ones that are switched off included
+			const types = repo.types({ includeInactive: true });
 
 			expect(types.map(type => type.code)).to.deep.equal(["E", "F", "I", "K", "M", "U", "W"]);
+			// “sickness”, “accident” and “military service” are for the administration only: without the flag they
+			// stay away, because an employee does not request them
+			expect(repo.types().map(type => type.code)).to.deep.equal(["E", "F", "I", "W"]);
+			expect(types.find(type => type.code === "K")?.isActive).to.equal(false);
+			expect(types.find(type => type.code === "F")?.isActive).to.equal(true);
 			const vacation = types.find(type => type.code === "F");
 			expect(vacation?.name).to.equal("Ferien");
 			expect(vacation?.paid).to.equal(true);

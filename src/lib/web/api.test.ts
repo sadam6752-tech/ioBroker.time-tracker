@@ -741,6 +741,29 @@ describe("web api", () => {
 			});
 			expect(bodyOf<{ types: { id: number }[] }>(gone).types.some(type => type.id === typeId)).to.equal(false);
 		});
+
+		it("lets an employee request only the types that are visible for everybody", async () => {
+			// “K” (sickness) belongs to the administration: an employee neither sees nor requests it
+			const own = await send("GET", "/absence-types", { headers: headers(annaToken, annaCsrf) });
+			const visible = bodyOf<{ types: { code: string }[] }>(own).types.map(type => type.code);
+			expect(visible).to.not.include("K");
+			expect(visible).to.include("F");
+
+			const denied = await send("POST", "/absences", {
+				body: { typeCode: "K", dateFrom: "2026-09-15" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(denied.status).to.equal(403);
+			expect(bodyOf(denied).detail).to.contain("absence type is not public");
+
+			// the administration books the sickness herself
+			const booked = await send("POST", "/absences", {
+				body: { userId: annaId, typeCode: "K", dateFrom: "2026-09-15" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(booked.status).to.equal(201);
+			expect(bodyOf<{ absence: { typeCode: string } }>(booked).absence.typeCode).to.equal("K");
+		});
 	});
 
 	describe("field validation and negative cases", () => {

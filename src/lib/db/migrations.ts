@@ -657,4 +657,16 @@ export const migrations: Migration[] = [
 			db.exec("CREATE INDEX IF NOT EXISTS idx_absences_approval ON absences(approval, date_from)");
 		},
 	},
+	{
+		version: 22,
+		name: "absence types: sickness, accident and military are for the administration only",
+		sql: `
+			-- A sickness note usually reaches a company on the same day, so nobody “requests” it: the administration
+			-- books it. “Visible for everybody” (is_active) therefore starts switched off for these three types, so an
+			-- employee does not find them in the app. The administration can switch it on again in the card of the
+			-- absence types at any time.
+			UPDATE absence_types SET is_active = 0
+			 WHERE user_id IS NULL AND code IN ('K','U','M') AND is_active = 1;
+		`,
+	},
 ];

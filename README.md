@@ -36,15 +36,17 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 
 ## Installation
 
-1. In the ioBroker admin: *Adapters* → **“Install from custom URL”** → `iobroker.time-tracker`, or
-   `iobroker install iobroker.time-tracker` on the command line. **The instance `time-tracker.0` is created
-   automatically** — `iobroker add time-tracker` is only needed if you want the instance on its own.
-   An installation from Git or from a checkout does not work on its own: `build/` and `www/` are built and not
-   part of the repository. Either use the npm package, or build once in the adapter directory
-   (`npm ci && npm run install:pwa && npm run build:pwa && npm run build`, then `iobroker install .`).
+1. Install the adapter in the ioBroker admin: **Adapters** → filter for *time-tracker* → install. On a machine
+   without the admin the same package can be installed from the registry with `iobroker install iobroker.time-tracker`.
+   **The instance `time-tracker.0` is created automatically** — `iobroker add time-tracker` is only needed if you want
+   the instance on its own.
 2. Start the instance and open the web app on the port of the instance settings (default **8092**):
    `http://<ioBroker host>:8092/`
 3. Log in with the start password (see [First start](#first-start)) and create your employees.
+
+> **For work on the sources** the adapter is built in the repository: `npm ci && npm run install:pwa &&
+> npm run build:pwa && npm run build`, then `iobroker install .`. `build/` and `www/` are built and not part of the
+> repository, so a plain Git installation does not work on its own.
 
 ## First start
 
@@ -312,7 +314,7 @@ the adapter and switch **Trust the reverse proxy** on: the adapter then takes th
 
 | Problem                                | Cause and fix                                                                                            |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/` answers `404 not_found`            | the web app is missing: install the npm package or build it (`npm run install:pwa && npm run build:pwa`) |
+| `/` answers `404 not_found`            | the web app is missing: reinstall the adapter — the package ships the built web app in `www/`            |
 | Not installable as an app on the phone | the page is not reachable over HTTPS — see above                                                         |
 | The PDF refuses or shows empty boxes   | `report_font_path` is missing — see [Reports](#reports)                                                  |
 | A restore seems to do nothing          | it is applied on the next start: restart the instance                                                    |
@@ -353,6 +355,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.3.3 (2026-09-22)
+
+- (Alex) fix: the installation chapter no longer points to the “Install from custom URL” dialog — the repository
+  checker reports that as `E6013` (“suggests to install the adapter directly from GitHub, directly from npm or using
+  npm commands”). It now leads with the normal way through the adapter list of the ioBroker admin, names the registry
+  for a machine without the admin and keeps the build steps in a clearly marked note for work on the sources. The
+  troubleshooting row for a missing web app no longer carries npm commands either
+
 ### 0.3.2 (2026-09-22)
 
 - (Alex) fix: the automation rules are a **list** now — one row per rule with its caption, kind, time, target and
@@ -389,12 +399,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) test: the end-to-end suite is deterministic again — the correction spec anchors its “forgotten day” inside the
   local day (`now - 8h` fell on the day before when the suite ran shortly after midnight and left the employee
   present for the specs that follow), and the presence spec puts its employee into a known state before it asserts
-
-### 0.2.6 (2026-09-22)
-
-- (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows
-  up in `events.*` (`lastType`, `lastUser`, `lastDirection`, `lastSource`) and reaches the web app live. The punch was
-  stored in the database but never sent to the event bus, so the event states kept the previous punch
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

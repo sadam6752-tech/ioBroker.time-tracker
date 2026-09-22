@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.6 (2026-09-22)
+
+- (Alex) fix: a punch from the presence state (`users.<id>.present`) is published like every other one now — it shows
+  up in `events.*` (`lastType`, `lastUser`, `lastDirection`, `lastSource`) and reaches the web app live. The punch was
+  stored in the database but never sent to the event bus, so the event states kept the previous punch
+
 ### 0.2.5 (2026-09-21)
 
 - (Alex) docs: the installation chapter leads with the normal way now — install the npm package (`iobroker install

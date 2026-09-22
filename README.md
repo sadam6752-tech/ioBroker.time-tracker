@@ -355,6 +355,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.4.0 (2026-09-22)
+
+- (Alex) new: the administration decides about absences. A request of an employee waits as `requested` and counts for
+  nothing until somebody approves or rejects it — the new tab **Abwesenheiten** shows the open requests (with a reason
+  for the decision), lets the administration enter dates for an employee (approved right away) and answers “who is
+  away”. Only approved days reach the working time and the vacation balance, the state of a request is marked in the
+  app and a rejection carries its reason back (migration 21, `POST /absences/:id/approval`)
+
 ### 0.3.4 (2026-09-22)
 
 - (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with
@@ -385,15 +393,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   it grow beyond 0. The API adds the minutes of an open punch to its answer now, the tile shows that value directly,
   and the board refreshes every 20 s (was 60 s). The API test moves the clock ten minutes and expects the open punch
   in the answer
-
-### 0.3.0 (2026-09-22)
-
-- (Alex) new: the presence board can show the working time of today on the employee tiles — `1:23` next to
-  `Present`/`Away` (`0:00` before the first punch), and the tile keeps counting while the employee is present. It is
-  switched on **per employee** in the work profile (*Arbeitszeit auf der Anwesenheitskarte*, off by default), because
-  the board is visible before the PIN is entered — the decision is made on the server, the API only sends the minutes
-  for employees who agreed (`/terminal/users` and `/terminal/punch`). The new column
-  `work_profiles.show_worked_time` arrives with migration 20
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

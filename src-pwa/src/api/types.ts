@@ -150,6 +150,14 @@ export interface Absence {
 	dayPortion: number;
 	hours: number | null;
 	status: string;
+	/** Workflow: `requested` waits for a decision, `approved` counts, `rejected` came back */
+	approval: string;
+	/** Instant of the decision, UTC epoch seconds */
+	decidedAt?: number | null;
+	/** Employee who decided about the request */
+	decidedBy?: number | null;
+	/** Reason of the decision, shown to the employee */
+	decisionNote?: string | null;
 	note: string | null;
 }
 

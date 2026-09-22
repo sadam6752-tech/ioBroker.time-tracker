@@ -629,4 +629,32 @@ export const migrations: Migration[] = [
 			ALTER TABLE work_profiles ADD COLUMN show_worked_time INTEGER NOT NULL DEFAULT 0;
 		`,
 	},
+	{
+		version: 21,
+		name: "absences: approval by the administration (requested, approved, rejected)",
+		run: (db: Db): void => {
+			// An employee requests, the administration decides. `approval` is separate from `status`, which keeps
+			// saying whether the days are planned or already taken: a request can be planned and still wait for
+			// its decision. Everything that exists before this migration counts as approved, so no figure changes
+			// for a running installation; a request of an employee starts as `requested`.
+			if (!hasColumn(db, "absences", "approval")) {
+				db.exec(
+					"ALTER TABLE absences ADD COLUMN approval TEXT NOT NULL DEFAULT 'approved' " +
+						"CHECK (approval IN ('requested','approved','rejected'))",
+				);
+			}
+			// Who decided when and why — a rejection without a reason is not much use to the employee.
+			if (!hasColumn(db, "absences", "decided_at")) {
+				db.exec("ALTER TABLE absences ADD COLUMN decided_at INTEGER");
+			}
+			if (!hasColumn(db, "absences", "decided_by")) {
+				db.exec("ALTER TABLE absences ADD COLUMN decided_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
+			}
+			if (!hasColumn(db, "absences", "decision_note")) {
+				db.exec("ALTER TABLE absences ADD COLUMN decision_note TEXT");
+			}
+			// The administration looks at the open requests first, so they get an index of their own.
+			db.exec("CREATE INDEX IF NOT EXISTS idx_absences_approval ON absences(approval, date_from)");
+		},
+	},
 ];

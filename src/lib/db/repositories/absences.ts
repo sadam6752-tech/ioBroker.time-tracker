@@ -14,6 +14,29 @@ import { diffFields, writeAuditLog } from "./audit";
 /** Status of an absence: requested/planned or already taken. */
 export type AbsenceStatus = "taken" | "planned";
 
+/**
+ * Approval of an absence: the employee requests, the administration decides.
+ *
+ * Independent of {@link AbsenceStatus}, which says whether the days are planned or already taken — a request can be
+ * planned and still wait for its decision. Rows that exist before migration 21 count as `approved`, so nothing
+ * changes for a running installation.
+ */
+export type AbsenceApproval = "requested" | "approved" | "rejected";
+
+/**
+ * True when an absence counts for the calculation.
+ *
+ * A row counts unless it is a request that still waits for its decision or a rejected one. Everything else is
+ * effective — including rows that predate migration 21 and therefore carry no value at all.
+ *
+ * @param absence - the absence to check
+ * @param absence.approval - approval of the absence, missing on rows that predate migration 21
+ * @returns true when the days count
+ */
+export function isApproved(absence: { approval?: AbsenceApproval }): boolean {
+	return absence.approval !== "requested" && absence.approval !== "rejected";
+}
+
 /** An absence type (global when `userId` is `null`, otherwise user specific). */
 export interface AbsenceTypeRecord {
 	/** Primary key */
@@ -76,6 +99,14 @@ export interface AbsenceRecord {
 	hours: number | null;
 	/** Requested or already taken */
 	status: AbsenceStatus;
+	/** Approval of the administration: requested, approved or rejected */
+	approval: AbsenceApproval;
+	/** Instant of the decision, UTC epoch seconds (`null` while nobody decided) */
+	decidedAt: number | null;
+	/** Who decided about the request */
+	decidedBy: number | null;
+	/** Reason of the decision, shown to the employee */
+	decisionNote: string | null;
 	/** Free-form note */
 	note: string | null;
 	/** Instant of creation, UTC epoch seconds */
@@ -116,6 +147,8 @@ export interface CreateAbsenceInput {
 	hours?: number | null;
 	/** Status, default `planned` (a request that still needs approval) */
 	status?: AbsenceStatus;
+	/** Approval, default `approved` (the administration enters dates, an employee requests them) */
+	approval?: AbsenceApproval;
 	/** Free-form note */
 	note?: string | null;
 	/** Who creates the absence */
@@ -185,6 +218,15 @@ export interface AbsencesRepository {
 		actorIp?: string | null;
 		now?: number;
 	}): AbsenceRecord;
+	/** Approves or rejects a request of an employee and audits the decision */
+	setApproval(input: {
+		id: number;
+		approval: AbsenceApproval;
+		note?: string | null;
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): AbsenceRecord;
 	/** Deletes an absence by id */
 	remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 	/** Absences of one user within an optional period, sorted by start date */
@@ -193,6 +235,8 @@ export interface AbsencesRepository {
 	forDate(userId: number, date: string): AbsenceRecord[];
 	/** Absences overlapping a range, including their type information */
 	withTypesInRange(userId: number, from: string, to: string): AbsenceWithType[];
+	/** Absences of **all** employees overlapping a range — the overview of the administration */
+	allInRange(from: string, to: string): AbsenceWithType[];
 }
 
 interface AbsenceTypeRow {
@@ -215,6 +259,10 @@ interface AbsenceRow {
 	day_portion: number;
 	hours: number | null;
 	status: AbsenceStatus;
+	approval: AbsenceApproval;
+	decided_at: number | null;
+	decided_by: number | null;
+	decision_note: string | null;
 	note: string | null;
 	created_at: number;
 	created_by: number | null;
@@ -229,7 +277,7 @@ interface AbsenceWithTypeRow extends AbsenceRow {
 }
 
 const TYPE_COLUMNS = "id, user_id, code, name, paid, factor, reduce_vacation, is_active";
-const ABSENCE_COLUMNS = `id, user_id, type_id, date_from, date_to, day_portion, hours, status, note,
+const ABSENCE_COLUMNS = `id, user_id, type_id, date_from, date_to, day_portion, hours, status, approval, decided_at, decided_by, decision_note, note,
 \tcreated_at, created_by`;
 
 /** Field names of an absence that are compared for the audit trail. */
@@ -270,6 +318,10 @@ export function mapAbsenceRow(row: AbsenceRow): AbsenceRecord {
 		dayPortion: row.day_portion,
 		hours: row.hours,
 		status: row.status,
+		approval: row.approval,
+		decidedAt: row.decided_at,
+		decidedBy: row.decided_by,
+		decisionNote: row.decision_note,
 		note: row.note,
 		createdAt: row.created_at,
 		createdBy: row.created_by,
@@ -323,24 +375,38 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 		 ORDER BY date_from, date_to, id`,
 	);
 	const selectWithTypes = db.prepare(
-		`SELECT a.id, a.user_id, a.type_id, a.date_from, a.date_to, a.day_portion, a.hours, a.status, a.note,
-		        a.created_at, a.created_by,
+		`SELECT a.id, a.user_id, a.type_id, a.date_from, a.date_to, a.day_portion, a.hours, a.status, a.approval,
+		        a.decided_at, a.decided_by, a.decision_note, a.note, a.created_at, a.created_by,
 		        t.code AS type_code, t.name AS type_name, t.paid AS type_paid, t.factor AS type_factor,
 		        t.reduce_vacation AS type_reduce_vacation
 		 FROM absences a JOIN absence_types t ON t.id = a.type_id
 		 WHERE a.user_id = ? AND a.date_to >= ? AND a.date_from <= ?
 		 ORDER BY a.date_from, a.date_to, a.id`,
 	);
+	// the same list for the administration: every employee in one answer, so the overview needs one request
+	const selectAllWithTypes = db.prepare(
+		`SELECT a.id, a.user_id, a.type_id, a.date_from, a.date_to, a.day_portion, a.hours, a.status, a.approval,
+		        a.decided_at, a.decided_by, a.decision_note, a.note, a.created_at, a.created_by,
+		        t.code AS type_code, t.name AS type_name, t.paid AS type_paid, t.factor AS type_factor,
+		        t.reduce_vacation AS type_reduce_vacation
+		 FROM absences a JOIN absence_types t ON t.id = a.type_id
+		 WHERE a.date_to >= ? AND a.date_from <= ?
+		 ORDER BY a.date_from, a.date_to, a.user_id, a.id`,
+	);
 	const insertAbsence = db.prepare(
 		`INSERT INTO absences
-		 (user_id, type_id, date_from, date_to, day_portion, hours, status, note, created_at, created_by)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, type_id, date_from, date_to, day_portion, hours, status, approval, decided_at, decided_by,
+		  decision_note, note, created_at, created_by)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	);
 	const updateAbsence = db.prepare(
 		`UPDATE absences SET type_id = ?, date_from = ?, date_to = ?, day_portion = ?, hours = ?, note = ?
 		 WHERE id = ?`,
 	);
 	const updateStatusStatement = db.prepare("UPDATE absences SET status = ? WHERE id = ?");
+	const updateApprovalStatement = db.prepare(
+		"UPDATE absences SET approval = ?, decided_at = ?, decided_by = ?, decision_note = ? WHERE id = ?",
+	);
 	const deleteAbsence = db.prepare("DELETE FROM absences WHERE id = ?");
 	const insertType = db.prepare(
 		`INSERT INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active)
@@ -492,7 +558,11 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 			}
 			const dayPortion = requireDayPortion(input.dayPortion ?? 1);
 			const status: AbsenceStatus = input.status ?? "planned";
+			// the administration enters dates straight away, a request of an employee waits for its decision
+			const approval: AbsenceApproval = input.approval ?? "approved";
 			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const decidedAt = approval === "requested" ? null : now;
+			const decidedBy = approval === "requested" ? null : input.actorId;
 
 			let absenceId = 0;
 			const run = db.transaction((): void => {
@@ -504,6 +574,10 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 					dayPortion,
 					input.hours ?? null,
 					status,
+					approval,
+					decidedAt,
+					decidedBy,
+					null,
 					input.note ?? null,
 					now,
 					input.actorId,
@@ -637,6 +711,44 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 			return updated;
 		},
 
+		setApproval(input: {
+			id: number;
+			approval: AbsenceApproval;
+			note?: string | null;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): AbsenceRecord {
+			const current = read(input.id);
+			if (!current) {
+				throw new NotFoundError(`absence ${input.id} not found`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+
+			const run = db.transaction((): void => {
+				updateApprovalStatement.run(input.approval, now, input.actorId, input.note ?? null, input.id);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "absence.approval",
+					entity: "absence",
+					entityId: input.id,
+					detail: {
+						changes: { approval: { old: current.approval, new: input.approval } },
+						...(input.note ? { note: input.note } : {}),
+					},
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			const updated = read(input.id);
+			if (!updated) {
+				throw new Error(`absence ${input.id} disappeared right after the decision`);
+			}
+			return updated;
+		},
+
 		remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean {
 			const current = read(input.id);
 			if (!current) {
@@ -681,6 +793,21 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 		withTypesInRange(userId: number, from: string, to: string): AbsenceWithType[] {
 			const rows = selectWithTypes.all(
 				userId,
+				requireDate(from, "from"),
+				requireDate(to, "to"),
+			) as AbsenceWithTypeRow[];
+			return rows.map(row => ({
+				...mapAbsenceRow(row),
+				typeCode: row.type_code,
+				typeName: row.type_name,
+				paid: row.type_paid !== 0,
+				factor: row.type_factor,
+				reduceVacation: row.type_reduce_vacation !== 0,
+			}));
+		},
+
+		allInRange(from: string, to: string): AbsenceWithType[] {
+			const rows = selectAllWithTypes.all(
 				requireDate(from, "from"),
 				requireDate(to, "to"),
 			) as AbsenceWithTypeRow[];

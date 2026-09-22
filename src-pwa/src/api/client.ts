@@ -158,14 +158,19 @@ export interface ApiClient {
 		reduceVacation?: boolean;
 		isActive?: boolean;
 	}): Promise<AbsenceType>;
-	/** Requests an absence */
+	/** Requests an absence; the administration may name the employee */
 	createAbsence(input: {
+		userId?: number;
 		typeCode: string;
 		dateFrom: string;
 		dateTo?: string;
 		dayPortion?: number;
 		note?: string;
 	}): Promise<Absence>;
+	/** Absences of every employee in a period (needs `absence.approve`) */
+	absencesOverview(from: string, to: string): Promise<Absence[]>;
+	/** Approves or rejects a request (needs `absence.approve`) */
+	decideAbsence(id: number, approval: "approved" | "rejected", note?: string): Promise<Absence>;
 	/** Sends queued punches of the offline queue */
 	sync(punches: { idempotencyKey: string; tsUtc: number; direction?: string; note?: string }[]): Promise<{
 		accepted: number;
@@ -922,6 +927,20 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 
 		async createAbsence(input): Promise<Absence> {
 			const result = await request<{ absence: Absence }>("POST", "/absences", { body: input });
+			return result.absence;
+		},
+
+		async absencesOverview(from, to): Promise<Absence[]> {
+			const result = await request<{ absences: Absence[] }>("GET", "/absences", {
+				query: { scope: "all", from, to },
+			});
+			return result.absences ?? [];
+		},
+
+		async decideAbsence(id, approval, note): Promise<Absence> {
+			const result = await request<{ absence: Absence }>("POST", `/absences/${id}/approval`, {
+				body: { approval, ...(note ? { note } : {}) },
+			});
 			return result.absence;
 		},
 

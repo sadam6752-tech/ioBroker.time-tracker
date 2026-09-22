@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.3.0 (2026-09-22)
+
+- (Alex) new: the presence board can show the working time of today on the employee tiles — `1:23` next to
+  `Present`/`Away` (`0:00` before the first punch), and the tile keeps counting while the employee is present. It is
+  switched on **per employee** in the work profile (*Arbeitszeit auf der Anwesenheitskarte*, off by default), because
+  the board is visible before the PIN is entered — the decision is made on the server, the API only sends the minutes
+  for employees who agreed (`/terminal/users` and `/terminal/punch`). The new column
+  `work_profiles.show_worked_time` arrives with migration 20
+
 ### 0.2.7 (2026-09-22)
 
 - (Alex) fix: **every** punch path reaches `events.*` and the web app now. Besides the presence state (0.2.6) the

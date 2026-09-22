@@ -12,6 +12,7 @@
 
 import type { Db } from "../db/database";
 import type { AbsencesRepository, AbsenceWithType } from "../db/repositories/absences";
+import { isApproved } from "../db/repositories/absences";
 import type { EntriesRepository } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { RulesRepository } from "../db/repositories/rules";
@@ -414,7 +415,8 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 	 * @returns the covering absence or `null`
 	 */
 	const absenceFor = (userId: number, date: string): AbsenceWithType | null => {
-		const covering = absences.withTypesInRange(userId, date, date);
+		// a request waits for its decision and a rejected one never counts: only effective days are credited
+		const covering = absences.withTypesInRange(userId, date, date).filter(isApproved);
 		let best: AbsenceWithType | null = null;
 		for (const absence of covering) {
 			const share = (Math.max(0, Math.min(100, absence.factor)) / 100) * absence.dayPortion;
@@ -540,7 +542,8 @@ export function createAggregationService(deps: AggregationDeps): AggregationServ
 	}): number => {
 		const year = Number(args.to.slice(0, 4));
 		const holidayDates = holidays.dateSet(year, holidayRegion());
-		const overlapping = absences.withTypesInRange(args.userId, args.from, args.to);
+		// only effective days count — a request still waits for its decision, a rejected one never counts
+		const overlapping = absences.withTypesInRange(args.userId, args.from, args.to).filter(isApproved);
 
 		let days = 0;
 		for (const absence of overlapping) {

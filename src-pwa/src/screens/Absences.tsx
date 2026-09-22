@@ -6,6 +6,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
 import CardContent from "@mui/material/CardContent";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
@@ -130,14 +131,24 @@ export function Absences(): React.JSX.Element {
 										? ` – ${formatDate(absence.dateTo, i18n.language)}`
 										: ""
 								}${typeSuffix(absence.typeCode)}`}
-								secondary={`${t("absences.portion")}: ${absence.dayPortion}`}
+								secondary={`${t("absences.portion")}: ${absence.dayPortion}${
+									absence.approval === "rejected" && absence.decisionNote
+										? ` · ${t("absences.reason")}: ${absence.decisionNote}`
+										: ""
+								}`}
 							>
-								<Typography
-									variant="body2"
-									color="text.secondary"
-								>
-									{absence.status}
-								</Typography>
+								<Chip
+									size="small"
+									color={
+										absence.approval === "approved"
+											? "success"
+											: absence.approval === "rejected"
+												? "default"
+												: "warning"
+									}
+									variant={absence.approval === "approved" ? "filled" : "outlined"}
+									label={t(`absences.state.${absence.approval}`)}
+								/>
 							</ActionRow>
 						))}
 					</List>

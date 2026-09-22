@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { openAndMigrate, type Db } from "../database";
 import { seed } from "../seed";
 import { createUsersRepository, type UsersRepository } from "./users";
-import { createAbsencesRepository, UnknownAbsenceTypeError, type AbsencesRepository } from "./absences";
+import { createAbsencesRepository, isApproved, UnknownAbsenceTypeError, type AbsencesRepository } from "./absences";
 
 describe("absences repository", () => {
 	let db: Db;
@@ -299,6 +299,76 @@ describe("absences repository", () => {
 			repo.setStatus({ id: absence.id, status: "taken", actorId: adminId });
 			expect(countAudit("absence.status")).to.equal(1);
 			expect(() => repo.setStatus({ id: 999, status: "taken", actorId: adminId })).to.throw(
+				"absence 999 not found",
+			);
+		});
+
+		it("lets an employee request an absence and the administration decide", () => {
+			// an employee asks: the days wait as `requested` and count for nothing until somebody decides
+			const requested = repo.create({
+				userId: annaId,
+				typeCode: "F",
+				dateFrom: "2026-07-20",
+				status: "planned",
+				approval: "requested",
+				actorId: annaId,
+				now: 1000,
+			});
+			expect(requested.approval).to.equal("requested");
+			expect(requested.decidedAt).to.equal(null);
+			expect(requested.decidedBy).to.equal(null);
+			expect(isApproved(requested)).to.equal(false);
+
+			const approved = repo.setApproval({
+				id: requested.id,
+				approval: "approved",
+				actorId: adminId,
+				actorIp: "10.0.0.1",
+				now: 2000,
+			});
+			expect(approved.approval).to.equal("approved");
+			expect(approved.decidedAt).to.equal(2000);
+			expect(approved.decidedBy).to.equal(adminId);
+			expect(isApproved(approved)).to.equal(true);
+			expect(countAudit("absence.approval")).to.equal(1);
+			expect(lastDetail("absence.approval")).to.deep.equal({
+				changes: { approval: { old: "requested", new: "approved" } },
+			});
+
+			// a rejection carries the reason the employee reads in the app
+			const rejected = repo.setApproval({
+				id: requested.id,
+				approval: "rejected",
+				note: "Betriebsferien",
+				actorId: adminId,
+				now: 3000,
+			});
+			expect(rejected.decisionNote).to.equal("Betriebsferien");
+			expect(isApproved(rejected)).to.equal(false);
+			expect(lastDetail("absence.approval")).to.deep.equal({
+				changes: { approval: { old: "approved", new: "rejected" } },
+				note: "Betriebsferien",
+			});
+
+			// what the administration enters itself is approved right away
+			const booked = repo.create({
+				userId: annaId,
+				typeCode: "F",
+				dateFrom: "2026-08-03",
+				actorId: adminId,
+				now: 4000,
+			});
+			expect(booked.approval).to.equal("approved");
+			expect(booked.decidedAt).to.equal(4000);
+			expect(booked.decidedBy).to.equal(adminId);
+
+			// the overview of the administration sees every employee and carries the approval
+			const range = repo.allInRange("2026-07-01", "2026-08-31");
+			expect(range.map(absence => absence.id)).to.include(requested.id);
+			expect(range.some(absence => absence.userId === annaId && absence.approval === "approved")).to.equal(true);
+			expect(range.every(absence => typeof absence.approval === "string")).to.equal(true);
+
+			expect(() => repo.setApproval({ id: 999, approval: "approved", actorId: adminId })).to.throw(
 				"absence 999 not found",
 			);
 		});

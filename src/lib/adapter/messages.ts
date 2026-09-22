@@ -17,6 +17,7 @@
  */
 
 import type { AbsencesRepository } from "../db/repositories/absences";
+import { isApproved } from "../db/repositories/absences";
 import type { EntriesRepository } from "../db/repositories/entries";
 import type { SettingsRepository } from "../db/repositories/settings";
 import type { UserRecord, UsersRepository } from "../db/repositories/users";
@@ -170,14 +171,18 @@ function statementInput(
 		year,
 		month,
 		days: deps.aggregation.days(user.id, first, last),
-		absences: deps.absences.withTypesInRange(user.id, first, last).map(absence => ({
-			typeCode: absence.typeCode,
-			typeName: absence.typeName,
-			dateFrom: absence.dateFrom,
-			dateTo: absence.dateTo,
-			dayPortion: absence.dayPortion,
-			hours: absence.hours,
-		})),
+		// only effective absences are listed: a request still waits for its decision, a rejected one never counts
+		absences: deps.absences
+			.withTypesInRange(user.id, first, last)
+			.filter(isApproved)
+			.map(absence => ({
+				typeCode: absence.typeCode,
+				typeName: absence.typeName,
+				dateFrom: absence.dateFrom,
+				dateTo: absence.dateTo,
+				dayPortion: absence.dayPortion,
+				hours: absence.hours,
+			})),
 		generatedAt: timestamp,
 		generator: `time-tracker ${deps.version ?? ""}`.trim(),
 	};

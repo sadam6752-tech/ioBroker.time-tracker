@@ -34,6 +34,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { CorrectionsTab } from "./CorrectionsTab";
+import { AbsencesTab } from "./AbsencesTab";
 import BackupIcon from "@mui/icons-material/Backup";
 import DownloadIcon from "@mui/icons-material/Download";
 import RestoreIcon from "@mui/icons-material/Restore";
@@ -3643,6 +3644,10 @@ export function Admin(): React.JSX.Element {
 	// correcting punches is the everyday administrative task, so it sits right next to the employees
 	if (hasPermission(permissions, "time.edit_other")) {
 		tabs.push({ label: t("admin.corrections"), render: () => <CorrectionsTab language={i18n.language} /> });
+	}
+	// absences: the requests of the employees wait here for their decision, and “who is away” is answered here
+	if (hasPermission(permissions, "absence.approve")) {
+		tabs.push({ label: t("admin.absences.title"), render: () => <AbsencesTab language={i18n.language} /> });
 	}
 	if (hasPermission(permissions, "terminal.manage")) {
 		tabs.push({ label: t("admin.terminals"), render: () => <TerminalsTab language={i18n.language} /> });

@@ -656,6 +656,56 @@ describe("web api", () => {
 			expect(approved.status).to.equal(200);
 			expect(bodyOf<{ absence: { status: string } }>(approved).absence.status).to.equal("taken");
 		});
+
+		it("carries a request through the decision of the administration", async () => {
+			// an employee requests: the answer names the request as such
+			const created = await send("POST", "/absences", {
+				body: { typeCode: "F", dateFrom: "2026-08-10", dateTo: "2026-08-14" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const requested = bodyOf<{ absence: { id: number; approval: string; decidedAt: number | null } }>(created);
+			expect(requested.absence.approval).to.equal("requested");
+			expect(requested.absence.decidedAt).to.equal(null);
+
+			// the administration finds it in its overview
+			const overview = await send("GET", "/absences", {
+				query: { scope: "all", from: "2026-08-01", to: "2026-08-31" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(overview.status).to.equal(200);
+			const seen = bodyOf<{ absences: { id: number; userId: number; approval: string }[] }>(overview).absences;
+			expect(seen.some(absence => absence.id === requested.absence.id)).to.equal(true);
+			expect(seen.every(absence => typeof absence.approval === "string")).to.equal(true);
+
+			// the employee may not decide about the own request
+			const denied = await send("POST", `/absences/${requested.absence.id}/approval`, {
+				body: { approval: "approved" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(denied.status).to.equal(403);
+
+			// the administration rejects it and hands the reason over
+			const rejected = await send("POST", `/absences/${requested.absence.id}/approval`, {
+				body: { approval: "rejected", note: "Betriebsferien" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(rejected.status).to.equal(200);
+			const decided = bodyOf<{ absence: { approval: string; decisionNote: string; decidedAt: number } }>(
+				rejected,
+			);
+			expect(decided.absence.approval).to.equal("rejected");
+			expect(decided.absence.decisionNote).to.equal("Betriebsferien");
+			expect(decided.absence.decidedAt).to.be.a("number");
+
+			// an unknown decision is refused
+			const invalid = await send("POST", `/absences/${requested.absence.id}/approval`, {
+				body: { approval: "vielleicht" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(invalid.status).to.equal(400);
+			expect(bodyOf(invalid).detail).to.contain("approval must be requested, approved or rejected");
+		});
 	});
 
 	describe("field validation and negative cases", () => {

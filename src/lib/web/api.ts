@@ -18,7 +18,8 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 
 import type { Db } from "../db/database";
-import type { AbsencesRepository, AbsenceRecord } from "../db/repositories/absences";
+import type { AbsencesRepository, AbsenceApproval, AbsenceRecord } from "../db/repositories/absences";
+import { isApproved } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
 import type {
 	AutomationKind,
@@ -1338,6 +1339,20 @@ export function createApi(deps: ApiDeps): Api {
 	};
 
 	route("GET", "/absences", { permission: "report.view_own" }, context => {
+		// `scope=all` is the overview of the administration: every employee in one answer, so the tab needs a single
+		// request. The open requests and “who is away” both read from here. A path segment would clash with
+		// `/absences/:id`, which the router matches first — hence the query parameter.
+		if (context.query("scope") === "all") {
+			if (!context.auth?.permissions.includes("absence.approve")) {
+				throw problem(403, "permission_denied", "request rejected (permission_denied: absence.approve)");
+			}
+			const from = context.query("from");
+			const to = context.query("to");
+			if (!from || !to) {
+				throw new ValidationError("from and to are required with scope=all");
+			}
+			return json(200, { absences: absences.allInRange(from, to).map(publicAbsence) });
+		}
 		const requested = context.query("userId") ? Number(context.query("userId")) : null;
 		const userId = resolveScope(context, requested, "report.view_own", "report.view_other");
 		const year = context.query("year") ? Number(context.query("year")) : undefined;
@@ -1357,6 +1372,10 @@ export function createApi(deps: ApiDeps): Api {
 		if (status !== null && status !== "taken" && status !== "planned") {
 			throw new ValidationError(`status must be taken or planned (got ${status})`);
 		}
+		// The administration books dates straight away, an employee only requests them: who may change an absence
+		// of somebody else decides about it, everybody else waits for that decision.
+		const mayDecide = context.auth.permissions.includes("absence.edit_other");
+		const approval: AbsenceApproval = mayDecide ? "approved" : "requested";
 
 		const created = absences.create({
 			userId,
@@ -1367,6 +1386,7 @@ export function createApi(deps: ApiDeps): Api {
 			dayPortion: optionalNumber(body, "dayPortion") ?? undefined,
 			hours: optionalNumber(body, "hours"),
 			status: status ?? undefined,
+			approval,
 			note: optionalString(body, "note"),
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
@@ -1393,6 +1413,30 @@ export function createApi(deps: ApiDeps): Api {
 			now: now(),
 		});
 		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "status" } });
+		return json(200, { absence: publicAbsence(updated) });
+	});
+
+	// The other decision: the administration approves or rejects what an employee asked for. The reason travels
+	// with the decision, so the employee sees why a request came back.
+	route("POST", "/absences/:id/approval", { permission: "absence.approve", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const approval = requireString(body, "approval");
+		if (approval !== "requested" && approval !== "approved" && approval !== "rejected") {
+			throw new ValidationError(`approval must be requested, approved or rejected (got ${approval})`);
+		}
+
+		const updated = absences.setApproval({
+			id: numberParam(context, "id"),
+			approval,
+			note: optionalString(body, "note"),
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "approval" } });
 		return json(200, { absence: publicAbsence(updated) });
 	});
 
@@ -1450,7 +1494,7 @@ export function createApi(deps: ApiDeps): Api {
 			});
 		}
 
-		const updated = hasFields
+		const changed = hasFields
 			? absences.update({
 					id: absence.id,
 					patch,
@@ -1460,6 +1504,20 @@ export function createApi(deps: ApiDeps): Api {
 					now: now(),
 				})
 			: (absences.findById(absence.id) ?? absence);
+
+		// An employee who changes a request asks again: the decision of the administration belonged to the old
+		// dates. Who may change absences of somebody else decides as well, so nothing goes back for them.
+		const updated =
+			hasFields && !context.auth?.permissions.includes("absence.edit_other") && changed.approval !== "requested"
+				? absences.setApproval({
+						id: changed.id,
+						approval: "requested",
+						note: null,
+						actorId: context.auth?.user.id ?? 0,
+						actorIp: context.request.remoteAddress ?? null,
+						now: now(),
+					})
+				: changed;
 
 		emit({ type: "absence.change", userId: updated.userId, data: { absenceId: updated.id, action: "updated" } });
 		return json(200, { absence: publicAbsence(updated) });
@@ -3250,14 +3308,18 @@ export function createApi(deps: ApiDeps): Api {
 				year,
 				month,
 				days: aggregation.days(userId, first, last),
-				absences: absences.withTypesInRange(userId, first, last).map(absence => ({
-					typeCode: absence.typeCode,
-					typeName: absence.typeName,
-					dateFrom: absence.dateFrom,
-					dateTo: absence.dateTo,
-					dayPortion: absence.dayPortion,
-					hours: absence.hours,
-				})),
+				// the document only lists effective absences — a request waits for its decision
+				absences: absences
+					.withTypesInRange(userId, first, last)
+					.filter(isApproved)
+					.map(absence => ({
+						typeCode: absence.typeCode,
+						typeName: absence.typeName,
+						dateFrom: absence.dateFrom,
+						dateTo: absence.dateTo,
+						dayPortion: absence.dayPortion,
+						hours: absence.hours,
+					})),
 				generatedAt: timestamp,
 				generator: `time-tracker ${deps.version ?? ""}`.trim(),
 			},

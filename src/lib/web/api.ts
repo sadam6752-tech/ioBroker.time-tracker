@@ -2694,7 +2694,13 @@ export function createApi(deps: ApiDeps): Api {
 					: candidates.filter(user => terminal.userIds.includes(user.id));
 			return json(200, {
 				users: visible.map(user => {
-					const day = aggregation.day(user.id, localDate(timestamp, user.timezone));
+					// The aggregate counts finished punches only. While a punch is open, the time that passed since
+					// it started is added here, so the board shows the time that really passed. (A break that the
+					// pause rules deduct later is not part of this - the next punch brings the exact value.)
+					const date = localDate(timestamp, user.timezone);
+					const day = aggregation.recalculateDay(user.id, date, { now: timestamp });
+					const open = day?.hasOpenEntry ? entries.listByDate(user.id, date).at(-1) : undefined;
+					const runningMin = open ? Math.max(0, Math.floor((timestamp - open.tsUtc) / 60)) : 0;
 					// The worked time of the day travels only for employees whose work profile allows it: the
 					// presence screen is visible before the PIN is entered, so the decision stays with the
 					// administration - and it is made here, not in the browser.
@@ -2703,7 +2709,7 @@ export function createApi(deps: ApiDeps): Api {
 						id: user.id,
 						displayName: user.displayName,
 						present: day?.hasOpenEntry === true,
-						workedMin: showWorkedTime ? (day?.workedMin ?? 0) : undefined,
+						workedMin: showWorkedTime ? (day?.workedMin ?? 0) + runningMin : undefined,
 						// the picture is fetched by the browser from its own route; the session of this device travels
 						// in the query, so a plain `<img>` can load it
 						avatarUrl: user.avatar

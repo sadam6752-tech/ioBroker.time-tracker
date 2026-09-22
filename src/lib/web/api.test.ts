@@ -1721,6 +1721,20 @@ describe("web api", () => {
 				)?.workedMin,
 			).to.equal(480);
 
+			// The board shows the running time of an open punch — the day aggregate alone counts finished pairs.
+			// The clock moves ten minutes (the terminal session lives fifteen), and the punch starts ten minutes
+			// in the past: the board has to show those ten minutes without anybody punching again.
+			await send("POST", "/terminal/punch", { body: { terminalSession, userId: annaId, pin: "1234" } });
+			clock += 10 * 60;
+			await send("POST", "/terminal/punch", {
+				body: { terminalSession, userId: annaId, pin: "1234", tsUtc: clock - 10 * 60 },
+			});
+			const board = await send("GET", "/terminal/users", { query: { terminalSession } });
+			const running = bodyOf<{ users: { id: number; workedMin?: number }[] }>(board).users.find(
+				user => user.id === annaId,
+			)?.workedMin;
+			expect(running, "the open punch counts with the ten minutes it runs").to.be.at.least(10);
+
 			const heartbeat = await send("POST", "/terminal/heartbeat", { body: { terminalSession } });
 			expect(heartbeat.status).to.equal(200);
 			expect(bodyOf(heartbeat)).to.deep.include({ status: "ok" });

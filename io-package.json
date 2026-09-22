@@ -1,9 +1,22 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.3.0",
+		"version": "0.3.1",
 		"nogit": true,
 		"news": {
+			"0.3.1": {
+				"en": "fix: the presence board shows the running working time of the day now. The API adds the minutes of an open punch to its answer (the stored day aggregate only changes on a punch, so the value stood still), the tile shows that value directly and the board refreshes every 20 seconds instead of 60",
+				"de": "fix: die Anwesenheitskarte zeigt jetzt die wirklich laufende Arbeitszeit des Tages. Die API rechnet die Minuten eines offenen Stempels in ihre Antwort ein (das gespeicherte Tagesaggregat ändert sich nur bei einem Stempel, deshalb stand der Wert still), die Kachel zeigt diesen Wert direkt und die Karte aktualisiert alle 20 Sekunden statt alle 60",
+				"ru": "исправление: карточка присутствия теперь показывает действительно текущее рабочее время дня. API добавляет минуты открытой отметки в свой ответ (сохранённый агрегат дня меняется только при отметке, поэтому значение стояло), плитка показывает это значение напрямую, а карточка обновляется каждые 20 секунд вместо 60",
+				"pt": "correção: o cartão de presença mostra agora o tempo de trabalho realmente a correr. A API soma os minutos de uma marcação aberta à sua resposta (o agregado diário guardado só muda numa marcação, por isso o valor ficava parado), a placa mostra esse valor diretamente e o cartão atualiza a cada 20 segundos em vez de 60",
+				"nl": "fix: het aanwezigheidsbord toont nu de echt lopende werktijd van de dag. De API telt de minuten van een open stempeling bij het antwoord op (het opgeslagen dagsaldo verandert alleen bij een stempeling, daarom stond de waarde stil), de tegel toont die waarde direct en het bord ververst elke 20 seconden in plaats van 60",
+				"fr": "correctif : le tableau de présence affiche désormais le temps de travail réellement en cours. L'API ajoute les minutes d'un pointage ouvert à sa réponse (l'agrégat journalier enregistré ne change qu'à un pointage, la valeur restait donc figée), la tuile affiche directement cette valeur et le tableau se rafraîchit toutes les 20 secondes au lieu de 60",
+				"it": "correzione: la bacheca delle presenze mostra ora il tempo di lavoro realmente in corso. L'API somma i minuti di una timbratura aperta alla sua risposta (l'aggregato giornaliero salvato cambia solo con una timbratura, perciò il valore restava fermo), la scheda mostra quel valore direttamente e la bacheca si aggiorna ogni 20 secondi invece di 60",
+				"es": "corrección: el tablero de presencia muestra ahora el tiempo de trabajo realmente en curso. La API suma los minutos de un fichaje abierto a su respuesta (el agregado diario guardado solo cambia con un fichaje, por eso el valor se quedaba parado), la tarjeta muestra ese valor directamente y el tablero se actualiza cada 20 segundos en lugar de 60",
+				"pl": "poprawka: tablica obecności pokazuje teraz rzeczywiście biegnący czas pracy dnia. API dolicza minuty otwartego wpisu do swojej odpowiedzi (zapisany agregat dnia zmienia się tylko przy wpisie, dlatego wartość stała), kafelek pokazuje tę wartość bezpośrednio, a tablica odświeża się co 20 sekund zamiast co 60",
+				"uk": "виправлення: табло присутності тепер показує дійсно поточний робочий час дня. API додає хвилини відкритої відмітки до своєї відповіді (збережений агрегат дня змінюється лише при відмітці, тому значення стояло), плитка показує це значення напряму, а табло оновлюється кожні 20 секунд замість 60",
+				"zh-cn": "修复：在岗看板现在显示真正持续更新的当天工作时间。API 会在响应中加入未结束打卡的分钟数（已保存的当日汇总只在打卡时变化，因此数值一直不动），卡片直接显示该数值，看板改为每 20 秒刷新一次（原为 60 秒）"
+			},
 			"0.3.0": {
 				"en": "new: the presence board can show the working time of today on the employee tiles — next to `Present`/`Away`, for example `1:23` (and `0:00` before the first punch). It is switched on **per employee** in the work profile (*Arbeitszeit auf der Anwesenheitskarte*), because the board is visible before the PIN is entered; without that permission the API never sends the minutes. While the employee is present the tile keeps counting",
 				"de": "neu: die Anwesenheitskarte kann die heute geleistete Arbeitszeit auf den Mitarbeiter-Kacheln zeigen — neben `Anwesend`/`Abwesend`, z. B. `1:23` (und `0:00` vor dem ersten Stempel). Eingeschaltet wird das **pro Mitarbeiter** im Arbeitsprofil (*Arbeitszeit auf der Anwesenheitskarte*), weil die Karte schon vor der PIN-Eingabe sichtbar ist; ohne diese Freigabe liefert die API die Minuten gar nicht erst. Solange der Mitarbeiter anwesend ist, zählt die Kachel weiter",
@@ -81,19 +94,6 @@
 				"pl": "poprawka: skorygowana definicja obiektu dociera teraz także do istniejących instalacji — `ensureObject` scala pola należące do adaptera (`name`, `type`, `role`, `read`, `write`, `unit`), a nie tylko nazwę, dlatego `commands.punchUserId` otrzyma rolę `level` przy następnym starcie (kontrola `E1011`)",
 				"uk": "виправлення: виправлене визначення об'єкта тепер доходить і до наявних установок — `ensureObject` об'єднує поля, якими володіє адаптер (`name`, `type`, `role`, `read`, `write`, `unit`), а не лише назву, тому `commands.punchUserId` отримає роль `level` під час наступного запуску (перевірка `E1011`)",
 				"zh-cn": "修复：修正后的对象定义现在也会到达已有安装 —— `ensureObject` 合并适配器拥有的字段（`name`、`type`、`role`、`read`、`write`、`unit`），而不仅是名称，因此 `commands.punchUserId` 会在下次启动时获得角色 `level`（检查 `E1011`）"
-			},
-			"0.2.2": {
-				"en": "the object structure check is satisfied: every object name carries all eleven languages (`E6001`) and the employee-id command uses the role `level` instead of `value` (`E1011`). The names live in one place and existing installations receive them on the next start",
-				"de": "die Objektstruktur-Prüfung ist erfüllt: jeder Objektname trägt jetzt alle elf Sprachen (`E6001`) und der Mitarbeiter-Id-Befehl nutzt die Rolle `level` statt `value` (`E1011`). Die Namen liegen an einer Stelle, bestehende Installationen erhalten sie beim nächsten Start",
-				"ru": "проверка структуры объектов пройдена: каждое имя объекта теперь содержит все одиннадцать языков (`E6001`), а команда с идентификатором сотрудника использует роль `level` вместо `value` (`E1011`). Имена хранятся в одном месте, существующие установки получат их при следующем запуске",
-				"pt": "a verificação da estrutura dos objetos está satisfeita: cada nome de objeto passa a ter os onze idiomas (`E6001`) e o comando do ID do funcionário usa a função `level` em vez de `value` (`E1011`). Os nomes ficam num único lugar e as instalações existentes recebem-nos no próximo arranque",
-				"nl": "de objectstructuurcontrole is voldaan: elke objectnaam heeft nu alle elf talen (`E6001`) en de opdracht met het medewerker-id gebruikt de rol `level` in plaats van `value` (`E1011`). De namen staan op één plek en bestaande installaties krijgen ze bij de volgende start",
-				"fr": "le contrôle de la structure des objets est satisfait : chaque nom d'objet porte désormais les onze langues (`E6001`) et la commande d'identifiant d'employé utilise le rôle `level` au lieu de `value` (`E1011`). Les noms sont au même endroit et les installations existantes les reçoivent au prochain démarrage",
-				"it": "il controllo della struttura degli oggetti è soddisfatto: ogni nome di oggetto ora porta tutte e undici le lingue (`E6001`) e il comando con l'ID del dipendente usa il ruolo `level` invece di `value` (`E1011`). I nomi stanno in un unico posto e le installazioni esistenti li ricevono al prossimo avvio",
-				"es": "la comprobación de la estructura de objetos está satisfecha: cada nombre de objeto lleva ahora los once idiomas (`E6001`) y el comando del ID del empleado usa el rol `level` en lugar de `value` (`E1011`). Los nombres están en un solo lugar y las instalaciones existentes los reciben en el próximo arranque",
-				"pl": "kontrola struktury obiektów jest spełniona: każda nazwa obiektu ma teraz wszystkie jedenaście języków (`E6001`), a polecenie z identyfikatorem pracownika używa roli `level` zamiast `value` (`E1011`). Nazwy są w jednym miejscu, a istniejące instalacje otrzymają je przy następnym starcie",
-				"uk": "перевірку структури об'єктів пройдено: кожна назва об'єкта тепер містить усі одинадцять мов (`E6001`), а команда з ідентифікатором співробітника використовує роль `level` замість `value` (`E1011`). Назви лежать в одному місці, наявні установки отримають їх під час наступного запуску",
-				"zh-cn": "对象结构检查已满足：每个对象名称现在都包含全部十一种语言（`E6001`），员工 ID 命令使用角色 `level` 而不是 `value`（`E1011`）。名称集中在一个地方，现有安装会在下次启动时获得它们"
 			}
 		},
 		"titleLang": {

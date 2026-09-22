@@ -353,6 +353,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.3.1 (2026-09-22)
+
+- (Alex) fix: the presence board shows the **real running** time of the day now. Two things kept it frozen:
+  `/terminal/users` answered with the stored day aggregate, which only changes on a punch (it counts finished
+  pairs), and the tile “ticker” measured the seconds since the last server answer — a refresh every 60 s never let
+  it grow beyond 0. The API adds the minutes of an open punch to its answer now, the tile shows that value directly,
+  and the board refreshes every 20 s (was 60 s). The API test moves the clock ten minutes and expects the open punch
+  in the answer
+
 ### 0.3.0 (2026-09-22)
 
 - (Alex) new: the presence board can show the working time of today on the employee tiles — `1:23` next to
@@ -385,14 +394,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   iobroker.time-tracker` or the admin’s “Install from custom URL”), which creates the instance `time-tracker.0`
   automatically. Building from a checkout is only the developer path, and the chapter explains why a Git install
   reports `cannot find start file!` (`build/` and `www/` are not part of the repository)
-
-### 0.2.4 (2026-09-21)
-
-- (Alex) `commands.punchUserId` does what it promises now: writing an employee id selects the employee the punch
-  buttons apply to (`0` = the only employee again), and the adapter mirrors the current choice back into the state.
-  For the user the README has a new *Commands (states)* section and `docs/erste-schritte.md` explains all six command
-  states — both with copy-ready examples and the two traps (buttons act on `true` only, a wrong period answers in the
-  log)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

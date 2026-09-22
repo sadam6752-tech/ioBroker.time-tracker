@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.4 (2026-09-21)
+
+- (Alex) `commands.punchUserId` does what it promises now: writing an employee id selects the employee the punch
+  buttons apply to (`0` = the only employee again), and the adapter mirrors the current choice back into the state.
+  For the user the README has a new *Commands (states)* section and `docs/erste-schritte.md` explains all six command
+  states — both with copy-ready examples and the two traps (buttons act on `true` only, a wrong period answers in the
+  log)
+
 ### 0.2.3 (2026-09-20)
 
 - (Alex) fix: a corrected object definition really reaches existing installations now — `ensureObject` merges the

@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Wiederholung",
 	"admin.automation.repeatDay": "einmal pro Tag",
 	"admin.automation.repeatWeek": "einmal pro Woche",
-	"admin.settings.setting.report_font_path": "PDF-Schriftdatei"
+	"admin.settings.setting.report_font_path": "PDF-Schriftdatei",
+	"presence.workedToday": "Heute gearbeitet",
+	"admin.user.workedTime": "Arbeitszeit auf der Anwesenheitskarte",
+	"admin.user.workedTimeHint": "Zeigt auf der Anwesenheitskarte die heute geleistete Arbeitszeit (z. B. 1:23). Ohne Stempel steht dort 0:00; ohne diese Freigabe bleibt die Karte bei Anwesend/Abwesend und dem Namen."
 }

@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Ripetizione",
 	"admin.automation.repeatDay": "una volta al giorno",
 	"admin.automation.repeatWeek": "una volta a settimana",
-	"admin.settings.setting.report_font_path": "Carattere per PDF"
+	"admin.settings.setting.report_font_path": "Carattere per PDF",
+	"presence.workedToday": "Lavorato oggi",
+	"admin.user.workedTime": "Tempo di lavoro sulla scheda di presenza",
+	"admin.user.workedTimeHint": "Mostra sulla scheda di presenza il tempo lavorato oggi (per esempio 1:23). Senza timbratura c'è 0:00; senza questa autorizzazione la scheda resta con presente/assente e il nome."
 }

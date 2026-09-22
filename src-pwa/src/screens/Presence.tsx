@@ -24,9 +24,11 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import { useTranslation } from "react-i18next";
 import {
 	api,
+	formatMinutes,
 	formatTime,
 	type TerminalPunchResult,
 	type TerminalSessionResult,
@@ -91,7 +93,25 @@ export function Presence(): React.JSX.Element {
 	const [timeZone, setTimeZone] = useState("UTC");
 	const [clock, setClock] = useState(Math.floor(Date.now() / 1000));
 	const offset = useRef(0);
+	// server instant the figures of the tiles were loaded: while an employee is present, the time that passed
+	// since then is added to the worked minutes of the day, so the tile keeps counting without a request
+	const loadedAt = useRef(0);
 	const branding = useBranding();
+
+	/** Server instant of this device, in seconds. */
+	const serverNow = useCallback((): number => Math.floor(Date.now() / 1000) + offset.current, []);
+
+	/**
+	 * Minutes the tile shows: the worked minutes of the day plus the time since the figures were loaded, as long as
+	 * the employee is present. `undefined` means the work profile of the employee does not allow the display.
+	 *
+	 * @param user - tile of the employee
+	 * @returns minutes of the day, or `undefined`
+	 */
+	const workedMinutes = (user: TerminalUser): number | undefined =>
+		user.workedMin === undefined
+			? undefined
+			: user.workedMin + (user.present ? Math.max(0, Math.floor((clock - loadedAt.current) / 60)) : 0);
 
 	/** Forgets the device token of this device, so the screen asks for a new one. */
 	const forgetToken = useCallback((): void => {
@@ -152,11 +172,12 @@ export function Presence(): React.JSX.Element {
 				onRenewed: setSession,
 			});
 			setUsers(answer.users);
+			loadedAt.current = serverNow();
 			setProblem(null);
 		} catch (error) {
 			setProblem(error);
 		}
-	}, [session, token]);
+	}, [session, token, serverNow]);
 
 	useEffect(() => {
 		void loadUsers();
@@ -216,9 +237,16 @@ export function Presence(): React.JSX.Element {
 			});
 			setConfirmation(result);
 			// the answer carries the new state of the day, so the tile is right without asking again
+			loadedAt.current = serverNow();
 			setUsers(current =>
 				current.map(user =>
-					user.id === result.user.id ? { ...user, present: result.day.hasOpenEntry } : user,
+					user.id === result.user.id
+						? {
+								...user,
+								present: result.day.hasOpenEntry,
+								workedMin: result.day.workedMin ?? user.workedMin,
+							}
+						: user,
 				),
 			);
 			setSelected(null);
@@ -367,11 +395,28 @@ export function Presence(): React.JSX.Element {
 								</Avatar>
 								{/* the state above the name: both lines then have the whole width of the tile */}
 								<Box sx={{ minWidth: 0, flexGrow: 1 }}>
-									<Chip
-										size="small"
-										color={user.present ? "success" : "default"}
-										label={t(user.present ? "presence.present" : "presence.absent")}
-									/>
+									<Stack
+										direction="row"
+										spacing={0.5}
+										sx={{ alignItems: "center" }}
+									>
+										<Chip
+											size="small"
+											color={user.present ? "success" : "default"}
+											label={t(user.present ? "presence.present" : "presence.absent")}
+										/>
+
+										{/* worked time of the day: only when the work profile of the employee allows it */}
+										{workedMinutes(user) !== undefined && (
+											<Chip
+												size="small"
+												variant="outlined"
+												icon={<ScheduleIcon fontSize="small" />}
+												label={formatMinutes(workedMinutes(user) ?? 0)}
+												title={t("presence.workedToday")}
+											/>
+										)}
+									</Stack>
 									<Typography
 										variant="subtitle1"
 										noWrap

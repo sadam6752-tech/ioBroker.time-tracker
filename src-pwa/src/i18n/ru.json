@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Повтор",
 	"admin.automation.repeatDay": "раз в день",
 	"admin.automation.repeatWeek": "раз в неделю",
-	"admin.settings.setting.report_font_path": "Шрифт для PDF"
+	"admin.settings.setting.report_font_path": "Шрифт для PDF",
+	"presence.workedToday": "Отработано сегодня",
+	"admin.user.workedTime": "Рабочее время на карточке присутствия",
+	"admin.user.workedTimeHint": "Показывает на карточке присутствия отработанное сегодня время (например, 1:23). Без отметки там 0:00; без разрешения карточка остаётся с присутствует/отсутствует и именем."
 }

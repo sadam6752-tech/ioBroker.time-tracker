@@ -63,6 +63,9 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
    (4–8 Ziffern) setzen, wenn er am Kiosk per PIN stempeln soll.
    Mit **Foto** hinterlegt man ein Bild des Mitarbeiters (PNG/JPEG/WEBP/GIF bis 256 KB). Es erscheint auf den
    Kacheln des Anwesenheits-Bildschirms und am Kiosk; ohne Bild zeigt die Oberfläche den Platzhalter.
+   Im **Arbeitsprofil** eines Mitarbeiters schaltet **Arbeitszeit auf der Anwesenheitskarte** die heute geleistete
+   Arbeitszeit auf seiner Kachel frei (`1:23`, ohne Stempel `0:00`). Die Karte ist schon **vor** der PIN-Eingabe für
+   alle sichtbar, deshalb entscheidet die Verwaltung das je Mitarbeiter — Standard ist **aus**.
 2. **Verwaltung → Terminals**: Terminal anlegen (PIN-Pflicht an), **Geräte-Token kopieren** und die angezeigte
    Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4. Ohne **PIN-Pflicht** stempelt
    das Gerät ohne PIN: Ausweis scannen oder den Namen auswählen genügt. Eine falsche PIN wird trotzdem abgelehnt.

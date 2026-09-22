@@ -321,6 +321,11 @@ export interface TerminalUser {
 	displayName: string;
 	/** True when the employee has an open punch, so is at the workplace right now */
 	present: boolean;
+	/**
+	 * Minutes worked today, or `undefined` when the work profile of the employee does not allow the presence
+	 * card to show them. The screen adds the time since the answer arrived while the employee is present.
+	 */
+	workedMin?: number;
 	/** Address of the picture of the employee, `null` when none is stored */
 	avatarUrl: string | null;
 }
@@ -331,8 +336,8 @@ export interface TerminalPunchResult {
 	user: { id: number; displayName: string };
 	/** The stored punch */
 	entry: { id: number; tsUtc: number; direction: "in" | "out" | "auto"; localDate: string };
-	/** Figures of that day */
-	day: { workedMin: number; targetMin: number; balanceMin: number; hasOpenEntry: boolean };
+	/** Figures of that day; `workedMin` only when the work profile of the employee allows it */
+	day: { workedMin?: number; targetMin: number; balanceMin: number; hasOpenEntry: boolean };
 }
 
 /** A kiosk terminal as the administration sees it (`GET /terminals`). */

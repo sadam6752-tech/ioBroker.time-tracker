@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Herhaling",
 	"admin.automation.repeatDay": "één keer per dag",
 	"admin.automation.repeatWeek": "één keer per week",
-	"admin.settings.setting.report_font_path": "Lettertype voor PDF"
+	"admin.settings.setting.report_font_path": "Lettertype voor PDF",
+	"presence.workedToday": "Vandaag gewerkt",
+	"admin.user.workedTime": "Werktijd op de aanwezigheidskaart",
+	"admin.user.workedTimeHint": "Toont op de aanwezigheidskaart de vandaag gewerkte tijd (bijvoorbeeld 1:23). Zonder stempeling staat er 0:00; zonder deze vrijgave blijft de kaart bij aanwezig/afwezig en de naam."
 }

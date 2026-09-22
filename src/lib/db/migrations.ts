@@ -620,4 +620,13 @@ export const migrations: Migration[] = [
 			UPDATE holidays SET key = 'corpusChristi' WHERE key IS NULL AND name = 'Corpus Christi';
 		`,
 	},
+	{
+		version: 20,
+		name: "work profiles: whether the presence card shows the working time of the day",
+		sql: `
+			-- The presence screen is visible before the PIN is entered, so showing the worked time of an employee
+			-- is a decision of the administration, per employee. Off by default.
+			ALTER TABLE work_profiles ADD COLUMN show_worked_time INTEGER NOT NULL DEFAULT 0;
+		`,
+	},
 ];

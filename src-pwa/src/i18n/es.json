@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Repetición",
 	"admin.automation.repeatDay": "una vez al día",
 	"admin.automation.repeatWeek": "una vez por semana",
-	"admin.settings.setting.report_font_path": "Fuente para PDF"
+	"admin.settings.setting.report_font_path": "Fuente para PDF",
+	"presence.workedToday": "Trabajado hoy",
+	"admin.user.workedTime": "Tiempo de trabajo en la tarjeta de presencia",
+	"admin.user.workedTimeHint": "Muestra en la tarjeta de presencia el tiempo trabajado hoy (por ejemplo, 1:23). Sin fichaje pone 0:00; sin esta autorización la tarjeta se queda en presente/ausente y el nombre."
 }

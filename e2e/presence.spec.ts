@@ -125,6 +125,20 @@ test("shows who is present, uses the stored picture and the placeholder otherwis
 	// … and an employee without a picture gets the placeholder of the project
 	const adminTile = page.getByRole("button", { name: /E2E Admin/ }).first();
 	await expect(adminTile.locator("img")).toHaveAttribute("src", /\/person\.png$/);
+	// Anna allows the working time of today on the presence card: the tile then shows it next to the state.
+	// Without that permission the API never sends the minutes — the card is visible before the PIN is entered.
+	const allowed = await request.put(`/api/users/${annaId}/profile`, {
+		headers: { "x-session-token": session.token, "x-csrf-token": session.csrfToken },
+		data: { showWorkedTime: true, reason: "e2e test" },
+	});
+	expect(allowed.status()).toBe(200);
+	await page.reload();
+	await expect(page.getByRole("button", { name: /Anna Muster/ }).first()).toContainText("Abwesend");
+	// the tile shows the minutes of the day next to the state; the exact value depends on the punches of the
+	// other specs, so the format is what is checked here (h:mm, and 0:00 when nobody punched yet)
+	await expect(page.getByRole("button", { name: /Anna Muster/ }).first()).toHaveText(
+		/^Abwesend\s*\d{1,2}:\d{2}\s*Anna Muster$/,
+	);
 
 	// tapping the tile asks for the PIN of that employee — entered on the built-in keypad, because the screen
 	// has to work without a keyboard

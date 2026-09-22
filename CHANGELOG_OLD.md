@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.2.3 (2026-09-20)
+
+- (Alex) fix: a corrected object definition really reaches existing installations now — `ensureObject` merges the
+  fields the adapter owns (`name`, `type`, `role`, `read`, `write`, `unit`) instead of only the name. An installation
+  created before 0.2.2 kept its old `role: "value"` on `commands.punchUserId`, so the object structure check still
+  reported `E1011`
+
 ### 0.2.2 (2026-09-20)
 
 - (Alex) object structure check: every object name carries all **eleven languages** now (`E6001`) and the employee-id

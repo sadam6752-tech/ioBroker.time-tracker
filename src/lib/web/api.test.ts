@@ -1696,10 +1696,30 @@ describe("web api", () => {
 				body: { terminalSession, userId: annaId, pin: "1234", tsUtc: 1000 + 8 * 3600 },
 			});
 			expect(byPin.status).to.equal(201);
-			expect(bodyOf<{ day: { hasOpenEntry: boolean; workedMin: number } }>(byPin).day).to.deep.include({
-				hasOpenEntry: false,
+			// Anna has not allowed the working time on the presence card, so the terminal never sees it
+			expect(bodyOf<{ day: { hasOpenEntry: boolean; workedMin?: number } }>(byPin).day.hasOpenEntry).to.equal(
+				false,
+			);
+			expect(bodyOf<{ day: { workedMin?: number } }>(byPin).day.workedMin).to.equal(undefined);
+
+			// with the permission in the work profile the very same answer carries the minutes of the day …
+			users.saveWorkProfile({ userId: annaId, profile: { showWorkedTime: true }, actorId: adminId });
+			const withTime = await send("POST", "/terminal/punch", {
+				body: { terminalSession, userId: annaId, pin: "1234", tsUtc: 1000 + 9 * 3600 },
+			});
+			expect(withTime.status).to.equal(201);
+			expect(bodyOf<{ day: { hasOpenEntry: boolean; workedMin?: number } }>(withTime).day).to.deep.include({
+				hasOpenEntry: true,
 				workedMin: 480,
 			});
+
+			// … and the list of the terminal shows them too
+			const terminalUsers = await send("GET", "/terminal/users", { query: { terminalSession } });
+			expect(
+				bodyOf<{ users: { id: number; workedMin?: number }[] }>(terminalUsers).users.find(
+					user => user.id === annaId,
+				)?.workedMin,
+			).to.equal(480);
 
 			const heartbeat = await send("POST", "/terminal/heartbeat", { body: { terminalSession } });
 			expect(heartbeat.status).to.equal(200);

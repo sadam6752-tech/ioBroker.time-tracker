@@ -512,6 +512,23 @@ function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose:
 								</MenuItem>
 							))}
 						</TextField>
+						<Box>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={current?.showWorkedTime === true}
+										onChange={event => set({ showWorkedTime: event.target.checked })}
+									/>
+								}
+								label={t("admin.user.workedTime")}
+							/>
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.user.workedTimeHint")}
+							</Typography>
+						</Box>
 						<Stack
 							direction="row"
 							spacing={2}

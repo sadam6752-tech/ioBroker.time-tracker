@@ -254,6 +254,8 @@ export interface WorkProfile {
 	holidayFlags: string | null;
 	/** Minutes of the break per day that are paid (0 = the break is not paid at all) */
 	pausePaidMinutes: number;
+	/** True when the presence card shows the working time of today for this employee */
+	showWorkedTime: boolean;
 }
 
 /** One database backup. */

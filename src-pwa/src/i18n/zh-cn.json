@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "重复",
 	"admin.automation.repeatDay": "每天一次",
 	"admin.automation.repeatWeek": "每周一次",
-	"admin.settings.setting.report_font_path": "PDF 字体"
+	"admin.settings.setting.report_font_path": "PDF 字体",
+	"presence.workedToday": "今日已工作",
+	"admin.user.workedTime": "在岗卡片上的工作时间",
+	"admin.user.workedTimeHint": "在在岗卡片上显示今天的工作时间（例如 1:23）。未打卡时显示 0:00；未授权时卡片只显示在岗/缺勤和姓名。"
 }

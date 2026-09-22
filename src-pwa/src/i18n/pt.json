@@ -355,5 +355,8 @@
 	"admin.automation.repeat": "Repetição",
 	"admin.automation.repeatDay": "uma vez por dia",
 	"admin.automation.repeatWeek": "uma vez por semana",
-	"admin.settings.setting.report_font_path": "Fonte para PDF"
+	"admin.settings.setting.report_font_path": "Fonte para PDF",
+	"presence.workedToday": "Trabalhado hoje",
+	"admin.user.workedTime": "Tempo de trabalho no cartão de presença",
+	"admin.user.workedTimeHint": "Mostra no cartão de presença o tempo trabalhado hoje (por exemplo, 1:23). Sem marcação lê-se 0:00; sem esta permissão o cartão mantém presente/ausente e o nome."
 }

@@ -131,6 +131,11 @@ Everything is served on the port of the instance settings:
 | `/terminal?token=…`       | the kiosk screen (badge and PIN)                                              |
 | `/presence?token=…`       | the board “who is at work right now”                                          |
 
+The board shows every employee with the state of the day. The **worked time of today** appears next to it
+(`1:23`, `0:00` before the first punch of the day) once the **work profile** of that employee allows it
+(*Arbeitszeit auf der Anwesenheitskarte*, off by default): the board is visible before the PIN is entered, so the
+administration decides this per employee — the API only sends the minutes for employees who agreed.
+
 ### Terminal (kiosk)
 
 Switch **Enable kiosk terminal** on, then create the device in **Administration → Terminals** and copy the device
@@ -348,6 +353,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.3.0 (2026-09-22)
+
+- (Alex) new: the presence board can show the working time of today on the employee tiles — `1:23` next to
+  `Present`/`Away` (`0:00` before the first punch), and the tile keeps counting while the employee is present. It is
+  switched on **per employee** in the work profile (*Arbeitszeit auf der Anwesenheitskarte*, off by default), because
+  the board is visible before the PIN is entered — the decision is made on the server, the API only sends the minutes
+  for employees who agreed (`/terminal/users` and `/terminal/punch`). The new column
+  `work_profiles.show_worked_time` arrives with migration 20
+
 ### 0.2.7 (2026-09-22)
 
 - (Alex) fix: **every** punch path reaches `events.*` and the web app now. Besides the presence state (0.2.6) the
@@ -379,13 +393,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   For the user the README has a new *Commands (states)* section and `docs/erste-schritte.md` explains all six command
   states — both with copy-ready examples and the two traps (buttons act on `true` only, a wrong period answers in the
   log)
-
-### 0.2.3 (2026-09-20)
-
-- (Alex) fix: a corrected object definition really reaches existing installations now — `ensureObject` merges the
-  fields the adapter owns (`name`, `type`, `role`, `read`, `write`, `unit`) instead of only the name. An installation
-  created before 0.2.2 kept its old `role: "value"` on `commands.punchUserId`, so the object structure check still
-  reported `E1011`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -445,6 +445,7 @@ const PROFILE_FIELDS: (keyof Omit<WorkProfileRecord, "userId">)[] = [
 	"overtimeModel",
 	"holidayFlags",
 	"pausePaidMinutes",
+	"showWorkedTime",
 ];
 
 /**
@@ -522,6 +523,13 @@ function readProfilePatch(body: Record<string, unknown>): Partial<Omit<WorkProfi
 				continue;
 			}
 			patch.pausePaidMinutes = minutes;
+		} else if (key === "showWorkedTime") {
+			// whether the presence card shows the worked time of the day for this employee
+			if (typeof value !== "boolean") {
+				issues.push({ path: key, message: "must be true or false" });
+				continue;
+			}
+			patch.showWorkedTime = value;
 		} else {
 			const number = Number(value);
 			if (!Number.isInteger(number)) {
@@ -2685,16 +2693,24 @@ export function createApi(deps: ApiDeps): Api {
 					? candidates
 					: candidates.filter(user => terminal.userIds.includes(user.id));
 			return json(200, {
-				users: visible.map(user => ({
-					id: user.id,
-					displayName: user.displayName,
-					present: aggregation.day(user.id, localDate(timestamp, user.timezone))?.hasOpenEntry === true,
-					// the picture is fetched by the browser from its own route; the session of this device travels
-					// in the query, so a plain `<img>` can load it
-					avatarUrl: user.avatar
-						? `/api/users/${user.id}/avatar?terminalSession=${encodeURIComponent(terminalSession)}&v=${user.updatedAt}`
-						: null,
-				})),
+				users: visible.map(user => {
+					const day = aggregation.day(user.id, localDate(timestamp, user.timezone));
+					// The worked time of the day travels only for employees whose work profile allows it: the
+					// presence screen is visible before the PIN is entered, so the decision stays with the
+					// administration - and it is made here, not in the browser.
+					const showWorkedTime = users.getWorkProfile(user.id)?.showWorkedTime === true;
+					return {
+						id: user.id,
+						displayName: user.displayName,
+						present: day?.hasOpenEntry === true,
+						workedMin: showWorkedTime ? (day?.workedMin ?? 0) : undefined,
+						// the picture is fetched by the browser from its own route; the session of this device travels
+						// in the query, so a plain `<img>` can load it
+						avatarUrl: user.avatar
+							? `/api/users/${user.id}/avatar?terminalSession=${encodeURIComponent(terminalSession)}&v=${user.updatedAt}`
+							: null,
+					};
+				}),
 			});
 		},
 	);
@@ -2776,7 +2792,9 @@ export function createApi(deps: ApiDeps): Api {
 					localDate: stored.entry.localDate,
 				},
 				day: {
-					workedMin: day.workedMin,
+					// the worked time of the day only when the work profile of the employee allows it: the
+					// presence card is public, so the same rule as in `/terminal/users` applies here
+					workedMin: users.getWorkProfile(user.id)?.showWorkedTime === true ? day.workedMin : undefined,
 					targetMin: day.targetMin,
 					balanceMin: day.balanceMin,
 					hasOpenEntry: day.hasOpenEntry,

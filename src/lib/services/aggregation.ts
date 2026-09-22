@@ -247,6 +247,7 @@ function defaultProfile(userId: number): WorkProfileRecord {
 		overtimeModel: "monthly",
 		holidayFlags: null,
 		pausePaidMinutes: 0,
+		showWorkedTime: false,
 	};
 }
 

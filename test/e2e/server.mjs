@@ -16,7 +16,8 @@ import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = join(here, "..");
+// the server lives in `test/e2e`, so the repository root is two levels up
+const repo = join(here, "..", "..");
 
 const { openAndMigrate } = require(join(repo, "build/lib/db/database.js"));
 const { seed } = require(join(repo, "build/lib/db/seed.js"));

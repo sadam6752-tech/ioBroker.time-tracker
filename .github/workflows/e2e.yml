@@ -1,6 +1,6 @@
 name: E2E (Playwright)
 
-# The browser tests run against the real server code: `e2e/server.mjs` starts the API on an in-memory database and
+# The browser tests run against the real server code: `test/e2e/server.mjs` starts the API on an in-memory database and
 # serves the built web app, so nothing of ioBroker is needed. Only Linux: one browser and one runner are enough.
 on:
   push:

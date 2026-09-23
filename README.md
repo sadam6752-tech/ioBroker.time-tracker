@@ -351,6 +351,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.4.4 (2026-09-23)
+
+- (Alex) fix: the browser tests moved from `e2e/` to `test/e2e/`. The repository checker looks at the imported
+  packages of the sources and skips the `test` directory only, so `@playwright/test` (a dev dependency that the specs
+  use) was reported as `W5042` “used but not found in dependencies”. `playwright.config.ts`, the e2e workflow and the
+  docs follow the new path, the test server computes the repository root one level deeper, and the root
+  `tsconfig.json` leaves the browser tests to their own `test/e2e/tsconfig.json` — they need the DOM types the
+  adapter does not have
+
 ### 0.4.3 (2026-09-22)
 
 - (Alex) change: “active” of an absence type now reads “**visible for everybody**” and means exactly that. Switched on,
@@ -379,12 +388,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   for the decision), lets the administration enter dates for an employee (approved right away) and answers “who is
   away”. Only approved days reach the working time and the vacation balance, the state of a request is marked in the
   app and a rejection carries its reason back (migration 21, `POST /absences/:id/approval`)
-
-### 0.3.4 (2026-09-22)
-
-- (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with
-  code, name, paid, factor and the vacation deduction. The type that uses up the vacation allowance is marked in the
-  lists and in the picker, so “F – Ferien” reads as vacation at one glance
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

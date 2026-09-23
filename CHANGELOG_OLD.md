@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.3.4 (2026-09-22)
+
+- (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with
+  code, name, paid, factor and the vacation deduction. The type that uses up the vacation allowance is marked in the
+  lists and in the picker, so “F – Ferien” reads as vacation at one glance
+
 ### 0.3.3 (2026-09-22)
 
 - (Alex) fix: the installation chapter no longer points to the dialog that installs an adapter from a URL — the

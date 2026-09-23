@@ -1,7 +1,7 @@
 /**
  * Browser tests of the web app.
  *
- * They run against `e2e/server.mjs`, which starts the real API on a throwaway database *file* and serves the built
+ * They run against `test/e2e/server.mjs`, which starts the real API on a throwaway database *file* and serves the built
  * web app — no ioBroker needed. The service worker is blocked on purpose (see `playwright.config.ts`).
  */
 import { expect, test, type Page } from "@playwright/test";

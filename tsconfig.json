@@ -42,6 +42,8 @@
 	"exclude": [
 		"build/**",
 		"node_modules/**",
-		"widgets/**"
+		"widgets/**",
+		// the browser tests run in the browser and need the DOM types: they carry their own tsconfig.json
+		"test/e2e/**"
 	]
 }

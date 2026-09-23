@@ -11,7 +11,7 @@ src-pwa/      Progressive Web App (Vite + React + MUI) — wird nach www/ gebaut
 src-shared/   Typen und Prüfungen, die Adapter und Web-App teilen
 admin/        jsonConfig der Instanz und Übersetzungen (11 Sprachen)
 test/         Paket- und Integrationstests (@iobroker/testing)
-e2e/          Browser-Tests (Playwright, eigener Server ohne ioBroker)
+test/e2e/     Browser-Tests (Playwright, eigener Server ohne ioBroker)
 docs/         Bedienungs-, Technik- und Übersetzer-Dokumentation
 ```
 
@@ -29,7 +29,7 @@ docs/         Bedienungs-, Technik- und Übersetzer-Dokumentation
 | `npm run test:ts`          | Unit-Tests der Adapter-Quellen                                               |
 | `npm run test:package`     | `package.json` / `io-package.json` prüfen                                    |
 | `npm run test:integration` | Adapterstart gegen echten js-controller (packt `build/` und `www/`)          |
-| `npm run e2e`              | Browser-Tests (Playwright) gegen `e2e/server.mjs`                            |
+| `npm run e2e`              | Browser-Tests (Playwright) gegen `test/e2e/server.mjs`                            |
 | `npm run coverage`         | Unit-Tests mit Coverage-Bericht                                              |
 | `npm run translate`        | die 11 Übersetzungsdateien abgleichen                                        |
 | `npm run check:i18n`       | prüfen, dass alle 11 Sprachen vollständig sind                               |
@@ -75,7 +75,7 @@ Laufzeit des Adapters wird davon nichts geladen.
 Deshalb meldet `npx @iobroker/repochecker … --local` das `W5042` („Package … is used in source file(s) but not found
 in dependencies of package.json") für die PWA-Pakete: bei dieser Aufteilung ist das **erwartet** — die Abhängigkeiten
 stehen in `src-pwa/package.json` und sind für den Adapter reine Entwicklungs-Abhängigkeiten. `W5049` (`process.env`
-in `e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
+in `test/e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
 Compact-Mode vor — der Adapter bringt einen eigenen HTTP-Port und eine SQLite-Datei mit und läuft bewusst **nicht** im
 Compact-Mode (`common.compact: false`).
 

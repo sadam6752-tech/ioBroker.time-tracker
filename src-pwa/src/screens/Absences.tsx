@@ -81,6 +81,18 @@ export function Absences(): React.JSX.Element {
 		},
 	});
 
+	/** The own subscription link, `null` while nobody asked for it. */
+	const [feedUrl, setFeedUrl] = useState<string | null>(null);
+	const [copied, setCopied] = useState(false);
+
+	const calendar = useMutation({
+		mutationFn: (rotate: boolean) => api.calendarToken(rotate),
+		onSuccess: (token: string) => {
+			setFeedUrl(`${window.location.origin}/api/calendar.ics?token=${encodeURIComponent(token)}`);
+			setCopied(false);
+		},
+	});
+
 	/**
 	 * Sends the form.
 	 *
@@ -239,6 +251,72 @@ export function Absences(): React.JSX.Element {
 					</CardContent>
 				</Card>
 			)}
+			<Card sx={{ mb: 3 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("absences.calendar")}
+					</Typography>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						sx={{ mb: 1 }}
+					>
+						{t("absences.calendarHint")}
+					</Typography>
+					{feedUrl !== null && (
+						<TextField
+							fullWidth
+							size="small"
+							value={feedUrl}
+							InputProps={{ readOnly: true }}
+							sx={{ mb: 1 }}
+							data-testid="calendar-url"
+						/>
+					)}
+					<Stack
+						direction="row"
+						spacing={1}
+						flexWrap="wrap"
+					>
+						<Button
+							size="small"
+							variant="outlined"
+							disabled={calendar.isPending}
+							data-testid="calendar-request"
+							onClick={() => calendar.mutate(false)}
+						>
+							{t(feedUrl === null ? "absences.calendarShow" : "absences.calendarReload")}
+						</Button>
+						{feedUrl !== null && (
+							<>
+								<Button
+									size="small"
+									data-testid="calendar-copy"
+									onClick={() => {
+										void navigator.clipboard.writeText(feedUrl);
+										setCopied(true);
+									}}
+								>
+									{copied ? t("absences.calendarCopied") : t("absences.calendarCopy")}
+								</Button>
+								<Button
+									size="small"
+									color="warning"
+									disabled={calendar.isPending}
+									data-testid="calendar-rotate"
+									onClick={() => calendar.mutate(true)}
+								>
+									{t("absences.calendarRotate")}
+								</Button>
+							</>
+						)}
+					</Stack>
+					<ErrorAlert error={calendar.error} />
+				</CardContent>
+			</Card>
 		</AppShell>
 	);
 }

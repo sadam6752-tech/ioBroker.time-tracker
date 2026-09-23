@@ -408,5 +408,14 @@
 	"role.employee": "Mitarbeiter",
 	"admin.absenceTypes.remove": "Löschen",
 	"admin.absenceTypes.removeTitle": "Art löschen",
-	"admin.absenceTypes.removeConfirm": "„{{name}}“ wirklich entfernen? Abwesenheiten, die diese Art noch nutzen, müssen zuerst gelöscht oder umgestellt werden."
+	"admin.absenceTypes.removeConfirm": "„{{name}}“ wirklich entfernen? Abwesenheiten, die diese Art noch nutzen, müssen zuerst gelöscht oder umgestellt werden.",
+	"absences.calendar": "Kalender",
+	"absences.calendarHint": "Abonniere deine Abwesenheiten in Google, Outlook oder Apple Kalender. Der Link ist ein Geheimnis — wer ihn hat, sieht deine Abwesenheiten.",
+	"absences.calendarShow": "Kalender-Link anzeigen",
+	"absences.calendarReload": "Link erneut anzeigen",
+	"absences.calendarCopy": "Kopieren",
+	"absences.calendarCopied": "Kopiert",
+	"absences.calendarRotate": "Link erneuern",
+	"admin.absences.year": "Jahresübersicht {{year}}",
+	"admin.absences.yearHint": "Genehmigte Abwesenheitstage je Monat und Mitarbeiter. Beantragte Tage erscheinen hier erst nach der Entscheidung."
 }

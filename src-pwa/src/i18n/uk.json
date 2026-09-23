@@ -408,5 +408,14 @@
 	"role.employee": "Працівник",
 	"admin.absenceTypes.remove": "Видалити",
 	"admin.absenceTypes.removeTitle": "Видалити вид",
-	"admin.absenceTypes.removeConfirm": "Справді видалити «{{name}}»? Відсутності, які ще використовують цей вид, потрібно спочатку видалити або змінити."
+	"admin.absenceTypes.removeConfirm": "Справді видалити «{{name}}»? Відсутності, які ще використовують цей вид, потрібно спочатку видалити або змінити.",
+	"absences.calendar": "Календар",
+	"absences.calendarHint": "Підпишіться на свої відсутності в Google, Outlook або Apple Календарі. Посилання — це таємниця: хто його має, той бачить ваші відсутності.",
+	"absences.calendarShow": "Показати посилання календаря",
+	"absences.calendarReload": "Показати посилання знову",
+	"absences.calendarCopy": "Копіювати",
+	"absences.calendarCopied": "Скопійовано",
+	"absences.calendarRotate": "Оновити посилання",
+	"admin.absences.year": "Огляд року {{year}}",
+	"admin.absences.yearHint": "Схвалені дні відсутності за місяцями й працівниками. Запитані дні з'являються тут лише після рішення."
 }

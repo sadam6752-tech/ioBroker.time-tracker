@@ -764,6 +764,54 @@ describe("web api", () => {
 			expect(booked.status).to.equal(201);
 			expect(bodyOf<{ absence: { typeCode: string } }>(booked).absence.typeCode).to.equal("K");
 		});
+
+		it("serves the calendar feed of an employee and rotates its token", async () => {
+			// the test clock sits at 1970, and the feed looks a year back and to the end of next year
+			const requested = await send("POST", "/absences", {
+				body: { typeCode: "F", dateFrom: "1970-03-02", dateTo: "1970-03-05" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			const absenceId = bodyOf<{ absence: { id: number } }>(requested).absence.id;
+
+			// the employee asks for her subscription link
+			const created = await send("POST", "/calendar/token", { body: {}, headers: headers(annaToken, annaCsrf) });
+			expect(created.status).to.equal(200);
+			const token = bodyOf<{ token: string }>(created).token;
+			expect(token).to.be.a("string");
+			expect(token.length).to.be.greaterThan(20);
+
+			// asking again keeps the token, rotating replaces it
+			const kept = bodyOf<{ token: string }>(
+				await send("POST", "/calendar/token", { body: {}, headers: headers(annaToken, annaCsrf) }),
+			).token;
+			expect(kept).to.equal(token);
+			const rotated = bodyOf<{ token: string }>(
+				await send("POST", "/calendar/token", {
+					body: { rotate: true },
+					headers: headers(annaToken, annaCsrf),
+				}),
+			).token;
+			expect(rotated).to.not.equal(token);
+
+			// the old link is dead, the new one works without a session
+			expect((await send("GET", "/calendar.ics", { query: { token } })).status).to.equal(401);
+
+			const feed = await send("GET", "/calendar.ics", { query: { token: rotated } });
+			expect(feed.status).to.equal(200);
+			expect(feed.headers["content-type"]).to.contain("text/calendar");
+			const document = feed.body.toString();
+			expect(document).to.contain("BEGIN:VCALENDAR");
+			expect(document).to.contain(`UID:absence-${absenceId}@time-tracker`);
+			// DTEND is exclusive, so the day after the last one ends the event
+			expect(document).to.contain("DTSTART;VALUE=DATE:19700302");
+			expect(document).to.contain("DTEND;VALUE=DATE:19700306");
+			// a request that waits for its decision stays tentative
+			expect(document).to.contain("STATUS:TENTATIVE");
+			expect(document).to.contain("SUMMARY:Ferien (F)");
+
+			// a token nobody owns opens nothing
+			expect((await send("GET", "/calendar.ics", { query: { token: "nope" } })).status).to.equal(401);
+		});
 	});
 
 	describe("field validation and negative cases", () => {

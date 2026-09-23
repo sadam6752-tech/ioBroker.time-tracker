@@ -256,3 +256,18 @@ test("requests an absence in the form and finds it in the year", async ({ page, 
 	const stored = (await list.json()) as { absences: { dateFrom: string; dateTo: string }[] };
 	expect(stored.absences.some(entry => entry.dateFrom === "2026-10-05" && entry.dateTo === "2026-10-09")).toBe(true);
 });
+test("shows the calendar subscription link of the own absences", async ({ page }) => {
+	await signIn(page);
+	await page.getByRole("button", { name: "Abwesenheiten" }).click();
+
+	await expect(page.getByText("Kalender", { exact: true })).toBeVisible();
+	await page.getByTestId("calendar-request").click();
+
+	const url = page.getByTestId("calendar-url").locator("input");
+	await expect(url).toHaveValue(/\/api\/calendar\.ics\?token=/);
+
+	// renewing the link hands out a new one, so the old link is dead
+	const first = await url.inputValue();
+	await page.getByTestId("calendar-rotate").click();
+	await expect(url).not.toHaveValue(first);
+});

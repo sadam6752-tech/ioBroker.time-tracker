@@ -669,4 +669,15 @@ export const migrations: Migration[] = [
 			 WHERE user_id IS NULL AND code IN ('K','U','M') AND is_active = 1;
 		`,
 	},
+	{
+		version: 23,
+		name: "users: a private token for the calendar feed",
+		sql: `
+			-- Everybody can subscribe to the own absences in a calendar app (Google, Outlook, Apple). The feed is a
+			-- public route with a secret in the URL, so the token belongs to one employee and can be rotated: a new
+			-- token makes the old link invalid. A missing token simply means “no feed yet”.
+			ALTER TABLE users ADD COLUMN calendar_token TEXT;
+			CREATE UNIQUE INDEX idx_users_calendar_token ON users(calendar_token) WHERE calendar_token IS NOT NULL;
+		`,
+	},
 ];

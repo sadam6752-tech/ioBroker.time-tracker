@@ -25,6 +25,8 @@ export interface UserRecord {
 	email: string | null;
 	/** RFID card id */
 	rfidCard: string | null;
+	/** Secret in the URL of the calendar feed, `null` while no feed is subscribed */
+	calendarToken: string | null;
 	/** False for deactivated accounts */
 	isActive: boolean;
 	/** True while the user has to set a new password */
@@ -167,6 +169,15 @@ export interface UsersRepository {
 	findByLogin(login: string): UserRecord | null;
 	/** Reads a user by the RFID card of the badge terminal */
 	findByRfidCard(card: string): UserRecord | null;
+	/** Looks a user up by the token of his calendar feed */
+	findByCalendarToken(token: string): UserRecord | null;
+	/** Writes a new calendar token (or removes it with `null`) */
+	setCalendarToken(input: {
+		userId: number;
+		token: string | null;
+		actorId?: number | null;
+		now?: number;
+	}): UserRecord;
 	/** Stores or clears the personal kiosk PIN (never written to the audit trail) */
 	setPin(input: {
 		userId: number;
@@ -229,6 +240,7 @@ interface UserRow {
 	display_name: string;
 	email: string | null;
 	rfid_card: string | null;
+	calendar_token: string | null;
 	is_active: number;
 	must_change_pw: number;
 	locale: string;
@@ -271,6 +283,7 @@ export function mapUserRow(row: UserRow): UserRecord {
 		displayName: row.display_name,
 		email: row.email,
 		rfidCard: row.rfid_card,
+		calendarToken: row.calendar_token,
 		isActive: row.is_active !== 0,
 		mustChangePw: row.must_change_pw !== 0,
 		locale: row.locale,
@@ -308,7 +321,7 @@ export function mapWorkProfileRow(row: WorkProfileRow): WorkProfileRecord {
 	};
 }
 
-const USER_COLUMNS = `id, login, password_hash, display_name, email, rfid_card, is_active,
+const USER_COLUMNS = `id, login, password_hash, display_name, email, rfid_card, calendar_token, is_active,
 \tmust_change_pw, locale, timezone, pin_hash, avatar, created_at, updated_at, last_login_at`;
 
 const PROFILE_COLUMNS = `user_id, percent, weekly_hours, workdays, start_date, end_date, overtime_carryover,
@@ -355,6 +368,8 @@ export function createUsersRepository(db: Db): UsersRepository {
 	const selectById = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`);
 	const selectByLogin = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE login = ? COLLATE NOCASE`);
 	const selectByRfid = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE rfid_card = ? COLLATE NOCASE LIMIT 1`);
+	const selectByCalendarToken = db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE calendar_token = ? LIMIT 1`);
+	const setCalendarTokenStatement = db.prepare("UPDATE users SET calendar_token = ?, updated_at = ? WHERE id = ?");
 	const setPinHash = db.prepare("UPDATE users SET pin_hash = ?, updated_at = ? WHERE id = ?");
 	const setAvatarData = db.prepare("UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?");
 	const selectAll = db.prepare(`SELECT ${USER_COLUMNS} FROM users ORDER BY display_name COLLATE NOCASE, id`);
@@ -524,6 +539,43 @@ export function createUsersRepository(db: Db): UsersRepository {
 		findByRfidCard(card: string): UserRecord | null {
 			const row = selectByRfid.get(card.trim()) as UserRow | undefined;
 			return row ? mapUserRow(row) : null;
+		},
+
+		findByCalendarToken(token: string): UserRecord | null {
+			const row = selectByCalendarToken.get(token.trim()) as UserRow | undefined;
+			return row ? mapUserRow(row) : null;
+		},
+
+		setCalendarToken(input: {
+			userId: number;
+			token: string | null;
+			actorId?: number | null;
+			now?: number;
+		}): UserRecord {
+			if (!read(input.userId)) {
+				throw new NotFoundError(`user ${input.userId} not found`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+			const run = db.transaction((): void => {
+				setCalendarTokenStatement.run(input.token, now, input.userId);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId ?? null,
+					action: "user.calendarToken",
+					entity: "user",
+					entityId: input.userId,
+					// the token is a secret, so the audit trail only records whether there is one
+					detail: { set: input.token !== null },
+					ip: null,
+				});
+			});
+			run();
+
+			const updated = read(input.userId);
+			if (!updated) {
+				throw new Error(`user ${input.userId} disappeared right after the calendar token`);
+			}
+			return updated;
 		},
 
 		setPin(input: {

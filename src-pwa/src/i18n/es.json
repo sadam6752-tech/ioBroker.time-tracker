@@ -408,5 +408,14 @@
 	"role.employee": "Empleado",
 	"admin.absenceTypes.remove": "Eliminar",
 	"admin.absenceTypes.removeTitle": "Eliminar el tipo",
-	"admin.absenceTypes.removeConfirm": "¿Eliminar «{{name}}» de verdad? Las ausencias que aún usan este tipo deben borrarse o cambiarse primero."
+	"admin.absenceTypes.removeConfirm": "¿Eliminar «{{name}}» de verdad? Las ausencias que aún usan este tipo deben borrarse o cambiarse primero.",
+	"absences.calendar": "Calendario",
+	"absences.calendarHint": "Suscríbete a tus ausencias en Google, Outlook o Apple Calendario. El enlace es un secreto: quien lo tenga verá tus ausencias.",
+	"absences.calendarShow": "Mostrar el enlace del calendario",
+	"absences.calendarReload": "Mostrar el enlace de nuevo",
+	"absences.calendarCopy": "Copiar",
+	"absences.calendarCopied": "Copiado",
+	"absences.calendarRotate": "Renovar el enlace",
+	"admin.absences.year": "Visión del año {{year}}",
+	"admin.absences.yearHint": "Días de ausencia aprobados por mes y empleado. Los días solicitados solo aparecen aquí tras la decisión."
 }

@@ -173,6 +173,8 @@ export interface ApiClient {
 	absencesOverview(from: string, to: string): Promise<Absence[]>;
 	/** Approves or rejects a request (needs `absence.approve`) */
 	decideAbsence(id: number, approval: "approved" | "rejected", note?: string): Promise<Absence>;
+	/** Subscription link of the own calendar; `rotate` makes the old link invalid */
+	calendarToken(rotate?: boolean): Promise<string>;
 	/** Sends queued punches of the offline queue */
 	sync(punches: { idempotencyKey: string; tsUtc: number; direction?: string; note?: string }[]): Promise<{
 		accepted: number;
@@ -952,6 +954,13 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				body: { approval, ...(note ? { note } : {}) },
 			});
 			return result.absence;
+		},
+
+		async calendarToken(rotate): Promise<string> {
+			const result = await request<{ token: string }>("POST", "/calendar/token", {
+				body: rotate ? { rotate: true } : {},
+			});
+			return result.token;
 		},
 
 		sync: punches => request("POST", "/entries/sync", { body: { punches } }),

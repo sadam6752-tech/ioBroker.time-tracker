@@ -14,11 +14,11 @@
  *  - reads recalculate the requested period, so a report is always up to date.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 
 import type { Db } from "../db/database";
-import type { AbsencesRepository, AbsenceApproval, AbsenceRecord } from "../db/repositories/absences";
+import type { AbsencesRepository, AbsenceApproval, AbsenceRecord, AbsenceWithType } from "../db/repositories/absences";
 import { isApproved } from "../db/repositories/absences";
 import { readTimeEntryAudit } from "../db/repositories/audit";
 import type {
@@ -1318,6 +1318,90 @@ export function createApi(deps: ApiDeps): Api {
 
 	// absences
 
+	/** Media type of the calendar feed. */
+	const ICAL_CONTENT_TYPE = "text/calendar; charset=utf-8";
+
+	/** How long a calendar app may cache the feed (a hint — Google caches longer anyway). */
+	const CALENDAR_TTL = "PT2H";
+
+	/**
+	 * Escapes a text for an iCalendar value.
+	 *
+	 * @param value - raw text
+	 * @returns the text with the characters iCalendar reserves
+	 */
+	const icalText = (value: string): string =>
+		value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+
+	/**
+	 * Formats an instant as a UTC stamp (`YYYYMMDDTHHMMSSZ`).
+	 *
+	 * @param seconds - UTC epoch seconds
+	 * @returns the iCalendar timestamp
+	 */
+	const icalStamp = (seconds: number): string =>
+		new Date(seconds * 1000)
+			.toISOString()
+			.replace(/[-:]/g, "")
+			.replace(/\.\d{3}/, "");
+
+	/**
+	 * The day after a local date.
+	 *
+	 * iCalendar ends an all-day event **exclusively**: a vacation from the 5th to the 9th has to carry `DTEND` as the
+	 * 10th, otherwise every calendar shows it one day short.
+	 *
+	 * @param date - local date `YYYY-MM-DD`
+	 * @returns the following day
+	 */
+	const dayAfter = (date: string): string => {
+		const [year, month, day] = date.split("-").map(Number);
+		return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+	};
+
+	/**
+	 * Builds the calendar document of one employee.
+	 *
+	 * Days that still wait for their decision are marked `TENTATIVE`, so the employee sees the request but the day is
+	 * not counted as taken. The `UID` is derived from the row id and stays the same across refreshes — that is what
+	 * lets a calendar app update an event instead of adding it again.
+	 *
+	 * @param user - owner of the calendar
+	 * @param list - absences in the period
+	 * @param stamp - instant of the answer (`DTSTAMP`)
+	 * @returns the `VCALENDAR` document
+	 */
+	const calendarDocument = (user: UserRecord, list: AbsenceWithType[], stamp: number): string => {
+		const lines: (string | null)[] = [
+			"BEGIN:VCALENDAR",
+			"VERSION:2.0",
+			"PRODID:-//ioBroker//time-tracker//EN",
+			"CALSCALE:GREGORIAN",
+			"METHOD:PUBLISH",
+			`X-WR-CALNAME:${icalText(`Abwesenheiten ${user.displayName}`)}`,
+			`REFRESH-INTERVAL;VALUE=DURATION:${CALENDAR_TTL}`,
+			`X-PUBLISHED-TTL:${CALENDAR_TTL}`,
+		];
+		for (const absence of list) {
+			// a half day cannot be an all-day event, so the portion travels in the summary
+			const portion = absence.dayPortion < 1 ? ` (${absence.dayPortion})` : "";
+			lines.push(
+				"BEGIN:VEVENT",
+				`UID:absence-${absence.id}@time-tracker`,
+				`DTSTAMP:${icalStamp(stamp)}`,
+				`DTSTART;VALUE=DATE:${absence.dateFrom.replace(/-/g, "")}`,
+				`DTEND;VALUE=DATE:${dayAfter(absence.dateTo).replace(/-/g, "")}`,
+				`SUMMARY:${icalText(`${absence.typeName} (${absence.typeCode})${portion}`)}`,
+				absence.approval === "approved" ? "STATUS:CONFIRMED" : "STATUS:TENTATIVE",
+				absence.note ? `DESCRIPTION:${icalText(absence.note)}` : null,
+				"TRANSP:TRANSPARENT",
+				"END:VEVENT",
+			);
+		}
+		lines.push("END:VCALENDAR");
+		return `${lines.filter(line => line !== null).join("\r\n")}\r\n`;
+	};
+
 	/**
 	 * Adds the code and the name of the type to an absence.
 	 *
@@ -1580,6 +1664,57 @@ export function createApi(deps: ApiDeps): Api {
 
 	// The administration sees the types that are switched off as well — that is what “active” is for: an inactive type
 	// stays out of the picker of the employees, while the administration can still book it for somebody.
+	// The calendar feed: a public route with the secret in the URL, so a phone or a calendar app can subscribe without
+	// a session. It carries the absences of one employee — nobody else sees them through this link.
+	route(
+		"GET",
+		"/calendar.ics",
+		{ public: true, csrf: false, rateLimit: { name: "calendar", limit: 30, windowSeconds: 60 } },
+		context => {
+			const token = (context.query("token") ?? "").trim();
+			const user = token === "" ? null : users.findByCalendarToken(token);
+			if (!user || !user.isActive) {
+				throw problem(401, "invalid_credentials", "the calendar token is not valid");
+			}
+
+			// a window around today keeps the feed small: a year back and to the end of next year
+			const stamp = now();
+			const today = new Date(stamp * 1000);
+			const year = today.getUTCFullYear();
+			const list = absences.withTypesInRange(user.id, `${year - 1}-01-01`, `${year + 1}-12-31`);
+
+			return binary(200, Buffer.from(calendarDocument(user, list, stamp), "utf8"), ICAL_CONTENT_TYPE, {
+				"content-disposition": 'inline; filename="time-tracker.ics"',
+				"cache-control": "no-store",
+			});
+		},
+	);
+
+	// The subscription link of the own calendar: the token is created on the first call and can be rotated, which
+	// invalidates the old link. The administration may ask for the token of somebody else.
+	route("POST", "/calendar/token", { permission: "report.view_own", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const userId = resolveScope(context, optionalNumber(body, "userId"), "report.view_own", "absence.edit_other");
+		const current = users.findById(userId);
+		if (!current) {
+			throw new NotFoundError(`user ${userId} not found`);
+		}
+
+		const rotate = optionalBoolean(body, "rotate") ?? false;
+		const token =
+			rotate || current.calendarToken === null ? randomBytes(32).toString("base64url") : current.calendarToken;
+		const updated = users.setCalendarToken({
+			userId,
+			token,
+			actorId: context.auth.user.id,
+			now: now(),
+		});
+		return json(200, { token: updated.calendarToken });
+	});
+
 	route("GET", "/absence-types", {}, context => {
 		const includeInactive =
 			context.query("includeInactive") === "true" &&

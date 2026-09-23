@@ -408,5 +408,14 @@
 	"role.employee": "员工",
 	"admin.absenceTypes.remove": "删除",
 	"admin.absenceTypes.removeTitle": "删除类型",
-	"admin.absenceTypes.removeConfirm": "确实要删除「{{name}}」吗？仍在使用该类型的缺勤必须先删除或更改。"
+	"admin.absenceTypes.removeConfirm": "确实要删除「{{name}}」吗？仍在使用该类型的缺勤必须先删除或更改。",
+	"absences.calendar": "日历",
+	"absences.calendarHint": "在 Google、Outlook 或 Apple 日历中订阅你的缺勤。该链接是秘密 —— 谁拥有它，谁就能看到你的缺勤。",
+	"absences.calendarShow": "显示日历链接",
+	"absences.calendarReload": "再次显示链接",
+	"absences.calendarCopy": "复制",
+	"absences.calendarCopied": "已复制",
+	"absences.calendarRotate": "更新链接",
+	"admin.absences.year": "{{year}} 年度总览",
+	"admin.absences.yearHint": "按月份与员工显示的已批准缺勤天数。已申请的日期只有在决定之后才会出现在这里。"
 }

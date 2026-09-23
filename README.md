@@ -351,6 +351,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.5.0 (2026-09-23)
+
+- (Alex) new: the own absences can be subscribed in any calendar app. `POST /calendar/token` hands out a personal link
+  (`GET /calendar.ics?token=…`, public and rate limited) whose token can be rotated — that makes the old link invalid.
+  The feed is proper iCalendar: `DTEND` is exclusive (no event loses its last day), half days carry their portion in
+  the summary, a request that waits for its decision is `TENTATIVE`, and the approval state travels in `STATUS`.
+  On top the administration finds a **year overview** in the absence tab: approved days per employee and month, fed by
+  its own request for the calendar year
+
 ### 0.4.4 (2026-09-23)
 
 - (Alex) fix: the browser tests moved from `e2e/` to `test/e2e/`. The repository checker looks at the imported
@@ -380,14 +389,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 - (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in
   `CONTRIBUTING.md` and `docs/entwicklung.md`, so the README stays a manual for users
-
-### 0.4.0 (2026-09-22)
-
-- (Alex) new: the administration decides about absences. A request of an employee waits as `requested` and counts for
-  nothing until somebody approves or rejects it — the new tab **Abwesenheiten** shows the open requests (with a reason
-  for the decision), lets the administration enter dates for an employee (approved right away) and answers “who is
-  away”. Only approved days reach the working time and the vacation balance, the state of a request is marked in the
-  app and a rejection carries its reason back (migration 21, `POST /absences/:id/approval`)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -408,5 +408,14 @@
 	"role.employee": "Medewerker",
 	"admin.absenceTypes.remove": "Verwijderen",
 	"admin.absenceTypes.removeTitle": "Het type verwijderen",
-	"admin.absenceTypes.removeConfirm": "“{{name}}” echt verwijderen? Afwezigheden die dit type nog gebruiken moeten eerst worden verwijderd of gewijzigd."
+	"admin.absenceTypes.removeConfirm": "“{{name}}” echt verwijderen? Afwezigheden die dit type nog gebruiken moeten eerst worden verwijderd of gewijzigd.",
+	"absences.calendar": "Agenda",
+	"absences.calendarHint": "Abonneer je op je afwezigheden in Google, Outlook of Apple Agenda. De link is een geheim — wie hem heeft ziet jouw afwezigheden.",
+	"absences.calendarShow": "Agendalink tonen",
+	"absences.calendarReload": "Link opnieuw tonen",
+	"absences.calendarCopy": "Kopiëren",
+	"absences.calendarCopied": "Gekopieerd",
+	"absences.calendarRotate": "Link vernieuwen",
+	"admin.absences.year": "Jaaroverzicht {{year}}",
+	"admin.absences.yearHint": "Goedgekeurde afwezigheidsdagen per maand en medewerker. Aangevraagde dagen verschijnen hier pas na de beslissing."
 }

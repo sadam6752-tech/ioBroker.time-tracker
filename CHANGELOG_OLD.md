@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.4.0 (2026-09-22)
+
+- (Alex) new: the administration decides about absences. A request of an employee waits as `requested` and counts for
+  nothing until somebody approves or rejects it — the new tab **Abwesenheiten** shows the open requests (with a reason
+  for the decision), lets the administration enter dates for an employee (approved right away) and answers “who is
+  away”. Only approved days reach the working time and the vacation balance, the state of a request is marked in the
+  app and a rejection carries its reason back (migration 21, `POST /absences/:id/approval`)
+
 ### 0.3.4 (2026-09-22)
 
 - (Alex) feat: the absence types can be maintained in the admin now — one row per type and the form in a dialog, with

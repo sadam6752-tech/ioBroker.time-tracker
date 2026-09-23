@@ -42,4 +42,10 @@ test("shows the absence tab and enters an absence for an employee", async ({ pag
 
 	// the request section stays empty, because nothing waits for a decision
 	await expect(page.getByText("Keine offenen Anträge — alles entschieden.")).toBeVisible();
+
+	// the year overview counts the approved days of every employee per month
+	const year = page.getByTestId("absence-year");
+	await expect(year).toBeVisible();
+	await expect(page.getByText("Jahresübersicht", { exact: false })).toBeVisible();
+	await expect(year.locator("tbody tr").first()).toBeVisible();
 });

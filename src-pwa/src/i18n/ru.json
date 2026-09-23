@@ -408,5 +408,14 @@
 	"role.employee": "Сотрудник",
 	"admin.absenceTypes.remove": "Удалить",
 	"admin.absenceTypes.removeTitle": "Удалить вид",
-	"admin.absenceTypes.removeConfirm": "Действительно удалить «{{name}}»? Отсутствия, которые ещё используют этот вид, нужно сначала удалить или изменить."
+	"admin.absenceTypes.removeConfirm": "Действительно удалить «{{name}}»? Отсутствия, которые ещё используют этот вид, нужно сначала удалить или изменить.",
+	"absences.calendar": "Календарь",
+	"absences.calendarHint": "Подпишитесь на свои отсутствия в Google, Outlook или Apple Календаре. Ссылка — секрет: у кого она есть, тот видит ваши отсутствия.",
+	"absences.calendarShow": "Показать ссылку календаря",
+	"absences.calendarReload": "Показать ссылку снова",
+	"absences.calendarCopy": "Копировать",
+	"absences.calendarCopied": "Скопировано",
+	"absences.calendarRotate": "Обновить ссылку",
+	"admin.absences.year": "Обзор года {{year}}",
+	"admin.absences.yearHint": "Одобренные дни отсутствия по месяцам и сотрудникам. Запрошенные дни появляются здесь только после решения."
 }

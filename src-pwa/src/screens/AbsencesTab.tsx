@@ -68,6 +68,34 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 		queryFn: () => api.absencesOverview(from, to),
 	});
 
+	/** The year the overview shows, with its own request (the tab itself looks at a moving window). */
+	const [overviewYear] = useState(() => new Date().getFullYear());
+	const yearFrom = `${overviewYear}-01-01`;
+	const yearTo = `${overviewYear}-12-31`;
+	const yearList = useQuery({
+		queryKey: ["absences", "overview", yearFrom, yearTo],
+		queryFn: () => api.absencesOverview(yearFrom, yearTo),
+	});
+
+	/**
+	 * Counts the days of an absence that fall into one month of the overview.
+	 *
+	 * @param absence - the absence
+	 * @param monthIndex - month of the year (0 = January)
+	 * @returns number of days (half days count as 0.5)
+	 */
+	const daysInMonth = (absence: Absence, monthIndex: number): number => {
+		const first = new Date(Date.UTC(overviewYear, monthIndex, 1)).toISOString().slice(0, 10);
+		const last = new Date(Date.UTC(overviewYear, monthIndex + 1, 0)).toISOString().slice(0, 10);
+		const start = absence.dateFrom > first ? absence.dateFrom : first;
+		const end = absence.dateTo < last ? absence.dateTo : last;
+		if (start > end) {
+			return 0;
+		}
+		const days = Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1;
+		return days * absence.dayPortion;
+	};
+
 	/** The request the dialog decides about, `null` while the dialog is closed. */
 	const [decision, setDecision] = useState<{ absence: Absence; approve: boolean } | null>(null);
 	const [reason, setReason] = useState("");
@@ -103,6 +131,11 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 			await invalidate();
 		},
 	});
+
+	/** Short month names in the language of the display. */
+	const monthNames = Array.from({ length: 12 }, (_unused, index) =>
+		new Intl.DateTimeFormat(language, { month: "short" }).format(new Date(Date.UTC(2026, index, 1))),
+	);
 
 	const all = list.data ?? [];
 	const nameOf = (userId: number): string =>
@@ -197,6 +230,87 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 							)}
 						</>
 					)}
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.absences.year", { year: overviewYear })}
+					</Typography>
+					<ErrorAlert error={yearList.error} />
+					{yearList.isLoading ? (
+						<Loading />
+					) : (
+						<div
+							style={{ overflowX: "auto" }}
+							data-testid="absence-year"
+						>
+							<table style={{ borderCollapse: "collapse", width: "100%" }}>
+								<thead>
+									<tr>
+										<th />
+										{monthNames.map(name => (
+											<th
+												key={name}
+												style={{
+													padding: "2px 4px",
+													fontSize: "0.7rem",
+													textAlign: "center",
+													fontWeight: 400,
+												}}
+											>
+												{name}
+											</th>
+										))}
+									</tr>
+								</thead>
+								<tbody>
+									{(people.data ?? []).map(person => (
+										<tr key={person.id}>
+											<td style={{ paddingRight: 8, whiteSpace: "nowrap", fontSize: "0.85rem" }}>
+												{person.displayName}
+											</td>
+											{monthNames.map((name, monthIndex) => {
+												const days = (yearList.data ?? [])
+													.filter(
+														absence =>
+															absence.userId === person.id &&
+															absence.approval === "approved",
+													)
+													.reduce(
+														(sum, absence) => sum + daysInMonth(absence, monthIndex),
+														0,
+													);
+												return (
+													<td
+														key={`${person.id}-${name}`}
+														style={{
+															textAlign: "center",
+															fontSize: "0.8rem",
+															color: days === 0 ? "inherit" : "#2e7d32",
+															fontWeight: days === 0 ? 400 : 600,
+														}}
+													>
+														{days === 0 ? "·" : days.toLocaleString(language)}
+													</td>
+												);
+											})}
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+					<Typography
+						variant="caption"
+						color="text.secondary"
+					>
+						{t("admin.absences.yearHint")}
+					</Typography>
 				</CardContent>
 			</Card>
 

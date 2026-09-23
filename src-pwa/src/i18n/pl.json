@@ -408,5 +408,14 @@
 	"role.employee": "Pracownik",
 	"admin.absenceTypes.remove": "Usuń",
 	"admin.absenceTypes.removeTitle": "Usuń rodzaj",
-	"admin.absenceTypes.removeConfirm": "Naprawdę usunąć „{{name}}”? Nieobecności, które nadal używają tego rodzaju, trzeba najpierw usunąć lub zmienić."
+	"admin.absenceTypes.removeConfirm": "Naprawdę usunąć „{{name}}”? Nieobecności, które nadal używają tego rodzaju, trzeba najpierw usunąć lub zmienić.",
+	"absences.calendar": "Kalendarz",
+	"absences.calendarHint": "Zaprenumeruj swoje nieobecności w Kalendarzu Google, Outlook lub Apple. Link jest tajemnicą — kto go ma, widzi twoje nieobecności.",
+	"absences.calendarShow": "Pokaż link kalendarza",
+	"absences.calendarReload": "Pokaż link ponownie",
+	"absences.calendarCopy": "Kopiuj",
+	"absences.calendarCopied": "Skopiowano",
+	"absences.calendarRotate": "Odśwież link",
+	"admin.absences.year": "Przegląd roku {{year}}",
+	"admin.absences.yearHint": "Zatwierdzone dni nieobecności według miesiąca i pracownika. Złożone dni pojawiają się tu dopiero po decyzji."
 }

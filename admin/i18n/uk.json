@@ -6,7 +6,7 @@
 	"Bind address": "Адреса прив'язки",
 	"Calculate absences only until today": "Розраховувати відсутності лише до сьогодні",
 	"Database file (empty = adapter data directory)": "Файл бази даних (порожній = каталог даних адаптера)",
-	"Days users may edit on their own": "Дні, які користувачі можуть редагувати самостійно",
+	"Days the offline queue accepts on its own": "Дні, які офлайн-черга приймає самостійно",
 	"Default language for new users": "Мова за умовчанням для нових користувачів",
 	"empty = a random password is written to the adapter log once; it has to be changed at the first login": "порожньо = випадковий пароль один раз записується в журнал адаптера; його потрібно змінити під час першого входу",
 	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "порожньо = адаптер один раз створює значення і зберігає його поруч із базою даних, щоб сесії переживали перезапуск",

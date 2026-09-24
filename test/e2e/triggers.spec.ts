@@ -40,7 +40,7 @@ async function signIn(page: Page): Promise<void> {
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 }
 
 test("creates a trigger rule for a state of another adapter and removes it again", async ({ page, request }) => {

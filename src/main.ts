@@ -11,6 +11,7 @@ import { currentSchemaVersion, openAndMigrate, type Db } from "./lib/db/database
 import { seed } from "./lib/db/seed";
 import type { HolidayCountry } from "./lib/domain/holidays";
 import { createAbsencesRepository } from "./lib/db/repositories/absences";
+import { createDayNotesRepository, type DayNotesRepository } from "./lib/db/repositories/dayNotes";
 import { createEntriesRepository } from "./lib/db/repositories/entries";
 import { createHolidaysRepository } from "./lib/db/repositories/holidays";
 import { createPayoutsRepository } from "./lib/db/repositories/payouts";
@@ -96,6 +97,7 @@ interface AdapterServices {
 	users: UsersRepository;
 	entries: EntriesRepository;
 	absences: AbsencesRepository;
+	dayNotes: DayNotesRepository;
 	settings: SettingsRepository;
 	aggregation: AggregationService;
 	sync: SyncService;
@@ -398,6 +400,7 @@ class TimeTracker extends utils.Adapter {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const dayNotes = createDayNotesRepository(db);
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
@@ -436,6 +439,7 @@ class TimeTracker extends utils.Adapter {
 			users,
 			entries,
 			absences,
+			dayNotes,
 			holidays,
 			rules,
 			payouts,
@@ -461,6 +465,7 @@ class TimeTracker extends utils.Adapter {
 			users,
 			entries,
 			absences,
+			dayNotes,
 			settings,
 			aggregation,
 			sync,

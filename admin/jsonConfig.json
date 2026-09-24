@@ -145,7 +145,7 @@
 				},
 				"editWindowDays": {
 					"type": "number",
-					"label": "Days users may edit on their own",
+					"label": "Days the offline queue accepts on its own",
 					"min": 0,
 					"max": 365,
 					"xs": 12,

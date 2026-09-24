@@ -29,9 +29,16 @@ export const PERMISSIONS = {
 
 export const ALL_PERMISSIONS: string[] = Object.values(PERMISSIONS).flat();
 
-/** Role → permissions (specification section 4.8). */
+/**
+ * Role → permissions (specification section 4.8).
+ *
+ * The administrator account is created by the installation and belongs to nobody: it administers the employees
+ * instead of working with them and therefore does not punch (migration 26 takes the right away from installations
+ * that already exist). Whoever both administers and works carries the `employee` role as well — the right comes
+ * back with it, because permissions are the union of the roles of an account.
+ */
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-	admin: ALL_PERMISSIONS,
+	admin: ALL_PERMISSIONS.filter(permission => permission !== "time.punch"),
 	manager: [
 		"time.punch",
 		"time.edit_own",

@@ -696,4 +696,43 @@ export const migrations: Migration[] = [
 			UPDATE absence_types SET color = '#795548' WHERE color IS NULL AND code = 'E';
 		`,
 	},
+	{
+		version: 25,
+		name: "day notes: what an employee wants the administration to know about one day",
+		sql: `
+			-- An employee does not change punches any more; the day of a forgotten punch is corrected by the
+			-- administration. What the employee may do is leave a note for that day (“forgot to clock in or out”),
+			-- so the message lives outside the punches: a day without a punch is exactly the case it is meant for.
+			-- One note per employee and day; the administration marks it as handled and keeps it for the record.
+			CREATE TABLE day_notes (
+				id          INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+				local_date  TEXT    NOT NULL,
+				note        TEXT    NOT NULL,
+				created_by  INTEGER REFERENCES users(id),
+				created_at  INTEGER NOT NULL,
+				updated_by  INTEGER REFERENCES users(id),
+				updated_at  INTEGER NOT NULL,
+				handled_at  INTEGER,
+				handled_by  INTEGER REFERENCES users(id)
+			);
+
+			CREATE UNIQUE INDEX idx_day_notes_user_date ON day_notes(user_id, local_date);
+			CREATE INDEX idx_day_notes_open ON day_notes(handled_at, local_date);
+			`,
+	},
+	{
+		version: 26,
+		name: "roles: the administrator does not punch",
+		sql: `
+			-- The administrator account is created by the installation and belongs to nobody: it administers the
+			-- employees instead of working with them, so it needs no punch. Punching stays with the roles that
+			-- belong to a person: a manager corrects and punches, an employee punches. An administrator who also
+			-- works gets the right back through the employee role, because permissions are the union of the roles
+			-- of an account.
+			DELETE FROM role_permissions
+			 WHERE role_id = (SELECT id FROM roles WHERE key = 'admin')
+			   AND permission_id = (SELECT id FROM permissions WHERE key = 'time.punch');
+			`,
+	},
 ];

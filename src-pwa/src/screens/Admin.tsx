@@ -2877,8 +2877,8 @@ function AbsenceTypesCard({
 		if (type.reduceVacation) {
 			parts.push(t("admin.absenceTypes.reduceVacation"));
 		}
-		if (!type.isActive) {
-			parts.push(`– ${t("admin.absenceTypes.active")}`);
+		if (type.isActive) {
+			parts.push(t("admin.absenceTypes.active"));
 		}
 		return parts.join(" · ");
 	};

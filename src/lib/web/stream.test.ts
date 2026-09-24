@@ -4,6 +4,7 @@ import { WebSocket, type RawData } from "ws";
 import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository } from "../db/repositories/absences";
+import { createDayNotesRepository } from "../db/repositories/dayNotes";
 import { createEntriesRepository } from "../db/repositories/entries";
 import { createHolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository } from "../db/repositories/payouts";
@@ -142,13 +143,14 @@ describe("web event stream", () => {
 	 * @param path - request path below the API prefix
 	 * @param token - session token
 	 * @param csrfToken - CSRF token
+	 * @param body
 	 * @returns status code
 	 */
-	async function post(path: string, token: string, csrfToken: string): Promise<number> {
+	async function post(path: string, token: string, csrfToken: string, body: unknown = {}): Promise<number> {
 		const response = await fetch(`${server.url}/api${path}`, {
 			method: "POST",
 			headers: { "content-type": "application/json", "x-session-token": token, "x-csrf-token": csrfToken },
-			body: "{}",
+			body: JSON.stringify(body),
 		});
 		return response.status;
 	}
@@ -184,6 +186,7 @@ describe("web event stream", () => {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const dayNotes = createDayNotesRepository(db);
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
@@ -201,6 +204,7 @@ describe("web event stream", () => {
 			users,
 			entries,
 			absences,
+			dayNotes,
 			holidays,
 			rules,
 			payouts,
@@ -264,8 +268,9 @@ describe("web event stream", () => {
 		const admin = await connect(adminToken);
 		expect(admin.hello).to.deep.include({ type: "hello", subscribe: "all" });
 
-		// the admin punches for their own account: anna must not see it, the admin must
-		expect(await post("/punch", adminToken, adminCsrf)).to.equal(201);
+		// the administration writes a punch for its own account: anna must not see it, the administration must.
+		// The administrator role does not punch, so the punch is written as a correction (`POST /entries`).
+		expect(await post("/entries", adminToken, adminCsrf, { tsUtc: 1_000_000 })).to.equal(201);
 
 		const frame = await admin.next();
 		expect(frame.userId).to.not.equal(annaId);

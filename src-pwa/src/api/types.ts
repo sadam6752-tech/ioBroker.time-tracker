@@ -94,6 +94,30 @@ export interface EntryAuditRow {
 	atUtc: number;
 }
 
+/** A note an employee leaves for the administration at one day (`GET /day-notes`). */
+export interface DayNote {
+	/** Primary key */
+	id: number;
+	/** Owner of the day */
+	userId: number;
+	/** Local date the note belongs to */
+	localDate: string;
+	/** Text of the note */
+	note: string;
+	/** Who wrote it */
+	createdBy: number | null;
+	/** Instant it was written, UTC epoch seconds */
+	createdAt: number;
+	/** Who changed it last */
+	updatedBy: number | null;
+	/** Instant of the last change, UTC epoch seconds */
+	updatedAt: number;
+	/** Instant the administration marked it as handled, `null` while it waits */
+	handledAt: number | null;
+	/** Who marked it as handled */
+	handledBy: number | null;
+}
+
 /** Result of a punch. */
 export interface PunchResult {
 	entry: Entry;

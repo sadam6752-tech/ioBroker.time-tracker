@@ -9,21 +9,49 @@ import { expect, test, type Page } from "@playwright/test";
 /** Credentials of the administrator the end-to-end server seeds. */
 const admin = { login: "admin", password: "E2e-2026-klar!" };
 
+/**
+ * Credentials of the employee the punch tests use: a second employee keeps the presence tiles of the other specs out
+ * of the way.
+ */
+const ben = { login: "ben", password: "E2e-2026-klar!" };
+
 /** Credentials of an account that still has to change its start password. */
 const fresh = { login: "start", password: "E2e-2026-klar!", next: "Frisch-2026-klar!" };
 
 /**
- * Signs the administrator in and waits for the punch screen.
+ * Fills in the login form.
+ *
+ * @param page - page under test
+ * @param user - credentials to use
+ * @param user.login - login name of the account
+ * @param user.password - password of the account
+ */
+async function signInAs(page: Page, user: { login: string; password: string }): Promise<void> {
+	await page.goto("/");
+	await page.getByLabel("Benutzername").fill(user.login);
+	await page.getByLabel("Passwort").fill(user.password);
+	await page.getByRole("button", { name: "Anmelden" }).click();
+}
+
+/**
+ * Signs the administrator in and waits for the dashboard. The administrator account belongs to nobody and does not
+ * punch, so the dashboard announces its purpose instead of showing the punch screen.
  *
  * @param page - page under test
  */
 async function signIn(page: Page): Promise<void> {
-	await page.goto("/");
-	await page.getByLabel("Benutzername").fill(admin.login);
-	await page.getByLabel("Passwort").fill(admin.password);
-	await page.getByRole("button", { name: "Anmelden" }).click();
-	// the punch screen is there when its button is. Whether the day is started already depends on the other
-	// tests of this file (they share one database), so the state itself must not be asserted here
+	await signInAs(page, admin);
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
+}
+
+/**
+ * Signs an employee in and waits for the punch button. Whether the day is started already depends on the other tests
+ * of this file (they share one database), so the state itself must not be asserted here.
+ *
+ * @param page - page under test
+ */
+async function signInEmployee(page: Page): Promise<void> {
+	await signInAs(page, ben);
 	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
 }
 
@@ -38,11 +66,12 @@ test("refuses a wrong password and lets the administrator in", async ({ page }) 
 
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	// the administrator lands on the dashboard, which says what the account is for
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 });
 
 test("survives a reload on the cookie alone and can still punch", async ({ page }) => {
-	await signIn(page);
+	await signInEmployee(page);
 
 	// the session token lives in an httpOnly cookie; only the CSRF token and the user are stored in the page
 	const stored = await page.evaluate(() => window.localStorage.getItem("time-tracker.session") ?? "");

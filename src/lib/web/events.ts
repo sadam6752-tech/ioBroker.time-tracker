@@ -12,6 +12,7 @@ export type EventType =
 	| "punch"
 	| "entry.update"
 	| "entry.delete"
+	| "dayNote.change"
 	| "entries.import"
 	| "absence.change"
 	| "month.close"

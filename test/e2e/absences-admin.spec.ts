@@ -14,7 +14,7 @@ test("shows the absence tab and enters an absence for an employee", async ({ pag
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 
 	await page.goto("/admin");
 	await page.getByRole("tab", { name: "Abwesenheiten" }).click();

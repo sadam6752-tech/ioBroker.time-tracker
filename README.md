@@ -22,7 +22,8 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 - **Terminal for everybody**: badge (RFID/NFC) or PIN on a shared tablet, plus a board that shows who is at work
 - **Working time**: target time from weekly hours, employment level and working days; breaks (punched or by graduated rules), overtime models, carryover, vacation and public holidays
 - **Absences and vacation**: requests and approvals, half days, and a preview of the days already planned
-- **Corrections** by the administration (change, delete, add a punch or a whole day) — every change carries a reason and the history of a punch stays readable
+- **Corrections** by the administration (change, delete, add a punch or a whole day) — every change carries a reason and the history of a punch stays readable; the administration opens the day right in the month view of an employee
+- **Day notes**: an employee does not change his own times — he leaves a note for the administration (“forgot to clock in or out”), which the office books and marks as handled
 - **Monthly statements** as PDF and Excel, for the own account and — with the right — for every employee; statistics and payouts included
 - **Roles**: administrator, manager, employee; every decision is checked on the server
 - **Automations**: aggregates, live events and commands as ioBroker states
@@ -83,7 +84,7 @@ The adapter is configured in the **instance settings** of the ioBroker admin:
 | Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)                                                          |
 | Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest); empty = generated on the first start and stored next to the database |
 | Session lifetime in minutes         | how long a login lasts                                                                                                      |
-| Days users may edit on their own    | how far back an employee may correct own punches                                                                            |
+| Days the offline queue accepts on its own | how far back the punches of the offline queue are accepted without a decision of the administration          |
 | Round quick punches to minutes      | rounding of the quick punch (0 = off)                                                                                       |
 | Calculate absences only until today | future absences do not reduce the target time                                                                               |
 | Subtract working time from absences | lets vacation turn into overtime                                                                                            |
@@ -107,15 +108,33 @@ The pause of a day appears in the month view of the app and in the monthly state
 
 ## Roles
 
-| Role       | May                                                                                          |
-| ---------- | -------------------------------------------------------------------------------------------- |
-| `employee` | punch, see the own month and year, request absences, edit own punches inside the edit window |
-| `manager`  | everything an employee may, plus statements and corrections for other employees              |
-| `admin`    | everything: employees, roles, terminals, settings, backups                                   |
+| Role       | May                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| `employee` | punch, see the own month and year, request absences, leave a note for the administration at one day     |
+| `manager`  | everything an employee may, plus punching, statements and corrections for other employees              |
+| `admin`    | everything except punching: employees, roles, terminals, settings, backups                              |
 
-The **edit window** (`edit_window_days`, default 7 days) is what an `employee` is bound by: an older punch is
-rejected with `edit_window_closed` and stays with the administration. Managers and admins are not bound by it.
-Employees correct their own day right in the month view — the pencil beside a day opens its punches.
+The **administrator** account is created by the installation and belongs to nobody: it administers the employees
+instead of working with them, so it does not punch (the role has no `time.punch`). Whoever also works gets the right
+back through the `employee` role — permissions are the union of the roles of an account. A `manager` punches and
+corrects.
+
+The **edit window** (`edit_window_days`, default 7 days) bounds what an account may do with a day of its own without
+a decision of the administration. Since times belong to the administration, it now matters for the **offline queue**:
+a queued punch that is older arrives as the conflict `too_old` and counts once the office accepts it. Managers and
+admins are not bound by it.
+
+### Times, corrections and notes
+
+Punching is what an employee does (`POST /punch`, the quick punch, the offline queue). A punch written **by hand** is
+a correction of the administration (`time.edit_other`) and carries a reason in the audit trail — the month view of an
+employee offers exactly that: the pencil beside a day adds a forgotten punch, corrects a time or removes one
+(`time.delete`).
+
+An employee who noticed a forgotten punch does **not** change the times: he opens the day in the month view and
+leaves a **note** for the office (`PUT /api/day-notes`, own days with `time.edit_own`). The administration reads it in
+the day row and in the day of that employee, books the day and marks the note as **handled**
+(`POST /api/day-notes/handled`) — it stays visible for the record.
 
 ## Web app, terminal and API
 
@@ -351,6 +370,25 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.1 (2026-09-24)
+
+- (Alex) fix: the correction dialog in the month view of an employee shows and changes **his** punches. It asked the
+  API without the employee, so the administration saw, moved and added punches of their own account — “add a punch”
+  even created one there
+- (Alex) change: times belong to the administration. An employee no longer changes own times (`POST /entries` and
+  every change of a time now need `time.edit_other`); instead he leaves a **note for the day** (“forgot to clock
+  out”), which the administration reads in the month view and marks as handled (new table `day_notes`, migration 25).
+  A queued punch of the offline queue that is older than the edit window arrives as the conflict `too_old`
+- (Alex) change: the **administrator** account belongs to nobody and does not punch any more — the role loses
+  `time.punch` (migration 26), and the dashboard explains what the account is for. A manager punches and corrects as
+  before; whoever also works gets the right back through the `employee` role
+- (Alex) fix: `GET /entries/conflicts` accepts `?userId=`, so the administration sees the conflict queue of an
+  employee
+- (Alex) fix: the list of the absence types writes “visible for everybody” at the types the employees may really
+  pick — it was written at the switched off ones and at nothing else
+- (Alex) fix: on a narrow phone the balance of a day (month) and of a month (statements) no longer runs over the
+  text — the pencil, the balance and the download buttons stand beside the text instead of being laid over it
+
 ### 0.7.0 (2026-09-24)
 
 - (Alex) new: an absence type can carry a **colour**, and the calendar paints a day with it — vacation and sickness are
@@ -382,14 +420,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   docs follow the new path, the test server computes the repository root one level deeper, and the root
   `tsconfig.json` leaves the browser tests to their own `test/e2e/tsconfig.json` — they need the DOM types the
   adapter does not have
-
-### 0.4.3 (2026-09-22)
-
-- (Alex) change: “active” of an absence type now reads “**visible for everybody**” and means exactly that. Switched on,
-  the employees pick the type in the app and request it (vacation, further training); switched off, the type belongs to
-  the administration alone (sickness, accident, military service — such a note reaches a company on the same day and is
-  booked, not requested). The server refuses an employee a type that is not public (`403`), the administration sees
-  every type in its own lists, and sickness, accident and military service start switched off (migration 22)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

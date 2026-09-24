@@ -6,7 +6,7 @@
 	"Bind address": "绑定地址",
 	"Calculate absences only until today": "仅计算今天之前的缺勤情况",
 	"Database file (empty = adapter data directory)": "数据库文件（空=适配器数据目录）",
-	"Days users may edit on their own": "用户可以自行编辑的天数",
+	"Days the offline queue accepts on its own": "离线队列自行接受的天数",
 	"Default language for new users": "新用户的默认语言",
 	"empty = a random password is written to the adapter log once; it has to be changed at the first login": "留空 = 随机密码会写入一次适配器日志；首次登录时必须修改",
 	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "留空 = 适配器会生成一次并保存在数据库旁边，这样会话在重启后仍然有效",

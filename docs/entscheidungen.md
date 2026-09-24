@@ -129,3 +129,49 @@ Minuten" und einem Schalter je Regel; der Aufruf ersetzt die ganze Tabelle, fehl
 
 **Nachweis:** Der Stundennachweis zeigt neben „Pause" die Spalte **„davon bezahlt"** (`day_aggregates.paid_break_min`,
 Migration 14) samt Summe — so sieht man im PDF und in der Excel-Datei, welcher Teil der Pause bezahlt wurde.
+
+## D6 — Zeiten ändert nur die Verwaltung, der Mitarbeiter notiert den Tag (24.09.2026)
+
+Wer eine Zeit ändern kann, kann Arbeitszeit erfinden. Bis hierher durfte ein `employee` **eigene** Stempel innerhalb
+des Bearbeitungsfensters (`edit_window_days`, Vorgabe 7 Tage) ändern und ergänzen; im Monat öffnete der Stift genau
+diesen Dialog. Zwei Dinge daran waren falsch:
+
+1. **Der Monatsdialog war nicht auf den Mitarbeiter bezogen.** `DayCorrectionsDialog` fragte die Stempel **ohne**
+   `userId` ab (`api.entries(date, date)`), der Server setzte damit das eigene Konto ein — und `createEntry` schrieb
+   mit `userId: session.user.id`. Im Monat eines Mitarbeiters (`/month?userId=…`) zeigte und änderte die Verwaltung
+   also ihre **eigenen** Stempel; „Stempel hinzufügen" legte einen Stempel im eigenen Konto an.
+2. **Die Zeit ist nicht die Sache des Mitarbeiters.** Eine vergessene Stempelung ist eine **Mitteilung**, keine
+   Korrektur: der Mitarbeiter weiß, dass er sie vergessen hat, die Verwaltung bucht sie.
+
+**Entscheidung:** Zeiten gehören der Verwaltung, der Mitarbeiter **notiert**.
+
+| Rolle | Stift im Monat | Inhalt des Dialogs |
+| --- | --- | --- |
+| `admin`, `manager` (`time.edit_other`) | eigener Monat und Monat eines Mitarbeiters | Stempel des Tages: ergänzen, Zeit ändern, löschen (`time.delete`), **Begründung** fürs Protokoll — bezogen auf den Mitarbeiter, dessen Monat offen ist |
+| `employee` | nur eigener Monat | **Notiz zum Tag** („An-/Ausstempeln vergessen"), sonst nichts |
+
+Serverseitig dahinter: `POST /api/entries` (Nachtrag von Hand) und jedes Setzen von `tsUtc` in
+`PATCH /api/entries/:id` verlangen `time.edit_other`; ein eigener Stempel lässt sich also nur noch **kommentieren**
+(`note`). `DELETE` bleibt `time.delete`. Gestempelt wird weiter über `time.punch` (`/punch`, `/punch/quick`, die
+Offline-Warteschlange `/entries/sync`).
+
+**Die Notiz** braucht einen eigenen Ort, weil genau der Tag **ohne** Stempel der Fall ist, für den sie gedacht ist:
+Tabelle `day_notes` (Migration 25, ein Eintrag je Mitarbeiter und Tag) mit `GET`/`PUT /api/day-notes` (eigene Tage mit
+`time.edit_own`, fremde mit `time.edit_other`; leerer Text löscht) und `POST /api/day-notes/handled` — die Verwaltung
+hakt die Notiz als **erledigt** ab, sie bleibt sichtbar. Der Monat markiert einen Tag mit Notiz (Symbol neben dem
+Saldo): offen = gelb, erledigt = grau.
+
+**Das Administrator-Konto stempelt nicht:** Es wird bei der Installation angelegt und gehört niemandem, es verwaltet
+die Mitarbeiter. Die Rolle `admin` verliert deshalb `time.punch` (Seed und Migration 26); wer zusätzlich arbeitet,
+bekommt das Recht über die Rolle `employee` zurück (Rechte sind die Vereinigung der Rollen). Der `manager` stempelt
+und korrigiert weiter. Die Startseite erklärt dem Konto ohne Stempelrecht, wofür es da ist.
+
+**Wirkung auf das Bearbeitungsfenster:** Es greift nur dort, wo jemand eigene Zeiten ändern darf — und das darf nach
+dieser Entscheidung nur, wer `time.edit_other` hat. Praktisch wirkt es jetzt auf die **Offline-Warteschlange**: ein
+gestempelter Eintrag, der älter als `edit_window_days` ankommt, wird als Konflikt `too_old` gespeichert und zählt
+erst, wenn die Verwaltung ihn annimmt. `GET /entries/conflicts` nimmt dafür `?userId=` entgegen, damit die Verwaltung
+die Warteschlange eines Mitarbeiters sieht.
+
+**Nachweis:** `src/lib/db/repositories/dayNotes.test.ts`, die Rechte in `src/lib/web/api.test.ts` (Mitarbeiter: 403
+für Zeiten, 200 für die eigene Notiz), `too_old` in `src/lib/services/sync.test.ts` und der Ablauf in
+`test/e2e/day-notes.spec.ts` (Notiz des Mitarbeiters, Korrektur und „erledigt" der Verwaltung).

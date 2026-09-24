@@ -19,6 +19,7 @@ import type {
 	Branding,
 	Conflict,
 	CreateUserInput,
+	DayNote,
 	DayRange,
 	Entry,
 	EntryAuditRow,
@@ -145,6 +146,12 @@ export interface ApiClient {
 	deleteEntry(id: number, reason?: string | null): Promise<void>;
 	/** Audit trail of a punch (newest change first) */
 	entryAudit(id: number): Promise<EntryAuditRow[]>;
+	/** Notes of a period; with `userId` the administration reads those of an employee */
+	dayNotes(from: string, to: string, userId?: number): Promise<DayNote[]>;
+	/** Writes the note of one day; an empty text removes it */
+	saveDayNote(input: { date: string; note: string; userId?: number }): Promise<DayNote | null>;
+	/** Marks a note as handled or open again (administration) */
+	setDayNoteHandled(input: { date: string; handled: boolean; userId?: number }): Promise<DayNote>;
 	/** Absences of a year */
 	absences(year: number): Promise<Absence[]>;
 	/** Absence types the caller may use; the administration sees the inactive ones as well */
@@ -914,6 +921,27 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async entryAudit(id): Promise<EntryAuditRow[]> {
 			const result = await request<{ audit: EntryAuditRow[] }>("GET", `/entries/${id}/audit`);
 			return result.audit ?? [];
+		},
+
+		async dayNotes(from, to, userId): Promise<DayNote[]> {
+			const result = await request<{ notes: DayNote[] }>("GET", "/day-notes", { query: { from, to, userId } });
+			return result.notes ?? [];
+		},
+
+		async saveDayNote(input): Promise<DayNote | null> {
+			const result = await request<{ note: DayNote | null }>("PUT", "/day-notes", {
+				query: { date: input.date, userId: input.userId },
+				body: { note: input.note },
+			});
+			return result.note ?? null;
+		},
+
+		async setDayNoteHandled(input): Promise<DayNote> {
+			const result = await request<{ note: DayNote }>("POST", "/day-notes/handled", {
+				query: { date: input.date, userId: input.userId },
+				body: { handled: input.handled },
+			});
+			return result.note;
 		},
 
 		async absences(year): Promise<Absence[]> {

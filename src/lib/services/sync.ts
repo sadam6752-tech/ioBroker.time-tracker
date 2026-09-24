@@ -24,7 +24,7 @@ import type { AggregationService } from "./aggregation";
 
 /** Reason why a punch was not accepted as it came in. */
 export type SyncConflictReason =
-	"missing_key" | "invalid" | "future" | "duplicate_punch" | "clock_skew" | "employment_window";
+	"missing_key" | "invalid" | "future" | "too_old" | "duplicate_punch" | "clock_skew" | "employment_window";
 
 /** A single punch of an offline batch. */
 export interface SyncPunchInput {
@@ -58,6 +58,13 @@ export interface SyncBatchInput {
 	minDistanceSeconds?: number;
 	/** Punches further in the future than this are rejected (`12` hours) */
 	maxFutureSeconds?: number;
+	/**
+	 * Queued punches older than this are stored as a conflict instead of counting (`0` = no bound).
+	 *
+	 * The offline queue is the only way an employee still writes a punch of his own, so the same window that
+	 * bounds an own change applies here: an older punch reaches the day and waits for the administration.
+	 */
+	maxPastSeconds?: number;
 	/** Instant of the synchronisation, defaults to now */
 	now?: number;
 }
@@ -252,6 +259,7 @@ export function createSyncService(deps: SyncDeps): SyncService {
 			const maxSkew = input.maxClockSkewSeconds ?? 300;
 			const minDistance = input.minDistanceSeconds ?? 30;
 			const maxFuture = input.maxFutureSeconds ?? 12 * 3600;
+			const maxPast = input.maxPastSeconds ?? 0;
 			const profile = users.getWorkProfile(input.userId);
 			const window = { startDate: profile?.startDate ?? null, endDate: profile?.endDate ?? null };
 
@@ -309,7 +317,10 @@ export function createSyncService(deps: SyncDeps): SyncService {
 
 				const skew = punch.clientTsUtc == null ? 0 : Math.abs(punch.tsUtc - punch.clientTsUtc);
 				const windowError = checkEmploymentWindow(punch.tsUtc, window);
-				const syncState: EntrySyncState = skew > maxSkew || windowError ? "conflict" : "synced";
+				// a queued punch that is older than the window is not lost: it is stored and waits for a decision
+				// of the administration instead of counting right away
+				const tooOld = maxPast > 0 && punch.tsUtc < now - maxPast;
+				const syncState: EntrySyncState = skew > maxSkew || windowError || tooOld ? "conflict" : "synced";
 
 				const stored = entries.insert({
 					userId: input.userId,
@@ -330,7 +341,7 @@ export function createSyncService(deps: SyncDeps): SyncService {
 				if (syncState === "conflict") {
 					conflicts.push({
 						idempotencyKey: key,
-						reason: windowError ? "employment_window" : "clock_skew",
+						reason: tooOld ? "too_old" : windowError ? "employment_window" : "clock_skew",
 						entryId: stored.entry.id,
 						entry: stored.entry,
 					});

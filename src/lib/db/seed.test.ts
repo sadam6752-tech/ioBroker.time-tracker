@@ -40,9 +40,14 @@ describe("seeds", () => {
 		expect(ALL_PERMISSIONS.length).to.be.greaterThan(25);
 	});
 
-	it("grants the admin role every permission", () => {
+	it("grants the admin role every permission except punching", () => {
 		seed(db, { holidayYears: [2026] });
-		expect(permissionsOf(db, "admin").sort()).to.deep.equal([...ALL_PERMISSIONS].sort());
+		// the account is created by the installation and belongs to nobody, so it does not punch; whoever works
+		// gets the employee role as well and the right comes back with it
+		expect(permissionsOf(db, "admin")).to.not.include("time.punch");
+		expect(permissionsOf(db, "admin").sort()).to.deep.equal(
+			ALL_PERMISSIONS.filter(permission => permission !== "time.punch").sort(),
+		);
 	});
 
 	it("gives the employee role only the basic permissions", () => {

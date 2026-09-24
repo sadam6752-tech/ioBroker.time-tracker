@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.4.3 (2026-09-22)
+
+- (Alex) change: “active” of an absence type now reads “**visible for everybody**” and means exactly that. Switched on,
+  the employees pick the type in the app and request it (vacation, further training); switched off, the type belongs to
+  the administration alone (sickness, accident, military service — such a note reaches a company on the same day and is
+  booked, not requested). The server refuses an employee a type that is not public (`403`), the administration sees
+  every type in its own lists, and sickness, accident and military service start switched off (migration 22)
+
 ### 0.4.2 (2026-09-22)
 
 - (Alex) fix: the roles appear in the language of the display (the database keeps “Administrator”, “Manager” and

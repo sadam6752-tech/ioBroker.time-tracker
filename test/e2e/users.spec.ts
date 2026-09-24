@@ -38,7 +38,7 @@ async function signIn(page: Page): Promise<void> {
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 }
 
 test("creates an employee with the chosen role", async ({ page, request }) => {

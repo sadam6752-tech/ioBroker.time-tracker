@@ -6,7 +6,7 @@
 	"Bind address": "Indirizzo di ascolto",
 	"Calculate absences only until today": "Calcola le assenze solo fino ad oggi",
 	"Database file (empty = adapter data directory)": "File di database (vuoto = directory dei dati dell'adattatore)",
-	"Days users may edit on their own": "Giorni in cui gli utenti possono modificare autonomamente",
+	"Days the offline queue accepts on its own": "Giorni che la coda offline accetta da sola",
 	"Default language for new users": "Lingua predefinita per i nuovi utenti",
 	"empty = a random password is written to the adapter log once; it has to be changed at the first login": "vuoto = una password casuale viene scritta una volta nel log dell'adattatore; va cambiata al primo accesso",
 	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "vuoto = l'adattatore ne genera uno una volta e lo salva accanto al database, così le sessioni sopravvivono ai riavvii",

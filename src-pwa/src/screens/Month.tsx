@@ -13,12 +13,14 @@ import Typography from "@mui/material/Typography";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EditIcon from "@mui/icons-material/Edit";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
+import Tooltip from "@mui/material/Tooltip";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, formatMinutes, formatWeekday } from "../api/client";
-import type { DayAggregate } from "../api/types";
+import type { DayAggregate, DayNote } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { DayCorrectionsDialog } from "../components/DayCorrections";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -70,6 +72,42 @@ export function Month(): React.JSX.Element {
 		queryKey: ["days", range.from, range.to, scopedUserId],
 		queryFn: () => api.days(range.from, range.to, scopedUserId),
 	});
+	// the note an employee left for a day belongs in the row: the office sees it without opening the day
+	const notes = useQuery({
+		queryKey: ["day-notes", range.from, range.to, scopedUserId],
+		queryFn: () => api.dayNotes(range.from, range.to, scopedUserId),
+	});
+	const notesByDate = new Map((notes.data ?? []).map(note => [note.localDate, note]));
+	// the punches of a day are shown in the time zone of its owner, not in the one of the caller
+	const maySeeEmployees = scopedUserId !== undefined && hasPermission(permissions, "user.view");
+	const employees = useQuery({
+		queryKey: ["employees"],
+		queryFn: () => api.users(),
+		enabled: maySeeEmployees,
+	});
+	const ownerTimeZone =
+		(employees.data ?? []).find(person => person.id === scopedUserId)?.timezone ?? session?.user.timezone ?? "UTC";
+	// the own day may be opened by everybody who may touch it; the day of an employee only by the administration
+	const mayEditDays =
+		scopedUserId === undefined
+			? hasPermission(permissions, "time.edit_own") || hasPermission(permissions, "time.edit_other")
+			: hasPermission(permissions, "time.edit_other");
+
+	/**
+	 * Marks a day an employee left a note for.
+	 *
+	 * @param note - the note of that day or `undefined`
+	 * @returns the icon with the text as its tooltip, `null` without a note
+	 */
+	const noteMark = (note: DayNote | undefined): React.JSX.Element | null =>
+		note ? (
+			<Tooltip title={`${t("month.noteLabel")}: ${note.note}`}>
+				<StickyNote2Icon
+					fontSize="small"
+					color={note.handledAt === null ? "warning" : "disabled"}
+				/>
+			</Tooltip>
+		) : null;
 
 	/**
 	 * Moves the shown month.
@@ -165,29 +203,10 @@ export function Month(): React.JSX.Element {
 							{(days.data?.days ?? []).map(day => (
 								<ListItem
 									key={day.localDate}
-									secondaryAction={
-										<Stack
-											direction="row"
-											spacing={0.5}
-											sx={{ alignItems: "center" }}
-										>
-											{hasPermission(permissions, "time.edit_own") && (
-												<IconButton
-													size="small"
-													title={t("month.edit")}
-													onClick={() => setEditingDay(day)}
-												>
-													<EditIcon fontSize="small" />
-												</IconButton>
-											)}
-											<Typography
-												variant="body2"
-												color={day.balanceMin < 0 ? "error" : "text.secondary"}
-											>
-												{formatMinutes(day.balanceMin)}
-											</Typography>
-										</Stack>
-									}
+									// the pencil and the balance of the day stay beside the text: MUI's absolutely positioned
+									// `secondaryAction` reserves the width of one icon only, so the balance ran over the text
+									// on a phone
+									sx={{ "& .MuiListItemText-root": { minWidth: 0 } }}
 								>
 									<ListItemText
 										primary={formatWeekday(day.localDate, i18n.language)}
@@ -206,6 +225,28 @@ export function Month(): React.JSX.Element {
 											.filter(Boolean)
 											.join(" · ")}
 									/>
+									<Stack
+										direction="row"
+										spacing={0.5}
+										sx={{ alignItems: "center", flexShrink: 0 }}
+									>
+										{mayEditDays && (
+											<IconButton
+												size="small"
+												title={t("month.edit")}
+												onClick={() => setEditingDay(day)}
+											>
+												<EditIcon fontSize="small" />
+											</IconButton>
+										)}
+										{noteMark(notesByDate.get(day.localDate))}
+										<Typography
+											variant="body2"
+											color={day.balanceMin < 0 ? "error" : "text.secondary"}
+										>
+											{formatMinutes(day.balanceMin)}
+										</Typography>
+									</Stack>
 								</ListItem>
 							))}
 						</List>
@@ -225,7 +266,8 @@ export function Month(): React.JSX.Element {
 
 			<DayCorrectionsDialog
 				day={editingDay}
-				timeZone={session?.user.timezone ?? "UTC"}
+				userId={scopedUserId}
+				timeZone={ownerTimeZone}
 				onClose={() => setEditingDay(null)}
 			/>
 		</AppShell>

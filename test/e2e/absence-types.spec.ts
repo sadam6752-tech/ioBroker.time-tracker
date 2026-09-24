@@ -14,7 +14,7 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 
 	await page.goto("/admin");
 	await page.getByRole("tab", { name: "Einstellungen" }).click();
@@ -30,6 +30,13 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 
 	// every row carries the colour dot of its type
 	await expect(card.locator("li span[data-testid^='absence-type-color']").first()).toBeVisible();
+
+	// the row says whether the employees may pick the type: the label stands at the type that is switched on and
+	// nowhere else (it used to be the other way round)
+	await expect(card.locator("li").filter({ hasText: "F – Ferien (Urlaub)" }).first()).toContainText(
+		"Für alle sichtbar",
+	);
+	await expect(sickRow).not.toContainText("Für alle sichtbar");
 
 	// a new type opens in the dialog and lands in the list
 	await page.getByRole("button", { name: "Art hinzufügen" }).click();

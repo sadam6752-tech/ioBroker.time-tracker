@@ -21,7 +21,7 @@ async function signIn(page: Page): Promise<void> {
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill(admin.password);
 	await page.getByRole("button", { name: "Anmelden" }).click();
-	await expect(page.getByRole("button", { name: /Einstempeln|Ausstempeln/ })).toBeVisible();
+	await expect(page.getByText("Dieses Konto dient der Verwaltung")).toBeVisible();
 }
 
 /**
@@ -65,6 +65,8 @@ test("keeps the actions of a row beside the text on a phone", async ({ page }) =
 
 	for (const route of ["/month", "/reports", "/absences", "/admin"]) {
 		await page.goto(route);
+		// measure the settled page, not one that is still fetching: an empty screen has no overlap to find
+		await page.waitForLoadState("networkidle");
 		await expect.poll(() => overlappingRows(page), { message: route }).toEqual([]);
 	}
 

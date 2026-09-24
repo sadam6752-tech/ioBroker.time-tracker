@@ -108,6 +108,26 @@ describe("sync service", () => {
 			expect(aggregation.day(annaId, "2026-01-07")?.workedMin).to.equal(480);
 		});
 
+		it("keeps a queued punch of an old day for the administration", () => {
+			// the offline queue is the only place where an employee still writes a punch of his own, so the window
+			// of the instance applies here too: a punch from the week before last is stored and waits for a
+			// decision instead of counting right away
+			const result = service.sync({
+				userId: annaId,
+				timeZone: berlin,
+				punches: [{ idempotencyKey: "alt", tsUtc: utc("2026-01-07T08:00") }],
+				actorId: annaId,
+				maxPastSeconds: 7 * 86_400,
+				now: utc("2026-01-20T08:00"),
+			});
+
+			expect(result.accepted).to.deep.equal([]);
+			expect(result.conflicts.map(conflict => conflict.reason)).to.deep.equal(["too_old"]);
+			expect(result.rejected).to.deep.equal([]);
+			expect(entries.listByDate(annaId, "2026-01-07").map(entry => entry.syncState)).to.deep.equal(["conflict"]);
+			expect(aggregation.day(annaId, "2026-01-07")?.workedMin ?? 0).to.equal(0);
+		});
+
 		it("is idempotent for a repeated batch", () => {
 			const batch = {
 				userId: annaId,

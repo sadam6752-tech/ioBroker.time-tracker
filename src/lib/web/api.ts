@@ -27,6 +27,7 @@ import type {
 	AutomationRuleRecord,
 	AutomationsRepository,
 } from "../db/repositories/automations";
+import type { DayNotesRepository } from "../db/repositories/dayNotes";
 import type { EntriesRepository, EntryDirection, EntryRecord } from "../db/repositories/entries";
 import type { HolidaysRepository } from "../db/repositories/holidays";
 import type { PayoutsRepository } from "../db/repositories/payouts";
@@ -85,6 +86,8 @@ export interface ApiDeps {
 	entries: EntriesRepository;
 	/** Absence storage */
 	absences: AbsencesRepository;
+	/** Notes the employees leave for the administration */
+	dayNotes: DayNotesRepository;
 	/** Holiday storage */
 	holidays: HolidaysRepository;
 	/** Surcharge and break rules */
@@ -993,6 +996,31 @@ export function createApi(deps: ApiDeps): Api {
 	};
 
 	/**
+	 * Resolves the employee a day note belongs to from `?userId=`.
+	 *
+	 * A note for somebody else is an administrative step and needs `time.edit_other`; without that right only the
+	 * own day can be commented. The target has to exist, like everywhere else.
+	 *
+	 * @param context - route context with the authenticated caller
+	 * @param actorId - id of the caller
+	 * @returns the target user id
+	 */
+	const dayNoteTarget = (context: RouteContext, actorId: number): number => {
+		const raw = context.query("userId");
+		const target = raw === null || raw.trim() === "" ? actorId : Number(raw);
+		if (!Number.isInteger(target)) {
+			throw new ValidationError("userId must be a whole number");
+		}
+		if (target !== actorId && !(context.auth?.permissions.includes("time.edit_other") ?? false)) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
+		}
+		if (!users.findById(target)) {
+			throw new NotFoundError(`user ${target} not found`);
+		}
+		return target;
+	};
+
+	/**
 	 * Reads a required whole-number query parameter.
 	 *
 	 * @param context - route context
@@ -1128,6 +1156,9 @@ export function createApi(deps: ApiDeps): Api {
 			const result = sync.sync({
 				userId: user.id,
 				timeZone: user.timezone,
+				// the offline queue is the only way an employee still writes a punch of his own, so the window of the
+				// instance applies to it as well (`0` switches the bound off)
+				maxPastSeconds: Math.max(0, settings.getNumber("edit_window_days", 0)) * 86_400,
 				punches: (body.punches as unknown[]).map(raw => {
 					const punch = (raw ?? {}) as Record<string, unknown>;
 					const tsUtc = optionalNumber(punch, "tsUtc");
@@ -1163,7 +1194,11 @@ export function createApi(deps: ApiDeps): Api {
 	);
 
 	route("GET", "/entries/conflicts", { permission: "time.resolve_conflict" }, context =>
-		json(200, { conflicts: sync.conflicts(context.auth?.user.id ?? 0) }),
+		// without `?userId=` the own queue; the administration reads the queue of an employee with it, because a
+		// conflict of an employee waits for a decision of the office
+		json(200, {
+			conflicts: sync.conflicts(scopeUser(context, "time.resolve_conflict", "time.resolve_conflict")),
+		}),
 	);
 
 	route("POST", "/entries/:id/resolve", { permission: "time.resolve_conflict", csrf: true }, context => {
@@ -1256,7 +1291,9 @@ export function createApi(deps: ApiDeps): Api {
 		return json(200, { entries: entries.listByRange(userId, from, to) });
 	});
 
-	route("POST", "/entries", { permission: "time.edit_own", csrf: true }, context => {
+	// A punch written by hand is an administrative correction: an employee does not edit his own times, he leaves a
+	// day note for the administration (`time.edit_own` is that right) and the administration books the day.
+	route("POST", "/entries", { permission: "time.edit_other", csrf: true }, context => {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
@@ -1264,11 +1301,6 @@ export function createApi(deps: ApiDeps): Api {
 		const target = Number(context.query("userId") ?? context.auth.user.id);
 		if (!Number.isInteger(target)) {
 			throw new ValidationError("userId must be a whole number");
-		}
-		// adding a punch for someone else is an administrative correction
-		const own = target === context.auth.user.id;
-		if (!own && !context.auth.permissions.includes("time.edit_other")) {
-			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
 		}
 
 		const user = users.findById(target);
@@ -1288,7 +1320,8 @@ export function createApi(deps: ApiDeps): Api {
 			tsUtc,
 			clientTsUtc: optionalNumber(body, "clientTsUtc"),
 			timeZone: user.timezone,
-			source: own ? "web" : "admin",
+			// a hand-written punch is always a correction; the normal punch comes through `POST /punch` (`web`)
+			source: "admin",
 			direction: optionalDirection(body),
 			idempotencyKey: optionalString(body, "idempotencyKey"),
 			note: optionalString(body, "note"),
@@ -1306,7 +1339,7 @@ export function createApi(deps: ApiDeps): Api {
 				entryId: stored.entry.id,
 				created: stored.created,
 				localDate: stored.entry.localDate,
-				source: own ? "web" : "admin",
+				source: "admin",
 			},
 		});
 		return json(
@@ -2185,11 +2218,15 @@ export function createApi(deps: ApiDeps): Api {
 		if (revision === null) {
 			throw new ValidationError("revision is required");
 		}
+		// an employee only comments his own punch: the times of a day belong to the administration
+		const wantedTs = optionalNumber(body, "tsUtc");
+		if (wantedTs !== null && !context.auth.permissions.includes("time.edit_other")) {
+			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
+		}
 		// both the stored instant and the new one have to be inside the window, so nobody can move an old punch
 		// into it
-		requireInsideEditWindow(context, existing.userId, existing.tsUtc);
-		const wantedTs = optionalNumber(body, "tsUtc");
 		if (wantedTs !== null) {
+			requireInsideEditWindow(context, existing.userId, existing.tsUtc);
 			requireInsideEditWindow(context, existing.userId, wantedTs);
 		}
 		const target = users.findById(existing.userId);
@@ -2244,6 +2281,63 @@ export function createApi(deps: ApiDeps): Api {
 			data: { entryId: existing.id, localDate: existing.localDate },
 		});
 		return noContent();
+	});
+
+	// day notes: what an employee wants the administration to know about one day
+
+	route("GET", "/day-notes", { permission: "report.view_own" }, context => {
+		const userId = scopeUser(context);
+		const from = context.query("from");
+		const to = context.query("to") ?? from;
+		if (!from || !to) {
+			throw new ValidationError("from and to are required");
+		}
+		return json(200, { notes: deps.dayNotes.listByRange(userId, from, to) });
+	});
+
+	route("PUT", "/day-notes", { permission: "time.edit_own", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const body = context.jsonBody();
+		const userId = dayNoteTarget(context, context.auth.user.id);
+		const localDate = context.query("date");
+		if (!localDate) {
+			throw new ValidationError("date is required");
+		}
+		const note = deps.dayNotes.save({
+			userId,
+			localDate,
+			// an empty text is how a note is taken back
+			note: optionalString(body, "note") ?? "",
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({ type: "dayNote.change", userId, data: { localDate } });
+		return json(200, { note });
+	});
+
+	route("POST", "/day-notes/handled", { permission: "time.edit_other", csrf: true }, context => {
+		if (!context.auth) {
+			throw problem(401, "no_session", "request rejected (no_session)");
+		}
+		const userId = dayNoteTarget(context, context.auth.user.id);
+		const localDate = context.query("date");
+		if (!localDate) {
+			throw new ValidationError("date is required");
+		}
+		const handled = optionalBoolean(context.jsonBody(), "handled") ?? true;
+		const note = deps.dayNotes.setHandled({
+			userId,
+			localDate,
+			handled,
+			actorId: context.auth.user.id,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({ type: "dayNote.change", userId, data: { localDate } });
+		return json(200, { note });
 	});
 
 	route("GET", "/entries/:id/audit", { permission: "audit.view" }, context => {

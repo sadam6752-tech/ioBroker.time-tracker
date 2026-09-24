@@ -207,29 +207,9 @@ export function Reports(): React.JSX.Element {
 							{months.map((month, index) => (
 								<ListItem
 									key={index}
-									secondaryAction={
-										<Stack
-											direction="row"
-											spacing={1}
-											alignItems="center"
-										>
-											<Typography
-												variant="body2"
-												color={(month?.balanceMin ?? 0) < 0 ? "error" : "text.secondary"}
-											>
-												{formatMinutes(month?.balanceMin ?? 0)}
-											</Typography>
-											{/* the statement of this month, for the months that have one */}
-											{month && (
-												<ReportDownloads
-													year={year}
-													month={index + 1}
-													userId={employeeId}
-													compact
-												/>
-											)}
-										</Stack>
-									}
+									// the balance and the download buttons stay beside the text: MUI's absolutely positioned
+									// `secondaryAction` reserves the width of one icon only, so they ran over the text on a phone
+									sx={{ "& .MuiListItemText-root": { minWidth: 0 } }}
 								>
 									<ListItemText
 										primary={
@@ -256,6 +236,28 @@ export function Reports(): React.JSX.Element {
 												: t("reports.empty")
 										}
 									/>
+									<Stack
+										direction="row"
+										spacing={1}
+										alignItems="center"
+										sx={{ flexShrink: 0 }}
+									>
+										<Typography
+											variant="body2"
+											color={(month?.balanceMin ?? 0) < 0 ? "error" : "text.secondary"}
+										>
+											{formatMinutes(month?.balanceMin ?? 0)}
+										</Typography>
+										{/* the statement of this month, for the months that have one */}
+										{month && (
+											<ReportDownloads
+												year={year}
+												month={index + 1}
+												userId={employeeId}
+												compact
+											/>
+										)}
+									</Stack>
 								</ListItem>
 							))}
 						</List>

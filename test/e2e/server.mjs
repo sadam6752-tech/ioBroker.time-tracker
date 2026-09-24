@@ -24,6 +24,7 @@ const { seed } = require(join(repo, "build/lib/db/seed.js"));
 const { createUsersRepository } = require(join(repo, "build/lib/db/repositories/users.js"));
 const { createEntriesRepository } = require(join(repo, "build/lib/db/repositories/entries.js"));
 const { createAbsencesRepository } = require(join(repo, "build/lib/db/repositories/absences.js"));
+const { createDayNotesRepository } = require(join(repo, "build/lib/db/repositories/dayNotes.js"));
 const { createHolidaysRepository } = require(join(repo, "build/lib/db/repositories/holidays.js"));
 const { createRulesRepository } = require(join(repo, "build/lib/db/repositories/rules.js"));
 const { createPayoutsRepository } = require(join(repo, "build/lib/db/repositories/payouts.js"));
@@ -58,6 +59,7 @@ seed(db, { holidayYears: [2026] });
 const users = createUsersRepository(db);
 const entries = createEntriesRepository(db);
 const absences = createAbsencesRepository(db);
+const dayNotes = createDayNotesRepository(db);
 const holidays = createHolidaysRepository(db);
 const rules = createRulesRepository(db);
 const payouts = createPayoutsRepository(db);
@@ -76,11 +78,14 @@ const backup = createBackupService({
 	now,
 });
 
-// one administrator (the account the specs sign in with) and one employee to punch for
+// one administrator (the account the specs sign in with), one employee the administration works on and one the
+// punch tests use — a second employee keeps the tiles of the presence screen out of their way
 const admin = users.create({ login: "admin", displayName: "E2E Admin", roleKeys: ["admin"] });
 const anna = users.create({ login: "anna", displayName: "Anna Muster", roleKeys: ["employee"] });
+const ben = users.create({ login: "ben", displayName: "Ben Beispiel", roleKeys: ["employee"] });
 auth.setPassword({ userId: admin.id, password: adminPassword, mustChangePw: false, actorId: admin.id, now: now() });
 auth.setPassword({ userId: anna.id, password: adminPassword, mustChangePw: false, actorId: admin.id, now: now() });
+auth.setPassword({ userId: ben.id, password: adminPassword, mustChangePw: false, actorId: admin.id, now: now() });
 // an account that still carries its start password: the web app has to ask for a new one before anything else
 const fresh = users.create({ login: "start", displayName: "Neue Kraft", roleKeys: ["employee"] });
 auth.setPassword({ userId: fresh.id, password: adminPassword, mustChangePw: true, actorId: admin.id, now: now() });
@@ -97,6 +102,7 @@ const api = createApi({
 	users,
 	entries,
 	absences,
+	dayNotes,
 	holidays,
 	rules,
 	payouts,

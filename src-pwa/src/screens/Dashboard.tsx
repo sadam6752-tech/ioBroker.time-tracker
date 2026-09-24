@@ -19,7 +19,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatMinutes, formatTime } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { ErrorAlert } from "../components/feedback";
-import { useSession } from "../state/session";
+import { hasPermission, useSession } from "../state/session";
 import { useSync } from "../offline/useSync";
 
 /**
@@ -29,14 +29,16 @@ import { useSync } from "../offline/useSync";
  */
 export function Dashboard(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
-	const { session } = useSession();
+	const { session, permissions } = useSession();
 	const { pending, record, outcome } = useSync();
 	const queryClient = useQueryClient();
 	const [note, setNote] = useState("");
 	const [queued, setQueued] = useState(false);
+	/** The administrator account belongs to nobody and does not punch (`time.punch`). */
+	const mayPunch = hasPermission(permissions, "time.punch");
 
 	const timeZone = session?.user.timezone ?? "UTC";
-	const status = useQuery({ queryKey: ["status"], queryFn: () => api.status() });
+	const status = useQuery({ queryKey: ["status"], queryFn: () => api.status(), enabled: mayPunch });
 
 	// after a successful synchronisation the figures and the status are stale
 	useEffect(() => {
@@ -58,6 +60,24 @@ export function Dashboard(): React.JSX.Element {
 
 	const data = status.data;
 	const open = data?.hasOpenEntry ?? false;
+
+	// an account without the punch right administers the employees: it has no working time of its own
+	if (!mayPunch) {
+		return (
+			<AppShell title={t("nav.dashboard")}>
+				<Card>
+					<CardContent>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+						>
+							{t("dashboard.adminOnly")}
+						</Typography>
+					</CardContent>
+				</Card>
+			</AppShell>
+		);
+	}
 
 	return (
 		<AppShell title={t("nav.dashboard")}>

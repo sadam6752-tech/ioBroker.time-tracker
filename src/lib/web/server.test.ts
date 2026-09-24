@@ -8,6 +8,7 @@ import * as path from "node:path";
 import { openAndMigrate, type Db } from "../db/database";
 import { seed } from "../db/seed";
 import { createAbsencesRepository } from "../db/repositories/absences";
+import { createDayNotesRepository } from "../db/repositories/dayNotes";
 import { createEntriesRepository } from "../db/repositories/entries";
 import { createHolidaysRepository } from "../db/repositories/holidays";
 import { createPayoutsRepository } from "../db/repositories/payouts";
@@ -64,6 +65,7 @@ describe("web server", () => {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const dayNotes = createDayNotesRepository(db);
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
@@ -89,6 +91,7 @@ describe("web server", () => {
 			users,
 			entries,
 			absences,
+			dayNotes,
 			holidays,
 			rules,
 			payouts,
@@ -313,6 +316,7 @@ describe("web server without a web interface", () => {
 		const users = createUsersRepository(db);
 		const entries = createEntriesRepository(db);
 		const absences = createAbsencesRepository(db);
+		const dayNotes = createDayNotesRepository(db);
 		const holidays = createHolidaysRepository(db);
 		const rules = createRulesRepository(db);
 		const payouts = createPayoutsRepository(db);
@@ -330,6 +334,7 @@ describe("web server without a web interface", () => {
 			users,
 			entries,
 			absences,
+			dayNotes,
 			holidays,
 			rules,
 			payouts,

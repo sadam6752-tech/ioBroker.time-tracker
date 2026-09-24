@@ -112,7 +112,9 @@ describe("users repository", () => {
 			const admin = repo.create({ login: "admin", displayName: "Admin", roleKeys: ["admin"] });
 			const employee = repo.create({ login: "anna", displayName: "Anna", roleKeys: ["employee"] });
 
-			expect(repo.permissions(admin.id)).to.have.lengthOf(33);
+			// the administrator does not punch: that account manages the employees instead of working with them
+			expect(repo.hasPermissions(admin.id, ["time.punch"])).to.equal(false);
+			expect(repo.permissions(admin.id)).to.have.lengthOf(32);
 			expect(repo.permissions(employee.id)).to.deep.equal([
 				"absence.request",
 				"report.view_own",

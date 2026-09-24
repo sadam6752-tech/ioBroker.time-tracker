@@ -119,6 +119,13 @@ instead of working with them, so it does not punch (the role has no `time.punch`
 back through the `employee` role — permissions are the union of the roles of an account. A `manager` punches and
 corrects.
 
+**One active administrator always remains:** deactivating or taking the `admin` role away from the *last* active
+administrator is refused (problem `last_administrator`, 409) — without that role nobody could administer the
+installation any more, and the way back would be a restart of the instance with a free `adminLogin`. The web app says
+it before the change: the switch of the **own** account explains why an account cannot deactivate itself (`PATCH` and
+`DELETE /users/:id` refuse it on the server as well), and the role dialog names the last administrator and keeps
+saving locked while the role would be gone.
+
 The **edit window** (`edit_window_days`, default 7 days) bounds what an account may do with a day of its own without
 a decision of the administration. Since times belong to the administration, it now matters for the **offline queue**:
 a queued punch that is older arrives as the conflict `too_old` and counts once the office accepts it. Managers and
@@ -370,6 +377,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.2 (2026-09-24)
+
+- (Alex) security: the administration cannot lock itself out any more. Deactivating or taking the admin role away from
+  the **last active administrator** is refused (problem `last_administrator`, 409), and the web app warns before it is
+  tried on the **own** account: the own switch explains why an account cannot deactivate itself, and the role dialog
+  names the last administrator and keeps saving locked
+- (Alex) fix: the PDF statement writes the **absences** left aligned on lines of their own. They started where the last
+  cell of the day table was drawn, so every line was squeezed into the rest of that row
+- (Alex) fix: the list of the absence types shows “visible for everybody” on a line of its own, so the long facts
+  (`reduces vacation`) cannot push it out of the row any more
+
 ### 0.7.1 (2026-09-24)
 
 - (Alex) fix: the correction dialog in the month view of an employee shows and changes **his** punches. It asked the
@@ -411,15 +429,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   the summary, a request that waits for its decision is `TENTATIVE`, and the approval state travels in `STATUS`.
   On top the administration finds a **year overview** in the absence tab: approved days per employee and month, fed by
   its own request for the calendar year
-
-### 0.4.4 (2026-09-23)
-
-- (Alex) fix: the browser tests moved from `e2e/` to `test/e2e/`. The repository checker looks at the imported
-  packages of the sources and skips the `test` directory only, so `@playwright/test` (a dev dependency that the specs
-  use) was reported as `W5042` “used but not found in dependencies”. `playwright.config.ts`, the e2e workflow and the
-  docs follow the new path, the test server computes the repository root one level deeper, and the root
-  `tsconfig.json` leaves the browser tests to their own `test/e2e/tsconfig.json` — they need the DOM types the
-  adapter does not have
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

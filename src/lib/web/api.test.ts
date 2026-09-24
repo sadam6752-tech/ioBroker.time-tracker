@@ -1424,6 +1424,51 @@ describe("web api", () => {
 				(await send("DELETE", `/users/${adminId}`, { headers: headers(adminToken, adminCsrf) })).status,
 			).to.equal(400);
 		});
+
+		it("keeps the last active administrator in place", async () => {
+			// a second administrator may be added and demoted again
+			const second = bodyOf<{ user: { id: number } }>(
+				await send("POST", "/users", {
+					body: { login: "chef", displayName: "Chef", password: "Zeit-2026-klar", roleKeys: ["admin"] },
+					headers: headers(adminToken, adminCsrf),
+				}),
+			).user;
+			expect(
+				(
+					await send("PATCH", `/users/${second.id}`, {
+						body: { roleKeys: ["manager"] },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(200);
+
+			// the last active one keeps the role: without it the installation could not be administered any more
+			for (const body of [{ roleKeys: ["manager"] }, { roleKeys: [] }]) {
+				const refused = await send("PATCH", `/users/${adminId}`, {
+					body,
+					headers: headers(adminToken, adminCsrf),
+				});
+				expect(refused.status).to.equal(409);
+				expect(bodyOf<{ code: string }>(refused).code).to.equal("last_administrator");
+			}
+			expect(users.roles(adminId)).to.deep.equal(["admin"]);
+
+			// as soon as somebody else carries the role the change goes through (deactivating the own account stays
+			// refused by its own rule — the test above checks that)
+			await send("PATCH", `/users/${second.id}`, {
+				body: { roleKeys: ["admin"] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(
+				(
+					await send("PATCH", `/users/${adminId}`, {
+						body: { roleKeys: ["manager"] },
+						headers: headers(adminToken, adminCsrf),
+					})
+				).status,
+			).to.equal(200);
+			expect(users.roles(adminId)).to.deep.equal(["manager"]);
+		});
 	});
 
 	describe("work profiles and shift rules", () => {

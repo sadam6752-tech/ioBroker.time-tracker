@@ -175,3 +175,38 @@ die Warteschlange eines Mitarbeiters sieht.
 **Nachweis:** `src/lib/db/repositories/dayNotes.test.ts`, die Rechte in `src/lib/web/api.test.ts` (Mitarbeiter: 403
 für Zeiten, 200 für die eigene Notiz), `too_old` in `src/lib/services/sync.test.ts` und der Ablauf in
 `test/e2e/day-notes.spec.ts` (Notiz des Mitarbeiters, Korrektur und „erledigt" der Verwaltung).
+
+## D7 — Es bleibt immer ein aktiver Administrator (24.09.2026)
+
+Ein Administrator kann sich selbst die Verwaltung entziehen. Zwei Wege führten dorthin: das **Deaktivieren** des
+eigenen Kontos (dagegen half schon eine Sonderregel — `PATCH /users/:id` und `DELETE /users/:id` lehnen es ab, weil die
+laufende Sitzung sofort enden würde) und das **Entziehen der Rolle `admin`** über den Rollen-Dialog. Der zweite Weg war
+ungeschützt: wer der letzte aktive Administrator ist und sich die Rolle nimmt, kann danach nichts mehr verwalten —
+Mitarbeiter, Rollen, Terminals, Einstellungen und Sicherungen hängen allein an dieser Rolle. Zurück käme man nur über
+einen Neustart der Instanz mit einem **freien** `adminLogin` (`ensureAdministrator` legt nur dann einen Administrator
+an, wenn es keinen **aktiven** gibt, und scheitert mit `LoginExistsError`, wenn der konfigurierte Login vergeben ist).
+
+**Entscheidung:** Eine Änderung, die die Installation ohne aktiven Administrator zurücklassen würde, wird abgelehnt —
+Problem `last_administrator`, Status 409. Die Regel prüft **beide** Felder zusammen (`isActive` und `roleKeys`), weil
+eine Anfrage beide setzen kann, und zählt nur **aktive** Konten: ein deaktivierter Administrator hilft niemandem.
+
+| Situation                                                            | Ergebnis                                          |
+| -------------------------------------------------------------------- | ------------------------------------------------- |
+| letzter aktiver Administrator wird deaktiviert                        | 409 `last_administrator`                          |
+| letzter aktiver Administrator verliert die Rolle / `roleKeys: []`     | 409 `last_administrator`                          |
+| es bleibt ein anderer aktiver Administrator                           | 200, die Änderung geht durch                      |
+| eigenes Konto deaktivieren                                            | 400 `ValidationError` (eigene Regel, unverändert) |
+
+`DELETE /users/:id` deaktiviert Konten ebenfalls, verlangt aber `user.deactivate` — das trägt nur die Rolle `admin`, der
+Aufrufer ist also selbst ein aktiver Administrator und das Ziel nie der letzte. Die Regel steht deshalb nur im `PATCH`;
+ein Kommentar an der Stelle hält das fest.
+
+**Die Oberfläche warnt vorher:** Der Schalter des **eigenen** Kontos erklärt in einem Dialog, warum das eigene Konto
+nicht deaktiviert werden kann, statt eine Anfrage zu schicken, die abgelehnt würde. Der Rollen-Dialog nennt beim letzten
+aktiven Administrator, dass die Rolle nicht entzogen werden kann, und sperrt „Speichern", solange der Haken fehlt; bei
+jedem anderen eigenen Konto warnt er nur, dass sofort alle Verwaltungsrechte wegfallen. Die Meldung des Servers
+erscheint als `error.last_administrator` in allen elf Sprachen.
+
+**Nachweis:** `src/lib/web/api.test.ts` („keeps the last active administrator in place": zweiter Administrator,
+Ablehnung für den letzten, Erfolg sobald ein anderer die Rolle trägt), `test/e2e/users.spec.ts` (Warnung am eigenen
+Konto, gesperrtes Speichern, unveränderter Zustand).

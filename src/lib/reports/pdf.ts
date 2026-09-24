@@ -59,7 +59,7 @@ interface FontChoice {
 }
 
 /** Margins and text sizes of the statement (A4 portrait, points). */
-const LAYOUT = {
+export const LAYOUT = {
 	margin: 40,
 	fontSize: 9,
 	lineHeight: 14,
@@ -438,8 +438,14 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 
 	// --- absences -------------------------------------------------------------
 	if (input.absences.length > 0) {
+		// The block starts at the left margin over the whole width: after the table the drawing position sits inside
+		// the page (the last cell was written there), and every line would be squeezed into the rest of that row.
+		const contentWidth = doc.page.width - 2 * LAYOUT.margin;
 		doc.moveDown(1);
-		doc.font(fonts.bold).fontSize(10).fillColor("#000000").text(labels.absences);
+		doc.font(fonts.bold)
+			.fontSize(10)
+			.fillColor("#000000")
+			.text(labels.absences, LAYOUT.margin, doc.y, { width: contentWidth });
 		doc.moveDown(0.3);
 		for (const absence of input.absences) {
 			const portion = absence.dayPortion === 0.5 ? labels.halfDay : labels.fullDay;
@@ -451,6 +457,9 @@ export async function buildMonthStatement(input: PdfStatementInput): Promise<Buf
 						absence.dateTo,
 						locale,
 					)}, ${portion}${absence.hours === null ? "" : `, ${absence.hours} h`}`,
+					LAYOUT.margin,
+					doc.y,
+					{ width: contentWidth },
 				);
 		}
 	}

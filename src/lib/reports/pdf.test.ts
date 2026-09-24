@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import type { DayAggregateRecord } from "../services/aggregation";
 import { ValidationError } from "../errors";
 import { REPORT_LABELS, reportLabels, type ReportLabels } from "./labels";
-import { buildMonthStatement } from "./pdf";
+import { buildMonthStatement, LAYOUT } from "./pdf";
 
 /**
  * Builds a day row with sensible defaults.
@@ -200,31 +200,30 @@ describe("monthly report (pdf)", () => {
 		expect(text).to.contain("Tage: 0");
 	});
 
-	it("lists the absences and the signature lines", async () => {
-		const text = textOf(
-			await buildMonthStatement({
-				...baseInput,
-				days: [day("2026-09-01", { workedMin: 480, balanceMin: 0 })],
-				absences: [
-					{
-						typeCode: "U",
-						typeName: "Urlaub",
-						dateFrom: "2026-09-07",
-						dateTo: "2026-09-11",
-						dayPortion: 1,
-						hours: null,
-					},
-					{
-						typeCode: "A",
-						typeName: "Arzt",
-						dateFrom: "2026-09-15",
-						dateTo: "2026-09-15",
-						dayPortion: 0.5,
-						hours: 4,
-					},
-				],
-			}),
-		);
+	it("lists the absences at the left margin, one line each, and the signature lines", async () => {
+		const pdf = await buildMonthStatement({
+			...baseInput,
+			days: [day("2026-09-01", { workedMin: 480, balanceMin: 0 })],
+			absences: [
+				{
+					typeCode: "U",
+					typeName: "Urlaub",
+					dateFrom: "2026-09-07",
+					dateTo: "2026-09-11",
+					dayPortion: 1,
+					hours: null,
+				},
+				{
+					typeCode: "A",
+					typeName: "Arzt",
+					dateFrom: "2026-09-15",
+					dateTo: "2026-09-15",
+					dayPortion: 0.5,
+					hours: 4,
+				},
+			],
+		});
+		const text = textOf(pdf);
 
 		expect(text).to.contain("Abwesenheiten");
 		expect(text).to.contain("U - Urlaub");
@@ -232,6 +231,20 @@ describe("monthly report (pdf)", () => {
 		expect(text).to.contain("4 h");
 		expect(text).to.contain("Unterschrift Mitarbeiter");
 		expect(text).to.contain("Unterschrift Vorgesetzter");
+
+		// The block starts at the left margin and every absence is one drawn line: the heading used to begin where
+		// the last cell of the table was written, so the lines were squeezed into the rest of that row.
+		const pieces = piecesOf(pdf);
+		const heading = pieces.filter(piece => piece.text.includes("Abwesenheiten"));
+		const firstLine = pieces.filter(piece => piece.text.includes("U - Urlaub"));
+		expect(
+			heading.map(piece => piece.x),
+			"heading of the block",
+		).to.deep.equal([LAYOUT.margin]);
+		expect(
+			firstLine.map(piece => piece.x),
+			"first absence",
+		).to.deep.equal([LAYOUT.margin]);
 	});
 
 	it("uses the labels of the employee", async () => {

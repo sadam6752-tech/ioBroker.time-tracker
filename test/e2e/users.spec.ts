@@ -87,6 +87,30 @@ test("creates an employee with the chosen role", async ({ page, request }) => {
 	expect(stored?.roles ?? []).not.toEqual(["employee"]);
 });
 
+test("warns before the own account loses its administration", async ({ page }) => {
+	await signIn(page);
+	await page.goto("/admin");
+
+	// the switch of the own row deactivates nothing: it explains why the own account cannot do that
+	const ownRow = page.getByRole("listitem").filter({ hasText: "E2E Admin" });
+	await ownRow.getByRole("checkbox").click();
+	const hint = page.getByRole("dialog");
+	await expect(hint.getByText("Eigenes Konto")).toBeVisible();
+	await hint.getByRole("button", { name: "Schließen" }).click();
+	await expect(hint).toBeHidden();
+	await expect(ownRow.getByRole("checkbox")).toBeChecked();
+
+	// the roles dialog warns as well and keeps saving locked while the own account would lose its role
+	await ownRow.getByRole("button", { name: "Rollen" }).click();
+	const roles = page.getByRole("dialog");
+	await expect(roles.getByTestId("roles-warning")).toBeHidden();
+	await roles.getByRole("checkbox", { name: "Administrator" }).click();
+	await expect(roles.getByTestId("roles-warning")).toBeVisible();
+	await expect(roles.getByRole("button", { name: "Speichern", exact: true })).toBeDisabled();
+	await roles.getByRole("button", { name: "Abbrechen" }).click();
+	await expect(roles).toBeHidden();
+});
+
 test("creates a terminal for a group of employees", async ({ page }) => {
 	await signIn(page);
 	await page.goto("/admin");

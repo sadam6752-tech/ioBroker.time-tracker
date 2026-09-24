@@ -617,7 +617,7 @@ function WorkProfileDialog({ user, onClose }: { user: AdminUser | null; onClose:
 
 function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const { t } = useTranslation();
-	const { permissions } = useSession();
+	const { session, permissions } = useSession();
 	const queryClient = useQueryClient();
 	const mayEdit = hasPermission(permissions, "user.edit");
 	const mayCreate = hasPermission(permissions, "user.create");
@@ -628,10 +628,16 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 	const [photo, setPhoto] = useState<string | null>(null);
 	const [rolesUser, setRolesUser] = useState<AdminUser | null>(null);
 	const [profileUser, setProfileUser] = useState<AdminUser | null>(null);
+	/** True while the hint about the own account is on screen. */
+	const [warnSelf, setWarnSelf] = useState(false);
 	// assigning roles is a right of its own (the server checks it again)
 	const mayManageRoles = hasPermission(permissions, "user.manage_roles");
+	/** Account of the caller: it cannot be deactivated itself, and its admin role is the last one to keep. */
+	const ownId = session?.user.id ?? 0;
 
 	const users = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users(true) });
+	/** Active administrators: the last one keeps its activity and its role (the server refuses that change too). */
+	const activeAdmins = (users.data ?? []).filter(user => user.isActive && user.roles.includes("admin"));
 
 	/** Reloads the list after a change. */
 	const reload = async (): Promise<void> => {
@@ -748,9 +754,14 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 									<Switch
 										checked={user.isActive}
 										title={t(user.isActive ? "admin.user.active" : "admin.user.inactive")}
-										onChange={() =>
-											change.mutate({ id: user.id, patch: { isActive: !user.isActive } })
-										}
+										onChange={() => {
+											if (user.id === ownId && user.isActive) {
+												// the own account cannot be deactivated (the server refuses it) — explain it
+												setWarnSelf(true);
+												return;
+											}
+											change.mutate({ id: user.id, patch: { isActive: !user.isActive } });
+										}}
 									/>
 								</>
 							)}
@@ -845,6 +856,8 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 			{rolesUser && (
 				<RolesDialog
 					user={rolesUser}
+					isSelf={rolesUser.id === ownId}
+					lastAdministrator={activeAdmins.length === 1 && rolesUser.roles.includes("admin")}
 					onClose={() => setRolesUser(null)}
 					onSaved={roleKeys => {
 						change.mutate({ id: rolesUser.id, patch: { roleKeys } });
@@ -852,6 +865,24 @@ function UsersTab({ language }: { language: string }): React.JSX.Element {
 					}}
 				/>
 			)}
+
+			<Dialog
+				open={warnSelf}
+				onClose={() => setWarnSelf(false)}
+			>
+				<DialogTitle>{t("admin.user.selfTitle")}</DialogTitle>
+				<DialogContent>
+					<DialogContentText>{t("admin.user.selfDeactivate")}</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button
+						variant="contained"
+						onClick={() => setWarnSelf(false)}
+					>
+						{t("common.close")}
+					</Button>
+				</DialogActions>
+			</Dialog>
 
 			{creating && (
 				<CreateUserDialog
@@ -1295,24 +1326,35 @@ function TerminalsTab({ language }: { language: string }): React.JSX.Element {
 /**
  * Dialog that assigns the roles of an employee.
  *
- * @param props - employee, close handler and save handler
+ * The account of the caller and the last active administrator are special: losing the admin role there would end
+ * the administration of the installation, so the dialog says it before anybody tries (the server refuses it, too).
+ *
+ * @param props - employee, flags, close handler and save handler
  * @param props.user - employee to edit
+ * @param props.isSelf - true when the caller edits the own account
+ * @param props.lastAdministrator - true when the employee is the only active administrator
  * @param props.onClose - called when the dialog is closed
  * @param props.onSaved - called with the chosen role keys
  * @returns the dialog
  */
 function RolesDialog({
 	user,
+	isSelf,
+	lastAdministrator,
 	onClose,
 	onSaved,
 }: {
 	user: AdminUser;
+	isSelf: boolean;
+	lastAdministrator: boolean;
 	onClose: () => void;
 	onSaved: (roleKeys: string[]) => void;
 }): React.JSX.Element {
 	const { t } = useTranslation();
 	const roles = useQuery({ queryKey: ["admin", "roles"], queryFn: () => api.roles() });
 	const [chosen, setChosen] = useState<string[]>(user.roles);
+	/** True while the account would lose the admin role. */
+	const losesAdmin = user.roles.includes("admin") && !chosen.includes("admin");
 
 	/**
 	 * Adds or removes a role.
@@ -1331,6 +1373,15 @@ function RolesDialog({
 		>
 			<DialogTitle>{t("admin.user.roles")}</DialogTitle>
 			<DialogContent>
+				{isSelf && losesAdmin && (
+					<Alert
+						data-testid="roles-warning"
+						severity={lastAdministrator ? "info" : "warning"}
+						sx={{ mt: 1 }}
+					>
+						{lastAdministrator ? t("admin.user.lastAdminRoles") : t("admin.user.selfRoles")}
+					</Alert>
+				)}
 				<Stack
 					spacing={1}
 					sx={{ mt: 1 }}
@@ -1344,6 +1395,7 @@ function RolesDialog({
 						>
 							<Switch
 								checked={chosen.includes(role.key)}
+								inputProps={{ "aria-label": t(`role.${role.key}`, role.name) }}
 								onChange={(_event, checked) => toggle(role.key, checked)}
 							/>
 							<Typography>{t(`role.${role.key}`, role.name)}</Typography>
@@ -1355,7 +1407,7 @@ function RolesDialog({
 				<Button onClick={onClose}>{t("common.cancel")}</Button>
 				<Button
 					variant="contained"
-					disabled={chosen.length === 0}
+					disabled={chosen.length === 0 || (lastAdministrator && losesAdmin)}
 					onClick={() => onSaved(chosen)}
 				>
 					{t("common.save")}
@@ -2866,6 +2918,9 @@ function AbsenceTypesCard({
 	/**
 	 * The facts of a type in one line.
 	 *
+	 * The visibility is not part of it: it has its own line in the row, so the long facts (`Zieht vom Urlaub ab`)
+	 * cannot push it out of the line.
+	 *
 	 * @param type - the type
 	 * @returns text like `Bezahlt · Faktor (%): 100 · Zieht vom Urlaub ab`
 	 */
@@ -2876,9 +2931,6 @@ function AbsenceTypesCard({
 		];
 		if (type.reduceVacation) {
 			parts.push(t("admin.absenceTypes.reduceVacation"));
-		}
-		if (type.isActive) {
-			parts.push(t("admin.absenceTypes.active"));
 		}
 		return parts.join(" · ");
 	};
@@ -2933,7 +2985,21 @@ function AbsenceTypesCard({
 							primary={`${type.code} – ${type.name}${
 								type.reduceVacation ? ` (${t("absences.vacationTag")})` : ""
 							}`}
-							secondary={summary(type)}
+							secondary={
+								<>
+									{summary(type)}
+									{type.isActive && (
+										// the visibility keeps a line of its own: the facts above must not push it out
+										<Typography
+											component="span"
+											variant="caption"
+											sx={{ display: "block" }}
+										>
+											{t("admin.absenceTypes.active")}
+										</Typography>
+									)}
+								</>
+							}
 						>
 							<span
 								data-testid={`absence-type-color-${type.id}`}

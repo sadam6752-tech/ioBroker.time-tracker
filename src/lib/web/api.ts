@@ -790,6 +790,33 @@ export function createApi(deps: ApiDeps): Api {
 	}
 
 	/**
+	 * Refuses a change that would leave the installation without an active administrator.
+	 *
+	 * The installation creates exactly one administrator; if the last active one is deactivated or loses the role,
+	 * nobody can administer any more — only the `admin` role carries `user.edit`, `user.manage_roles`, `settings.edit`
+	 * and the rest. The way back would be an instance restart with a free `adminLogin`, so the change is refused
+	 * instead. Only active accounts count: a deactivated administrator helps nobody.
+	 *
+	 * @param userId - account that is changed
+	 * @param next - state the account would have afterwards
+	 * @param next.isActive - activity after the change
+	 * @param next.roleKeys - roles after the change
+	 */
+	function requireActiveAdministrator(userId: number, next: { isActive: boolean; roleKeys: string[] }): void {
+		if (next.isActive && next.roleKeys.includes("admin")) {
+			return;
+		}
+		const remaining = users.list().some(user => user.id !== userId && users.roles(user.id).includes("admin"));
+		if (!remaining) {
+			throw problem(
+				409,
+				"last_administrator",
+				"the last active administrator cannot be deactivated or lose the admin role",
+			);
+		}
+	}
+
+	/**
 	 * Registers a route and remembers it for the documentation.
 	 *
 	 * @param method - HTTP method(s)
@@ -2456,7 +2483,8 @@ export function createApi(deps: ApiDeps): Api {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
 		const id = numberParam(context, "id");
-		if (!users.findById(id)) {
+		const target = users.findById(id);
+		if (!target) {
 			throw new NotFoundError(`user ${id} not found`);
 		}
 
@@ -2544,6 +2572,15 @@ export function createApi(deps: ApiDeps): Api {
 			});
 		}
 
+		// one rule for both fields: deactivating or demoting the last active administrator is refused, so the
+		// installation always keeps somebody who may administer it
+		if (patch.isActive === false || roleKeys !== null) {
+			requireActiveAdministrator(id, {
+				isActive: patch.isActive ?? target.isActive,
+				roleKeys: roleKeys ?? users.roles(id),
+			});
+		}
+
 		const updated = users.update({
 			id,
 			patch,
@@ -2581,6 +2618,8 @@ export function createApi(deps: ApiDeps): Api {
 		if (id === context.auth.user.id) {
 			throw new ValidationError("an account cannot deactivate itself");
 		}
+		// `user.deactivate` is carried by the admin role alone, so the caller is an active administrator: an account
+		// deactivated here is never the last one (and the own one is refused above)
 
 		// accounts are never deleted, they are deactivated and keep their history
 		users.update({

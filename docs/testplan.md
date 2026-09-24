@@ -140,6 +140,7 @@ Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen.
 | T18 | 24.09.2026 | Alex | ok | alles wie erwartet: Notiz am Tag (Symbol), Korrektur im fremden Monat landete beim Mitarbeiter, `POST /entries` des Mitarbeiters 403, Administrator-Konto ohne Stempel-Knopf |
 | T19 | 24.09.2026 | Alex | ok | Schalter der eigenen Zeile öffnete nur den Hinweis, Rollen-Dialog sperrte „Speichern", API antwortete 409 `last_administrator`, Rollen unverändert |
 | T20 | 24.09.2026 | Alex | ok | PDF-Abwesenheiten linksbündig in eigenen Zeilen unter der Tagestabelle, „Für alle sichtbar" in eigener Zeile unter den Fakten |
+| T21 | 24.09.2026 | Alex | ok (eine Abweichung, behoben in 0.7.4) | `calendar.feedUrl` lieferte die Datei, der Download über den Dateiserver funktioniert, das Skript aus §10a loggt die Abwesenheiten; im ersten Durchlauf führte der Link zur Anmeldung — ihm fehlte das Präfix `/api`, behoben in 0.7.4 (Datei liegt im Instanzordner `files/time-tracker.0/`, sichtbar als eigener Eintrag im Dateimanager) |
 
 ## 8. Bewusst nicht im Umfang dieser Runde
 

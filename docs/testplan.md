@@ -104,7 +104,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 | T18 | Notiz und Korrektur im Monat    | als `anna` anmelden und im Monat den Stift bei einem Tag in der Vergangenheit öffnen (nur das Feld „Notiz für die Verwaltung", keine Zeitfelder), eine Notiz speichern; als `admin` den Monat dieses Mitarbeiters öffnen, denselben Tag aufklappen (Stempel des Mitarbeiters und seine Notiz), einen Stempel ergänzen und „Als erledigt markieren" drücken; danach prüfen, ob das Administrator-Konto selbst stempeln kann | die Notiz erscheint als Symbol am Tag (offen = gelb, erledigt = grau) und Speichern schickt `PUT /day-notes`; die Verwaltung sieht **die Stempel des Mitarbeiters** (nicht die eigenen) und „Stempel hinzufügen" landet in seinem Konto (`source: admin`); `POST /entries` mit dem Token des Mitarbeiters antwortet `403 permission_denied`; das Administrator-Konto hat keinen Stempel-Knopf, die Startseite erklärt, wofür es da ist |
 | T19 | Administrator-Schutz           | in der Verwaltung den Schalter der **eigenen** Zeile drücken, danach „Rollen" öffnen und den Haken „Administrator" entfernen; anschließend `PATCH /api/users/<eigene id>` mit `{"isActive": false}` und mit `{"roleKeys": []}` (Konsole oder curl, mit CSRF-Token) | der Schalter öffnet nur den Hinweis „Eigenes Konto", das Konto bleibt aktiv; der Rollen-Dialog zeigt den Hinweis zum letzten aktiven Administrator und lässt „Speichern" gesperrt; die API antwortet beide Male **409** `last_administrator`, die Rollen bleiben `["admin"]` |
 | T20 | Abwesenheiten im PDF und in der Artenliste | einen Monat mit mindestens zwei Abwesenheiten als PDF herunterladen (Berichte → Monat als PDF) und in der Verwaltung eine Abwesenheitsart ansehen, die „Zieht vom Urlaub ab" **und** „Für alle sichtbar" trägt | die Abwesenheiten stehen **linksbündig** in je einer Zeile unter der Tagestabelle (nichts eingerückt, nichts umgebrochen); in der Artenliste steht „Für alle sichtbar" in einer eigenen Zeile unter den Fakten |
-| T21 | Kalender in ioBroker           | `commands.rotateCalendarToken` auf `true` schreiben, `calendar.feedUrl` und `calendar.feedFile` lesen; die Datei im `ical`-Adapter als **lokale Datei** eintragen oder `calendar.feedUrl` an `ical.0.iCalReadTrigger` geben; `calendar.absences` im Skript-Tab mit `JSON.parse(getState("time-tracker.0.calendar.absences").val)` prüfen; danach eine Abwesenheit in der App anlegen | `calendar.feedUrl` enthält einen Link mit Token und `calendar.feedFile` den Pfad der Datei; der `ical`-Adapter zeigt die Abwesenheit als „Name: Art (Code)", `calendar.updatedAt` und `calendar.absences` ändern sich sofort nach dem Anlegen; ein zweiter Aufruf des Befehls erzeugt einen **neuen** Token, der alte Link antwortet **401** |
+| T21 | Kalender in ioBroker           | `commands.rotateCalendarToken` auf `true` schreiben, dann `calendar.feedUrl` **im Browser** öffnen (die URL muss `/api/calendar.ics?token=…` enthalten), `calendar.feedFile` im `ical`-Adapter als **lokale Datei** eintragen (oder den Link an `ical.0.iCalReadTrigger` geben), die Datei zusätzlich über `http://<host>:8081/files/time-tracker.0/calendar.ics` herunterladen und das Skript aus dem README (Abschnitt *Calendar for ioBroker*) im Skripte-Tab starten; danach eine Abwesenheit in der App anlegen | der Browser zeigt den `VCALENDAR`-Text (keine Anmeldung), der Download liefert dieselbe Datei; der `ical`-Adapter und das Skript zeigen die Abwesenheit als „Name: Art (Code)", `calendar.updatedAt` und `calendar.absences` ändern sich sofort nach dem Anlegen; ein zweiter Aufruf des Befehls erzeugt einen **neuen** Token, der alte Link antwortet **401** |
 
 ## 6. Abnahmekriterien
 
@@ -162,6 +162,36 @@ Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen.
 - Offene Abweichungen als Liste in `PROJECT_PROMPT.md` (Abschnitt 13) ergänzen.
 - Erst danach Version taggen (`npm run release -- patch|minor`) — der Deploy-Job veröffentlicht dann über
   npm (trusted publishing vorausgesetzt) und legt das GitHub-Release an.
+
+## 10a. Prüfschnipsel für T21 (nur zum Nachsehen, nicht Teil des Adapters)
+
+`calendar.absences` ist JSON; dieses Skript im **Skripte-Tab** schreibt die heute laufenden Abwesenheiten ins Log und
+meldet sich bei jeder Aktualisierung des Adapters erneut:
+
+```js
+const id = "time-tracker.0.calendar.absences";
+
+/** Schreibt die heute laufenden Abwesenheiten ins Log. */
+function pruefeKalender() {
+	const state = getState(id);
+	if (!state || !state.val) {
+		log("time-tracker: noch keine Abwesenheiten", "warn");
+		return;
+	}
+	const heute = formatDate(new Date(), "YYYY-MM-DD");
+	const laufend = JSON.parse(state.val).filter(
+		a => a.approval === "approved" && a.from <= heute && a.to >= heute,
+	);
+	log(
+		laufend.length === 0
+			? "time-tracker: heute ist niemand abwesend"
+			: `time-tracker: ${laufend.map(a => `${a.name} - ${a.type} (${a.code}) bis ${a.to}`).join(", ")}`,
+	);
+}
+
+pruefeKalender();
+on(id, pruefeKalender);
+```
 
 ## 11. Entwicklungshinweise (Web-Oberfläche)
 

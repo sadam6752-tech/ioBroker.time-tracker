@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.6.0 (2026-09-24)
+
+- (Alex) change: the year overview of the absence tab became a **calendar**. The month now stands as a grid (Monday
+  first) with the name of every absent employee on the day — approved days green, requested ones grey, numbers of a
+  public holiday in bold. A **year dropdown** (three years back and ahead) and arrows for the month make the past and
+  the future reachable, so the administration can look ahead and back instead of only seeing the current year
+
 ### 0.5.0 (2026-09-23)
 
 - (Alex) new: the own absences can be subscribed in any calendar app. `POST /calendar/token` hands out a personal link

@@ -253,12 +253,16 @@ broken instance.
 
 The absences of the whole company reach ioBroker in two ways — both without a session and without a token:
 
-| What         | Where                                                                                        | Who uses it                                                                                   |
-| ------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **File**     | `<iobroker-data>/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes | the `ical` adapter as a **local file** (`iobroker-data/time-tracker.0/calendar.ics`)           |
-| **URL**      | `calendar.feedUrl` (`http://<host>:<port>/calendar.ics?token=…`)                              | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                    |
-| **Data**     | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                          |
-| **When**     | `calendar.updatedAt`                                                                          | to see how current the three above are                                                        |
+| What     | Where                                                                                                              | Who uses it                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| **File** | `<iobroker-data>/files/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes                | the `ical` adapter as a **local file**, or a browser through the file server of a `web` instance |
+| **URL**  | `calendar.feedUrl` (`http://<host>:<port>/api/calendar.ics?token=…`)                                                | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                      |
+| **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                            |
+| **When** | `calendar.updatedAt`                                                                                                | to see how current the three above are                                                          |
+
+The file lives in the `files` folder of the instance data, because the instance folder next to it can only be read by
+the adapter itself. With a `web` instance on the usual port the same file is downloadable as
+`http://<host>:8081/files/time-tracker.0/calendar.ics`; the `ical` adapter points at the path from `calendar.feedFile`.
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
 for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
@@ -271,6 +275,9 @@ setState("time-tracker.0.commands.rotateCalendarToken", true);   // create or re
 log(getState("time-tracker.0.calendar.feedUrl").val);            // paste it into a calendar app
 setState("ical.0.iCalReadTrigger", "read " + getState("time-tracker.0.calendar.feedUrl").val);
 ```
+
+`calendar.absences` is JSON, so any script can read it — the field list stands in the table above. T21 in
+[`docs/testplan.md`](docs/testplan.md) carries a small snippet that logs the running absences.
 
 ### Actions (trigger rules)
 
@@ -405,6 +412,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.4 (2026-09-24)
+
+- (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without
+  it a browser got the web app and its login instead of the calendar
+- (Alex) change: the written calendar file sits in `<iobroker-data>/files/time-tracker.<n>/calendar.ics` instead of the
+  instance folder next to it — that one is readable for the adapter alone, while `files/` is handed out by a `web`
+  instance as a download (`http://<host>:8081/files/time-tracker.0/calendar.ics`); the `ical` adapter keeps reading it
+  as a local file
+- (Alex) docs: the test plan carries a small snippet for the *Scripts* tab that reads `calendar.absences` and logs who
+  is away today (for T21, not part of the adapter)
+
 ### 0.7.3 (2026-09-24)
 
 - (Alex) new: the calendar goes to ioBroker. The adapter writes `calendar.ics` into its instance folder — the `ical`
@@ -454,13 +472,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   told apart at a glance. The editor offers a colour picker plus “remove the colour”, the list shows a dot per type, and
   the seeded types come with colours (vacation green, sickness red, accident orange, military slate, internal blue,
   training violet, external brown). An open request keeps its colour but is drawn faded
-
-### 0.6.0 (2026-09-24)
-
-- (Alex) change: the year overview of the absence tab became a **calendar**. The month now stands as a grid (Monday
-  first) with the name of every absent employee on the day — approved days green, requested ones grey, numbers of a
-  public holiday in bold. A **year dropdown** (three years back and ahead) and arrows for the month make the past and
-  the future reachable, so the administration can look ahead and back instead of only seeing the current year
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

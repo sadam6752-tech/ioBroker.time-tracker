@@ -46,7 +46,14 @@ import {
 	type BackupService,
 } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
-import { absenceEvents, absenceFeed, calendarDocument, COMPANY_CALENDAR_NAME } from "./lib/services/calendar";
+import {
+	absenceEvents,
+	absenceFeed,
+	API_PREFIX,
+	calendarDocument,
+	companyFeedUrl,
+	COMPANY_CALENDAR_NAME,
+} from "./lib/services/calendar";
 import {
 	COMMAND_IDS,
 	createCalendarStates,
@@ -509,6 +516,8 @@ class TimeTracker extends utils.Adapter {
 				router: api.router,
 				port: this.config.port || 8092,
 				bind: this.config.bind || "127.0.0.1",
+				// the same prefix the calendar link carries (`/api`) — the web app and its login live beside it
+				apiPrefix: API_PREFIX,
 				staticFiles,
 				// an uploaded backup is bigger than the default limit; the route carries the same bound
 				maxBodyBytes: MAX_BACKUP_UPLOAD_BYTES,
@@ -716,8 +725,12 @@ class TimeTracker extends utils.Adapter {
 		);
 		const list = services.absences.allInRange(from, to);
 
-		const file = path.join(utils.getAbsoluteInstanceDataDir(this), CALENDAR_FILE_NAME);
-		fs.mkdirSync(path.dirname(file), { recursive: true });
+		// The file lives in the `files` folder of the instance data, so the web file server hands it out as well
+		// (`http://<host>:8081/files/<adapter>.<instance>/calendar.ics`) while the `ical` adapter reads it as a local
+		// file — the instance folder itself is readable for the adapter only.
+		const folder = path.join(utils.getAbsoluteDefaultDataDir(), "files", `${this.name}.${this.instance}`);
+		const file = path.join(folder, CALENDAR_FILE_NAME);
+		fs.mkdirSync(folder, { recursive: true });
 		fs.writeFileSync(
 			file,
 			calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp),
@@ -728,7 +741,7 @@ class TimeTracker extends utils.Adapter {
 		await publishCalendarSnapshot(this, {
 			// the host part is the name of this machine: an address that is reachable from the LAN and simple enough
 			// to correct by hand (a reverse proxy or another address is a matter of the copy in the calendar app)
-			feedUrl: token ? `http://${hostname()}:${this.config.port || 8092}/calendar.ics?token=${token}` : "",
+			feedUrl: token ? companyFeedUrl(hostname(), this.config.port || 8092, token) : "",
 			feedFile: file,
 			updatedAt: stamp,
 			absences: JSON.stringify(absenceFeed(list, employees)),

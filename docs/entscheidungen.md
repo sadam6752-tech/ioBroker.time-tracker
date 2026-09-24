@@ -221,11 +221,16 @@ Er zeigt **eine** Person und wird in einer Kalender-App eingetragen. Für ioBrok
 
 **Entscheidung:** Der Kalender der Firma wird auf drei Wegen angeboten, alle ohne Sitzung:
 
-| Weg   | Wie                                                                                            | Für wen                                                                          |
-| ----- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Datei | `<iobroker-data>/time-tracker.<n>/calendar.ics`, bei jeder Änderung und alle 5 Minuten neu      | den `ical`-Adapter als **lokale Datei** — kein URL, kein Token, kein Netz         |
-| URL   | `GET /calendar.ics?token=<Instanz-Token>` (dieselbe Route, der Instanz-Token wird zuerst geprüft) | eine Kalender-App oder ein Skript, das den Link an `ical.0.iCalReadTrigger` gibt  |
-| Daten | `calendar.absences` (JSON) und `calendar.updatedAt`                                             | Skripte, Blockly, VIS                                                             |
+| Weg   | Wie                                                                                             | Für wen                                                                          |
+| ----- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Datei | `<iobroker-data>/files/time-tracker.<n>/calendar.ics`, bei jeder Änderung und alle 5 Minuten neu | den `ical`-Adapter als **lokale Datei** — kein URL, kein Token, kein Netz — und einen Browser über den Dateiserver einer `web`-Instanz |
+| URL   | `GET /api/calendar.ics?token=<Instanz-Token>` (der Instanz-Token wird zuerst geprüft)            | eine Kalender-App oder ein Skript, das den Link an `ical.0.iCalReadTrigger` gibt  |
+| Daten | `calendar.absences` (JSON) und `calendar.updatedAt`                                              | Skripte, Blockly, VIS                                                             |
+
+Die Datei liegt bewusst in `files/` statt im Instanz-Ordner daneben: den kann nur der Adapter lesen, `files/` liefert
+eine `web`-Instanz dagegen als Download aus (`http://<host>:8081/files/time-tracker.0/calendar.ics`). Der **Link**
+muss unter dem Präfix `/api` liegen — ohne es bekommt ein Browser die Web-Oberfläche samt Anmeldung statt des
+Kalenders (`companyFeedUrl` in `src/lib/services/calendar.ts` hält das fest, die Routine wird getestet).
 
 Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
 legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link

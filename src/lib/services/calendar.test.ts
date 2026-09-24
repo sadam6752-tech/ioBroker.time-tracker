@@ -1,7 +1,15 @@
 /// <reference types="mocha" />
 import { expect } from "chai";
 import type { AbsenceWithType } from "../db/repositories/absences";
-import { absenceEvents, absenceFeed, calendarDocument, dayAfter, shiftDate, type CalendarEmployee } from "./calendar";
+import {
+	absenceEvents,
+	absenceFeed,
+	calendarDocument,
+	companyFeedUrl,
+	dayAfter,
+	shiftDate,
+	type CalendarEmployee,
+} from "./calendar";
 
 /**
  * Builds an absence with sensible defaults.
@@ -92,6 +100,17 @@ describe("calendar service", () => {
 		// a comma, a semicolon and a line break are escaped
 		expect(document).to.contain("DESCRIPTION:Zeile 1\\nZeile 2\\, mit Komma\\; und Semikolon");
 		expect(document).to.contain("DTSTAMP:20270115T080000Z");
+	});
+
+	it("builds the subscription link of the company below the API prefix", () => {
+		// without the prefix a browser gets the web app and its login instead of the calendar
+		expect(companyFeedUrl("iobroker.lan", 8092, "abc123")).to.equal(
+			"http://iobroker.lan:8092/api/calendar.ics?token=abc123",
+		);
+		// a token that is not plain stays usable
+		expect(companyFeedUrl("10.0.0.2", 8093, "a b/c")).to.equal(
+			"http://10.0.0.2:8093/api/calendar.ics?token=a%20b%2Fc",
+		);
 	});
 
 	it("lists the absences of the plain data view sorted by day", () => {

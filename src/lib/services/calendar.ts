@@ -23,6 +23,24 @@ export const CALENDAR_TTL = "PT2H";
 /** Name of the calendar that carries every employee (the feed of the instance and the written file). */
 export const COMPANY_CALENDAR_NAME = "Abwesenheiten (Firma)";
 
+/** Path prefix the API is mounted on (the web server uses the same default). */
+export const API_PREFIX = "/api";
+
+/**
+ * The subscription link of the company calendar.
+ *
+ * The API lives **below the prefix** — a browser that asks the prefix-less path gets the web app and its login —
+ * so the prefix has to be part of the link. The token travels in the query, encoded like any other value.
+ *
+ * @param host - host name or address the devices can reach
+ * @param port - port of the adapter
+ * @param token - token of the instance
+ * @returns the URL a calendar app subscribes to
+ */
+export function companyFeedUrl(host: string, port: number, token: string): string {
+	return `http://${host}:${port}${API_PREFIX}/calendar.ics?token=${encodeURIComponent(token)}`;
+}
+
 /** The few fields of an employee a calendar needs. */
 export interface CalendarEmployee {
 	/** Database id of the employee */

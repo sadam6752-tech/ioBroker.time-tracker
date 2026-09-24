@@ -41,8 +41,6 @@ export type ProblemCode =
 	| "backup_invalid"
 	| "import_mismatch"
 	| "rate_limited"
-	// an employee may only change own punches inside the edit window of the instance
-	| "edit_window_closed"
 	// the installation always keeps one active administrator
 	| "last_administrator"
 	| "internal_error";

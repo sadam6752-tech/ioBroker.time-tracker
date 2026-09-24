@@ -762,34 +762,6 @@ export function createApi(deps: ApiDeps): Api {
 	};
 
 	/**
-	 * Checks a punch against the edit window of the instance.
-	 *
-	 * Employees may change their **own** punches only inside the window the administration configured. Anyone who
-	 * may also edit foreign punches is not bound by it: a correction there is daily business of the office.
-	 *
-	 * @param context - route context of the request
-	 * @param ownerId - owner of the punch
-	 * @param tsUtc - instant the punch has or will have
-	 */
-	function requireInsideEditWindow(context: RouteContext, ownerId: number, tsUtc: number): void {
-		const actor = context.auth;
-		if (!actor || actor.user.id !== ownerId || actor.permissions.includes("time.edit_other")) {
-			return;
-		}
-		const days = settings.getNumber("edit_window_days", 0);
-		if (days <= 0) {
-			return;
-		}
-		if (tsUtc < now() - days * 86_400) {
-			throw problem(
-				403,
-				"edit_window_closed",
-				`own punches may only be changed within ${days} day(s) (edit_window_days)`,
-			);
-		}
-	}
-
-	/**
 	 * Refuses a change that would leave the installation without an active administrator.
 	 *
 	 * The installation creates exactly one administrator; if the last active one is deactivated or loses the role,
@@ -1338,8 +1310,6 @@ export function createApi(deps: ApiDeps): Api {
 		if (tsUtc === null) {
 			throw new ValidationError("tsUtc is required");
 		}
-		// an employee may not write into the past beyond the configured window
-		requireInsideEditWindow(context, target, tsUtc);
 
 		const timestamp = now();
 		const stored = entries.insert({
@@ -2249,12 +2219,6 @@ export function createApi(deps: ApiDeps): Api {
 		const wantedTs = optionalNumber(body, "tsUtc");
 		if (wantedTs !== null && !context.auth.permissions.includes("time.edit_other")) {
 			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
-		}
-		// both the stored instant and the new one have to be inside the window, so nobody can move an old punch
-		// into it
-		if (wantedTs !== null) {
-			requireInsideEditWindow(context, existing.userId, existing.tsUtc);
-			requireInsideEditWindow(context, existing.userId, wantedTs);
 		}
 		const target = users.findById(existing.userId);
 		if (!target) {

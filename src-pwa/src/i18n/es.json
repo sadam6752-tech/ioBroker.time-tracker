@@ -71,7 +71,6 @@
 	"login.title": "Iniciar sesión",
 	"month.absence": "Ausencia",
 	"month.balance": "Saldo",
-	"error.edit_window_closed": "Fuera de la ventana de corrección",
 	"admin.profile.pauseRules": "Reglas de pausa propias",
 	"admin.profile.pauseRulesHint": "Reglas solo para este empleado: sustituyen la regla de la empresa con el mismo «desde minutos». Sin reglas propias se aplica la escala de la empresa.",
 	"report.csv": "Datos brutos (CSV)",

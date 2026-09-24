@@ -2452,9 +2452,8 @@ describe("web api", () => {
 		});
 
 		it("refuses the times of the day to the employees and keeps them for the administration", async () => {
-			settings.set("edit_window_days", 7, adminId);
-			// the clock moves a month ahead, so the punches of the seeded day are outside the window now; both
-			// sessions are long expired then, so the test signs in again
+			// the clock moves a month ahead, so the punches of the seeded day lie far in the past — an employee
+			// may not change them, however old they are; both sessions are expired then, so the test signs in again
 			clock = 1000 + 30 * 86_400;
 			const annaLater = await send("POST", "/auth/login", { body: { login: "anna", password } });
 			const adminLater = await send("POST", "/auth/login", { body: { login: "admin", password } });

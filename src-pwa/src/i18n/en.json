@@ -50,7 +50,6 @@
 	"month.worked": "Worked",
 	"month.target": "Target",
 	"month.balance": "Balance",
-	"error.edit_window_closed": "Outside the edit window",
 	"admin.profile.pauseRules": "Own break rules",
 	"admin.profile.pauseRulesHint": "Rules for this employee only: they replace the company rule with the same “from minutes”. Without own rules the company table applies.",
 	"report.csv": "Raw data (CSV)",

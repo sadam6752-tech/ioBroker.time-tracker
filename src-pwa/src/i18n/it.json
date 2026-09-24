@@ -71,7 +71,6 @@
 	"login.title": "Registrazione",
 	"month.absence": "Assenza",
 	"month.balance": "Bilancia",
-	"error.edit_window_closed": "Fuori dalla finestra di correzione",
 	"admin.profile.pauseRules": "Regole di pausa proprie",
 	"admin.profile.pauseRulesHint": "Regole solo per questo dipendente: sostituiscono la regola aziendale con lo stesso «da minuti». Senza regole proprie vale la scala aziendale.",
 	"report.csv": "Dati grezzi (CSV)",

@@ -50,7 +50,6 @@
 	"month.worked": "Gearbeitet",
 	"month.target": "Soll",
 	"month.balance": "Saldo",
-	"error.edit_window_closed": "Außerhalb des Bearbeitungsfensters",
 	"admin.profile.pauseRules": "Eigene Pausenregeln",
 	"admin.profile.pauseRulesHint": "Regeln nur für diesen Mitarbeiter: sie ersetzen die Firmenregel mit demselben „ab Minuten“. Ohne eigene Regeln gilt die Firmenstaffel.",
 	"report.csv": "Rohdaten (CSV)",

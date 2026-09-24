@@ -71,7 +71,6 @@
 	"login.title": "Войти",
 	"month.absence": "Отсутствие",
 	"month.balance": "Баланс",
-	"error.edit_window_closed": "Вне окна редактирования",
 	"admin.profile.pauseRules": "Свои правила перерывов",
 	"admin.profile.pauseRulesHint": "Правила только для этого сотрудника: они заменяют правило компании с тем же «с минут». Без своих правил действует шкала компании.",
 	"report.csv": "Исходные данные (CSV)",

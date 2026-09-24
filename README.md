@@ -126,10 +126,10 @@ it before the change: the switch of the **own** account explains why an account 
 `DELETE /users/:id` refuse it on the server as well), and the role dialog names the last administrator and keeps
 saving locked while the role would be gone.
 
-The **edit window** (`edit_window_days`, default 7 days) bounds what an account may do with a day of its own without
-a decision of the administration. Since times belong to the administration, it now matters for the **offline queue**:
-a queued punch that is older arrives as the conflict `too_old` and counts once the office accepts it. Managers and
-admins are not bound by it.
+The **edit window** (`edit_window_days`, default 7 days) decides how far back the **offline queue** may hand in a punch
+on its own: a queued punch that is older arrives as the conflict `too_old` and counts once the administration accepts
+it. Nothing else hangs on the setting — an employee does not change his own times at all, and the administration is not
+bound by any window.
 
 ### Times, corrections and notes
 
@@ -376,6 +376,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) cleanup: the guard `requireInsideEditWindow` is gone (with the problem `edit_window_closed`). It had been
+  unreachable since times belong to the administration: it only ever checked punches of the own account, and changing
+  one of those already needs `time.edit_other`. The setting `edit_window_days` stays and now has exactly one job — it
+  tells the **offline queue** how far back it may hand in a punch on its own (`too_old`); README and D6 say that
 
 ### 0.7.2 (2026-09-24)
 

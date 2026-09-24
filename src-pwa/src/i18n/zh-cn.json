@@ -71,7 +71,6 @@
 	"login.title": "登入",
 	"month.absence": "缺席",
 	"month.balance": "平衡",
-	"error.edit_window_closed": "超出编辑窗口",
 	"admin.profile.pauseRules": "个人休息规则",
 	"admin.profile.pauseRulesHint": "仅适用于该员工的规则：它们会替换相同“从分钟”的公司规则。没有个人规则时适用公司阶梯。",
 	"report.csv": "原始数据（CSV）",

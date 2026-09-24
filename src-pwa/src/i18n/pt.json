@@ -71,7 +71,6 @@
 	"login.title": "Entrar",
 	"month.absence": "Ausência",
 	"month.balance": "Equilíbrio",
-	"error.edit_window_closed": "Fora da janela de correção",
 	"admin.profile.pauseRules": "Regras de pausa próprias",
 	"admin.profile.pauseRulesHint": "Regras só para este trabalhador: substituem a regra da empresa com o mesmo «a partir de minutos». Sem regras próprias aplica-se a escala da empresa.",
 	"report.csv": "Dados brutos (CSV)",

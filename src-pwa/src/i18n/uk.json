@@ -71,7 +71,6 @@
 	"login.title": "Увійдіть",
 	"month.absence": "Відсутність",
 	"month.balance": "Баланс",
-	"error.edit_window_closed": "Поза вікном редагування",
 	"admin.profile.pauseRules": "Власні правила перерв",
 	"admin.profile.pauseRulesHint": "Правила лише для цього працівника: вони замінюють правило компанії з тим самим «з хвилин». Без власних правил діє шкала компанії.",
 	"report.csv": "Початкові дані (CSV)",

@@ -166,11 +166,13 @@ die Mitarbeiter. Die Rolle `admin` verliert deshalb `time.punch` (Seed und Migra
 bekommt das Recht über die Rolle `employee` zurück (Rechte sind die Vereinigung der Rollen). Der `manager` stempelt
 und korrigiert weiter. Die Startseite erklärt dem Konto ohne Stempelrecht, wofür es da ist.
 
-**Wirkung auf das Bearbeitungsfenster:** Es greift nur dort, wo jemand eigene Zeiten ändern darf — und das darf nach
-dieser Entscheidung nur, wer `time.edit_other` hat. Praktisch wirkt es jetzt auf die **Offline-Warteschlange**: ein
-gestempelter Eintrag, der älter als `edit_window_days` ankommt, wird als Konflikt `too_old` gespeichert und zählt
-erst, wenn die Verwaltung ihn annimmt. `GET /entries/conflicts` nimmt dafür `?userId=` entgegen, damit die Verwaltung
-die Warteschlange eines Mitarbeiters sieht.
+**Wirkung auf das Bearbeitungsfenster:** Hier war eine Prüfung übrig geblieben, die niemanden mehr erreichen konnte:
+`requireInsideEditWindow` hätte eigene Stempel außerhalb von `edit_window_days` abgewiesen — eigene Zeiten ändern darf
+nach dieser Entscheidung aber nur, wer `time.edit_other` hat, und für ihn stieg die Prüfung vorher aus. Sie ist
+deshalb entfernt (samt Problem `edit_window_closed`). Die Einstellung bleibt und wirkt an genau einer Stelle: auf die
+**Offline-Warteschlange** — ein gestempelter Eintrag, der älter als `edit_window_days` ankommt, wird als Konflikt
+`too_old` gespeichert und zählt erst, wenn die Verwaltung ihn annimmt. `GET /entries/conflicts` nimmt dafür `?userId=`
+entgegen, damit die Verwaltung die Warteschlange eines Mitarbeiters sieht.
 
 **Nachweis:** `src/lib/db/repositories/dayNotes.test.ts`, die Rechte in `src/lib/web/api.test.ts` (Mitarbeiter: 403
 für Zeiten, 200 für die eigene Notiz), `too_old` in `src/lib/services/sync.test.ts` und der Ablauf in

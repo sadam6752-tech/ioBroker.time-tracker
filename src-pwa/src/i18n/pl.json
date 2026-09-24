@@ -71,7 +71,6 @@
 	"login.title": "Zalogować się",
 	"month.absence": "Brak",
 	"month.balance": "Balansować",
-	"error.edit_window_closed": "Poza oknem edycji",
 	"admin.profile.pauseRules": "Własne zasady przerw",
 	"admin.profile.pauseRulesHint": "Zasady tylko dla tego pracownika: zastępują zasadę firmy z tym samym „od minut”. Bez własnych zasad obowiązuje tabela firmy.",
 	"report.csv": "Dane surowe (CSV)",

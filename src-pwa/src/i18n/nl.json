@@ -71,7 +71,6 @@
 	"login.title": "Log in",
 	"month.absence": "Afwezigheid",
 	"month.balance": "Evenwicht",
-	"error.edit_window_closed": "Buiten het correctievenster",
 	"admin.profile.pauseRules": "Eigen pauzeregels",
 	"admin.profile.pauseRulesHint": "Regels alleen voor deze medewerker: ze vervangen de bedrijfsregel met dezelfde “vanaf minuten”. Zonder eigen regels geldt de bedrijfsstaffel.",
 	"report.csv": "Ruwe gegevens (CSV)",

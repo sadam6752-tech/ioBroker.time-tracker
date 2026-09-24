@@ -114,6 +114,9 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 
 ## 7. Protokoll (beim Test ausfüllen)
 
+Die Abnahme lief auf **0.7.2** (Tag `v0.7.2`, Commit `3661f71`); T18 stammt aus der 0.7.1-Runde und wurde mit dieser
+Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen.
+
 | Nr  | Datum | Tester | Ergebnis (ok / Abweichung) | Beobachtung |
 | --- | ----- | ------ | -------------------------- | ----------- |
 | T1  |       |        |                            |             |
@@ -133,6 +136,9 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 | T15 |       |        |                            |             |
 | T16 |       |        |                            |             |
 | T17 |       |        |                            |             |
+| T18 | 24.09.2026 | Alex | ok | alles wie erwartet: Notiz am Tag (Symbol), Korrektur im fremden Monat landete beim Mitarbeiter, `POST /entries` des Mitarbeiters 403, Administrator-Konto ohne Stempel-Knopf |
+| T19 | 24.09.2026 | Alex | ok | Schalter der eigenen Zeile öffnete nur den Hinweis, Rollen-Dialog sperrte „Speichern", API antwortete 409 `last_administrator`, Rollen unverändert |
+| T20 | 24.09.2026 | Alex | ok | PDF-Abwesenheiten linksbündig in eigenen Zeilen unter der Tagestabelle, „Für alle sichtbar" in eigener Zeile unter den Fakten |
 
 ## 8. Bewusst nicht im Umfang dieser Runde
 

@@ -22,8 +22,8 @@ docs/PROJECT_PROMPT.md
 # ============================================================
 build/
 www/
-src-pwa/dist/
-src-pwa/dev-dist/
+src-www/dist/
+src-www/dev-dist/
 .vite/
 *.tsbuildinfo
 

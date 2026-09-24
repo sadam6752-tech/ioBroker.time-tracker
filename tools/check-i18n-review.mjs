@@ -18,7 +18,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /** Language files of the web app; derived from this file so the repository can be moved or renamed */
-const dir = fileURLToPath(new URL("../src-pwa/src/i18n", import.meta.url));
+const dir = fileURLToPath(new URL("../src-www/src/i18n", import.meta.url));
 const base = JSON.parse(readFileSync(`${dir}/en.json`, "utf8"));
 const languages = readdirSync(dir)
 	.filter(file => file.endsWith(".json") && file !== "en.json")

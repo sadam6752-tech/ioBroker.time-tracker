@@ -7,7 +7,7 @@ das [README](../README.md) beschreibt den Adapter für Anwender.
 
 ```
 src/          Adapter-Quellen (TypeScript)
-src-pwa/      Progressive Web App (Vite + React + MUI) — wird nach www/ gebaut
+src-www/      Progressive Web App (Vite + React + MUI) — wird nach www/ gebaut
 src-shared/   Typen und Prüfungen, die Adapter und Web-App teilen
 admin/        jsonConfig der Instanz und Übersetzungen (11 Sprachen)
 test/         Paket- und Integrationstests (@iobroker/testing)
@@ -21,7 +21,7 @@ docs/         Bedienungs-, Technik- und Übersetzer-Dokumentation
 | -------------------------- | ---------------------------------------------------------------------------- |
 | `npm run build`            | TypeScript-Quellen kompilieren                                               |
 | `npm run watch`            | kompilieren und auf Änderungen warten                                        |
-| `npm run install:pwa`      | Abhängigkeiten der Web-App installieren (`src-pwa`, eigene `node_modules`)   |
+| `npm run install:pwa`      | Abhängigkeiten der Web-App installieren (`src-www`, eigene `node_modules`)   |
 | `npm run build:pwa`        | Web-App typgeprüft nach `www/` bauen                                         |
 | `npm run dev:pwa`          | Vite-Dev-Server mit `/api`-Proxy auf die laufende Instanz                    |
 | `npm run lint`             | ESLint (`@iobroker/eslint-config`) für Adapter und Web-App                   |
@@ -68,13 +68,17 @@ npm run build
 ## Paketgrenzen (und was der ioBroker-Repochecker dazu sagt)
 
 Der Adapter hat **zwei** `package.json`: die Wurzel für den Adapter selbst (Laufzeit-Abhängigkeiten wie
-`better-sqlite3`, `pdfkit`, `exceljs`, `luxon`, `ws`) und `src-pwa/` für die Web-App (React, MUI, i18next, `qrcode`,
+`better-sqlite3`, `pdfkit`, `exceljs`, `luxon`, `ws`) und `src-www/` für die Web-App (React, MUI, i18next, `qrcode`,
 …). Die Web-App wird mit `npm run build:pwa` **vorgebaut** und liegt danach als fertiges Bundle in `www/`; zur
 Laufzeit des Adapters wird davon nichts geladen.
 
-Deshalb meldet `npx @iobroker/repochecker … --local` das `W5042` („Package … is used in source file(s) but not found
-in dependencies of package.json") für die PWA-Pakete: bei dieser Aufteilung ist das **erwartet** — die Abhängigkeiten
-stehen in `src-pwa/package.json` und sind für den Adapter reine Entwicklungs-Abhängigkeiten. `W5049` (`process.env`
+Der Repochecker liest die Quellen nach importierten Paketen ab und überspringt dabei nur eine **feste** Ordnerliste
+(`excludedSourceDirs` in `lib/M5000_Code.js`: `/admin`, `/build`, `/docs`, `/test`, `/tools`, `/www`, `/src-www`,
+`/src-vis`, `/src-widgets`, …). Der frühere Ordnername `src-pwa/` stand nicht darauf, deshalb meldete er `W5042`
+(„Package … is used in source file(s) but not found in dependencies of package.json") für react, MUI und i18next
+— Pakete, die der Web-App gehören (`src-www/package.json`) und die keine Adapter-Installation mitbringen soll.
+Mit `src-www/` steht der Ordner auf der Liste und die Meldungen sind weg; nur `dependencies` zählen, `@types/*` und
+`@iobroker/types` sind davon die Ausnahme. `W5049` (`process.env`
 in `test/e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
 Compact-Mode vor — der Adapter bringt einen eigenen HTTP-Port und eine SQLite-Datei mit und läuft bewusst **nicht** im
 Compact-Mode (`common.compact: false`).

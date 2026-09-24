@@ -124,7 +124,7 @@ $components = @(
     },
     [pscustomobject]@{
         Name = 'PWA'
-        Dir  = [System.IO.Path]::Combine($root, 'src-pwa', 'src', 'i18n')
+        Dir  = [System.IO.Path]::Combine($root, 'src-www', 'src', 'i18n')
     }
 )
 
@@ -195,7 +195,7 @@ foreach ($component in $components) {
 }
 
 # --- benutzte Texte mit fehlendem Schlüssel -----------------------------------
-$pwaSource = [System.IO.Path]::Combine($root, 'src-pwa', 'src')
+$pwaSource = [System.IO.Path]::Combine($root, 'src-www', 'src')
 $pwaBase   = [System.IO.Path]::Combine($pwaSource, 'i18n', "$baseLanguage.json")
 
 if ((Test-Path -LiteralPath $pwaSource) -and (Test-Path -LiteralPath $pwaBase)) {

@@ -29,11 +29,11 @@ jobs:
             # The web app is a second npm project. It is installed together with the adapter, so the default
             # type check (`npm run check`, which covers both projects) and the lint run can do their work.
             # Installing it in a step of this job would not work: the checkout inside the action removes
-            # untracked files, and `src-pwa/node_modules` is untracked.
+            # untracked files, and `src-www/node_modules` is untracked.
             - uses: ioBroker/testing-action-check@v2
               with:
                   node-version: "22.x"
-                  install-command: "npm ci && npm ci --prefix src-pwa"
+                  install-command: "npm ci && npm ci --prefix src-www"
                   type-checking: true
                   lint: true
 
@@ -63,7 +63,7 @@ jobs:
                   # fail while every other combination passed. The prebuilt binary is used at runtime, so the
                   # lifecycle scripts of the adapter project are skipped. The web app is installed in its own call
                   # and keeps its scripts, because esbuild needs its postinstall.
-                  install-command: "npm ci --ignore-scripts && npm ci --prefix src-pwa"
+                  install-command: "npm ci --ignore-scripts && npm ci --prefix src-www"
                   build: true
                   build-command: "npm run build && npm run build:pwa"
                   # The unit tests and the package checks belong to this job as well. By default the action
@@ -99,5 +99,5 @@ jobs:
                   build: true
                   # `npm run build` compiles the adapter only; the web app is a project of its own. Releases up to
                   # 0.0.6 shipped without `www/`, so the web interface answered 404 — both steps belong here.
-                  build-command: "npm run build && npm ci --prefix src-pwa && npm run build:pwa"
+                  build-command: "npm run build && npm ci --prefix src-www && npm run build:pwa"
                   github-token: ${{ secrets.GITHUB_TOKEN }}

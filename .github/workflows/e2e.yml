@@ -23,7 +23,7 @@ jobs:
       - name: Install the adapter
         run: npm ci --ignore-scripts
       - name: Install the web app
-        run: npm ci --prefix src-pwa
+        run: npm ci --prefix src-www
       - name: Build the adapter and the web app
         run: npm run build && npm run build:pwa
       - name: Install Chromium

@@ -1,4 +1,4 @@
-# src-pwa/ – Progressive Web App
+# src-www/ – Progressive Web App
 
 React 18 + MUI 5 + Vite + React Query, Service Worker über Workbox, installierbar auf Smartphone
 und Desktop, offlinefähiges Stempeln mit Sync-Warteschlange. Der Build wird nach `www/` geschrieben und vom

@@ -6,7 +6,7 @@
  *
  *   node tools/make-pwa-icons.mjs
  *
- * Written are `src-pwa/public/icon-192.png`, `icon-512.png` and `favicon.svg`. There are two masters, both
+ * Written are `src-www/public/icon-192.png`, `icon-512.png` and `favicon.svg`. There are two masters, both
  * part of the repository but not of the npm package (the `files` rule of `package.json` excludes
  * `admin/src`):
  *
@@ -33,7 +33,7 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const masterPath = join(here, "..", "admin", "src", "time-tracker.png");
 const vectorPath = join(here, "..", "admin", "src", "time-tracker.svg");
-const targetDir = join(here, "..", "src-pwa", "public");
+const targetDir = join(here, "..", "src-www", "public");
 
 /** Edge length of the visible mark in relation to the icon (the rest is margin). */
 const MARK_RATIO = 0.72;

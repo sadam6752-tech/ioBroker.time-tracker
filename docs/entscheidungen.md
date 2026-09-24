@@ -245,3 +245,25 @@ stellt den Namen des Mitarbeiters voran (`Anna Muster: Ferien (F)`), damit ein T
 **Nachweis:** `src/lib/services/calendar.test.ts` (DTEND exklusiv, Maskierung, JSON-Sicht),
 `src/lib/web/api.test.ts` (Firmen-Feed über den Instanz-Token, persönlicher Link bleibt persönlich, alter Token tot),
 `src/lib/adapter/states.test.ts` (States und Befehl) und die Abnahme **T21** in `docs/testplan.md`.
+
+## D9 — Die Quellen der Web-App heißen `src-www/` (24.09.2026)
+
+Der Repository-Checker liest die Quellen des Repositories und prüft importierte Pakete gegen die Wurzel-
+`package.json` (`W5042`). Er überspringt nur die Ordner einer **festen** Liste (`excludedSourceDirs` in
+`lib/M5000_Code.js`): `/admin`, `/build`, `/docs`, `/test`, `/tools`, `/www`, `/widgets`, `/src-admin`,
+`/src-www`, `/src-vis`, `/src-widgets` und weitere. `src-pwa/` stand **nicht** darauf, deshalb meldete der PR
+zum LATEST-Repository fünf `W5042` (react, MUI, i18next, `@tanstack/react-query`, `react-i18next`) und
+verlangte eine Entscheidung vor der Prüfung: Es zählen nur `dependencies` — `@types/*` und `@iobroker/types`
+sind die einzige Ausnahme, die in `devDependencies` liegen darf.
+
+**Entscheidung:** Die Quellen der Web-App liegen in **`src-www/`** (vorher `src-pwa/`). Der Ordner steht auf
+der Liste des Checkers, passt namentlich zur Auslieferung aus `www/`, und die App-Abhängigkeiten bleiben in
+`src-www/package.json`: sie gehören nicht in die Installation eines Adapters, denn zur Laufzeit wird aus den
+Quellen nichts geladen — `npm run build:pwa` legt das fertige Bundle in `www/` ab. Der andere Weg (react, MUI
+und i18next in die Wurzel-`package.json` aufnehmen) hätte jede ioBroker-Installation mit einem zweiten
+Frontend-Stapel beliefert und wäre inhaltlich falsch gewesen. Fachlich ändert der Umbau nichts: der Adapter
+liefert unverändert `www/` aus, alle Skripte und Workflows zeigen nur auf den neuen Pfad.
+
+**Nachweis:** `npm run check`, `npm run lint`, `npm run build`, `npm run build:pwa`, `npm run test:ts`,
+`npm run test:package`, `npm run check:adapter`, `npm run check:i18n` und `npm run version:check` sind grün;
+die Abnahme steht als **T22** in `docs/testplan.md`.

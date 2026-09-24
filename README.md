@@ -412,6 +412,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.5 (2026-09-24)
+
+- (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`
+- (Alex) fix: the periodic refresh and the hourly backup check cannot overlap themselves any more. A tick that finds the previous run still busy is skipped and logged, so a slow run (a big database, a slow disk) can no longer pile a second one on top of itself
+- (Alex) change: `onStateChange` no longer writes a debug line for every state of the instance that it does not handle - on a busy system that filled the log at log level `debug` for nothing
+
 ### 0.7.4 (2026-09-24)
 
 - (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without
@@ -465,13 +471,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   pick — it was written at the switched off ones and at nothing else
 - (Alex) fix: on a narrow phone the balance of a day (month) and of a month (statements) no longer runs over the
   text — the pencil, the balance and the download buttons stand beside the text instead of being laid over it
-
-### 0.7.0 (2026-09-24)
-
-- (Alex) new: an absence type can carry a **colour**, and the calendar paints a day with it — vacation and sickness are
-  told apart at a glance. The editor offers a colour picker plus “remove the colour”, the list shows a dot per type, and
-  the seeded types come with colours (vacation green, sickness red, accident orange, military slate, internal blue,
-  training violet, external brown). An open request keeps its colour but is drawn faded
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

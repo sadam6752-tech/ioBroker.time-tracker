@@ -8,6 +8,13 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.0 (2026-09-24)
+
+- (Alex) new: an absence type can carry a **colour**, and the calendar paints a day with it — vacation and sickness are
+  told apart at a glance. The editor offers a colour picker plus “remove the colour”, the list shows a dot per type, and
+  the seeded types come with colours (vacation green, sickness red, accident orange, military slate, internal blue,
+  training violet, external brown). An open request keeps its colour but is drawn faded
+
 ### 0.6.0 (2026-09-24)
 
 - (Alex) change: the year overview of the absence tab became a **calendar**. The month now stands as a grid (Monday

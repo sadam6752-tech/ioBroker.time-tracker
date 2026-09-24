@@ -65,12 +65,12 @@ und wird **nicht veröffentlicht**. Veröffentlicht werden ausschließlich die A
   die Typprüfung (`test/mocharc.coverage.json`), weil typprüfendes ts-node unter `nyc` an den Adapter-Typen scheitert;
   `npm run check` bleibt das Typgate;
   Testnamen beschreiben Szenario und Erwartung („baut Paare nach (ts_utc, id)", nicht „test1").
-- **Web-App (`src-pwa/`):** eigenes Projekt mit eigenem `package.json`/`tsconfig.json` (React 18, MUI 5, Vite).
+- **Web-App (`src-www/`):** eigenes Projekt mit eigenem `package.json`/`tsconfig.json` (React 18, MUI 5, Vite).
   Ablauf: `npm run install:pwa` → `npm run build:pwa` (Typprüfung + Build nach `www/`) → `npm run lint:pwa`;
   während der Entwicklung `npm run dev:pwa` (leitet `/api` auf die laufende Instanz). Die App spricht
   ausschließlich über das API-Präfix `/api` mit dem Adapter, hält die Sitzung in `localStorage` und legt
   Stempel offline in eine Warteschlange (`idempotencyKey` je Stempel). Berechtigungen entscheidet **immer** der
-  Server; die UI blendet nur aus, was ohnehin verboten wäre. Neue Texte gehören in `src-pwa/src/i18n/en.json`.
+  Server; die UI blendet nur aus, was ohnehin verboten wäre. Neue Texte gehören in `src-www/src/i18n/en.json`.
 - **Generiertes:** `build/` und `www/` werden erzeugt und nie direkt bearbeitet.
 - **States:** Objekte über `setObjectNotExistsAsync`/`extendObject` anlegen; `common.name` (mindestens `en`+`de`),
   `common.type`, `common.role`, `common.read`, `common.write` sind Pflicht und müssen zu den Rollenregeln passen
@@ -106,8 +106,8 @@ Spezifikation.
 | Lizenz                                | `LICENSE`                                           | ja                            |
 | Mitwirkungsregeln (Clean Room)        | `CONTRIBUTING.md`                                   | ja                            |
 | Herkunft                              | Abschnitt „Provenance" in `README.md`               | ja                            |
-| Quellcode                             | `src/`, `src-pwa/`, `src-shared/`, `tools/`         | ja                            |
-| Sprachdateien (11 Sprachen)           | `admin/i18n/`, `src-pwa/src/i18n/`                  | ja (Übersetzungen willkommen) |
+| Quellcode                             | `src/`, `src-www/`, `src-shared/`, `tools/`         | ja                            |
+| Sprachdateien (11 Sprachen)           | `admin/i18n/`, `src-www/src/i18n/`                  | ja (Übersetzungen willkommen) |
 | Übersetzer-Doku                       | `docs/i18n.md`                                      | ja                            |
 | Interne Spezifikation                 | außerhalb dieses Repositories                       | **nein**                      |
 | Fremde Projekte, Archive, Datenkopien | außerhalb dieses Repositories                       | **nein**                      |

@@ -21,7 +21,7 @@ updates:
                 - "version-update:semver-major"
 
     - package-ecosystem: npm
-      directory: "/src-pwa"
+      directory: "/src-www"
       schedule:
           interval: cron
           cron: "32 3 * * 3"

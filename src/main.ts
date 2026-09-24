@@ -134,6 +134,12 @@ class TimeTracker extends utils.Adapter {
 	/** Pending refresh of the figures after a change through the API */
 	private stateRefreshTimer: ioBroker.Timeout | undefined = undefined;
 
+	/** A refresh tick that is still running; the next tick is skipped instead of piling up on it. */
+	private stateRefreshRunning = false;
+
+	/** A backup run that is still running; the hourly check must not start a second one. */
+	private backupRunning = false;
+
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
 			...options,
@@ -225,18 +231,45 @@ class TimeTracker extends utils.Adapter {
 			await this.publishInstanceInfo();
 			await this.refreshStates();
 
-			// figures are refreshed regularly (the timer is cleared automatically on unload)
+			// figures are refreshed regularly (the timer is cleared automatically on unload). A tick that finds the
+			// previous run still busy is skipped: a slow run must not pile a second one on top of itself.
 			this.setInterval(
 				() => {
-					void this.publishInstanceInfo();
-					void this.refreshStates();
+					if (this.stateRefreshRunning) {
+						this.log.debug(`state refresh still running, skipping this ${STATE_REFRESH_MINUTES} min tick`);
+						return;
+					}
+					this.stateRefreshRunning = true;
+					void Promise.allSettled([this.publishInstanceInfo(), this.refreshStates()]).then(results => {
+						this.stateRefreshRunning = false;
+						for (const result of results) {
+							if (result.status === "rejected") {
+								this.log.warn(`state refresh failed: ${(result.reason as Error).message}`);
+							}
+						}
+					});
 				},
 				STATE_REFRESH_MINUTES * 60 * 1000,
 			);
 
-			// one backup per day: the check runs every hour, so a missed run is caught up after a restart
+			// one backup per day: the check runs every hour, so a missed run is caught up after a restart. A run that
+			// is still going (a big database, a slow disk) blocks the next check instead of starting a second copy.
 			await this.runScheduledBackup();
-			this.setInterval(() => void this.runScheduledBackup(), 60 * 60 * 1000);
+			this.setInterval(
+				() => {
+					if (this.backupRunning) {
+						this.log.debug("scheduled backup still running, skipping this hour");
+						return;
+					}
+					this.backupRunning = true;
+					void this.runScheduledBackup()
+						.catch(error => this.log.warn(`scheduled backup failed: ${(error as Error).message}`))
+						.finally(() => {
+							this.backupRunning = false;
+						});
+				},
+				60 * 60 * 1000,
+			);
 
 			// Service is ready
 			await this.setState("info.connection", true, true);
@@ -1259,8 +1292,6 @@ class TimeTracker extends utils.Adapter {
 				void this.runPresence(localId, state.val);
 				return;
 			}
-
-			this.log.debug(`Ignored state change: ${localId} = ${state.val}`);
 		} catch (error) {
 			this.log.error(`Error in onStateChange for ${id}: ${(error as Error).message}`);
 		}

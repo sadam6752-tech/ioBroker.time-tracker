@@ -39,7 +39,7 @@ export default [
 	{
 		// the API types of the web app mirror the JSON of the adapter field by field (like a generated client);
 		// the interfaces themselves are documented, the single fields are named after the API
-		files: ["src-pwa/src/api/types.ts"],
+		files: ["src-www/src/api/types.ts"],
 		rules: {
 			"jsdoc/require-jsdoc": "off",
 		},

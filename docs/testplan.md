@@ -116,7 +116,8 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 ## 7. Protokoll (beim Test ausfüllen)
 
 Die Abnahme lief auf **0.7.2** (Tag `v0.7.2`, Commit `3661f71`); T18 stammt aus der 0.7.1-Runde und wurde mit dieser
-Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen.
+Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen; T21 wurde mit 0.7.3/0.7.4 abgenommen, T22 ist der
+Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung).
 
 | Nr  | Datum | Tester | Ergebnis (ok / Abweichung) | Beobachtung |
 | --- | ----- | ------ | -------------------------- | ----------- |
@@ -141,6 +142,7 @@ Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen.
 | T19 | 24.09.2026 | Alex | ok | Schalter der eigenen Zeile öffnete nur den Hinweis, Rollen-Dialog sperrte „Speichern", API antwortete 409 `last_administrator`, Rollen unverändert |
 | T20 | 24.09.2026 | Alex | ok | PDF-Abwesenheiten linksbündig in eigenen Zeilen unter der Tagestabelle, „Für alle sichtbar" in eigener Zeile unter den Fakten |
 | T21 | 24.09.2026 | Alex | ok (eine Abweichung, behoben in 0.7.4) | `calendar.feedUrl` lieferte die Datei, der Download über den Dateiserver funktioniert, das Skript aus §10a loggt die Abwesenheiten; im ersten Durchlauf führte der Link zur Anmeldung — ihm fehlte das Präfix `/api`, behoben in 0.7.4 (Datei liegt im Instanzordner `files/time-tracker.0/`, sichtbar als eigener Eintrag im Dateimanager) |
+| T22 | 24.09.2026 | Alex | ok | Umbau für 0.7.5: Die Quellen der Web-App liegen in `src-www/` (vorher `src-pwa/`, der Repochecker meldete dafür fünf `W5042` für react, MUI und i18next), der regelmäßige Abgleich und die stündliche Sicherungsprüfung überspringen einen Durchlauf, statt sich zu überlappen, und `onStateChange` schreibt keine Debug-Zeile mehr zu jedem fremden Zustand; `npm run check`, `lint`, `build`, `build:pwa`, `test:ts`, `test:package`, `check:adapter`, `check:i18n` und `version:check` sind grün, die Web-App wird unverändert aus `www/` ausgeliefert |
 
 ## 8. Bewusst nicht im Umfang dieser Runde
 
@@ -216,12 +218,12 @@ alten Dateien aus dem Precache ausliefern.
 Fehlern):
 
 ```bash
-npm --prefix src-pwa run dev     # Port 5173, holt /api/… über den Proxy von 127.0.0.1:8092
+npm --prefix src-www run dev     # Port 5173, holt /api/… über den Proxy von 127.0.0.1:8092
 ```
 
 Zwei Fallstricke, die dabei Zeit gekostet haben:
 
-- Der Proxy in `src-pwa/vite.config.ts` muss als **berechneter** Schlüssel `[API_PREFIX]` stehen. Mit `API_PREFIX:`
+- Der Proxy in `src-www/vite.config.ts` muss als **berechneter** Schlüssel `[API_PREFIX]` stehen. Mit `API_PREFIX:`
   wird der wörtliche Text verglichen, der Proxy greift nie und jede API-Anfrage landet im App-Gerüst (Login läuft
   dann ins Leere, `GET /api/auth/me` liefert die HTML-Datei zurück).
 - `@mui/icons-material` 5.x liefert jedes Symbol zweimal: als CommonJS (`Menu.js`) und als ES-Modul
@@ -229,7 +231,7 @@ Zwei Fallstricke, die dabei Zeit gekostet haben:
   ankommen — React bricht dann mit „Element type is invalid … got: object“ (React #130) ab, und zwar erst nach
   dem Anmelden, weil die Symbole nur in der Shell und in den Masken vorkommen.
 
-Nach einer Änderung an `vite.config.ts` den Zwischenspeicher `src-pwa/node_modules/.vite` löschen, sonst antwortet
+Nach einer Änderung an `vite.config.ts` den Zwischenspeicher `src-www/node_modules/.vite` löschen, sonst antwortet
 der Dev-Server mit `504 Outdated Optimize Dep`.
 
 ### Echte ioBroker-Instanz lokal (dev-server)

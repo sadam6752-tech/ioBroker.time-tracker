@@ -202,6 +202,10 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 | `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma          |
 | `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
 | `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
+| `time-tracker.0.calendar.feedFile`                                                            | string  | the written `.ics` file (for `ical`)       |
+| `time-tracker.0.calendar.feedUrl`                                                             | string  | subscription link of the company calendar  |
+| `time-tracker.0.calendar.absences`                                                            | string  | the absences of the window as JSON         |
+| `time-tracker.0.calendar.updatedAt`                                                           | number  | when the calendar was written              |
 
 ### Commands (states)
 
@@ -217,6 +221,7 @@ happened.
 | `commands.closeMonth` | `YYYY-MM` | closes the month (the log line reports balance and overtime) |
 | `commands.recalc` | `YYYY-MM` or `YYYY` | recalculates the aggregates of that period |
 | `commands.backup` | `true` | writes a database backup |
+| `commands.rotateCalendarToken` | `true` | creates or renews the calendar link of the company |
 
 ```js
 setState("time-tracker.0.commands.punchUserId", 3);          // target employee (0 = the only one)
@@ -243,6 +248,29 @@ see *First start*) or send a message (see *Messages (`sendTo`)* below).
 Every command ends with a refreshed state tree (`users.*`, `company.*`, `events.*`), so a dashboard follows along.
 A wrong period, an unknown or deactivated employee is answered with a warning in the adapter log — never with a
 broken instance.
+
+### Calendar for ioBroker (feed and states)
+
+The absences of the whole company reach ioBroker in two ways — both without a session and without a token:
+
+| What         | Where                                                                                        | Who uses it                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **File**     | `<iobroker-data>/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes | the `ical` adapter as a **local file** (`iobroker-data/time-tracker.0/calendar.ics`)           |
+| **URL**      | `calendar.feedUrl` (`http://<host>:<port>/calendar.ics?token=…`)                              | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                    |
+| **Data**     | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                          |
+| **When**     | `calendar.updatedAt`                                                                          | to see how current the three above are                                                        |
+
+The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
+for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
+it — an old link stops working at once. That link opens the absences of **all** employees, so treat it like a password.
+The personal link of an employee stays what it was (`POST /calendar/token`, the app has a button for it) and shows
+only that employee.
+
+```js
+setState("time-tracker.0.commands.rotateCalendarToken", true);   // create or renew the link of the company
+log(getState("time-tracker.0.calendar.feedUrl").val);            // paste it into a calendar app
+setState("ical.0.iCalReadTrigger", "read " + getState("time-tracker.0.calendar.feedUrl").val);
+```
 
 ### Actions (trigger rules)
 
@@ -377,6 +405,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.3 (2026-09-24)
+
+- (Alex) new: the calendar goes to ioBroker. The adapter writes `calendar.ics` into its instance folder — the `ical`
+  adapter reads that as a **local file**, without URL, token or network — and publishes the subscription link of the
+  **company** in `calendar.feedUrl` plus the same days as JSON in `calendar.absences` (`calendar.updatedAt` says how
+  fresh they are). That link opens the absences of **all** employees, so nothing happens by itself:
+  `commands.rotateCalendarToken` creates the token and replaces it on every further call, which kills an old link at
+  once. The personal link of an employee is unchanged
 - (Alex) cleanup: the guard `requireInsideEditWindow` is gone (with the problem `edit_window_closed`). It had been
   unreachable since times belong to the administration: it only ever checked punches of the own account, and changing
   one of those already needs `time.edit_other`. The setting `edit_window_days` stays and now has exactly one job — it
@@ -425,15 +461,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   first) with the name of every absent employee on the day — approved days green, requested ones grey, numbers of a
   public holiday in bold. A **year dropdown** (three years back and ahead) and arrows for the month make the past and
   the future reachable, so the administration can look ahead and back instead of only seeing the current year
-
-### 0.5.0 (2026-09-23)
-
-- (Alex) new: the own absences can be subscribed in any calendar app. `POST /calendar/token` hands out a personal link
-  (`GET /calendar.ics?token=…`, public and rate limited) whose token can be rotated — that makes the old link invalid.
-  The feed is proper iCalendar: `DTEND` is exclusive (no event loses its last day), half days carry their portion in
-  the summary, a request that waits for its decision is `TENTATIVE`, and the approval state travels in `STATUS`.
-  On top the administration finds a **year overview** in the absence tab: approved days per employee and month, fed by
-  its own request for the calendar year
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

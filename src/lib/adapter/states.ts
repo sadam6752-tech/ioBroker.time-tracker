@@ -110,6 +110,8 @@ export const COMMAND_IDS = {
 	recalc: "commands.recalc",
 	/** Write a backup of the database */
 	backup: "commands.backup",
+	/** Create or renew the calendar link of the company */
+	rotateCalendarToken: "commands.rotateCalendarToken",
 } as const;
 
 /**
@@ -384,6 +386,14 @@ export async function createCommandStates(port: StatePort): Promise<void> {
 			write: true,
 		}),
 	);
+	await ensureObject(
+		port,
+		COMMAND_IDS.rotateCalendarToken,
+		stateObject(STATE_NAMES.rotateCalendarToken, "boolean", "button", {
+			read: false,
+			write: true,
+		}),
+	);
 }
 
 /**
@@ -478,4 +488,58 @@ export async function publishEventSnapshot(port: StatePort, snapshot: EventSnaps
 	await port.setState("events.lastUser", snapshot.userName, true);
 	await port.setState("events.lastDirection", snapshot.direction, true);
 	await port.setState("events.lastSource", snapshot.source, true);
+}
+
+/** Ids of the calendar states; the adapter publishes them from `main.ts`. */
+export const CALENDAR_IDS = {
+	/** Subscription link of the company calendar */
+	feedUrl: "calendar.feedUrl",
+	/** Path of the written `.ics` file */
+	feedFile: "calendar.feedFile",
+	/** Instant the calendar was written */
+	updatedAt: "calendar.updatedAt",
+	/** The absences as JSON */
+	absences: "calendar.absences",
+} as const;
+
+/** What the calendar states show. */
+export interface CalendarSnapshot {
+	/** Subscription link, empty while no token exists */
+	feedUrl: string;
+	/** Absolute path of the written `.ics` file */
+	feedFile: string;
+	/** Instant the file and the JSON were written */
+	updatedAt: number;
+	/** The absences as JSON text */
+	absences: string;
+}
+
+/**
+ * Creates the states of the calendar.
+ *
+ * @param port - state port
+ */
+export async function createCalendarStates(port: StatePort): Promise<void> {
+	await ensureObject(port, "calendar", channelObject(STATE_NAMES.calendarChannel));
+	await ensureObject(port, CALENDAR_IDS.feedUrl, stateObject(STATE_NAMES.calendarFeedUrl, "string", "text"));
+	await ensureObject(port, CALENDAR_IDS.feedFile, stateObject(STATE_NAMES.calendarFeedFile, "string", "text"));
+	await ensureObject(
+		port,
+		CALENDAR_IDS.updatedAt,
+		stateObject(STATE_NAMES.calendarUpdatedAt, "number", "value.time"),
+	);
+	await ensureObject(port, CALENDAR_IDS.absences, stateObject(STATE_NAMES.calendarAbsences, "string", "text"));
+}
+
+/**
+ * Publishes the calendar of the instance.
+ *
+ * @param port - state port
+ * @param snapshot - data to publish
+ */
+export async function publishCalendarSnapshot(port: StatePort, snapshot: CalendarSnapshot): Promise<void> {
+	await port.setState(CALENDAR_IDS.feedUrl, snapshot.feedUrl, true);
+	await port.setState(CALENDAR_IDS.feedFile, snapshot.feedFile, true);
+	await port.setState(CALENDAR_IDS.updatedAt, snapshot.updatedAt, true);
+	await port.setState(CALENDAR_IDS.absences, snapshot.absences, true);
 }

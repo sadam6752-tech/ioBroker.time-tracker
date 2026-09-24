@@ -6,6 +6,7 @@
  * browser, so no session is involved; the audit trail records them with `actorId: 0` (system).
  */
 
+import { randomBytes } from "node:crypto";
 import type { Db } from "../db/database";
 import type { EntriesRepository } from "../db/repositories/entries";
 import type { SettingsRepository } from "../db/repositories/settings";
@@ -287,6 +288,20 @@ export function handleCommand(deps: CommandDeps, id: string, value: ioBroker.Sta
 		return {
 			ok: true,
 			message: `backup ${created.backup.name} written (${created.backup.sizeBytes} bytes, ${created.backup.entries} punches), ${created.removed.length} old file(s) removed`,
+			recalculated: [],
+		};
+	}
+
+	if (id === COMMAND_IDS.rotateCalendarToken) {
+		if (value !== true) {
+			// buttons only act on `true`
+			return { ok: false, message: "ignored (buttons act on true)", recalculated: [] };
+		}
+		// replacing the token makes the old link useless at once — that is what makes a leaked link harmless
+		deps.settings.set("calendar_token", randomBytes(32).toString("base64url"), 0, timestamp);
+		return {
+			ok: true,
+			message: "calendar link of the company created or renewed (calendar.feedUrl)",
 			recalculated: [],
 		};
 	}

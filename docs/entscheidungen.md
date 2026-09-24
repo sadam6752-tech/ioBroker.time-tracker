@@ -212,3 +212,31 @@ erscheint als `error.last_administrator` in allen elf Sprachen.
 **Nachweis:** `src/lib/web/api.test.ts` („keeps the last active administrator in place": zweiter Administrator,
 Ablehnung für den letzten, Erfolg sobald ein anderer die Rolle trägt), `test/e2e/users.spec.ts` (Warnung am eigenen
 Konto, gesperrtes Speichern, unveränderter Zustand).
+
+## D8 — Der Kalender geht als Feed und als Zustand an ioBroker (24.09.2026)
+
+Der persönliche ICS-Link aus 0.5.0 (`POST /calendar/token` → `GET /calendar.ics?token=…`) ist für Mitarbeiter gedacht:
+Er zeigt **eine** Person und wird in einer Kalender-App eingetragen. Für ioBroker fehlte beides: eine Sicht auf die
+**ganze Firma** und ein Weg, der ohne Netz, Token und Kopieren auskommt.
+
+**Entscheidung:** Der Kalender der Firma wird auf drei Wegen angeboten, alle ohne Sitzung:
+
+| Weg   | Wie                                                                                            | Für wen                                                                          |
+| ----- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Datei | `<iobroker-data>/time-tracker.<n>/calendar.ics`, bei jeder Änderung und alle 5 Minuten neu      | den `ical`-Adapter als **lokale Datei** — kein URL, kein Token, kein Netz         |
+| URL   | `GET /calendar.ics?token=<Instanz-Token>` (dieselbe Route, der Instanz-Token wird zuerst geprüft) | eine Kalender-App oder ein Skript, das den Link an `ical.0.iCalReadTrigger` gibt  |
+| Daten | `calendar.absences` (JSON) und `calendar.updatedAt`                                             | Skripte, Blockly, VIS                                                             |
+
+Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
+legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link
+öffnet die Abwesenheiten **aller** Mitarbeiter, also bekommt ihn nur, wer danach fragt. `calendar.feedUrl` bleibt leer,
+bis das passiert ist.
+
+Der ICS-Bau (`absenceEvents`, `calendarDocument`) wandert dafür in einen Service (`src/lib/services/calendar.ts`), den
+die Route **und** der Adapter benutzen — zwei Fassungen desselben Formats wären der nächste Fehler. Der Firmenkalender
+stellt den Namen des Mitarbeiters voran (`Anna Muster: Ferien (F)`), damit ein Tag im Firmenkalender lesbar bleibt; die
+`UID` bleibt `absence-<id>@time-tracker`, damit eine Kalender-App ein Ereignis **aktualisiert** statt es zu verdoppeln.
+
+**Nachweis:** `src/lib/services/calendar.test.ts` (DTEND exklusiv, Maskierung, JSON-Sicht),
+`src/lib/web/api.test.ts` (Firmen-Feed über den Instanz-Token, persönlicher Link bleibt persönlich, alter Token tot),
+`src/lib/adapter/states.test.ts` (States und Befehl) und die Abnahme **T21** in `docs/testplan.md`.

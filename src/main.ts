@@ -6,6 +6,7 @@
 import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { hostname } from "node:os";
 import * as utils from "@iobroker/adapter-core";
 import { currentSchemaVersion, openAndMigrate, type Db } from "./lib/db/database";
 import { seed } from "./lib/db/seed";
@@ -45,13 +46,16 @@ import {
 	type BackupService,
 } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
+import { absenceEvents, absenceFeed, calendarDocument, COMPANY_CALENDAR_NAME } from "./lib/services/calendar";
 import {
 	COMMAND_IDS,
+	createCalendarStates,
 	createCommandStates,
 	createCompanyStates,
 	createEventStates,
 	createInfoStates,
 	publishAllUserStates,
+	publishCalendarSnapshot,
 	publishCompanySnapshot,
 	publishEventSnapshot,
 	readCompanySnapshot,
@@ -74,6 +78,9 @@ const SESSION_PURGE_MINUTES = 30;
 
 /** How often the published figures are refreshed (minutes). */
 const STATE_REFRESH_MINUTES = 5;
+
+/** File the company calendar is written into (inside the instance folder). */
+const CALENDAR_FILE_NAME = "calendar.ics";
 
 /** How old the newest backup may be before the daily check writes a new one. */
 const BACKUP_MAX_AGE_HOURS = 20;
@@ -555,6 +562,7 @@ class TimeTracker extends utils.Adapter {
 			await createInfoStates(this);
 			await createCompanyStates(this);
 			await createEventStates(this);
+			await createCalendarStates(this);
 			await this.subscribeStatesAsync("commands.*");
 			// the presence switch of every employee: written by a script, a fingerprint reader or a dashboard
 			await this.subscribeStatesAsync(`users.*.${PRESENCE_SUFFIX}`);
@@ -670,12 +678,61 @@ class TimeTracker extends utils.Adapter {
 			this.log.debug(`published ${snapshots.length} employee state(s)`);
 			// the company figures are derived from the same snapshots, so they never disagree
 			await publishCompanySnapshot(this, readCompanySnapshot(snapshots));
+			// the calendar of the instance: the file the `ical` adapter reads and the states around it
+			await this.publishCalendar();
 			// the target employee of the punch commands is mirrored into the state the user writes (acknowledged, so
 			// the adapter ignores its own write — see `onStateChange`). `0` means "the only employee".
 			await this.setState(COMMAND_IDS.punchUserId, services.settings.getNumber("command_punch_user_id", 0), true);
 		} catch (error) {
 			this.log.warn(`states could not be published: ${(error as Error).message}`);
 		}
+	}
+
+	/**
+	 * Writes the calendar of the instance and publishes what ioBroker needs.
+	 *
+	 * The `.ics` file is what the `ical` adapter reads as a **local source** — no URL, no token, no network — and what
+	 * a script can hand to another consumer. `calendar.absences` carries the same days as JSON for scripts and
+	 * dashboards. The subscription link is published only once the administration created it
+	 * (`commands.rotateCalendarToken`), because that link opens the absences of **all** employees to whoever holds it.
+	 */
+	private async publishCalendar(): Promise<void> {
+		const services = this.services;
+		if (!services) {
+			return;
+		}
+
+		// the same window the feed route uses: a year back and to the end of next year
+		const stamp = Math.floor(Date.now() / 1000);
+		const year = new Date(stamp * 1000).getUTCFullYear();
+		const from = `${year - 1}-01-01`;
+		const to = `${year + 1}-12-31`;
+
+		// deactivated accounts stay out (`list()` returns the active ones)
+		const employees = new Map(
+			services.users
+				.list()
+				.map(user => [user.id, { id: user.id, displayName: user.displayName, login: user.login }]),
+		);
+		const list = services.absences.allInRange(from, to);
+
+		const file = path.join(utils.getAbsoluteInstanceDataDir(this), CALENDAR_FILE_NAME);
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		fs.writeFileSync(
+			file,
+			calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp),
+			"utf8",
+		);
+
+		const token = services.settings.get("calendar_token");
+		await publishCalendarSnapshot(this, {
+			// the host part is the name of this machine: an address that is reachable from the LAN and simple enough
+			// to correct by hand (a reverse proxy or another address is a matter of the copy in the calendar app)
+			feedUrl: token ? `http://${hostname()}:${this.config.port || 8092}/calendar.ics?token=${token}` : "",
+			feedFile: file,
+			updatedAt: stamp,
+			absences: JSON.stringify(absenceFeed(list, employees)),
+		});
 	}
 
 	/**
@@ -730,7 +787,12 @@ class TimeTracker extends utils.Adapter {
 		}
 
 		// buttons are stateless: always release them again
-		if (id === COMMAND_IDS.punch || id === COMMAND_IDS.quickPunch || id === COMMAND_IDS.backup) {
+		if (
+			id === COMMAND_IDS.punch ||
+			id === COMMAND_IDS.quickPunch ||
+			id === COMMAND_IDS.backup ||
+			id === COMMAND_IDS.rotateCalendarToken
+		) {
 			await this.setState(id, false, true);
 		}
 		await this.refreshStates();

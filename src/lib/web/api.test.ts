@@ -822,6 +822,48 @@ describe("web api", () => {
 			expect((await send("GET", "/calendar.ics", { query: { token: "nope" } })).status).to.equal(401);
 		});
 
+		it("serves the calendar of the whole company with the token of the instance", async () => {
+			// two employees with different types, so the feed has to bring both together and name them
+			const first = await send("POST", "/absences", {
+				body: { typeCode: "F", dateFrom: "1970-03-02", dateTo: "1970-03-05", userId: annaId },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(first.status, bodyOf<{ detail?: string }>(first).detail ?? "").to.equal(201);
+			const second = await send("POST", "/absences", {
+				body: { typeCode: "W", dateFrom: "1970-04-06", dateTo: "1970-04-06", userId: adminId },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(second.status, bodyOf<{ detail?: string }>(second).detail ?? "").to.equal(201);
+
+			// without the token of the instance there is no company calendar at all
+			expect((await send("GET", "/calendar.ics", { query: { token: "" } })).status).to.equal(401);
+
+			// the command state of the adapter creates it; here the setting is written directly
+			settings.set("calendar_token", "company-token", adminId);
+
+			const feed = await send("GET", "/calendar.ics", { query: { token: "company-token" } });
+			expect(feed.status).to.equal(200);
+			const document = feed.body.toString();
+			expect(document).to.contain("X-WR-CALNAME:Abwesenheiten (Firma)");
+			// both employees are in one document and the company calendar says who is away
+			expect(document).to.contain("SUMMARY:Anna: Ferien (F)");
+			expect(document).to.contain("SUMMARY:Admin: Weiterbildung (W)");
+			expect((document.match(/BEGIN:VEVENT/g) ?? []).length).to.equal(2);
+
+			// the personal link of an employee keeps showing only that employee
+			const own = bodyOf<{ token: string }>(
+				await send("POST", "/calendar/token", { body: {}, headers: headers(annaToken, annaCsrf) }),
+			).token;
+			const personal = (await send("GET", "/calendar.ics", { query: { token: own } })).body.toString();
+			expect(personal).to.contain("SUMMARY:Ferien (F)");
+			expect(personal).to.not.contain("Weiterbildung");
+
+			// a replaced token makes the old link useless at once
+			settings.set("calendar_token", "company-token-2", adminId);
+			expect((await send("GET", "/calendar.ics", { query: { token: "company-token" } })).status).to.equal(401);
+			expect((await send("GET", "/calendar.ics", { query: { token: "company-token-2" } })).status).to.equal(200);
+		});
+
 		it("carries the colour of an absence type and refuses a broken one", async () => {
 			const created = await send("POST", "/absence-types", {
 				body: { code: "S", name: "Sabbatical", color: "#123456" },

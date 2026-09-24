@@ -33,13 +33,16 @@ import {
 	type PresenceDeps,
 } from "./presence";
 import {
+	CALENDAR_IDS,
 	COMMAND_IDS,
+	createCalendarStates,
 	createCommandStates,
 	createCompanyStates,
 	createEventStates,
 	createInfoStates,
 	createUserChannel,
 	publishAllUserStates,
+	publishCalendarSnapshot,
 	publishUserSnapshot,
 	readUserSnapshot,
 	type StatePort,
@@ -151,6 +154,33 @@ describe("adapter states and commands", () => {
 
 			const punchUserId = recorder.objects.get(COMMAND_IDS.punchUserId);
 			expect(punchUserId?.common).to.deep.include({ type: "number", write: true });
+
+			// the calendar link of the company is a button like the backup
+			const rotate = recorder.objects.get(COMMAND_IDS.rotateCalendarToken);
+			expect(rotate?.common).to.deep.include({ type: "boolean", role: "button", read: false, write: true });
+		});
+
+		it("creates the calendar states and publishes the calendar", async () => {
+			await createCalendarStates(recorder);
+
+			expect(recorder.objects.get("calendar")?.type).to.equal("channel");
+			expect(recorder.objects.get(CALENDAR_IDS.feedUrl)?.common).to.deep.include({
+				type: "string",
+				role: "text",
+			});
+			expect(recorder.objects.get(CALENDAR_IDS.feedFile)?.common).to.deep.include({ type: "string" });
+			expect(recorder.objects.get(CALENDAR_IDS.updatedAt)?.common).to.deep.include({ role: "value.time" });
+			expect(recorder.objects.get(CALENDAR_IDS.absences)?.common).to.deep.include({ type: "string" });
+
+			await publishCalendarSnapshot(recorder, {
+				feedUrl: "http://host:8092/calendar.ics?token=abc",
+				feedFile: "/data/calendar.ics",
+				updatedAt: now,
+				absences: '[{"id":1}]',
+			});
+			expect(recorder.values.get(CALENDAR_IDS.feedUrl)).to.equal("http://host:8092/calendar.ics?token=abc");
+			expect(recorder.values.get(CALENDAR_IDS.updatedAt)).to.equal(now);
+			expect(recorder.values.get(CALENDAR_IDS.absences)).to.equal('[{"id":1}]');
 		});
 
 		it("creates the informational states", async () => {
@@ -211,6 +241,23 @@ describe("adapter states and commands", () => {
 			expect(cleared.message).to.contain("the only employee");
 		});
 
+		it("creates a calendar token for the company and ignores anything but true", () => {
+			expect(settings.get("calendar_token")).to.equal(null);
+
+			const ignored = handleCommand(deps(), COMMAND_IDS.rotateCalendarToken, false);
+			expect(ignored.ok).to.equal(false);
+			expect(settings.get("calendar_token")).to.equal(null);
+
+			const created = handleCommand(deps(), COMMAND_IDS.rotateCalendarToken, true);
+			expect(created.ok).to.equal(true);
+			const first = settings.get("calendar_token");
+			expect(first ?? "").to.have.length.greaterThan(20);
+
+			// renewing replaces the token, so a link that was handed out stops working
+			handleCommand(deps(), COMMAND_IDS.rotateCalendarToken, true);
+			expect(settings.get("calendar_token")).to.not.equal(first);
+		});
+
 		it("updates the definition of an existing object (checker E1011)", async () => {
 			// an installation that still carries the old definition of the command
 			recorder.objects.set(COMMAND_IDS.punchUserId, {
@@ -231,6 +278,7 @@ describe("adapter states and commands", () => {
 			await createInfoStates(recorder);
 			await createCompanyStates(recorder);
 			await createEventStates(recorder);
+			await createCalendarStates(recorder);
 			await publishAllUserStates({ port: recorder, aggregation, users, sync, now });
 
 			const languages = ["en", "de", "ru", "pt", "nl", "fr", "it", "es", "pl", "uk", "zh-cn"];

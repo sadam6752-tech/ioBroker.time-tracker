@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.5.0 (2026-09-23)
+
+- (Alex) new: the own absences can be subscribed in any calendar app. `POST /calendar/token` hands out a personal link
+  (`GET /calendar.ics?token=…`, public and rate limited) whose token can be rotated — that makes the old link invalid.
+  The feed is proper iCalendar: `DTEND` is exclusive (no event loses its last day), half days carry their portion in
+  the summary, a request that waits for its decision is `TENTATIVE`, and the approval state travels in `STATUS`.
+  On top the administration finds a **year overview** in the absence tab: approved days per employee and month, fed by
+  its own request for the calendar year
+
 ### 0.4.4 (2026-09-23)
 
 - (Alex) fix: the browser tests moved from `e2e/` to `test/e2e/`. The repository checker looks at the imported

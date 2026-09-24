@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.4.2 (2026-09-22)
+
+- (Alex) fix: the roles appear in the language of the display (the database keeps “Administrator”, “Manager” and
+  “Employee”, the app translates them now), the two date fields of “enter an absence” no longer overlap with their
+  label, an absence type can be removed again as long as no absence uses it (new `DELETE /absence-types/:id` with a
+  confirmation that names the type), and an inactive type stays in the lists of the administration while the employees
+  no longer see it in their picker (`GET /absence-types?includeInactive=true`)
+
 ### 0.4.1 (2026-09-22)
 
 - (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in

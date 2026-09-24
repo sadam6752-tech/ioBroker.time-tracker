@@ -28,6 +28,9 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 	await expect(sickRow).toBeVisible();
 	await expect(sickRow.getByText("(Urlaub)")).toHaveCount(0);
 
+	// every row carries the colour dot of its type
+	await expect(card.locator("li span[data-testid^='absence-type-color']").first()).toBeVisible();
+
 	// a new type opens in the dialog and lands in the list
 	await page.getByRole("button", { name: "Art hinzufügen" }).click();
 	const dialog = page.getByRole("dialog");

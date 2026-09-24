@@ -2821,6 +2821,7 @@ function AbsenceTypesCard({
 				factor: type.factor,
 				reduceVacation: type.reduceVacation,
 				isActive: type.isActive,
+				color: type.color ?? null,
 			}),
 		onSuccess: () => {
 			setDraft(null);
@@ -2934,6 +2935,18 @@ function AbsenceTypesCard({
 							}`}
 							secondary={summary(type)}
 						>
+							<span
+								data-testid={`absence-type-color-${type.id}`}
+								style={{
+									width: 14,
+									height: 14,
+									borderRadius: "50%",
+									marginRight: 6,
+									display: "inline-block",
+									background: type.color ?? "transparent",
+									border: type.color ? "none" : "1px solid rgba(128,128,128,0.6)",
+								}}
+							/>
 							<IconButton
 								size="small"
 								disabled={disabled}
@@ -3039,6 +3052,32 @@ function AbsenceTypesCard({
 								}
 								label={t("admin.absenceTypes.active")}
 							/>
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ alignItems: "center" }}
+							>
+								<Typography
+									variant="body2"
+									sx={{ flexGrow: 1 }}
+								>
+									{t("admin.absenceTypes.color")}
+								</Typography>
+								<input
+									type="color"
+									data-testid="absence-type-color"
+									value={draft.color ?? "#607d8b"}
+									onChange={event => setDraft(changed(draft, { color: event.target.value }))}
+								/>
+								<Button
+									size="small"
+									data-testid="absence-type-color-clear"
+									disabled={draft.color === null}
+									onClick={() => setDraft(changed(draft, { color: null }))}
+								>
+									{t("admin.absenceTypes.colorClear")}
+								</Button>
+							</Stack>
 						</Stack>
 					)}
 				</DialogContent>

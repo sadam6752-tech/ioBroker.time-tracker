@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Copiar",
 	"absences.calendarCopied": "Copiado",
 	"absences.calendarRotate": "Renovar el enlace",
-	"admin.absences.yearHint": "Las ausencias aprobadas son verdes, las solicitadas grises. Los días festivos van en negrita.",
+	"admin.absences.yearHint": "Cada tipo aparece en el calendario con su propio color; los días solicitados son más claros. Los festivos en negrita.",
 	"admin.absences.yearLabel": "Año",
 	"absences.previousMonth": "Mes anterior",
-	"absences.nextMonth": "Mes siguiente"
+	"absences.nextMonth": "Mes siguiente",
+	"admin.absenceTypes.color": "Color en el calendario",
+	"admin.absenceTypes.colorClear": "Quitar el color"
 }

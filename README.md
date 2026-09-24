@@ -351,6 +351,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.0 (2026-09-24)
+
+- (Alex) new: an absence type can carry a **colour**, and the calendar paints a day with it — vacation and sickness are
+  told apart at a glance. The editor offers a colour picker plus “remove the colour”, the list shows a dot per type, and
+  the seeded types come with colours (vacation green, sickness red, accident orange, military slate, internal blue,
+  training violet, external brown). An open request keeps its colour but is drawn faded
+
 ### 0.6.0 (2026-09-24)
 
 - (Alex) change: the year overview of the absence tab became a **calendar**. The month now stands as a grid (Monday
@@ -383,14 +390,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   the administration alone (sickness, accident, military service — such a note reaches a company on the same day and is
   booked, not requested). The server refuses an employee a type that is not public (`403`), the administration sees
   every type in its own lists, and sickness, accident and military service start switched off (migration 22)
-
-### 0.4.2 (2026-09-22)
-
-- (Alex) fix: the roles appear in the language of the display (the database keeps “Administrator”, “Manager” and
-  “Employee”, the app translates them now), the two date fields of “enter an absence” no longer overlap with their
-  label, an absence type can be removed again as long as no absence uses it (new `DELETE /absence-types/:id` with a
-  confirmation that names the type), and an inactive type stays in the lists of the administration while the employees
-  no longer see it in their picker (`GET /absence-types?includeInactive=true`)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

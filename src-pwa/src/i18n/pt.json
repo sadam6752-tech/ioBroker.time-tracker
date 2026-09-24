@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Copiar",
 	"absences.calendarCopied": "Copiado",
 	"absences.calendarRotate": "Renovar o link",
-	"admin.absences.yearHint": "Ausências aprovadas a verde, pedidas a cinzento. Os números de dias feriados estão a negrito.",
+	"admin.absences.yearHint": "Cada tipo aparece no calendário com a sua cor; dias pedidos ficam mais claros. Feriados a negrito.",
 	"admin.absences.yearLabel": "Ano",
 	"absences.previousMonth": "Mês anterior",
-	"absences.nextMonth": "Mês seguinte"
+	"absences.nextMonth": "Mês seguinte",
+	"admin.absenceTypes.color": "Cor no calendário",
+	"admin.absenceTypes.colorClear": "Remover a cor"
 }

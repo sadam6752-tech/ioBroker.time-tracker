@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "复制",
 	"absences.calendarCopied": "已复制",
 	"absences.calendarRotate": "更新链接",
-	"admin.absences.yearHint": "已批准的缺勤显示为绿色，已申请的为灰色。节假日日期为粗体。",
+	"admin.absences.yearHint": "每种类型在日历中以自己的颜色显示；已申请的日期更浅。节假日为粗体。",
 	"admin.absences.yearLabel": "年份",
 	"absences.previousMonth": "上个月",
-	"absences.nextMonth": "下个月"
+	"absences.nextMonth": "下个月",
+	"admin.absenceTypes.color": "日历中的颜色",
+	"admin.absenceTypes.colorClear": "移除颜色"
 }

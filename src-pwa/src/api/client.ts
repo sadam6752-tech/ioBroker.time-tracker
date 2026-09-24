@@ -159,6 +159,8 @@ export interface ApiClient {
 		factor?: number;
 		reduceVacation?: boolean;
 		isActive?: boolean;
+		/** Colour in the calendar, `null` clears it */
+		color?: string | null;
 	}): Promise<AbsenceType>;
 	/** Requests an absence; the administration may name the employee */
 	createAbsence(input: {

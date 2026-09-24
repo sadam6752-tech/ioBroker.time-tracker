@@ -1737,6 +1737,7 @@ export function createApi(deps: ApiDeps): Api {
 			factor: optionalNumber(body, "factor") ?? undefined,
 			reduceVacation: optionalBoolean(body, "reduceVacation") ?? undefined,
 			isActive: optionalBoolean(body, "isActive") ?? undefined,
+			color: optionalString(body, "color"),
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),

@@ -812,6 +812,22 @@ describe("web api", () => {
 			// a token nobody owns opens nothing
 			expect((await send("GET", "/calendar.ics", { query: { token: "nope" } })).status).to.equal(401);
 		});
+
+		it("carries the colour of an absence type and refuses a broken one", async () => {
+			const created = await send("POST", "/absence-types", {
+				body: { code: "S", name: "Sabbatical", color: "#123456" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			expect(bodyOf<{ type: { color: string } }>(created).type.color).to.equal("#123456");
+
+			const broken = await send("POST", "/absence-types", {
+				body: { code: "S", name: "Sabbatical", color: "rot" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(broken.status).to.equal(400);
+			expect(bodyOf(broken).detail).to.contain("color must be a hex value");
+		});
 	});
 
 	describe("field validation and negative cases", () => {

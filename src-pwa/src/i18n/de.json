@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Kopieren",
 	"absences.calendarCopied": "Kopiert",
 	"absences.calendarRotate": "Link erneuern",
-	"admin.absences.yearHint": "Genehmigte Abwesenheiten erscheinen grün, beantragte grau. Kur Tage eines Feiertags sind fett.",
+	"admin.absences.yearHint": "Jede Art erscheint im Kalender in ihrer eigenen Farbe; beantragte Tage sind blasser. Feiertage stehen fett.",
 	"admin.absences.yearLabel": "Jahr",
 	"absences.previousMonth": "Voriger Monat",
-	"absences.nextMonth": "Nächster Monat"
+	"absences.nextMonth": "Nächster Monat",
+	"admin.absenceTypes.color": "Farbe im Kalender",
+	"admin.absenceTypes.colorClear": "Farbe entfernen"
 }

@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Kopiuj",
 	"absences.calendarCopied": "Skopiowano",
 	"absences.calendarRotate": "Odśwież link",
-	"admin.absences.yearHint": "Zatwierdzone nieobecności są zielone, złożone szare. Dni świąt są pogrubione.",
+	"admin.absences.yearHint": "Każdy rodzaj pojawia się w kalendarzu w swoim kolorze; złożone dni są bledsze. Święta są pogrubione.",
 	"admin.absences.yearLabel": "Rok",
 	"absences.previousMonth": "Poprzedni miesiąc",
-	"absences.nextMonth": "Następny miesiąc"
+	"absences.nextMonth": "Następny miesiąc",
+	"admin.absenceTypes.color": "Kolor w kalendarzu",
+	"admin.absenceTypes.colorClear": "Usuń kolor"
 }

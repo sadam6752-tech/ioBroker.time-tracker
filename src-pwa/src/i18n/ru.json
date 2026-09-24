@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Копировать",
 	"absences.calendarCopied": "Скопировано",
 	"absences.calendarRotate": "Обновить ссылку",
-	"admin.absences.yearHint": "Одобренные отсутствия зелёные, запрошенные серые. Числа праздничных дней выделены жирным.",
+	"admin.absences.yearHint": "Каждый вид показан в календаре своим цветом; запрошенные дни бледнее. Праздники выделены жирным.",
 	"admin.absences.yearLabel": "Год",
 	"absences.previousMonth": "Предыдущий месяц",
-	"absences.nextMonth": "Следующий месяц"
+	"absences.nextMonth": "Следующий месяц",
+	"admin.absenceTypes.color": "Цвет в календаре",
+	"admin.absenceTypes.colorClear": "Убрать цвет"
 }

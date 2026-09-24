@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Copy",
 	"absences.calendarCopied": "Copied",
 	"absences.calendarRotate": "Renew the link",
-	"admin.absences.yearHint": "Approved absences are green, requested ones grey. Day numbers of a public holiday are bold.",
+	"admin.absences.yearHint": "Every type shows up in the calendar with its own colour; requested days are faded. Public holidays are bold.",
 	"admin.absences.yearLabel": "Year",
 	"absences.previousMonth": "Previous month",
-	"absences.nextMonth": "Next month"
+	"absences.nextMonth": "Next month",
+	"admin.absenceTypes.color": "Colour in the calendar",
+	"admin.absenceTypes.colorClear": "Remove the colour"
 }

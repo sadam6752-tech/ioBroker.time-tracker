@@ -680,4 +680,20 @@ export const migrations: Migration[] = [
 			CREATE UNIQUE INDEX idx_users_calendar_token ON users(calendar_token) WHERE calendar_token IS NOT NULL;
 		`,
 	},
+	{
+		version: 24,
+		name: "absence types: a colour for the calendar",
+		sql: `
+			-- The calendar grid marks an absence with the colour of its type, so vacation and sickness are told apart at
+			-- a glance. The seeded types get their colour here; an empty value keeps the default of the display.
+			ALTER TABLE absence_types ADD COLUMN color TEXT;
+			UPDATE absence_types SET color = '#2e7d32' WHERE color IS NULL AND code = 'F';
+			UPDATE absence_types SET color = '#c62828' WHERE color IS NULL AND code = 'K';
+			UPDATE absence_types SET color = '#ef6c00' WHERE color IS NULL AND code = 'U';
+			UPDATE absence_types SET color = '#455a64' WHERE color IS NULL AND code = 'M';
+			UPDATE absence_types SET color = '#1565c0' WHERE color IS NULL AND code = 'I';
+			UPDATE absence_types SET color = '#6a1b9a' WHERE color IS NULL AND code = 'W';
+			UPDATE absence_types SET color = '#795548' WHERE color IS NULL AND code = 'E';
+		`,
+	},
 ];

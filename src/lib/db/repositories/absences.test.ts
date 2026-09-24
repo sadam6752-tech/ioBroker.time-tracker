@@ -379,6 +379,18 @@ describe("absences repository", () => {
 			);
 		});
 
+		it("keeps a colour for the calendar and rejects a broken one", () => {
+			const created = repo.upsertType({ code: "S", name: "Sabbatical", color: "#123456", actorId: adminId });
+			expect(created.type.color).to.equal("#123456");
+			expect(repo.findType("S")?.color).to.equal("#123456");
+
+			const cleared = repo.upsertType({ code: "S", name: "Sabbatical", color: null, actorId: adminId });
+			expect(cleared.type.color).to.equal(null);
+			expect(() => repo.upsertType({ code: "S", name: "Sabbatical", color: "rot", actorId: adminId })).to.throw(
+				"color must be a hex value",
+			);
+		});
+
 		it("removes a type that nobody uses and refuses a used one", () => {
 			const created = repo.upsertType({ code: "S", name: "Sabbatical", actorId: adminId, now: 1000 });
 			expect(repo.removeType({ id: created.type.id, actorId: adminId, now: 2000 })).to.equal(true);

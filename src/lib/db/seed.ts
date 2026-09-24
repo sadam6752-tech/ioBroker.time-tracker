@@ -72,14 +72,15 @@ export const ABSENCE_TYPES: {
 	factor: number;
 	reduceVacation: boolean;
 	active: boolean;
+	color: string;
 }[] = [
-	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true, active: true },
-	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false, active: false },
-	{ code: "U", name: "Unfall", factor: 100, reduceVacation: false, active: false },
-	{ code: "M", name: "Militär", factor: 100, reduceVacation: false, active: false },
-	{ code: "I", name: "Intern", factor: 100, reduceVacation: false, active: true },
-	{ code: "W", name: "Weiterbildung", factor: 50, reduceVacation: false, active: true },
-	{ code: "E", name: "Extern", factor: 50, reduceVacation: false, active: true },
+	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true, active: true, color: "#2e7d32" },
+	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false, active: false, color: "#c62828" },
+	{ code: "U", name: "Unfall", factor: 100, reduceVacation: false, active: false, color: "#ef6c00" },
+	{ code: "M", name: "Militär", factor: 100, reduceVacation: false, active: false, color: "#455a64" },
+	{ code: "I", name: "Intern", factor: 100, reduceVacation: false, active: true, color: "#1565c0" },
+	{ code: "W", name: "Weiterbildung", factor: 50, reduceVacation: false, active: true, color: "#6a1b9a" },
+	{ code: "E", name: "Extern", factor: 50, reduceVacation: false, active: true, color: "#795548" },
 ];
 
 /** Default instance settings (specification section 2.9.9); existing values are never overwritten. */
@@ -157,11 +158,18 @@ export function seed(db: Db, options: SeedOptions = {}): { permissions: number; 
 		}
 
 		const insertAbsenceType = db.prepare(
-			`INSERT OR IGNORE INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active)
-			 VALUES (NULL, ?, ?, 1, ?, ?, ?)`,
+			`INSERT OR IGNORE INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active, color)
+			 VALUES (NULL, ?, ?, 1, ?, ?, ?, ?)`,
 		);
 		for (const type of ABSENCE_TYPES) {
-			insertAbsenceType.run(type.code, type.name, type.factor, type.reduceVacation ? 1 : 0, type.active ? 1 : 0);
+			insertAbsenceType.run(
+				type.code,
+				type.name,
+				type.factor,
+				type.reduceVacation ? 1 : 0,
+				type.active ? 1 : 0,
+				type.color,
+			);
 		}
 
 		const insertSetting = db.prepare(

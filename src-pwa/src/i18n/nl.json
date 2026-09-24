@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Kopiëren",
 	"absences.calendarCopied": "Gekopieerd",
 	"absences.calendarRotate": "Link vernieuwen",
-	"admin.absences.yearHint": "Goedgekeurde afwezigheden zijn groen, aangevraagde grijs. Dagcijfers van een feestdag zijn vet.",
+	"admin.absences.yearHint": "Elk type verschijnt in de agenda met zijn eigen kleur; aangevraagde dagen zijn lichter. Feestdagen vet.",
 	"admin.absences.yearLabel": "Jaar",
 	"absences.previousMonth": "Vorige maand",
-	"absences.nextMonth": "Volgende maand"
+	"absences.nextMonth": "Volgende maand",
+	"admin.absenceTypes.color": "Kleur in de agenda",
+	"admin.absenceTypes.colorClear": "Kleur verwijderen"
 }

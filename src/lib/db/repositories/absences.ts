@@ -55,6 +55,8 @@ export interface AbsenceTypeRecord {
 	reduceVacation: boolean;
 	/** Inactive types are hidden but keep their history */
 	isActive: boolean;
+	/** Colour of the type in the calendar (`#rrggbb`), `null` when none is set */
+	color: string | null;
 }
 
 /** Input for creating or updating an absence type. */
@@ -73,6 +75,8 @@ export interface UpsertAbsenceTypeInput {
 	reduceVacation?: boolean;
 	/** False hides the type but keeps its history, defaults to `true` */
 	isActive?: boolean;
+	/** Colour in the calendar (`#rrggbb`), `null` clears it */
+	color?: string | null;
 	/** Who creates or changes the type */
 	actorId: number;
 	/** Client IP address of the actor */
@@ -250,6 +254,7 @@ interface AbsenceTypeRow {
 	factor: number;
 	reduce_vacation: number;
 	is_active: number;
+	color: string | null;
 }
 
 interface AbsenceRow {
@@ -278,7 +283,7 @@ interface AbsenceWithTypeRow extends AbsenceRow {
 	type_reduce_vacation: number;
 }
 
-const TYPE_COLUMNS = "id, user_id, code, name, paid, factor, reduce_vacation, is_active";
+const TYPE_COLUMNS = "id, user_id, code, name, paid, factor, reduce_vacation, is_active, color";
 const ABSENCE_COLUMNS = `id, user_id, type_id, date_from, date_to, day_portion, hours, status, approval, decided_at, decided_by, decision_note, note,
 \tcreated_at, created_by`;
 
@@ -301,6 +306,7 @@ export function mapAbsenceTypeRow(row: AbsenceTypeRow): AbsenceTypeRecord {
 		factor: row.factor,
 		reduceVacation: row.reduce_vacation !== 0,
 		isActive: row.is_active !== 0,
+		color: row.color,
 	};
 }
 
@@ -411,11 +417,12 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	);
 	const deleteAbsence = db.prepare("DELETE FROM absences WHERE id = ?");
 	const insertType = db.prepare(
-		`INSERT INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active, color)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 	);
 	const updateType = db.prepare(
-		`UPDATE absence_types SET name = ?, paid = ?, factor = ?, reduce_vacation = ?, is_active = ? WHERE id = ?`,
+		`UPDATE absence_types SET name = ?, paid = ?, factor = ?, reduce_vacation = ?, is_active = ?, color = ?
+		 WHERE id = ?`,
 	);
 	const deleteType = db.prepare("DELETE FROM absence_types WHERE id = ?");
 	const countAbsencesOfType = db.prepare("SELECT COUNT(*) AS count FROM absences WHERE type_id = ?");
@@ -503,6 +510,10 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 			const paid = input.paid ?? true;
 			const reduceVacation = input.reduceVacation ?? false;
 			const isActive = input.isActive ?? true;
+			const color = input.color ?? null;
+			if (color !== null && !/^#[0-9a-fA-F]{6}$/.test(color)) {
+				throw new ValidationError(`color must be a hex value like #2e7d32 (got "${input.color}")`);
+			}
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 
 			const existing = resolveType(code, userId);
@@ -510,7 +521,15 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 
 			const run = db.transaction((): void => {
 				if (existing) {
-					updateType.run(name, paid ? 1 : 0, factor, reduceVacation ? 1 : 0, isActive ? 1 : 0, existing.id);
+					updateType.run(
+						name,
+						paid ? 1 : 0,
+						factor,
+						reduceVacation ? 1 : 0,
+						isActive ? 1 : 0,
+						color,
+						existing.id,
+					);
 				} else {
 					const result = insertType.run(
 						userId,
@@ -520,6 +539,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 						factor,
 						reduceVacation ? 1 : 0,
 						isActive ? 1 : 0,
+						color,
 					);
 					typeId = Number(result.lastInsertRowid);
 				}
@@ -531,13 +551,13 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 					action: existing ? "absence_type.update" : "absence_type.create",
 					entity: "absence_types",
 					entityId: typeId,
-					detail: { code, userId, name, paid, factor, reduceVacation, isActive },
+					detail: { code, userId, name, paid, factor, reduceVacation, isActive, color },
 				});
 			});
 			run();
 
 			const type = existing
-				? { ...existing, name, paid, factor, reduceVacation, isActive }
+				? { ...existing, name, paid, factor, reduceVacation, isActive, color }
 				: {
 						id: typeId,
 						userId,
@@ -547,6 +567,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 						factor,
 						reduceVacation,
 						isActive,
+						color,
 					};
 			return { type, created: existing === null };
 		},

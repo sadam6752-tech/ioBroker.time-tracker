@@ -171,6 +171,13 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 		},
 	});
 
+	/** Colour of every absence type, keyed by code — the calendar paints a day with it. */
+	const typeColors = new Map(
+		(types.data ?? [])
+			.filter(type => type.color)
+			.map(type => [type.code, type.color as string] as [string, string]),
+	);
+
 	const all = list.data ?? [];
 	const nameOf = (userId: number): string =>
 		people.data?.find(person => person.id === userId)?.displayName ?? `#${userId}`;
@@ -371,9 +378,13 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 																			whiteSpace: "nowrap",
 																			color: "#fff",
 																			background:
+																				typeColors.get(absence.typeCode) ??
+																				"#607d8b",
+																			// an open request stays faded, so the decision is visible
+																			opacity:
 																				absence.approval === "approved"
-																					? "#2e7d32"
-																					: "#9e9e9e",
+																					? 1
+																					: 0.55,
 																		}}
 																	>
 																		{nameOf(absence.userId)} · {absence.typeCode}

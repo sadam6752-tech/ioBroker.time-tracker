@@ -416,8 +416,10 @@
 	"absences.calendarCopy": "Копіювати",
 	"absences.calendarCopied": "Скопійовано",
 	"absences.calendarRotate": "Оновити посилання",
-	"admin.absences.yearHint": "Схвалені відсутності зелені, запитані сірі. Числа святкових днів виділені жирним.",
+	"admin.absences.yearHint": "Кожен вид показано в календарі власним кольором; запитані дні блідіші. Свята виділені жирним.",
 	"admin.absences.yearLabel": "Рік",
 	"absences.previousMonth": "Попередній місяць",
-	"absences.nextMonth": "Наступний місяць"
+	"absences.nextMonth": "Наступний місяць",
+	"admin.absenceTypes.color": "Колір у календарі",
+	"admin.absenceTypes.colorClear": "Прибрати колір"
 }

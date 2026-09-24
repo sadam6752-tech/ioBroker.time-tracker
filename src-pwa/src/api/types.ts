@@ -171,6 +171,8 @@ export interface AbsenceType {
 	factor: number;
 	reduceVacation: boolean;
 	isActive: boolean;
+	/** Colour of the type in the calendar (`#rrggbb`), `null` for the default */
+	color?: string | null;
 }
 
 /** An open synchronisation conflict. */

@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Copy",
 	"absences.calendarCopied": "Copied",
 	"absences.calendarRotate": "Renew the link",
-	"admin.absences.year": "Year overview {{year}}",
-	"admin.absences.yearHint": "Approved absence days per month and employee. Requested days appear here only after the decision."
+	"admin.absences.yearHint": "Approved absences are green, requested ones grey. Day numbers of a public holiday are bold.",
+	"admin.absences.yearLabel": "Year",
+	"absences.previousMonth": "Previous month",
+	"absences.nextMonth": "Next month"
 }

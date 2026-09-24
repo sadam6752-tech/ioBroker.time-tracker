@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "复制",
 	"absences.calendarCopied": "已复制",
 	"absences.calendarRotate": "更新链接",
-	"admin.absences.year": "{{year}} 年度总览",
-	"admin.absences.yearHint": "按月份与员工显示的已批准缺勤天数。已申请的日期只有在决定之后才会出现在这里。"
+	"admin.absences.yearHint": "已批准的缺勤显示为绿色，已申请的为灰色。节假日日期为粗体。",
+	"admin.absences.yearLabel": "年份",
+	"absences.previousMonth": "上个月",
+	"absences.nextMonth": "下个月"
 }

@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Copiar",
 	"absences.calendarCopied": "Copiado",
 	"absences.calendarRotate": "Renovar o link",
-	"admin.absences.year": "Visão do ano {{year}}",
-	"admin.absences.yearHint": "Dias de ausência aprovados por mês e funcionário. Dias pedidos aparecem aqui só depois da decisão."
+	"admin.absences.yearHint": "Ausências aprovadas a verde, pedidas a cinzento. Os números de dias feriados estão a negrito.",
+	"admin.absences.yearLabel": "Ano",
+	"absences.previousMonth": "Mês anterior",
+	"absences.nextMonth": "Mês seguinte"
 }

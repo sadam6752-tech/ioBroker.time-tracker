@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Копировать",
 	"absences.calendarCopied": "Скопировано",
 	"absences.calendarRotate": "Обновить ссылку",
-	"admin.absences.year": "Обзор года {{year}}",
-	"admin.absences.yearHint": "Одобренные дни отсутствия по месяцам и сотрудникам. Запрошенные дни появляются здесь только после решения."
+	"admin.absences.yearHint": "Одобренные отсутствия зелёные, запрошенные серые. Числа праздничных дней выделены жирным.",
+	"admin.absences.yearLabel": "Год",
+	"absences.previousMonth": "Предыдущий месяц",
+	"absences.nextMonth": "Следующий месяц"
 }

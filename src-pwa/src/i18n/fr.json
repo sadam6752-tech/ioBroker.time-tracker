@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Copier",
 	"absences.calendarCopied": "Copié",
 	"absences.calendarRotate": "Renouveler le lien",
-	"admin.absences.year": "Vue de l'année {{year}}",
-	"admin.absences.yearHint": "Jours d'absence approuvés par mois et par employé. Les jours demandés n'apparaissent ici qu'après la décision."
+	"admin.absences.yearHint": "Les absences approuvées sont vertes, les demandées grises. Les jours fériés sont en gras.",
+	"admin.absences.yearLabel": "Année",
+	"absences.previousMonth": "Mois précédent",
+	"absences.nextMonth": "Mois suivant"
 }

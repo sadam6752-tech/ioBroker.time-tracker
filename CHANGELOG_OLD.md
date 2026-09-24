@@ -8,6 +8,11 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.4.1 (2026-09-22)
+
+- (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in
+  `CONTRIBUTING.md` and `docs/entwicklung.md`, so the README stays a manual for users
+
 ### 0.4.0 (2026-09-22)
 
 - (Alex) new: the administration decides about absences. A request of an employee waits as `requested` and counts for

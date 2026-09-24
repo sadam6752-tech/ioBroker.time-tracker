@@ -15,12 +15,15 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,33 +71,69 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 		queryFn: () => api.absencesOverview(from, to),
 	});
 
-	/** The year the overview shows, with its own request (the tab itself looks at a moving window). */
-	const [overviewYear] = useState(() => new Date().getFullYear());
-	const yearFrom = `${overviewYear}-01-01`;
-	const yearTo = `${overviewYear}-12-31`;
-	const yearList = useQuery({
-		queryKey: ["absences", "overview", yearFrom, yearTo],
-		queryFn: () => api.absencesOverview(yearFrom, yearTo),
+	/** The year and month the calendar shows; the year is a dropdown, so the past and the future are reachable. */
+	const [overviewYear, setOverviewYear] = useState(() => new Date().getFullYear());
+	const [gridMonth, setGridMonth] = useState(() => new Date().getMonth());
+	/** The years the dropdown offers (three back, three ahead). */
+	const yearChoices = Array.from({ length: 7 }, (_unused, index) => new Date().getFullYear() - 3 + index);
+
+	const monthFrom = `${overviewYear}-${String(gridMonth + 1).padStart(2, "0")}-01`;
+	const monthTo = new Date(Date.UTC(overviewYear, gridMonth + 1, 0)).toISOString().slice(0, 10);
+	const monthList = useQuery({
+		queryKey: ["absences", "overview", monthFrom, monthTo],
+		queryFn: () => api.absencesOverview(monthFrom, monthTo),
+	});
+	const yearHolidays = useQuery({
+		queryKey: ["holidays", overviewYear],
+		queryFn: () => api.holidays(overviewYear),
 	});
 
+	/** Long month names in the language of the display. */
+	const monthNames = Array.from({ length: 12 }, (_unused, index) =>
+		new Intl.DateTimeFormat(language, { month: "long" }).format(new Date(Date.UTC(2026, index, 1))),
+	);
+	/** Weekday names, Monday first — the calendar starts with Monday like the working week does. */
+	const weekdayNames = Array.from({ length: 7 }, (_unused, index) =>
+		new Intl.DateTimeFormat(language, { weekday: "short" }).format(new Date(Date.UTC(2026, 8, 7 + index))),
+	);
+
 	/**
-	 * Counts the days of an absence that fall into one month of the overview.
+	 * The weeks of the shown month, Monday first, empty cells as `null`.
 	 *
-	 * @param absence - the absence
-	 * @param monthIndex - month of the year (0 = January)
-	 * @returns number of days (half days count as 0.5)
+	 * @returns rows of seven dates
 	 */
-	const daysInMonth = (absence: Absence, monthIndex: number): number => {
-		const first = new Date(Date.UTC(overviewYear, monthIndex, 1)).toISOString().slice(0, 10);
-		const last = new Date(Date.UTC(overviewYear, monthIndex + 1, 0)).toISOString().slice(0, 10);
-		const start = absence.dateFrom > first ? absence.dateFrom : first;
-		const end = absence.dateTo < last ? absence.dateTo : last;
-		if (start > end) {
-			return 0;
+	const weekRows = (): (string | null)[][] => {
+		const first = new Date(Date.UTC(overviewYear, gridMonth, 1));
+		const lastDay = new Date(Date.UTC(overviewYear, gridMonth + 1, 0)).getUTCDate();
+		// `getUTCDay()` is Sunday based, the grid starts with Monday
+		const offset = (first.getUTCDay() + 6) % 7;
+		const cells: (string | null)[] = Array.from({ length: offset }, () => null);
+		for (let day = 1; day <= lastDay; day += 1) {
+			cells.push(new Date(Date.UTC(overviewYear, gridMonth, day)).toISOString().slice(0, 10));
 		}
-		const days = Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1;
-		return days * absence.dayPortion;
+		while (cells.length % 7 !== 0) {
+			cells.push(null);
+		}
+		const rows: (string | null)[][] = [];
+		for (let index = 0; index < cells.length; index += 7) {
+			rows.push(cells.slice(index, index + 7));
+		}
+		return rows;
 	};
+
+	/**
+	 * Moves the calendar by a number of months.
+	 *
+	 * @param step - months to add (negative for the past)
+	 */
+	const moveMonth = (step: number): void => {
+		const moved = new Date(Date.UTC(overviewYear, gridMonth + step, 1));
+		setOverviewYear(moved.getUTCFullYear());
+		setGridMonth(moved.getUTCMonth());
+	};
+
+	/** Holiday names of the shown year, keyed by date — for a marker on the day. */
+	const holidayNames = new Map((yearHolidays.data ?? []).map(holiday => [holiday.date, holiday.name]));
 
 	/** The request the dialog decides about, `null` while the dialog is closed. */
 	const [decision, setDecision] = useState<{ absence: Absence; approve: boolean } | null>(null);
@@ -131,11 +170,6 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 			await invalidate();
 		},
 	});
-
-	/** Short month names in the language of the display. */
-	const monthNames = Array.from({ length: 12 }, (_unused, index) =>
-		new Intl.DateTimeFormat(language, { month: "short" }).format(new Date(Date.UTC(2026, index, 1))),
-	);
 
 	const all = list.data ?? [];
 	const nameOf = (userId: number): string =>
@@ -235,33 +269,60 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 
 			<Card sx={{ mb: 2 }}>
 				<CardContent>
-					<Typography
-						variant="subtitle1"
-						gutterBottom
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{ alignItems: "center", mb: 1 }}
 					>
-						{t("admin.absences.year", { year: overviewYear })}
-					</Typography>
-					<ErrorAlert error={yearList.error} />
-					{yearList.isLoading ? (
+						<TextField
+							select
+							size="small"
+							label={t("admin.absences.yearLabel")}
+							value={String(overviewYear)}
+							onChange={event => setOverviewYear(Number(event.target.value))}
+							sx={{ minWidth: 110 }}
+						>
+							{yearChoices.map(year => (
+								<MenuItem
+									key={year}
+									value={String(year)}
+								>
+									{year}
+								</MenuItem>
+							))}
+						</TextField>
+						<IconButton
+							size="small"
+							aria-label={t("absences.previousMonth")}
+							data-testid="calendar-previous"
+							onClick={() => moveMonth(-1)}
+						>
+							<ChevronLeftIcon />
+						</IconButton>
+						<Typography sx={{ flexGrow: 1, textAlign: "center" }}>
+							{monthNames[gridMonth]} {overviewYear}
+						</Typography>
+						<IconButton
+							size="small"
+							aria-label={t("absences.nextMonth")}
+							data-testid="calendar-next"
+							onClick={() => moveMonth(1)}
+						>
+							<ChevronRightIcon />
+						</IconButton>
+					</Stack>
+					<ErrorAlert error={monthList.error ?? yearHolidays.error} />
+					{monthList.isLoading ? (
 						<Loading />
 					) : (
-						<div
-							style={{ overflowX: "auto" }}
-							data-testid="absence-year"
-						>
-							<table style={{ borderCollapse: "collapse", width: "100%" }}>
+						<div data-testid="absence-calendar">
+							<table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
 								<thead>
 									<tr>
-										<th />
-										{monthNames.map(name => (
+										{weekdayNames.map(name => (
 											<th
 												key={name}
-												style={{
-													padding: "2px 4px",
-													fontSize: "0.7rem",
-													textAlign: "center",
-													fontWeight: 400,
-												}}
+												style={{ padding: "2px", fontSize: "0.7rem", fontWeight: 400 }}
 											>
 												{name}
 											</th>
@@ -269,33 +330,62 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 									</tr>
 								</thead>
 								<tbody>
-									{(people.data ?? []).map(person => (
-										<tr key={person.id}>
-											<td style={{ paddingRight: 8, whiteSpace: "nowrap", fontSize: "0.85rem" }}>
-												{person.displayName}
-											</td>
-											{monthNames.map((name, monthIndex) => {
-												const days = (yearList.data ?? [])
-													.filter(
-														absence =>
-															absence.userId === person.id &&
-															absence.approval === "approved",
-													)
-													.reduce(
-														(sum, absence) => sum + daysInMonth(absence, monthIndex),
-														0,
-													);
+									{weekRows().map((row, rowIndex) => (
+										<tr key={rowIndex}>
+											{row.map((date, cellIndex) => {
+												const holiday = date === null ? undefined : holidayNames.get(date);
+												const dayAbsences =
+													date === null
+														? []
+														: (monthList.data ?? []).filter(
+																absence =>
+																	absence.dateFrom <= date && absence.dateTo >= date,
+															);
 												return (
 													<td
-														key={`${person.id}-${name}`}
+														key={date ?? `empty-${rowIndex}-${cellIndex}`}
+														data-testid={date ?? undefined}
 														style={{
-															textAlign: "center",
-															fontSize: "0.8rem",
-															color: days === 0 ? "inherit" : "#2e7d32",
-															fontWeight: days === 0 ? 400 : 600,
+															border: "1px solid rgba(128,128,128,0.25)",
+															verticalAlign: "top",
+															height: 62,
+															padding: "2px 3px",
+															fontSize: "0.7rem",
 														}}
 													>
-														{days === 0 ? "·" : days.toLocaleString(language)}
+														{date !== null && (
+															<>
+																<div style={{ fontWeight: holiday ? 700 : 400 }}>
+																	{Number(date.slice(8, 10))}
+																</div>
+																{dayAbsences.slice(0, 3).map(absence => (
+																	<div
+																		key={absence.id}
+																		style={{
+																			marginTop: 1,
+																			padding: "0 2px",
+																			borderRadius: 2,
+																			fontSize: "0.65rem",
+																			overflow: "hidden",
+																			textOverflow: "ellipsis",
+																			whiteSpace: "nowrap",
+																			color: "#fff",
+																			background:
+																				absence.approval === "approved"
+																					? "#2e7d32"
+																					: "#9e9e9e",
+																		}}
+																	>
+																		{nameOf(absence.userId)} · {absence.typeCode}
+																	</div>
+																))}
+																{dayAbsences.length > 3 && (
+																	<div style={{ fontSize: "0.65rem" }}>
+																		+{dayAbsences.length - 3}
+																	</div>
+																)}
+															</>
+														)}
 													</td>
 												);
 											})}

@@ -351,6 +351,13 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.6.0 (2026-09-24)
+
+- (Alex) change: the year overview of the absence tab became a **calendar**. The month now stands as a grid (Monday
+  first) with the name of every absent employee on the day — approved days green, requested ones grey, numbers of a
+  public holiday in bold. A **year dropdown** (three years back and ahead) and arrows for the month make the past and
+  the future reachable, so the administration can look ahead and back instead of only seeing the current year
+
 ### 0.5.0 (2026-09-23)
 
 - (Alex) new: the own absences can be subscribed in any calendar app. `POST /calendar/token` hands out a personal link
@@ -384,11 +391,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   label, an absence type can be removed again as long as no absence uses it (new `DELETE /absence-types/:id` with a
   confirmation that names the type), and an inactive type stays in the lists of the administration while the employees
   no longer see it in their picker (`GET /absence-types?includeInactive=true`)
-
-### 0.4.1 (2026-09-22)
-
-- (Alex) docs: the installation chapter no longer carries the build steps for work on the sources — they live in
-  `CONTRIBUTING.md` and `docs/entwicklung.md`, so the README stays a manual for users
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Kopieren",
 	"absences.calendarCopied": "Kopiert",
 	"absences.calendarRotate": "Link erneuern",
-	"admin.absences.year": "Jahresübersicht {{year}}",
-	"admin.absences.yearHint": "Genehmigte Abwesenheitstage je Monat und Mitarbeiter. Beantragte Tage erscheinen hier erst nach der Entscheidung."
+	"admin.absences.yearHint": "Genehmigte Abwesenheiten erscheinen grün, beantragte grau. Kur Tage eines Feiertags sind fett.",
+	"admin.absences.yearLabel": "Jahr",
+	"absences.previousMonth": "Voriger Monat",
+	"absences.nextMonth": "Nächster Monat"
 }

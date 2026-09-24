@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Kopiuj",
 	"absences.calendarCopied": "Skopiowano",
 	"absences.calendarRotate": "Odśwież link",
-	"admin.absences.year": "Przegląd roku {{year}}",
-	"admin.absences.yearHint": "Zatwierdzone dni nieobecności według miesiąca i pracownika. Złożone dni pojawiają się tu dopiero po decyzji."
+	"admin.absences.yearHint": "Zatwierdzone nieobecności są zielone, złożone szare. Dni świąt są pogrubione.",
+	"admin.absences.yearLabel": "Rok",
+	"absences.previousMonth": "Poprzedni miesiąc",
+	"absences.nextMonth": "Następny miesiąc"
 }

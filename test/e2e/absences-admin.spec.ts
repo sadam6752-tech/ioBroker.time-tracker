@@ -43,9 +43,12 @@ test("shows the absence tab and enters an absence for an employee", async ({ pag
 	// the request section stays empty, because nothing waits for a decision
 	await expect(page.getByText("Keine offenen Anträge — alles entschieden.")).toBeVisible();
 
-	// the year overview counts the approved days of every employee per month
-	const year = page.getByTestId("absence-year");
-	await expect(year).toBeVisible();
-	await expect(page.getByText("Jahresübersicht", { exact: false })).toBeVisible();
-	await expect(year.locator("tbody tr").first()).toBeVisible();
+	// the calendar shows the month; the year is selectable and the month can be walked through
+	const calendar = page.getByTestId("absence-calendar");
+	await expect(calendar).toBeVisible();
+	await expect(calendar.locator("td").first()).toBeVisible();
+	await expect(page.getByLabel("Jahr")).toBeVisible();
+	await page.getByTestId("calendar-next").click();
+	await expect(calendar).toBeVisible();
+	await expect(page.getByTestId("calendar-previous")).toBeVisible();
 });

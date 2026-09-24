@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Kopiëren",
 	"absences.calendarCopied": "Gekopieerd",
 	"absences.calendarRotate": "Link vernieuwen",
-	"admin.absences.year": "Jaaroverzicht {{year}}",
-	"admin.absences.yearHint": "Goedgekeurde afwezigheidsdagen per maand en medewerker. Aangevraagde dagen verschijnen hier pas na de beslissing."
+	"admin.absences.yearHint": "Goedgekeurde afwezigheden zijn groen, aangevraagde grijs. Dagcijfers van een feestdag zijn vet.",
+	"admin.absences.yearLabel": "Jaar",
+	"absences.previousMonth": "Vorige maand",
+	"absences.nextMonth": "Volgende maand"
 }

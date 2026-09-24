@@ -416,6 +416,8 @@
 	"absences.calendarCopy": "Копіювати",
 	"absences.calendarCopied": "Скопійовано",
 	"absences.calendarRotate": "Оновити посилання",
-	"admin.absences.year": "Огляд року {{year}}",
-	"admin.absences.yearHint": "Схвалені дні відсутності за місяцями й працівниками. Запитані дні з'являються тут лише після рішення."
+	"admin.absences.yearHint": "Схвалені відсутності зелені, запитані сірі. Числа святкових днів виділені жирним.",
+	"admin.absences.yearLabel": "Рік",
+	"absences.previousMonth": "Попередній місяць",
+	"absences.nextMonth": "Наступний місяць"
 }

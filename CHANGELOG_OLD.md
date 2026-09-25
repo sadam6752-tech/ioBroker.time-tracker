@@ -8,6 +8,17 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.2 (2026-09-24)
+
+- (Alex) security: the administration cannot lock itself out any more. Deactivating or taking the admin role away from
+  the **last active administrator** is refused (problem `last_administrator`, 409), and the web app warns before it is
+  tried on the **own** account: the own switch explains why an account cannot deactivate itself, and the role dialog
+  names the last administrator and keeps saving locked
+- (Alex) fix: the PDF statement writes the **absences** left aligned on lines of their own. They started where the last
+  cell of the day table was drawn, so every line was squeezed into the rest of that row
+- (Alex) fix: the list of the absence types shows “visible for everybody” on a line of its own, so the long facts
+  (`reduces vacation`) cannot push it out of the row any more
+
 ### 0.7.1 (2026-09-24)
 
 - (Alex) fix: the correction dialog in the month view of an employee shows and changes **his** punches. It asked the

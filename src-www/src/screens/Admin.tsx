@@ -2586,6 +2586,21 @@ function AutomationRulesCard({
 										<MenuItem value="day">{t("admin.automation.repeatDay")}</MenuItem>
 										<MenuItem value="week">{t("admin.automation.repeatWeek")}</MenuItem>
 									</TextField>
+									<Button
+										size="small"
+										color={draft.isActive === false ? "inherit" : "primary"}
+										onClick={() => setDraft({ ...draft, isActive: draft.isActive === false })}
+										disabled={disabled}
+									>
+										{t("admin.trigger.active")}
+									</Button>
+								</Stack>
+								<Stack
+									direction="row"
+									spacing={1}
+									useFlexGap
+									sx={{ alignItems: "flex-start", flexWrap: "wrap" }}
+								>
 									<TextField
 										size="small"
 										type="date"
@@ -2612,15 +2627,6 @@ function AutomationRulesCard({
 										sx={{ minWidth: 200 }}
 										InputLabelProps={{ shrink: true }}
 									/>
-
-									<Button
-										size="small"
-										color={draft.isActive === false ? "inherit" : "primary"}
-										onClick={() => setDraft({ ...draft, isActive: draft.isActive === false })}
-										disabled={disabled}
-									>
-										{t("admin.trigger.active")}
-									</Button>
 								</Stack>
 							</Stack>
 						)}

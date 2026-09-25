@@ -415,6 +415,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.7 (2026-09-25)
+
+- (Alex) change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab”/“Gültig
+  bis”) stand in a row of their own below it — the two date fields no longer wrap around the button
+
 ### 0.7.6 (2026-09-25)
 
 - (Alex) new: an automatic rule can be limited to a period. The rule dialog knows “Valid from” and “Valid until” as
@@ -452,17 +457,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   unreachable since times belong to the administration: it only ever checked punches of the own account, and changing
   one of those already needs `time.edit_other`. The setting `edit_window_days` stays and now has exactly one job — it
   tells the **offline queue** how far back it may hand in a punch on its own (`too_old`); README and D6 say that
-
-### 0.7.2 (2026-09-24)
-
-- (Alex) security: the administration cannot lock itself out any more. Deactivating or taking the admin role away from
-  the **last active administrator** is refused (problem `last_administrator`, 409), and the web app warns before it is
-  tried on the **own** account: the own switch explains why an account cannot deactivate itself, and the role dialog
-  names the last administrator and keeps saving locked
-- (Alex) fix: the PDF statement writes the **absences** left aligned on lines of their own. They started where the last
-  cell of the day table was drawn, so every line was squeezed into the rest of that row
-- (Alex) fix: the list of the absence types shows “visible for everybody” on a line of its own, so the long facts
-  (`reduces vacation`) cannot push it out of the row any more
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

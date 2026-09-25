@@ -202,7 +202,7 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 | `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma          |
 | `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
 | `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
-| `time-tracker.0.calendar.feedFile`                                                            | string  | the written `.ics` file (for `ical`)       |
+| `time-tracker.0.calendar.feedFile`                                                            | string  | the `.ics` file **path** (for `ical`)      |
 | `time-tracker.0.calendar.feedUrl`                                                             | string  | subscription link of the company calendar  |
 | `time-tracker.0.calendar.absences`                                                            | string  | the absences of the window as JSON         |
 | `time-tracker.0.calendar.updatedAt`                                                           | number  | when the calendar was written              |
@@ -251,18 +251,23 @@ broken instance.
 
 ### Calendar for ioBroker (feed and states)
 
-The absences of the whole company reach ioBroker in two ways — both without a session and without a token:
+The absences of the whole company reach ioBroker in two ways — the file without a session and without a token, the
+link with the instance token:
 
 | What     | Where                                                                                                              | Who uses it                                                                                     |
 | -------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| **File** | `<iobroker-data>/files/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes                | the `ical` adapter as a **local file**, or a browser through the file server of a `web` instance |
+| **File** | `<iobroker-data>/files/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes                | the `ical` adapter as a **local file** — no URL, no token, no network                           |
 | **URL**  | `calendar.feedUrl` (`http://<host>:<port>/api/calendar.ics?token=…`)                                                | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                      |
 | **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                            |
 | **When** | `calendar.updatedAt`                                                                                                | to see how current the three above are                                                          |
 
 The file lives in the `files` folder of the instance data, because the instance folder next to it can only be read by
-the adapter itself. With a `web` instance on the usual port the same file is downloadable as
-`http://<host>:8081/files/time-tracker.0/calendar.ics`; the `ical` adapter points at the path from `calendar.feedFile`.
+the adapter itself. The `ical` adapter points at the **path** from `calendar.feedFile`.
+
+The file server of a `web` instance is **not** a way to that file: the written calendar is not offered there as a
+download. For a browser, a calendar app or a script use `calendar.feedUrl`, the link with the instance token — the
+technical detail of why the file server does not work is written down in D11 of
+[`docs/entscheidungen.md`](docs/entscheidungen.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
 for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
@@ -414,6 +419,10 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) docs: the calendar file is described as what it is — the **path** for the `ical` adapter
+  (`calendar.feedFile`). The file server of a `web` instance does not deliver it (that public area answers with an
+  empty archive), so a browser, a calendar app or a script uses the token link `calendar.feedUrl`.
 
 ### 0.7.7 (2026-09-25)
 

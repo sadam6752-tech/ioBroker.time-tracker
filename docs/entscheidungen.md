@@ -232,6 +232,8 @@ eine `web`-Instanz dagegen als Download aus (`http://<host>:8081/files/time-trac
 muss unter dem Präfix `/api` liegen — ohne es bekommt ein Browser die Web-Oberfläche samt Anmeldung statt des
 Kalenders (`companyFeedUrl` in `src/lib/services/calendar.ts` hält das fest, die Routine wird getestet).
 
+*(Nachtrag 25.09.2026: der Dateiserver-Weg hat sich als nicht tragfähig erwiesen — siehe **D11**.)*
+
 Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
 legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link
 öffnet die Abwesenheiten **aller** Mitarbeiter, also bekommt ihn nur, wer danach fragt. `calendar.feedUrl` bleibt leer,
@@ -299,3 +301,31 @@ und liegt der Regelzeitpunkt des ersten Tages vor „gültig ab", fällt dieser 
 abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/api.test.ts` (die Daten reisen mit der Regel, 400 bei
 ungültigem Datum) und die Abnahme **T23** in `docs/testplan.md`. Die Liste unter der Tabelle zeigt außerdem nur noch
 die **fünf** jüngsten Ausführungen (vorher zwanzig) — sie ist ein Blick auf das letzte Verhalten, kein Archiv.
+
+## D11 — Der Dateiserver ist kein Weg zum Kalender (25.09.2026)
+
+Beim Nachprüfen von T21 kam heraus, dass der in D8 und im README versprochene Download über eine `web`-Instanz **nicht**
+funktioniert: `http://<host>:8081/files/time-tracker.0/calendar.ics` liefert die Datei nicht, und der naheliegende Weg
+ohne Instanznummer (`…/files/time-tracker/calendar.ics`) liefert ein **leeres ZIP-Archiv** (22 Bytes, `PK\x05\x06`).
+Die Anfrage landet damit im öffentlichen Web-Bereich und nicht im Instanzordner; ein Kalender ist das nicht.
+
+**Entscheidung:** Der Datei-Weg wird **nicht** mehr als Download angeboten. `calendar.feedFile` bleibt, was es ist —
+der **absolute Pfad** der geschriebenen Datei, den der `ical`-Adapter als lokale Datei liest (beim Test geprüft, in
+Ordnung). Für Browser, Kalender-Apps und Skripte ist `calendar.feedUrl` der Weg: der Link des Adapters mit dem
+Instanz-Token, der dieselbe, vollständige Datei liefert. README, Testplan und die Zeile der Zustandstabelle sagen das
+jetzt so (letztere nennt `feedFile` ausdrücklich einen *Pfad*).
+
+Zwei Punkte bleiben offen und wurden bewusst nicht mit erledigt:
+
+- **Schreibvorgang:** Die Datei wird bei jeder Änderung und alle fünf Minuten mit `writeFileSync` neu geschrieben —
+  erst leeren, dann schreiben. Ein Leser, der genau in diesem Moment liest, kann eine halbe Datei erwischen. Robust
+  wäre ein atomares Schreiben (erst `calendar.ics.tmp`, dann `rename`); kein akutes Problem, weil der `ical`-Adapter
+  in Minutenabständen liest.
+- **Sichtbarkeit:** Alles unter `<iobroker-data>/files/…` ist über eine `web`-Instanz **ohne Anmeldung** erreichbar.
+  Der Firmenkalender liegt damit in einem öffentlichen Ordner, obwohl der API-Weg ein Token verlangt. Wer das nicht
+  möchte, kann die Datei in den Instanzordner (`<iobroker-data>/time-tracker.<n>/`) zurückholen — der `ical`-Adapter
+  liest sie von dort genauso.
+
+**Nachweis:** **T24** in `docs/testplan.md` (der Link liefert die vollständige ICS-Datei, der `ical`-Adapter liest
+`calendar.feedFile`, README und Doku nennen keinen Dateiserver-Link mehr) und der geänderte Abschnitt *Calendar for
+ioBroker* im README.

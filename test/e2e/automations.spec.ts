@@ -31,6 +31,8 @@ test("shows the automation rules as rows and edits one in a dialog", async ({ pa
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
 	await expect(dialog.getByText("Neue Regel")).toBeVisible();
+	await expect(dialog.getByLabel("Gültig ab")).toBeVisible();
+	await expect(dialog.getByLabel("Gültig bis")).toBeVisible();
 	await dialog.getByRole("button", { name: "Speichern" }).click();
 	await expect(dialog).toBeHidden();
 

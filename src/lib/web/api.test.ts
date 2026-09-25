@@ -3302,6 +3302,19 @@ describe("web api", () => {
 				period: "2026-09-18",
 			});
 
+			// the administration reads the five most recent runs, no matter how many there are
+			for (let day = 1; day <= 6; day += 1) {
+				automations.recordRun({
+					ruleId: saved.automationRules[0].id,
+					userId: annaId,
+					period: `2026-09-${String(day).padStart(2, "0")}`,
+					action: `run ${day}`,
+					now: 5000 + day,
+				});
+			}
+			const recent = await send("GET", "/automation-rules/runs", { headers: headers(adminToken) });
+			expect(bodyOf<{ runs: unknown[] }>(recent).runs).to.have.length(5);
+
 			// the payload is the whole table: an empty list removes the rules again
 			const cleared = await send("PUT", "/automation-rules", {
 				body: { automationRules: [] },
@@ -3325,6 +3338,33 @@ describe("web api", () => {
 			expect(withDays.automationRules[0]).to.deep.include({ weekdays: [1, 2, 3, 4, 5], repeat: "week" });
 			// without a selection a rule runs every day, once a day
 			expect(withDays.automationRules[1]).to.deep.include({ weekdays: [1, 2, 3, 4, 5, 6, 7], repeat: "day" });
+
+			// a rule can be limited to a period, and both dates travel with it
+			const limited = await send("PUT", "/automation-rules", {
+				body: {
+					automationRules: [
+						{ kind: "clockOut", atMinute: 1200, activeFrom: "2026-10-01", activeUntil: "2026-10-15" },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(limited.status).to.equal(200);
+			expect(
+				bodyOf<{ automationRules: { activeFrom: string | null; activeUntil: string | null }[] }>(limited)
+					.automationRules[0],
+			).to.deep.include({ activeFrom: "2026-10-01", activeUntil: "2026-10-15" });
+
+			// a day that does not exist and an end before the start are refused as well
+			for (const broken of [
+				{ activeFrom: "2026-02-30" },
+				{ activeFrom: "2026-10-05", activeUntil: "2026-10-01" },
+			]) {
+				const refusedDates = await send("PUT", "/automation-rules", {
+					body: { automationRules: [{ kind: "clockOut", atMinute: 1200, ...broken }] },
+					headers: headers(adminToken, adminCsrf),
+				});
+				expect(refusedDates.status, JSON.stringify(broken)).to.equal(400);
+			}
 
 			// a day that does not exist, an empty selection and an unknown repeat are refused
 			for (const broken of [{ weekdays: [0, 8] }, { weekdays: [] }, { repeat: "month" }]) {

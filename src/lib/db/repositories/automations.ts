@@ -46,6 +46,10 @@ export interface AutomationRuleRecord {
 	repeat: AutomationRepeat;
 	/** Inactive rules are ignored but keep their history */
 	isActive: boolean;
+	/** First local day the rule is valid on (`YYYY-MM-DD`), `null` for “from now on” */
+	activeFrom: string | null;
+	/** Last local day the rule is valid on (`YYYY-MM-DD`, inclusive), `null` for “without an end” */
+	activeUntil: string | null;
 }
 
 /** Input for creating or changing a rule. */
@@ -68,6 +72,10 @@ export interface SaveAutomationRuleInput {
 	repeat?: AutomationRepeat;
 	/** `false` disables the rule without deleting it */
 	isActive?: boolean;
+	/** First local day the rule is valid on, omitted keeps the stored value, `null`/empty clears it */
+	activeFrom?: string | null;
+	/** Last local day the rule is valid on (inclusive), omitted keeps the stored value, `null`/empty clears it */
+	activeUntil?: string | null;
 	/** Who changes the rule */
 	actorId: number;
 	/** Client IP address of the actor */
@@ -121,6 +129,8 @@ interface AutomationRuleRow {
 	weekdays: number;
 	repeat: string;
 	is_active: number;
+	active_from: string | null;
+	active_until: string | null;
 }
 
 /** Raw database row of a run. */
@@ -132,7 +142,8 @@ interface AutomationRunRow {
 	action: string;
 }
 
-const RULE_COLUMNS = "id, label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active";
+const RULE_COLUMNS =
+	"id, label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active, active_from, active_until";
 const RUN_COLUMNS = "rule_id, user_id, period, fired_at, action";
 
 /**
@@ -149,6 +160,8 @@ const AUDITED_FIELDS: (keyof AutomationRuleRecord)[] = [
 	"afterMinutes",
 	"repeat",
 	"isActive",
+	"activeFrom",
+	"activeUntil",
 ];
 
 /** Kinds a rule may use. */
@@ -175,6 +188,8 @@ export function mapAutomationRuleRow(row: AutomationRuleRow): AutomationRuleReco
 		weekdays: maskToWeekdays(row.weekdays ?? 127),
 		repeat: row.repeat === "week" ? "week" : "day",
 		isActive: row.is_active !== 0,
+		activeFrom: row.active_from ?? null,
+		activeUntil: row.active_until ?? null,
 	};
 }
 
@@ -231,6 +246,39 @@ function requireWindow(
 		throw new ValidationError(`afterMinutes must be between 1 and 1440 (got ${afterMinutes})`);
 	}
 	return { atMinute: null, afterMinutes };
+}
+
+/**
+ * Validates one end of the validity period of a rule.
+ *
+ * `undefined` keeps the stored value, an empty string or `null` clears the limit (that is the “from now on” and
+ * “without an end” of the dialog), anything else has to be a real calendar date in `YYYY-MM-DD`.
+ *
+ * @param value - value from the request
+ * @param fallback - value to keep when the request says nothing
+ * @param field - field name for the error message
+ * @returns the validated date or `null`
+ */
+function requireValidityDate(value: string | null | undefined, fallback: string | null, field: string): string | null {
+	if (value === undefined) {
+		return fallback;
+	}
+	const text = (value ?? "").trim();
+	if (text === "") {
+		return null;
+	}
+	const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+	const date = parts ? new Date(Date.UTC(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]))) : null;
+	if (
+		!parts ||
+		!date ||
+		date.getUTCFullYear() !== Number(parts[1]) ||
+		date.getUTCMonth() !== Number(parts[2]) - 1 ||
+		date.getUTCDate() !== Number(parts[3])
+	) {
+		throw new ValidationError(`${field} must be a date like 2026-10-01 (got ${text})`);
+	}
+	return text;
 }
 
 /** Days a rule runs on when nothing else is chosen. */
@@ -313,13 +361,13 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 	const selectAll = db.prepare(`SELECT ${RULE_COLUMNS} FROM automation_rules ORDER BY id`);
 	const selectActive = db.prepare(`SELECT ${RULE_COLUMNS} FROM automation_rules WHERE is_active = 1 ORDER BY id`);
 	const insertRule = db.prepare(
-		`INSERT INTO automation_rules (label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO automation_rules (label, kind, user_id, at_minute, after_minutes, weekdays, repeat, is_active, active_from, active_until, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	);
 	const updateRule = db.prepare(
 		`UPDATE automation_rules
 		 SET label = ?, kind = ?, user_id = ?, at_minute = ?, after_minutes = ?, weekdays = ?, repeat = ?,
-		     is_active = ?, updated_at = ?
+		     is_active = ?, active_from = ?, active_until = ?, updated_at = ?
 		 WHERE id = ?`,
 	);
 	const deleteRule = db.prepare("DELETE FROM automation_rules WHERE id = ?");
@@ -378,6 +426,11 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 			}
 			const weekdays = requireWeekdays(input.weekdays, current?.weekdays ?? ALL_WEEKDAYS);
 			const repeat = requireRepeat(input.repeat, current?.repeat ?? "day");
+			const activeFrom = requireValidityDate(input.activeFrom, current?.activeFrom ?? null, "activeFrom");
+			const activeUntil = requireValidityDate(input.activeUntil, current?.activeUntil ?? null, "activeUntil");
+			if (activeFrom !== null && activeUntil !== null && activeUntil < activeFrom) {
+				throw new ValidationError(`activeUntil must not be before activeFrom (${activeFrom} … ${activeUntil})`);
+			}
 
 			const next: AutomationRuleRecord = {
 				id: current?.id ?? 0,
@@ -389,6 +442,8 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 				weekdays,
 				repeat,
 				isActive,
+				activeFrom,
+				activeUntil,
 			};
 			const changes = current
 				? diffFields(
@@ -417,6 +472,8 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 						weekdaysToMask(weekdays),
 						repeat,
 						isActive ? 1 : 0,
+						activeFrom,
+						activeUntil,
 						now,
 						current.id,
 					);
@@ -431,6 +488,8 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 							weekdaysToMask(weekdays),
 							repeat,
 							isActive ? 1 : 0,
+							activeFrom,
+							activeUntil,
 							now,
 							now,
 						).lastInsertRowid,

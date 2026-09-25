@@ -64,6 +64,72 @@ describe("automations repository", () => {
 		expect(repo.list()).to.have.length(1);
 	});
 
+	describe("the validity period of a rule", () => {
+		it("stores both ends, keeps an omitted one and opens an empty one", () => {
+			const limited = repo.save({
+				kind: "clockOut",
+				atMinute: 1200,
+				activeFrom: "2026-10-01",
+				activeUntil: "2026-10-15",
+				actorId: adminId,
+			});
+			expect(limited).to.deep.include({ activeFrom: "2026-10-01", activeUntil: "2026-10-15" });
+
+			// a change that says nothing about the dates keeps them
+			const renamed = repo.save({
+				id: limited.id,
+				kind: "clockOut",
+				atMinute: 1200,
+				label: "Ferien",
+				actorId: adminId,
+			});
+			expect(renamed).to.deep.include({
+				label: "Ferien",
+				activeFrom: "2026-10-01",
+				activeUntil: "2026-10-15",
+			});
+
+			// an empty value opens the period again
+			const open = repo.save({
+				id: limited.id,
+				kind: "clockOut",
+				atMinute: 1200,
+				activeFrom: null,
+				activeUntil: null,
+				actorId: adminId,
+			});
+			expect(open).to.deep.include({ activeFrom: null, activeUntil: null });
+
+			// one single day is a valid period
+			const oneDay = repo.save({
+				kind: "clockOut",
+				atMinute: 1200,
+				activeFrom: "2026-10-01",
+				activeUntil: "2026-10-01",
+				actorId: adminId,
+			});
+			expect(oneDay).to.deep.include({ activeFrom: "2026-10-01", activeUntil: "2026-10-01" });
+		});
+
+		it("refuses a day that does not exist and an end before the start", () => {
+			expect(() =>
+				repo.save({ kind: "clockOut", atMinute: 1200, activeFrom: "2026-02-30", actorId: adminId }),
+			).to.throw("activeFrom");
+			expect(() =>
+				repo.save({ kind: "clockOut", atMinute: 1200, activeUntil: "01.10.2026", actorId: adminId }),
+			).to.throw("activeUntil");
+			expect(() =>
+				repo.save({
+					kind: "clockOut",
+					atMinute: 1200,
+					activeFrom: "2026-10-05",
+					activeUntil: "2026-10-01",
+					actorId: adminId,
+				}),
+			).to.throw("must not be before");
+		});
+	});
+
 	it("asks before a rule runs twice on the same day", () => {
 		const rule = repo.save({ kind: "clockOut", atMinute: 1200, actorId: adminId });
 		expect(repo.hasRun({ ruleId: rule.id, userId: annaId, period: "2026-09-18" })).to.equal(false);

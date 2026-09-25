@@ -2042,6 +2042,8 @@ export function createApi(deps: ApiDeps): Api {
 				weekdays: Array.isArray(rule.weekdays) ? rule.weekdays.map(Number) : undefined,
 				repeat: optionalString(rule, "repeat") as AutomationRepeat | undefined,
 				isActive: optionalBoolean(rule, "isActive") ?? true,
+				activeFrom: optionalString(rule, "activeFrom"),
+				activeUntil: optionalString(rule, "activeUntil"),
 			};
 		});
 
@@ -2063,6 +2065,8 @@ export function createApi(deps: ApiDeps): Api {
 				...(rule.weekdays === undefined ? {} : { weekdays: rule.weekdays }),
 				...(rule.repeat === undefined ? {} : { repeat: rule.repeat }),
 				isActive: rule.isActive,
+				activeFrom: rule.activeFrom,
+				activeUntil: rule.activeUntil,
 				...actor,
 			}),
 		);
@@ -2075,7 +2079,7 @@ export function createApi(deps: ApiDeps): Api {
 	);
 
 	route("GET", "/automation-rules/runs", { permission: "settings.view" }, () =>
-		json(200, { runs: automations.runs({ limit: 20 }) }),
+		json(200, { runs: automations.runs({ limit: 5 }) }),
 	);
 
 	route("PUT", "/automation-rules", { permission: "settings.edit", csrf: true }, context =>

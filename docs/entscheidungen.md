@@ -267,3 +267,35 @@ liefert unverändert `www/` aus, alle Skripte und Workflows zeigen nur auf den n
 **Nachweis:** `npm run check`, `npm run lint`, `npm run build`, `npm run build:pwa`, `npm run test:ts`,
 `npm run test:package`, `npm run check:adapter`, `npm run check:i18n` und `npm run version:check` sind grün;
 die Abnahme steht als **T22** in `docs/testplan.md`.
+
+## D10 — Eine Automatikregel darf ein Gültigkeitsfenster haben (24.09.2026)
+
+Eine Regel lief bisher, bis sie jemand ausschaltete. Für eine dauerhafte Regel ist das richtig — für eine
+Ferienvertretung, eine Saisonkraft oder einen Projektzeitraum nicht: dort soll die Regel von selbst beginnen und von
+selbst aufhören, ohne dass jemand daran denken muss.
+
+**Entscheidung:** Jede Regel trägt zwei optionale Datumsfelder `active_from` und `active_until` (Migration 27).
+Beide sind **reine Datumsangaben** (`YYYY-MM-DD`), absichtlich ohne Uhrzeit: die Regelzeit selbst steht schon als
+Minute des lokalen Tages in der Regel, und ein Fenster mit Uhrzeit hätte die Frage nach der Zeitzone aufgeworfen (die
+Regel gilt *je Mitarbeiter* lokal). Verglichen wird deshalb das **lokale Kalenderdatum des Mitarbeiters**
+(`local.date` in `runAutomationRules`) — genau der Tag, mit dem auch die Wochentage und der Merker in
+`automation_runs` arbeiten. Damit ist nichts umzurechnen: „gültig bis 15.10." heißt für jeden Mitarbeiter der
+15. Oktober an seinem Ort, und ein Tageswechsel um Mitternacht fällt nicht auseinander.
+
+Beide Enden sind **einschließlich**; das leere Feld ist die offene Seite — „gültig ab leer" = ab sofort, „gültig bis
+leer" = unbegrenzt. Ein Auswahlwert „ab sofort" wäre nicht speicherbar gewesen: er hätte beim Speichern in ein festes
+Datum umgerechnet werden müssen und danach wie eine bewusst gesetzte Grenze ausgesehen. Die Oberfläche schreibt die
+Bedeutung trotzdem hin: die Felder tragen „Leer = ab sofort" und „Leer = unbegrenzt", und die Regelliste zeigt bei
+einer begrenzten Regel „gültig ab …", „gültig bis …" oder „gültig … – …".
+
+Geprüft wird das Fenster in `evaluateAutomation` (reine Funktion, direkt nach dem Wochentags-Check) — damit steht die
+Entscheidung samt Begründung im Debug-Log und ist ohne Adapter testbar. Ein abgelaufenes Fenster ist **kein** Fehler;
+Speichern bleibt erlaubt, sonst ließen sich alte Regeln nicht mehr ändern. Das Fenster setzt den Merker in
+`automation_runs` **nicht** zurück: eine Regel feuert weiterhin höchstens einmal pro Zeitraum (Tag bzw. ISO-Woche),
+und liegt der Regelzeitpunkt des ersten Tages vor „gültig ab", fällt dieser Tag aus und wird nicht nachgeholt.
+
+**Nachweis:** `src/lib/adapter/automation.test.ts` (Tag davor, genau „ab", genau „bis", Tag danach, beide Enden leer),
+`src/lib/db/repositories/automations.test.ts` (Speichern und Lesen, „weglassen behält", „leer leert", 30.02. wird
+abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/api.test.ts` (die Daten reisen mit der Regel, 400 bei
+ungültigem Datum) und die Abnahme **T23** in `docs/testplan.md`. Die Liste unter der Tabelle zeigt außerdem nur noch
+die **fünf** jüngsten Ausführungen (vorher zwanzig) — sie ist ein Blick auf das letzte Verhalten, kein Archiv.

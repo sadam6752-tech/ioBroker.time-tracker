@@ -20,6 +20,8 @@ function rule(overrides: Partial<AutomationRuleRecord> = {}): AutomationRuleReco
 		weekdays: [1, 2, 3, 4, 5, 6, 7],
 		repeat: "day",
 		isActive: true,
+		activeFrom: null,
+		activeUntil: null,
 		...overrides,
 	};
 }
@@ -53,6 +55,28 @@ describe("automation rules", () => {
 
 		// before the minute has arrived nothing happens
 		expect(evaluateAutomation(rule(), context({ minuteOfDay: 1199 })).reason).to.contain("waiting for minute 1200");
+	});
+
+	it("fires only inside the validity period of a rule", () => {
+		const limited = rule({ activeFrom: "2026-09-01", activeUntil: "2026-09-30" });
+		// both ends belong to the period
+		expect(evaluateAutomation(limited, context({ localDate: "2026-09-01" })).fire).to.equal(true);
+		expect(evaluateAutomation(limited, context({ localDate: "2026-09-30" })).fire).to.equal(true);
+		// a day before the start and a day after the end stay quiet
+		expect(evaluateAutomation(limited, context({ localDate: "2026-08-31" })).reason).to.contain(
+			"only valid from 2026-09-01",
+		);
+		expect(evaluateAutomation(limited, context({ localDate: "2026-10-01" })).reason).to.contain(
+			"ended on 2026-09-30",
+		);
+		// one open end is enough, and a rule without dates is not limited at all
+		expect(
+			evaluateAutomation(rule({ activeFrom: "2026-09-01" }), context({ localDate: "2027-01-01" })).fire,
+		).to.equal(true);
+		expect(
+			evaluateAutomation(rule({ activeUntil: "2026-09-30" }), context({ localDate: "2020-01-01" })).fire,
+		).to.equal(true);
+		expect(evaluateAutomation(rule(), context({ localDate: "2020-01-01" })).fire).to.equal(true);
 	});
 
 	it("reminds after a long work block", () => {

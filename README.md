@@ -306,10 +306,13 @@ The adapter can act on its own as well — that table lives in **Administration 
 | Clock out automatically | At the configured local time of the employee the open day is closed with a punch (note `auto.clockOut`) |
 | Report a missing punch  | The same moment, but nothing is written — the instance only reports it                                  |
 | Break reminder          | Reminds an employee whose running work block reached the configured length                              |
+| Validity period         | Optional “valid from” and “valid until” as dates: the rule stays quiet outside them, both ends belong to the period, an empty field means “from now on” or “without an end” |
 
 Every rule runs **at most once per employee and local date**; `automation_runs` holds that decision and doubles as
-the log shown below the table. The events `automation.clockOut`, `automation.missingPunch` and
-`automation.breakReminder` appear in `events.*` too, so a notification adapter can pick them up.
+the log below the table (the five most recent runs). A **validity period** is compared with the local calendar day of
+the employee, like the weekdays, so a holiday stand-in can end by itself. The events `automation.clockOut`,
+`automation.missingPunch` and `automation.breakReminder` appear in `events.*` too, so a notification adapter can pick
+them up.
 
 ### Messages (`sendTo`)
 
@@ -412,6 +415,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.6 (2026-09-25)
+
+- (Alex) new: an automatic rule can be limited to a period. The rule dialog knows “Valid from” and “Valid until” as
+  dates — an empty field means “from now on” or “without an end” — and the adapter compares them with the local
+  calendar day of the employee, exactly like the weekdays; a holiday stand-in, a seasonal worker or a project phase
+  therefore ends by itself
+- (Alex) change: the list of the last runs below the rules shows the five most recent entries instead of twenty
+
 ### 0.7.5 (2026-09-24)
 
 - (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`
@@ -452,25 +463,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   cell of the day table was drawn, so every line was squeezed into the rest of that row
 - (Alex) fix: the list of the absence types shows “visible for everybody” on a line of its own, so the long facts
   (`reduces vacation`) cannot push it out of the row any more
-
-### 0.7.1 (2026-09-24)
-
-- (Alex) fix: the correction dialog in the month view of an employee shows and changes **his** punches. It asked the
-  API without the employee, so the administration saw, moved and added punches of their own account — “add a punch”
-  even created one there
-- (Alex) change: times belong to the administration. An employee no longer changes own times (`POST /entries` and
-  every change of a time now need `time.edit_other`); instead he leaves a **note for the day** (“forgot to clock
-  out”), which the administration reads in the month view and marks as handled (new table `day_notes`, migration 25).
-  A queued punch of the offline queue that is older than the edit window arrives as the conflict `too_old`
-- (Alex) change: the **administrator** account belongs to nobody and does not punch any more — the role loses
-  `time.punch` (migration 26), and the dashboard explains what the account is for. A manager punches and corrects as
-  before; whoever also works gets the right back through the `employee` role
-- (Alex) fix: `GET /entries/conflicts` accepts `?userId=`, so the administration sees the conflict queue of an
-  employee
-- (Alex) fix: the list of the absence types writes “visible for everybody” at the types the employees may really
-  pick — it was written at the switched off ones and at nothing else
-- (Alex) fix: on a narrow phone the balance of a day (month) and of a month (statements) no longer runs over the
-  text — the pencil, the balance and the download buttons stand beside the text instead of being laid over it
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

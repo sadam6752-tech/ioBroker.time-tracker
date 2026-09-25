@@ -8,6 +8,25 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.1 (2026-09-24)
+
+- (Alex) fix: the correction dialog in the month view of an employee shows and changes **his** punches. It asked the
+  API without the employee, so the administration saw, moved and added punches of their own account — “add a punch”
+  even created one there
+- (Alex) change: times belong to the administration. An employee no longer changes own times (`POST /entries` and
+  every change of a time now need `time.edit_other`); instead he leaves a **note for the day** (“forgot to clock
+  out”), which the administration reads in the month view and marks as handled (new table `day_notes`, migration 25).
+  A queued punch of the offline queue that is older than the edit window arrives as the conflict `too_old`
+- (Alex) change: the **administrator** account belongs to nobody and does not punch any more — the role loses
+  `time.punch` (migration 26), and the dashboard explains what the account is for. A manager punches and corrects as
+  before; whoever also works gets the right back through the `employee` role
+- (Alex) fix: `GET /entries/conflicts` accepts `?userId=`, so the administration sees the conflict queue of an
+  employee
+- (Alex) fix: the list of the absence types writes “visible for everybody” at the types the employees may really
+  pick — it was written at the switched off ones and at nothing else
+- (Alex) fix: on a narrow phone the balance of a day (month) and of a month (statements) no longer runs over the
+  text — the pencil, the balance and the download buttons stand beside the text instead of being laid over it
+
 ### 0.7.0 (2026-09-24)
 
 - (Alex) new: an absence type can carry a **colour**, and the calendar paints a day with it — vacation and sickness are

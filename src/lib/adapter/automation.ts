@@ -58,6 +58,16 @@ export function evaluateAutomation(rule: AutomationRuleRecord, context: Automati
 	if (!rule.weekdays.includes(context.weekday)) {
 		return { fire: false, reason: `the rule does not run on weekday ${context.weekday}` };
 	}
+	// a rule can be limited to a period; the dates are local days of the employee, exactly like the weekdays
+	if (rule.activeFrom && context.localDate < rule.activeFrom) {
+		return {
+			fire: false,
+			reason: `the rule is only valid from ${rule.activeFrom} (today is ${context.localDate})`,
+		};
+	}
+	if (rule.activeUntil && context.localDate > rule.activeUntil) {
+		return { fire: false, reason: `the rule ended on ${rule.activeUntil} (today is ${context.localDate})` };
+	}
 
 	if (rule.kind === "breakReminder") {
 		if (!context.hasOpenEntry) {

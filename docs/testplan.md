@@ -117,7 +117,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 
 Die Abnahme lief auf **0.7.2** (Tag `v0.7.2`, Commit `3661f71`); T18 stammt aus der 0.7.1-Runde und wurde mit dieser
 Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen; T21 wurde mit 0.7.3/0.7.4 abgenommen, T22 ist der
-Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung).
+Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung), T23 das Gültigkeitsfenster der Regeln in 0.7.6.
 
 | Nr  | Datum | Tester | Ergebnis (ok / Abweichung) | Beobachtung |
 | --- | ----- | ------ | -------------------------- | ----------- |
@@ -143,6 +143,7 @@ Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung).
 | T20 | 24.09.2026 | Alex | ok | PDF-Abwesenheiten linksbündig in eigenen Zeilen unter der Tagestabelle, „Für alle sichtbar" in eigener Zeile unter den Fakten |
 | T21 | 24.09.2026 | Alex | ok (eine Abweichung, behoben in 0.7.4) | `calendar.feedUrl` lieferte die Datei, der Download über den Dateiserver funktioniert, das Skript aus §10a loggt die Abwesenheiten; im ersten Durchlauf führte der Link zur Anmeldung — ihm fehlte das Präfix `/api`, behoben in 0.7.4 (Datei liegt im Instanzordner `files/time-tracker.0/`, sichtbar als eigener Eintrag im Dateimanager) |
 | T22 | 24.09.2026 | Alex | ok | Umbau für 0.7.5: Die Quellen der Web-App liegen in `src-www/` (vorher `src-pwa/`, der Repochecker meldete dafür fünf `W5042` für react, MUI und i18next), der regelmäßige Abgleich und die stündliche Sicherungsprüfung überspringen einen Durchlauf, statt sich zu überlappen, und `onStateChange` schreibt keine Debug-Zeile mehr zu jedem fremden Zustand; `npm run check`, `lint`, `build`, `build:pwa`, `test:ts`, `test:package`, `check:adapter`, `check:i18n` und `version:check` sind grün, die Web-App wird unverändert aus `www/` ausgeliefert |
+| T23 | 24.09.2026 | Alex | ok | Gültigkeitsfenster der Regeln: Im Dialog stehen „Gültig ab"/„Gültig bis" (leer = ab sofort bzw. unbegrenzt); eine Regel außerhalb des Fensters feuert nicht und nennt den Grund im Debug-Log, die Grenztage gehören dazu; ein unmögliches Datum und „bis vor von" werden mit 400 abgelehnt; das Fenster überlebt ein Speichern ohne Datumsänderung; „Letzte Ausführungen" zeigt nur noch die letzten fünf Läufe |
 
 ## 8. Bewusst nicht im Umfang dieser Runde
 

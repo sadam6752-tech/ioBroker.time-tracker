@@ -489,6 +489,10 @@ export interface AutomationRule {
 	repeat?: "day" | "week";
 	/** `false` disables the rule without deleting it */
 	isActive?: boolean;
+	/** First local day the rule is valid on (`YYYY-MM-DD`), empty for “from now on” */
+	activeFrom?: string | null;
+	/** Last local day the rule is valid on (`YYYY-MM-DD`, inclusive), empty for “without an end” */
+	activeUntil?: string | null;
 }
 
 /** One run of an automation rule (`GET /automation-rules/runs`). */

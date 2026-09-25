@@ -2246,6 +2246,24 @@ function AutomationRulesCard({
 	};
 
 	/**
+	 * Validity period of a rule as a short text, empty when the rule is not limited.
+	 *
+	 * @param rule - rule to describe
+	 * @returns the period, or an empty string when the rule is valid without an end
+	 */
+	const validitySummary = (rule: AutomationRule): string => {
+		const from = rule.activeFrom ? formatDate(rule.activeFrom, language) : "";
+		const until = rule.activeUntil ? formatDate(rule.activeUntil, language) : "";
+		if (from && until) {
+			return t("admin.automation.validityRange", { from, until });
+		}
+		if (from) {
+			return t("admin.automation.validityFrom", { date: from });
+		}
+		return until ? t("admin.automation.validityUntil", { date: until }) : "";
+	};
+
+	/**
 	 * Merges a change into one rule.
 	 *
 	 * @param index - position of the rule in the table
@@ -2336,7 +2354,10 @@ function AutomationRulesCard({
 										? "admin.automation.repeatWeek"
 										: "admin.automation.repeatDay",
 								),
-							].join(" · ")}
+								validitySummary(rule),
+							]
+								.filter(part => part !== "")
+								.join(" · ")}
 						>
 							<Button
 								size="small"
@@ -2382,6 +2403,8 @@ function AutomationRulesCard({
 									weekdays: [1, 2, 3, 4, 5, 6, 7],
 									repeat: "day",
 									isActive: true,
+									activeFrom: null,
+									activeUntil: null,
 								};
 								onChange([...rules, created]);
 								openEditor(rules.length, created);
@@ -2563,6 +2586,33 @@ function AutomationRulesCard({
 										<MenuItem value="day">{t("admin.automation.repeatDay")}</MenuItem>
 										<MenuItem value="week">{t("admin.automation.repeatWeek")}</MenuItem>
 									</TextField>
+									<TextField
+										size="small"
+										type="date"
+										label={t("admin.automation.validFrom")}
+										helperText={t("admin.automation.validFromHint")}
+										value={draft.activeFrom ?? ""}
+										onChange={event =>
+											setDraft({ ...draft, activeFrom: event.target.value || null })
+										}
+										disabled={disabled}
+										sx={{ minWidth: 200 }}
+										InputLabelProps={{ shrink: true }}
+									/>
+									<TextField
+										size="small"
+										type="date"
+										label={t("admin.automation.validUntil")}
+										helperText={t("admin.automation.validUntilHint")}
+										value={draft.activeUntil ?? ""}
+										onChange={event =>
+											setDraft({ ...draft, activeUntil: event.target.value || null })
+										}
+										disabled={disabled}
+										sx={{ minWidth: 200 }}
+										InputLabelProps={{ shrink: true }}
+									/>
+
 									<Button
 										size="small"
 										color={draft.isActive === false ? "inherit" : "primary"}

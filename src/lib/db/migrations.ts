@@ -735,4 +735,20 @@ export const migrations: Migration[] = [
 			   AND permission_id = (SELECT id FROM permissions WHERE key = 'time.punch');
 			`,
 	},
+	/**
+	 * A rule can be limited to a period: `active_from` and `active_until` hold local dates (`YYYY-MM-DD`).
+	 *
+	 * Both are optional — an empty `active_from` means “from now on”, an empty `active_until` means “without an
+	 * end”. The date is the **local calendar day of the employee**, the same day the weekdays and the period
+	 * guard of a run use (`local_date`), so no time zone has to be converted and the window stays in step with
+	 * the rule time.
+	 */
+	{
+		version: 27,
+		name: "automation rules: valid from and until",
+		sql: `
+			ALTER TABLE automation_rules ADD COLUMN active_from TEXT;
+			ALTER TABLE automation_rules ADD COLUMN active_until TEXT;
+		`,
+	},
 ];

@@ -552,19 +552,19 @@ export const STATE_NAMES = {
 		uk: "Посилання підписки компанії",
 		"zh-cn": "公司的订阅链接",
 	},
-	/** The written calendar file */
+	/** Absolute path of the written calendar file (D11) */
 	calendarFeedFile: {
-		en: "Calendar file (.ics)",
-		de: "Kalenderdatei (.ics)",
-		ru: "Файл календаря (.ics)",
-		pt: "Ficheiro de calendário (.ics)",
-		nl: "Kalenderbestand (.ics)",
-		fr: "Fichier de calendrier (.ics)",
-		it: "File di calendario (.ics)",
-		es: "Archivo de calendario (.ics)",
-		pl: "Plik kalendarza (.ics)",
-		uk: "Файл календаря (.ics)",
-		"zh-cn": "日历文件（.ics）",
+		en: "Path of the calendar file (.ics)",
+		de: "Pfad der Kalenderdatei (.ics)",
+		ru: "Путь к файлу календаря (.ics)",
+		pt: "Caminho do ficheiro de calendário (.ics)",
+		nl: "Pad van het kalenderbestand (.ics)",
+		fr: "Chemin du fichier de calendrier (.ics)",
+		it: "Percorso del file di calendario (.ics)",
+		es: "Ruta del archivo de calendario (.ics)",
+		pl: "Ścieżka pliku kalendarza (.ics)",
+		uk: "Шлях до файлу календаря (.ics)",
+		"zh-cn": "日历文件的路径（.ics）",
 	},
 	/** Instant the calendar was written */
 	calendarUpdatedAt: {

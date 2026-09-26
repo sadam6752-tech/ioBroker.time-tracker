@@ -169,6 +169,10 @@ describe("adapter states and commands", () => {
 				role: "text",
 			});
 			expect(recorder.objects.get(CALENDAR_IDS.feedFile)?.common).to.deep.include({ type: "string" });
+			// the name says what the value is — the path for the `ical` adapter, not a download (D11)
+			const calendarFile = recorder.objects.get(CALENDAR_IDS.feedFile)?.common?.name as Record<string, string>;
+			expect(calendarFile.de).to.equal("Pfad der Kalenderdatei (.ics)");
+			expect(calendarFile.en).to.equal("Path of the calendar file (.ics)");
 			expect(recorder.objects.get(CALENDAR_IDS.updatedAt)?.common).to.deep.include({ role: "value.time" });
 			expect(recorder.objects.get(CALENDAR_IDS.absences)?.common).to.deep.include({ type: "string" });
 

@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.5 (2026-09-24)
+
+- (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`
+- (Alex) fix: the periodic refresh and the hourly backup check cannot overlap themselves any more. A tick that finds the previous run still busy is skipped and logged, so a slow run (a big database, a slow disk) can no longer pile a second one on top of itself
+- (Alex) change: `onStateChange` no longer writes a debug line for every state of the instance that it does not handle - on a busy system that filled the log at log level `debug` for nothing
+
 ### 0.7.4 (2026-09-24)
 
 - (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without

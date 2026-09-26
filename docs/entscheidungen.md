@@ -375,6 +375,15 @@ Zwei Punkte bleiben offen und wurden bewusst nicht mit erledigt:
 `calendar.feedFile`, README und Doku nennen keinen Dateiserver-Link mehr) und der geänderte Abschnitt *Calendar for
 ioBroker* im README.
 
+**Nachtrag (26.09.2026, 0.7.10):** Ein Punkt blieb damals stehen — der **Name des Zustands**. `calendar.feedFile` hieß
+„Kalenderdatei (.ics)" und ließ damit weiterhin an eine Datei zum Herunterladen denken, obwohl der Wert der **Pfad** für
+den `ical`-Adapter ist (mit `(.ics)` bleibt der Dateityp in der Beschriftung). Er heißt jetzt in allen elf Sprachen
+„Pfad der Kalenderdatei (.ics)" (`Path of the calendar file (.ics)`); `ensureObject` in `states.ts` merged `common` bei
+jedem Start, deshalb erreicht die Korrektur auch bestehende Instanzen und nicht nur neue. `calendar.feedUrl` bleibt
+„Abo-Link der Firma" und `calendar.absences` / `calendar.updatedAt` sind unverändert.
+**Nachweis:** die Prüfung des Namens in `src/lib/adapter/states.test.ts` (deutsch und englisch) und die Zeile der
+Zustandstabelle im README.
+
 ## D14 — Der Feiertagsreiter erfasst mit dem Datumsfeld des Browsers (26.09.2026)
 
 **Anlass:** Beim Nachprüfen des Feiertagsreiters in 0.7.8 blieb „Feiertag hinzufügen" **ausgegraut**. Das Datumsfeld war

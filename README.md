@@ -421,6 +421,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.10 (2026-09-26)
+
+- (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.
+  The old name said “calendar file” and let the value look like a download, while it is the **path** that the `ical`
+  adapter reads; browsers and calendar apps use the link `calendar.feedUrl`
+
 ### 0.7.9 (2026-09-26)
 
 - (Alex) fix: “Feiertag hinzufügen” stayed grey while the day had to be typed as text — it comes from the date field of
@@ -460,12 +466,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   calendar day of the employee, exactly like the weekdays; a holiday stand-in, a seasonal worker or a project phase
   therefore ends by itself
 - (Alex) change: the list of the last runs below the rules shows the five most recent entries instead of twenty
-
-### 0.7.5 (2026-09-24)
-
-- (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`
-- (Alex) fix: the periodic refresh and the hourly backup check cannot overlap themselves any more. A tick that finds the previous run still busy is skipped and logged, so a slow run (a big database, a slow disk) can no longer pile a second one on top of itself
-- (Alex) change: `onStateChange` no longer writes a debug line for every state of the instance that it does not handle - on a busy system that filled the log at log level `debug` for nothing
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

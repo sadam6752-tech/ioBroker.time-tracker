@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Fuseau horaire",
 	"admin.settings.saved": "Paramètres enregistrés.",
 	"admin.holidays": "Jours fériés",
-	"admin.holiday.date": "Date (AAAA-MM-JJ)",
+	"admin.holiday.date": "Date",
 	"admin.holiday.name": "Nom",
 	"holiday.newYear": "Nouvel An",
 	"holiday.epiphany": "Épiphanie",

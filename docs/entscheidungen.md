@@ -374,3 +374,36 @@ Zwei Punkte bleiben offen und wurden bewusst nicht mit erledigt:
 **Nachweis:** **T24** in `docs/testplan.md` (der Link liefert die vollständige ICS-Datei, der `ical`-Adapter liest
 `calendar.feedFile`, README und Doku nennen keinen Dateiserver-Link mehr) und der geänderte Abschnitt *Calendar for
 ioBroker* im README.
+
+## D14 — Der Feiertagsreiter erfasst mit dem Datumsfeld des Browsers (26.09.2026)
+
+**Anlass:** Beim Nachprüfen des Feiertagsreiters in 0.7.8 blieb „Feiertag hinzufügen" **ausgegraut**. Das Datumsfeld war
+ein Textfeld, und die Schaltfläche wurde erst aktiv, wenn der Wert genau `JJJJ-MM-TT` aussah — ein eingetipptes
+`24.12.2026`, ein fehlendes `0` oder eine leere Bezeichnung genügten nicht, und das Format stand nur als Klammer in der
+Beschriftung. Beim Schreiben des Browsertests kam ein zweiter Fehler dazu: ein **ohne Region** erfasster Tag landete in
+der Region `DE`. Die Liste (`GET /holidays` ohne `region`) zeigte bis dahin ausschließlich `DE`, die Auswertung rechnet
+aber mit dem **Feiertagsland der Instanz** (`holidayRegion()` im Aggregationsdienst) — eine schweizerische oder
+österreichische Instanz hätte ihren eigenen, von Hand erfassten Feiertag also weder gesehen noch gezählt.
+
+**Entscheidung:**
+
+1. Das Datum kommt aus dem Feld des Browsers (`type="date"`), wie überall sonst in der App. Die Beschriftung heißt nur
+   noch „Datum" (11 Sprachen); der Format-Hinweis ist weg, weil bei einem Datumsfeld der Browser das Format vorgibt.
+2. Ein Feiertag **ohne Region** gehört dem Land der Instanz: `POST /holidays` setzt `holiday_country` aus den
+   Einstellungen ein, statt die Region offen zu lassen.
+3. `listByYear(year)` **ohne** Region liefert alle Regionen des Jahres — der Reiter zeigt in jeder Zeile ihre Region,
+   also darf er nicht auf eine einzige einschränken (nach einem Wechsel des Feiertagslandes bleiben die alten Tage so
+   sichtbar und löschbar). Mit Region filtert sie wie bisher; die Auswertung ruft ohnehin mit ihrer Region auf,
+   `isHoliday` und `dateSet` sind unverändert.
+4. Nach dem Anlegen holt der Reiter das „Jahr" des erfassten Tages nach. Die Liste zeigt **ein** Jahr, ein Tag für das
+   nächste wäre gespeichert und sofort wieder außer Sicht gewesen.
+
+**Nebenbei:** Das Fenster „Abwesenheit ändern" ließ sich mit „Abbrechen" nicht schließen. Es steht offen, solange eine
+neue Abwesenheit erfasst **oder** eine bestehende geändert wird, und der Knopf löschte nur den ersten Zustand. Er räumt
+jetzt beide (`closeForm`).
+
+**Nachweis:** `test/e2e/holidays.spec.ts` (neue Datei: die Schaltfläche ist erst mit Datum **und** Bezeichnung aktiv,
+das Feld ist ein Datumsfeld, die Zeile trägt ihre Region, sie lässt sich entfernen, ein Tag des nächsten Jahres holt das
+Jahr nach), die erweiterte Prüfung in `src/lib/web/api.test.ts` (ein Tag ohne Region trägt das Land der Instanz),
+`src/lib/db/repositories/holidays.test.ts` („lists every region of a year when no region is asked for"), die
+Änder-Brücke in `test/e2e/absences-admin.spec.ts` und **T27** in `docs/testplan.md`.

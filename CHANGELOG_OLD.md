@@ -8,6 +8,16 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.4 (2026-09-24)
+
+- (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without
+  it a browser got the web app and its login instead of the calendar
+- (Alex) change: the written calendar file sits in `<iobroker-data>/files/time-tracker.<n>/calendar.ics` instead of the
+  instance folder next to it — that one is readable for the adapter alone; the `ical` adapter keeps reading it as a
+  local file
+- (Alex) docs: the test plan carries a small snippet for the *Scripts* tab that reads `calendar.absences` and logs who
+  is away today (for T21, not part of the adapter)
+
 ### 0.7.3 (2026-09-24)
 
 - (Alex) new: the calendar goes to ioBroker. The adapter writes `calendar.ics` into its instance folder — the `ical`

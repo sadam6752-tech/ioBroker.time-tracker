@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Zeitzone",
 	"admin.settings.saved": "Einstellungen gespeichert.",
 	"admin.holidays": "Feiertage",
-	"admin.holiday.date": "Datum (JJJJ-MM-TT)",
+	"admin.holiday.date": "Datum",
 	"admin.holiday.name": "Bezeichnung",
 	"holiday.newYear": "Neujahr",
 	"holiday.epiphany": "Heilige Drei Könige",

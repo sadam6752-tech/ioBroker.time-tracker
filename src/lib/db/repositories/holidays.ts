@@ -30,7 +30,7 @@ export interface HolidayRecord {
 
 /** Holiday storage operations. */
 export interface HolidaysRepository {
-	/** Holidays of one year, sorted by date */
+	/** Holidays of one year, sorted by date; without a region the days of every region are returned */
 	listByYear(year: number, region?: string): HolidayRecord[];
 	/** Years for which holidays are stored */
 	years(): number[];
@@ -92,6 +92,7 @@ function requireDate(date: string): string {
  */
 export function createHolidaysRepository(db: Db): HolidaysRepository {
 	const selectByYear = db.prepare(`SELECT ${COLUMNS} FROM holidays WHERE year = ? AND region = ? ORDER BY date`);
+	const selectByYearAllRegions = db.prepare(`SELECT ${COLUMNS} FROM holidays WHERE year = ? ORDER BY date, region`);
 	const selectByDate = db.prepare(`SELECT ${COLUMNS} FROM holidays WHERE date = ? AND region = ?`);
 	const selectYears = db.prepare("SELECT DISTINCT year FROM holidays ORDER BY year");
 	const selectById = db.prepare(`SELECT ${COLUMNS} FROM holidays WHERE id = ?`);
@@ -107,7 +108,12 @@ export function createHolidaysRepository(db: Db): HolidaysRepository {
 	};
 
 	return {
-		listByYear(year: number, region: string = DEFAULT_REGION): HolidayRecord[] {
+		listByYear(year: number, region?: string): HolidayRecord[] {
+			// without a region the whole year is listed: the administration also sees the days of another region,
+			// which keeps them at hand after a change of the holiday country
+			if (region === undefined) {
+				return selectByYearAllRegions.all(year) as HolidayRecord[];
+			}
 			return selectByYear.all(year, region) as HolidayRecord[];
 		},
 

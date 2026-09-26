@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Часовой пояс",
 	"admin.settings.saved": "Настройки сохранены.",
 	"admin.holidays": "Праздничные дни",
-	"admin.holiday.date": "Дата (ГГГГ-ММ-ДД)",
+	"admin.holiday.date": "Дата",
 	"admin.holiday.name": "Название",
 	"holiday.newYear": "Новый год",
 	"holiday.epiphany": "Богоявление",

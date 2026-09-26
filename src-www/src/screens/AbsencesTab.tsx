@@ -228,6 +228,17 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 		setEditing(absence);
 	};
 
+	/**
+	 * Closes the form.
+	 *
+	 * The dialog is open while a new absence is entered **or** while an existing one is changed, so “Abbrechen” has
+	 * to clear both — closing only the “new” flag would leave the edit dialog on the screen.
+	 */
+	const closeForm = (): void => {
+		setFormOpen(false);
+		setEditing(null);
+	};
+
 	/** Saves the form: a new absence for an employee, or the change of an existing one. */
 	const submitForm = (): void => {
 		if (editing) {
@@ -826,10 +837,7 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 
 			<Dialog
 				open={formOpen || editing !== null}
-				onClose={() => {
-					setFormOpen(false);
-					setEditing(null);
-				}}
+				onClose={closeForm}
 				fullWidth
 				maxWidth="xs"
 			>
@@ -901,7 +909,7 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 					</Stack>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={() => setFormOpen(false)}>{t("common.cancel")}</Button>
+					<Button onClick={closeForm}>{t("common.cancel")}</Button>
 					<Button
 						variant="contained"
 						data-testid="absence-create-save"

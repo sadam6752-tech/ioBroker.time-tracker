@@ -1207,6 +1207,16 @@ describe("web api", () => {
 			expect(
 				(await send("DELETE", `/holidays/${holidayId}`, { headers: headers(adminToken, adminCsrf) })).status,
 			).to.equal(404);
+
+			// a holiday without a region belongs to the country of the instance — the calculation looks only there
+			settings.set("holiday_country", "CH", adminId);
+			const swiss = await send("POST", "/holidays", {
+				body: { date: "2026-05-02", name: "Brückentag" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(swiss.status).to.equal(201);
+			expect(bodyOf<{ holiday: { region: string } }>(swiss).holiday.region).to.equal("CH");
+			expect(holidays.isHoliday("2026-05-02", "CH")).to.equal(true);
 		});
 
 		it("reads and changes instance settings through a whitelist", async () => {

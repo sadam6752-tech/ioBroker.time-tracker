@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Time zone",
 	"admin.settings.saved": "Settings saved.",
 	"admin.holidays": "Public holidays",
-	"admin.holiday.date": "Date (YYYY-MM-DD)",
+	"admin.holiday.date": "Date",
 	"admin.holiday.name": "Name",
 	"holiday.newYear": "New Year",
 	"holiday.epiphany": "Epiphany",

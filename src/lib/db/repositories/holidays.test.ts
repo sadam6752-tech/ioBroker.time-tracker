@@ -105,6 +105,18 @@ describe("holidays repository", () => {
 			expect(repo.listByYear(2027)).to.deep.equal([]);
 		});
 
+		it("lists every region of a year when no region is asked for", () => {
+			repo.ensureYear({ year: 2026, country: "DE" });
+			const all = repo.listByYear(2026);
+
+			// the days of the country of the instance and those of the other region stand in the list
+			expect(all).to.have.lengthOf(holidaysForYear(2026, "CH").length + holidaysForYear(2026, "DE").length);
+			expect(all.some(holiday => holiday.region === "DE" && holiday.date === "2026-10-03")).to.equal(true);
+
+			// a region limits the list again
+			expect(repo.listByYear(2026, "DE")).to.have.lengthOf(holidaysForYear(2026, "DE").length);
+		});
+
 		it("answers single date lookups", () => {
 			expect(repo.isHoliday("2026-01-01", "CH")).to.equal(true);
 			expect(repo.isHoliday("2026-01-02", "CH")).to.equal(false);

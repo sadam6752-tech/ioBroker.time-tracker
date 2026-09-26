@@ -1820,7 +1820,9 @@ export function createApi(deps: ApiDeps): Api {
 		const created = holidays.add({
 			date: requireString(body, "date"),
 			name: requireString(body, "name"),
-			region: optionalString(body, "region") ?? undefined,
+			// without a region the day belongs to the country of the instance: the calculation looks only there, so a
+			// day filed under a foreign region would never count
+			region: optionalString(body, "region") ?? settings.get("holiday_country") ?? undefined,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),

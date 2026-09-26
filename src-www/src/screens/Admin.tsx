@@ -1450,9 +1450,14 @@ function HolidaysTab({ language }: { language: string }): React.JSX.Element {
 				...(region.trim() ? { region: region.trim() } : {}),
 			}),
 		onSuccess: async () => {
+			// the list shows one year; a holiday of another one would be saved and missing from it right away
+			const addedYear = date.trim().slice(0, 4);
 			setDate("");
 			setName("");
 			setRegion("");
+			if (addedYear !== year) {
+				setYear(addedYear);
+			}
 			await reload();
 		},
 	});
@@ -1483,7 +1488,11 @@ function HolidaysTab({ language }: { language: string }): React.JSX.Element {
 						/>
 						<TextField
 							label={t("admin.holiday.date")}
+							type="date"
 							value={date}
+							size="small"
+							InputLabelProps={{ shrink: true }}
+							sx={{ width: 200 }}
 							onChange={event => setDate(event.target.value)}
 						/>
 						<TextField

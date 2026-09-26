@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Tijdzone",
 	"admin.settings.saved": "Instellingen opgeslagen.",
 	"admin.holidays": "Feestdagen",
-	"admin.holiday.date": "Datum (JJJJ-MM-DD)",
+	"admin.holiday.date": "Datum",
 	"admin.holiday.name": "Naam",
 	"holiday.newYear": "Nieuwjaar",
 	"holiday.epiphany": "Driekoningen",

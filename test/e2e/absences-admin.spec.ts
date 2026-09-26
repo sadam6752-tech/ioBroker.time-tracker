@@ -40,6 +40,17 @@ test("shows the absence tab and enters an absence for an employee", async ({ pag
 	const row = list.locator("li").filter({ hasText: "genehmigt" }).first();
 	await expect(row).toBeVisible();
 
+	// “Ändern” opens the form with the stored values — and “Abbrechen” closes it again: the dialog is open
+	// while a new absence is entered **or** while an existing one is changed, so both flags have to be cleared
+	// (it used to close only the “new” one and the edit dialog stayed on the screen)
+	const ownRow = list.locator("li").filter({ hasText: "21.12.2026" }).first();
+	await ownRow.getByRole("button", { name: "Ändern" }).click();
+	const editDialog = page.getByRole("dialog");
+	await expect(editDialog.getByText("Abwesenheit ändern")).toBeVisible();
+	await expect(editDialog.getByLabel("Von")).toHaveValue("2026-12-21");
+	await editDialog.getByRole("button", { name: "Abbrechen" }).click();
+	await expect(editDialog).toBeHidden();
+
 	// the request section stays empty, because nothing waits for a decision
 	await expect(page.getByText("Keine offenen Anträge — alles entschieden.")).toBeVisible();
 

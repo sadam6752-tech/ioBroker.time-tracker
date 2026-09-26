@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "时区",
 	"admin.settings.saved": "设置已保存。",
 	"admin.holidays": "公共假日",
-	"admin.holiday.date": "日期（YYYY-MM-DD）",
+	"admin.holiday.date": "日期",
 	"admin.holiday.name": "名称",
 	"holiday.newYear": "元旦",
 	"holiday.epiphany": "主显节",

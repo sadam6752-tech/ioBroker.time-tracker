@@ -421,6 +421,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.9 (2026-09-26)
+
+- (Alex) fix: “Feiertag hinzufügen” stayed grey while the day had to be typed as text — it comes from the date field of
+  the browser now, and the label no longer names a format. A holiday entered without a region belongs to the country of
+  the instance instead of always `DE`, the list shows the days of **every** region of the year, and a day of the next
+  year takes the shown year along
+- (Alex) fix: “Abbrechen” closes the form of an absence while it is being changed as well — it cleared only the flag of
+  the new absence and left the dialog of the change on the screen
+
 ### 0.7.8 (2026-09-26)
 
 - (Alex) new: an absence can be taken back. An employee withdraws a request that is still open, and for an approved
@@ -457,16 +466,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`
 - (Alex) fix: the periodic refresh and the hourly backup check cannot overlap themselves any more. A tick that finds the previous run still busy is skipped and logged, so a slow run (a big database, a slow disk) can no longer pile a second one on top of itself
 - (Alex) change: `onStateChange` no longer writes a debug line for every state of the instance that it does not handle - on a busy system that filled the log at log level `debug` for nothing
-
-### 0.7.4 (2026-09-24)
-
-- (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without
-  it a browser got the web app and its login instead of the calendar
-- (Alex) change: the written calendar file sits in `<iobroker-data>/files/time-tracker.<n>/calendar.ics` instead of the
-  instance folder next to it — that one is readable for the adapter alone; the `ical` adapter keeps reading it as a
-  local file
-- (Alex) docs: the test plan carries a small snippet for the *Scripts* tab that reads `calendar.absences` and logs who
-  is away today (for T21, not part of the adapter)
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

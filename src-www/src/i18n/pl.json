@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Strefa czasowa",
 	"admin.settings.saved": "Ustawienia zapisane.",
 	"admin.holidays": "Dni świąteczne",
-	"admin.holiday.date": "Data (RRRR-MM-DD)",
+	"admin.holiday.date": "Data",
 	"admin.holiday.name": "Nazwa",
 	"holiday.newYear": "Nowy Rok",
 	"holiday.epiphany": "Trzech Króli",

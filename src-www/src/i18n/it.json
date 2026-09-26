@@ -230,7 +230,7 @@
 	"admin.settings.setting.timezone": "Fuso orario",
 	"admin.settings.saved": "Impostazioni salvate.",
 	"admin.holidays": "Giorni festivi",
-	"admin.holiday.date": "Data (AAAA-MM-GG)",
+	"admin.holiday.date": "Data",
 	"admin.holiday.name": "Nome",
 	"holiday.newYear": "Capodanno",
 	"holiday.epiphany": "Epifania",

@@ -716,6 +716,67 @@ describe("web api", () => {
 			expect(bodyOf(invalid).detail).to.contain("approval must be requested, approved or rejected");
 		});
 
+		it("carries a cancellation of an approved absence through the decision", async () => {
+			// the administration books the days: they count right away, so the employee cannot cancel them alone
+			const created = await send("POST", "/absences", {
+				body: { userId: annaId, typeCode: "F", dateFrom: "2026-10-05", dateTo: "2026-10-09" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(created.status).to.equal(201);
+			const booked = bodyOf<{ absence: { id: number; approval: string } }>(created).absence;
+			expect(booked.approval).to.equal("approved");
+
+			const asked = await send("POST", `/absences/${booked.id}/cancellation`, {
+				body: { note: "Doch lieber im November" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(asked.status).to.equal(200);
+			const pending = bodyOf<{
+				absence: { approval: string; cancelRequestedAt: number; cancelNote: string };
+			}>(asked).absence;
+			expect(pending.approval).to.equal("approved");
+			expect(pending.cancelRequestedAt).to.be.a("number");
+			expect(pending.cancelNote).to.equal("Doch lieber im November");
+
+			// deciding about the cancellation needs the permission of the administration
+			const denied = await send("POST", `/absences/${booked.id}/cancellation/decline`, {
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(denied.status).to.equal(403);
+
+			// the employee takes the request back …
+			const withdrawn = await send("DELETE", `/absences/${booked.id}/cancellation`, {
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(withdrawn.status).to.equal(200);
+			expect(
+				bodyOf<{ absence: { cancelRequestedAt: number | null } }>(withdrawn).absence.cancelRequestedAt,
+			).to.equal(null);
+
+			// … asks again, and this time the administration declines: the days stay booked
+			await send("POST", `/absences/${booked.id}/cancellation`, { headers: headers(annaToken, annaCsrf) });
+			const declined = await send("POST", `/absences/${booked.id}/cancellation/decline`, {
+				body: { note: "Betriebsferien" },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(declined.status).to.equal(200);
+			expect(
+				bodyOf<{ absence: { cancelRequestedAt: number | null } }>(declined).absence.cancelRequestedAt,
+			).to.equal(null);
+
+			// a request of the employee is withdrawn instead — the server says so
+			const requested = await send("POST", "/absences", {
+				body: { typeCode: "F", dateFrom: "2026-11-02" },
+				headers: headers(annaToken, annaCsrf),
+			});
+			const requestId = bodyOf<{ absence: { id: number } }>(requested).absence.id;
+			const tooEarly = await send("POST", `/absences/${requestId}/cancellation`, {
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(tooEarly.status).to.equal(400);
+			expect(bodyOf(tooEarly).detail).to.contain("only an approved absence can be cancelled");
+		});
+
 		it("removes an unused absence type and lists the inactive ones for the administration", async () => {
 			// the administration creates a type and switches it off: employees do not see it any more
 			const created = await send("POST", "/absence-types", {
@@ -3302,7 +3363,7 @@ describe("web api", () => {
 				period: "2026-09-18",
 			});
 
-			// the administration reads the five most recent runs, no matter how many there are
+			// a rule that ran six times is still one line: the answer carries the newest run of every rule
 			for (let day = 1; day <= 6; day += 1) {
 				automations.recordRun({
 					ruleId: saved.automationRules[0].id,
@@ -3313,7 +3374,10 @@ describe("web api", () => {
 				});
 			}
 			const recent = await send("GET", "/automation-rules/runs", { headers: headers(adminToken) });
-			expect(bodyOf<{ runs: unknown[] }>(recent).runs).to.have.length(5);
+			const latest = bodyOf<{ runs: { ruleId: number; action: string }[] }>(recent).runs;
+			// only the rule that ran appears, and with its newest run — not with the six rows of the log
+			expect(latest).to.have.length(1);
+			expect(latest[0]).to.deep.include({ ruleId: saved.automationRules[0].id, action: "run 6" });
 
 			// the payload is the whole table: an empty list removes the rules again
 			const cleared = await send("PUT", "/automation-rules", {

@@ -8,6 +8,10 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import CardContent from "@mui/material/CardContent";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import MenuItem from "@mui/material/MenuItem";
@@ -20,6 +24,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, formatDate } from "../api/client";
+import type { Absence } from "../api/types";
 import { AppShell } from "../components/AppShell";
 import { ActionRow } from "../components/ActionRow";
 import { ErrorAlert, Loading } from "../components/feedback";
@@ -65,6 +70,11 @@ export function Absences(): React.JSX.Element {
 		return ` · ${type.name}${type.reduceVacation ? ` (${t("absences.vacationTag")})` : ""}`;
 	};
 
+	/** Reloads the list of the shown year. */
+	const reload = async (): Promise<void> => {
+		await queryClient.invalidateQueries({ queryKey: ["absences", year] });
+	};
+
 	const create = useMutation({
 		mutationFn: () =>
 			api.createAbsence({
@@ -77,9 +87,77 @@ export function Absences(): React.JSX.Element {
 			setDateFrom("");
 			setDateTo("");
 			setCreated(true);
-			void queryClient.invalidateQueries({ queryKey: ["absences", year] });
+			void reload();
 		},
 	});
+
+	/**
+	 * The row the dialog works on, `null` while it is closed.
+	 *
+	 * `withdraw` takes an own request back, `cancel` asks for the cancellation of an approved absence and
+	 * `cancelWithdraw` takes that wish back again.
+	 */
+	const [asking, setAsking] = useState<{ absence: Absence; kind: "withdraw" | "cancel" | "cancelWithdraw" } | null>(
+		null,
+	);
+	const [cancelNote, setCancelNote] = useState("");
+
+	/** An own request that nobody decided about yet simply goes away. */
+	const withdraw = useMutation({
+		mutationFn: (id: number) => api.deleteAbsence(id),
+		onSuccess: async () => {
+			setAsking(null);
+			await reload();
+		},
+	});
+
+	/** An approved absence stays booked until the administration answers this wish. */
+	const cancelAsk = useMutation({
+		mutationFn: (input: { id: number; note?: string }) => api.requestAbsenceCancel(input.id, input.note),
+		onSuccess: async () => {
+			setAsking(null);
+			setCancelNote("");
+			await reload();
+		},
+	});
+
+	const cancelWithdraw = useMutation({
+		mutationFn: (id: number) => api.withdrawAbsenceCancel(id),
+		onSuccess: async () => {
+			setAsking(null);
+			await reload();
+		},
+	});
+
+	/** Runs the action the dialog was opened for. */
+	const confirmAsking = (): void => {
+		if (!asking) {
+			return;
+		}
+		if (asking.kind === "withdraw") {
+			withdraw.mutate(asking.absence.id);
+			return;
+		}
+		if (asking.kind === "cancelWithdraw") {
+			cancelWithdraw.mutate(asking.absence.id);
+			return;
+		}
+		cancelAsk.mutate({
+			id: asking.absence.id,
+			...(cancelNote.trim() ? { note: cancelNote.trim() } : {}),
+		});
+	};
+
+	/**
+	 * The period of an absence as one text.
+	 *
+	 * @param absence - the absence
+	 * @returns a single date, or `from – to` for a range
+	 */
+	const periodOf = (absence: Absence): string =>
+		absence.dateTo && absence.dateTo !== absence.dateFrom
+			? `${formatDate(absence.dateFrom, i18n.language)} – ${formatDate(absence.dateTo, i18n.language)}`
+			: formatDate(absence.dateFrom, i18n.language);
 
 	/** The own subscription link, `null` while nobody asked for it. */
 	const [feedUrl, setFeedUrl] = useState<string | null>(null);
@@ -138,17 +216,47 @@ export function Absences(): React.JSX.Element {
 						{(list.data ?? []).map(absence => (
 							<ActionRow
 								key={absence.id}
-								primary={`${absence.typeCode}: ${formatDate(absence.dateFrom, i18n.language)}${
-									absence.dateTo && absence.dateTo !== absence.dateFrom
-										? ` – ${formatDate(absence.dateTo, i18n.language)}`
-										: ""
-								}${typeSuffix(absence.typeCode)}`}
+								primary={`${absence.typeCode}: ${periodOf(absence)}${typeSuffix(absence.typeCode)}`}
 								secondary={`${t("absences.portion")}: ${absence.dayPortion}${
 									absence.approval === "rejected" && absence.decisionNote
 										? ` · ${t("absences.reason")}: ${absence.decisionNote}`
 										: ""
+								}${
+									absence.cancelRequestedAt
+										? ` · ${t("absences.cancelPending")}${
+												absence.cancelNote ? `: ${absence.cancelNote}` : ""
+											}`
+										: ""
 								}`}
 							>
+								{absence.approval === "requested" && (
+									<Button
+										size="small"
+										data-testid={`absence-withdraw-${absence.id}`}
+										onClick={() => setAsking({ absence, kind: "withdraw" })}
+									>
+										{t("absences.withdraw")}
+									</Button>
+								)}
+								{absence.approval === "approved" && !absence.cancelRequestedAt && (
+									<Button
+										size="small"
+										color="warning"
+										data-testid={`absence-cancel-${absence.id}`}
+										onClick={() => setAsking({ absence, kind: "cancel" })}
+									>
+										{t("absences.cancelAsk")}
+									</Button>
+								)}
+								{absence.cancelRequestedAt ? (
+									<Button
+										size="small"
+										data-testid={`absence-cancel-withdraw-${absence.id}`}
+										onClick={() => setAsking({ absence, kind: "cancelWithdraw" })}
+									>
+										{t("absences.cancelWithdraw")}
+									</Button>
+								) : null}
 								<Chip
 									size="small"
 									color={
@@ -317,6 +425,53 @@ export function Absences(): React.JSX.Element {
 					<ErrorAlert error={calendar.error} />
 				</CardContent>
 			</Card>
+
+			<Dialog
+				open={asking !== null}
+				onClose={() => setAsking(null)}
+				fullWidth
+				maxWidth="xs"
+			>
+				<DialogTitle>
+					{asking?.kind === "withdraw"
+						? t("absences.withdrawTitle")
+						: asking?.kind === "cancel"
+							? t("absences.cancelTitle")
+							: t("absences.cancelWithdrawTitle")}
+				</DialogTitle>
+				<DialogContent>
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<ErrorAlert error={withdraw.error ?? cancelAsk.error ?? cancelWithdraw.error} />
+						<Typography variant="body2">
+							{asking ? `${asking.absence.typeCode}: ${periodOf(asking.absence)}` : ""}
+						</Typography>
+						{asking?.kind === "cancel" && (
+							<TextField
+								label={t("absences.cancelNote")}
+								value={cancelNote}
+								size="small"
+								multiline
+								minRows={2}
+								onChange={event => setCancelNote(event.target.value)}
+							/>
+						)}
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setAsking(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						data-testid="absence-ask-save"
+						disabled={withdraw.isPending || cancelAsk.isPending || cancelWithdraw.isPending}
+						onClick={confirmAsking}
+					>
+						{asking?.kind === "cancel" ? t("absences.cancelAsk") : t("absences.withdraw")}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</AppShell>
 	);
 }

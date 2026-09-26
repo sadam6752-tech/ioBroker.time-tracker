@@ -293,4 +293,22 @@ describe("the kind clockIn in the repository", () => {
 		repo.remove({ id: rule.id, actorId: adminId });
 		expect(repo.runs({ limit: 10 })).to.be.empty;
 	});
+
+	it("reports one run per rule — the newest", () => {
+		const first = repo.save({ kind: "clockIn", atMinute: 480, actorId: adminId });
+		const second = repo.save({ kind: "clockOut", atMinute: 1200, actorId: adminId });
+		repo.recordRun({ ruleId: first.id, userId: adminId, period: "2026-09-17", action: "clocked in", now: 1000 });
+		repo.recordRun({ ruleId: first.id, userId: adminId, period: "2026-09-18", action: "clocked in", now: 2000 });
+		repo.recordRun({ ruleId: second.id, userId: adminId, period: "2026-09-18", action: "clocked out", now: 3000 });
+
+		const latest = repo.latestRuns();
+		expect(latest).to.have.length(2);
+		expect(latest.map(run => run.ruleId)).to.deep.equal([second.id, first.id]);
+		expect(latest.find(run => run.ruleId === first.id)).to.deep.include({
+			userId: adminId,
+			period: "2026-09-18",
+			firedAt: 2000,
+			action: "clocked in",
+		});
+	});
 });

@@ -108,8 +108,10 @@ export interface AutomationsRepository {
 	save(input: SaveAutomationRuleInput): AutomationRuleRecord;
 	/** Deletes a rule (its runs go with it) */
 	remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
-	/** Runs of the rules, newest first */
+	/** Runs of the rules, newest first — the log behind the overview */
 	runs(input?: { ruleId?: number; period?: string; limit?: number }): AutomationRunRecord[];
+	/** The newest run of every rule, newest first — one line per rule for the overview */
+	latestRuns(): AutomationRunRecord[];
 	/** True when the rule already ran for that employee in that period */
 	hasRun(input: { ruleId: number; userId: number; period: string }): boolean;
 	/** Notes a run; a second call for the same rule, employee and period changes nothing and returns `false` */
@@ -381,6 +383,12 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 	const selectAllRuns = db.prepare(
 		`SELECT ${RUN_COLUMNS} FROM automation_runs ORDER BY fired_at DESC, rule_id LIMIT ?`,
 	);
+	// one line per rule: SQLite takes the bare columns of the row that carries the `MAX()` when a query has exactly
+	// one aggregate, so `user_id` and `period` belong to the newest run of their rule
+	const selectLatestRuns = db.prepare(
+		`SELECT rule_id, user_id, period, MAX(fired_at) AS fired_at, action
+		 FROM automation_runs GROUP BY rule_id ORDER BY fired_at DESC, rule_id`,
+	);
 	const selectRun = db.prepare(
 		"SELECT 1 AS found FROM automation_runs WHERE rule_id = ? AND user_id = ? AND period = ?",
 	);
@@ -559,6 +567,10 @@ export function createAutomationsRepository(db: Db): AutomationsRepository {
 				limit,
 			) as AutomationRunRow[];
 			return rows.map(mapAutomationRunRow);
+		},
+
+		latestRuns(): AutomationRunRecord[] {
+			return (selectLatestRuns.all() as AutomationRunRow[]).map(mapAutomationRunRow);
 		},
 
 		hasRun(input: { ruleId: number; userId: number; period: string }): boolean {

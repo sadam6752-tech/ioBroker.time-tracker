@@ -4,8 +4,7 @@
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.time-tracker.svg)](https://www.npmjs.com/package/iobroker.time-tracker)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.time-tracker.svg)](https://www.npmjs.com/package/iobroker.time-tracker)
-![Number of Installations](https://iobroker.live/badges/time-tracker-installed.svg)
-![Current version in stable repository](https://iobroker.live/badges/time-tracker-stable.svg)
+[![License](https://img.shields.io/github/license/sadam6752-tech/ioBroker.time-tracker.svg)](LICENSE)
 
 [![NPM](https://nodei.co/npm/iobroker.time-tracker.png?downloads=true)](https://nodei.co/npm/iobroker.time-tracker/)
 
@@ -21,7 +20,7 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 - **Clock in and out** in the web app (phone, tablet, PC); installable as an app (PWA) and it keeps punches while offline
 - **Terminal for everybody**: badge (RFID/NFC) or PIN on a shared tablet, plus a board that shows who is at work
 - **Working time**: target time from weekly hours, employment level and working days; breaks (punched or by graduated rules), overtime models, carryover, vacation and public holidays
-- **Absences and vacation**: requests and approvals, half days, and a preview of the days already planned
+- **Absences and vacation**: requests and approvals, half days, a preview of the days already planned — and a way back: an employee withdraws an open request himself, asks for the cancellation of an approved absence, and the administration changes, deletes or declines it
 - **Corrections** by the administration (change, delete, add a punch or a whole day) — every change carries a reason and the history of a punch stays readable; the administration opens the day right in the month view of an employee
 - **Day notes**: an employee does not change his own times — he leaves a note for the administration (“forgot to clock in or out”), which the office books and marks as handled
 - **Monthly statements** as PDF and Excel, for the own account and — with the right — for every employee; statistics and payouts included
@@ -313,9 +312,11 @@ The adapter can act on its own as well — that table lives in **Administration 
 | Break reminder          | Reminds an employee whose running work block reached the configured length                              |
 | Validity period         | Optional “valid from” and “valid until” as dates: the rule stays quiet outside them, both ends belong to the period, an empty field means “from now on” or “without an end” |
 
-Every rule runs **at most once per employee and local date**; `automation_runs` holds that decision and doubles as
-the log below the table (the five most recent runs). A **validity period** is compared with the local calendar day of
-the employee, like the weekdays, so a holiday stand-in can end by itself. The events `automation.clockOut`,
+Every rule runs **at most once per employee and local date**; `automation_runs` holds that decision and doubles as the
+log of the table — every row names its **newest run**, so a rule that fell silent shows up at one glance. The table is
+saved **as a whole**, which the hint beside “Save rules” says: editing a rule changes the list, only the button writes
+it. A **validity period** is compared with the local calendar day of the employee, like the weekdays, so a holiday
+stand-in can end by itself. The events `automation.clockOut`,
 `automation.missingPunch` and `automation.breakReminder` appear in `events.*` too, so a notification adapter can pick
 them up.
 
@@ -420,6 +421,20 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.8 (2026-09-26)
+
+- (Alex) new: an absence can be taken back. An employee withdraws a request that is still open, and for an approved
+  absence he asks for the cancellation and names a reason — the days keep counting until the administration answers.
+  It accepts the request (the absence is deleted) or declines it, and the employee can take his request back as well
+- (Alex) new: the administration changes and deletes absences in the app. “Ändern” opens the dates of an existing
+  absence (the employee belongs to it and stays), “Löschen” asks once and removes the row — the same button that
+  accepts a cancellation request
+- (Alex) change: the rules show their newest run in their own row, so a rule that fell silent is visible at a glance.
+  The list of the last runs below the table is gone, and a hint beside “Save rules” says that the table is saved as a
+  whole
+- (Alex) fix: a rule that runs on every day no longer prints “once a day” twice in its row
+- (Alex) docs: the two `iobroker.live` badges are gone from the top of this file — they belong to an entry in the
+  official repository, which does not exist yet, and showed a broken picture; a licence badge stands in their place
 - (Alex) docs: the calendar file is described as what it is — the **path** for the `ical` adapter
   (`calendar.feedFile`). The file server of a `web` instance does not deliver it (that public area answers with an
   empty archive), so a browser, a calendar app or a script uses the token link `calendar.feedUrl`.
@@ -448,24 +463,10 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) fix: the subscription link of the company carries the API prefix now (`…/api/calendar.ics?token=…`). Without
   it a browser got the web app and its login instead of the calendar
 - (Alex) change: the written calendar file sits in `<iobroker-data>/files/time-tracker.<n>/calendar.ics` instead of the
-  instance folder next to it — that one is readable for the adapter alone, while `files/` is handed out by a `web`
-  instance as a download (`http://<host>:8081/files/time-tracker.0/calendar.ics`); the `ical` adapter keeps reading it
-  as a local file
+  instance folder next to it — that one is readable for the adapter alone; the `ical` adapter keeps reading it as a
+  local file
 - (Alex) docs: the test plan carries a small snippet for the *Scripts* tab that reads `calendar.absences` and logs who
   is away today (for T21, not part of the adapter)
-
-### 0.7.3 (2026-09-24)
-
-- (Alex) new: the calendar goes to ioBroker. The adapter writes `calendar.ics` into its instance folder — the `ical`
-  adapter reads that as a **local file**, without URL, token or network — and publishes the subscription link of the
-  **company** in `calendar.feedUrl` plus the same days as JSON in `calendar.absences` (`calendar.updatedAt` says how
-  fresh they are). That link opens the absences of **all** employees, so nothing happens by itself:
-  `commands.rotateCalendarToken` creates the token and replaces it on every further call, which kills an old link at
-  once. The personal link of an employee is unchanged
-- (Alex) cleanup: the guard `requireInsideEditWindow` is gone (with the problem `edit_window_closed`). It had been
-  unreachable since times belong to the administration: it only ever checked punches of the own account, and changing
-  one of those already needs `time.edit_other`. The setting `edit_window_days` stays and now has exactly one job — it
-  tells the **offline queue** how far back it may hand in a punch on its own (`too_old`); README and D6 say that
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

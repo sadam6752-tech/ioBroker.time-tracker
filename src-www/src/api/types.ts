@@ -182,6 +182,10 @@ export interface Absence {
 	decidedBy?: number | null;
 	/** Reason of the decision, shown to the employee */
 	decisionNote?: string | null;
+	/** Instant the employee asked for the cancellation of an approved absence, `null` while none is open */
+	cancelRequestedAt?: number | null;
+	/** Reason the employee gave for that cancellation request */
+	cancelNote?: string | null;
 	note: string | null;
 }
 

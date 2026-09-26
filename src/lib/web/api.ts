@@ -1625,11 +1625,73 @@ export function createApi(deps: ApiDeps): Api {
 		return noContent();
 	});
 
+	// A cancellation of an approved absence. The employee asks for it; the days keep counting until the
+	// administration answers — deleting the absence is the “yes”, declining the request leaves it as it is. An
+	// employee never cancels around that decision, because deleting an absence of somebody else needs
+	// `absence.edit_other` (`changeableAbsence`).
+	route("POST", "/absences/:id/cancellation", { permission: "absence.request", csrf: true }, context => {
+		const absence = changeableAbsence(context);
+		const body = context.optionalJsonBody();
+		const updated = absences.requestCancel({
+			id: absence.id,
+			note: optionalString(body, "note"),
+			actorId: context.auth?.user.id ?? 0,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({
+			type: "absence.change",
+			userId: updated.userId,
+			data: { absenceId: updated.id, action: "cancellation" },
+		});
+		return json(200, { absence: publicAbsence(updated) });
+	});
+
+	// The request goes back: the employee withdraws it, the administration declines it (`…/decline`). Both end in
+	// the same state, only the log tells them apart.
+	route("DELETE", "/absences/:id/cancellation", { permission: "absence.request", csrf: true }, context => {
+		const absence = changeableAbsence(context);
+		const updated = absences.clearCancel({
+			id: absence.id,
+			actorId: context.auth?.user.id ?? 0,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({
+			type: "absence.change",
+			userId: updated.userId,
+			data: { absenceId: updated.id, action: "cancellationWithdrawn" },
+		});
+		return json(200, { absence: publicAbsence(updated) });
+	});
+
+	route("POST", "/absences/:id/cancellation/decline", { permission: "absence.approve", csrf: true }, context => {
+		const id = numberParam(context, "id");
+		const absence = absences.findById(id);
+		if (!absence) {
+			throw new NotFoundError(`absence ${id} not found`);
+		}
+		const body = context.optionalJsonBody();
+		const updated = absences.clearCancel({
+			id,
+			declined: true,
+			note: optionalString(body, "note"),
+			actorId: context.auth?.user.id ?? 0,
+			actorIp: context.request.remoteAddress ?? null,
+			now: now(),
+		});
+		emit({
+			type: "absence.change",
+			userId: updated.userId,
+			data: { absenceId: updated.id, action: "cancellationDeclined" },
+		});
+		return json(200, { absence: publicAbsence(updated) });
+	});
+
 	// master data: absence types, holidays and instance settings
 
 	// The administration sees the types that are switched off as well — that is what “active” is for: an inactive type
 	// stays out of the picker of the employees, while the administration can still book it for somebody.
-	// The calendar feed: a public route with the secret in the URL, so a phone or a calendar app can subscribe without
 	// The calendar feed: a public route with the secret in the URL, so a phone or a calendar app can subscribe without
 	// a session. Two tokens are accepted: the personal one of an employee (nobody else sees anything through such a
 	// link) and the token of the instance, which carries the absences of the whole company — that is the feed ioBroker
@@ -2073,13 +2135,14 @@ export function createApi(deps: ApiDeps): Api {
 	}
 
 	// Automation rules: what the adapter does on its own — clock out at a time, report a missing punch, remind
-	// about a break. The runs of the last days come with it, so the administration can see what happened.
+	// about a break. Every rule comes with its newest run, so the administration sees at one glance whether it
+	// still works; the complete log stays in the repository.
 	route("GET", "/automation-rules", { permission: "settings.view" }, () =>
 		json(200, { automationRules: automations.list({ includeInactive: true }) }),
 	);
 
 	route("GET", "/automation-rules/runs", { permission: "settings.view" }, () =>
-		json(200, { runs: automations.runs({ limit: 5 }) }),
+		json(200, { runs: automations.latestRuns() }),
 	);
 
 	route("PUT", "/automation-rules", { permission: "settings.edit", csrf: true }, context =>

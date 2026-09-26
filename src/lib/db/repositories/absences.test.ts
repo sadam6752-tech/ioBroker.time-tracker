@@ -470,8 +470,88 @@ describe("absences repository", () => {
 				dateFrom: "2026-07-06",
 				dateTo: "2026-07-06",
 				status: "planned",
+				cancelRequested: false,
 			});
 			expect(repo.remove({ id: absence.id, actorId: adminId })).to.equal(false);
+		});
+	});
+
+	describe("cancellation", () => {
+		it("records the wish of the employee and keeps the days counting", () => {
+			const absence = repo.create({
+				userId: annaId,
+				typeCode: "F",
+				dateFrom: "2026-07-06",
+				dateTo: "2026-07-09",
+				actorId: adminId,
+			});
+
+			const asked = repo.requestCancel({
+				id: absence.id,
+				note: "Urlaub verschoben",
+				actorId: annaId,
+				now: 5000,
+			});
+			expect(asked).to.deep.include({
+				approval: "approved",
+				cancelRequestedAt: 5000,
+				cancelNote: "Urlaub verschoben",
+			});
+			// the absence keeps counting while the administration has not answered
+			expect(isApproved(asked)).to.equal(true);
+			expect(countAudit("absence.cancel_request")).to.equal(1);
+			expect(lastDetail("absence.cancel_request")).to.deep.include({ note: "Urlaub verschoben" });
+
+			// the employee takes the wish back
+			const withdrawn = repo.clearCancel({ id: absence.id, actorId: annaId, now: 6000 });
+			expect(withdrawn).to.deep.include({ cancelRequestedAt: null, cancelNote: null });
+			expect(countAudit("absence.cancel_withdraw")).to.equal(1);
+
+			// … and asks again, so the administration can decline it
+			repo.requestCancel({ id: absence.id, actorId: annaId, now: 7000 });
+			const declined = repo.clearCancel({
+				id: absence.id,
+				declined: true,
+				note: "Betriebsferien",
+				actorId: adminId,
+				now: 8000,
+			});
+			expect(declined).to.deep.include({ cancelRequestedAt: null, cancelNote: null, approval: "approved" });
+			expect(countAudit("absence.cancel_decline")).to.equal(1);
+		});
+
+		it("refuses a cancellation of an absence that is not approved", () => {
+			const requested = repo.create({
+				userId: annaId,
+				typeCode: "F",
+				dateFrom: "2026-03-02",
+				approval: "requested",
+				actorId: annaId,
+			});
+
+			// a request that still waits for its decision is withdrawn, not cancelled
+			expect(() => repo.requestCancel({ id: requested.id, actorId: annaId })).to.throw(
+				/only an approved absence can be cancelled/,
+			);
+			expect(() => repo.clearCancel({ id: requested.id, actorId: annaId })).to.throw(
+				/no open cancellation request/,
+			);
+			expect(() => repo.requestCancel({ id: 999_999, actorId: annaId })).to.throw(/not found/);
+		});
+
+		it("drops a pending cancellation when the absence stops counting", () => {
+			const absence = repo.create({
+				userId: annaId,
+				typeCode: "F",
+				dateFrom: "2026-07-06",
+				actorId: adminId,
+			});
+			repo.requestCancel({ id: absence.id, actorId: annaId, now: 5000 });
+
+			// the administration rejects the absence — the cancellation nobody would decide is gone with it
+			const rejected = repo.setApproval({ id: absence.id, approval: "rejected", actorId: adminId, now: 6000 });
+			expect(rejected).to.deep.include({ approval: "rejected", cancelRequestedAt: null, cancelNote: null });
+			expect(countAudit("absence.cancel_withdraw")).to.equal(0);
 		});
 	});
 });

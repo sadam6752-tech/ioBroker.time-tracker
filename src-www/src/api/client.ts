@@ -180,6 +180,26 @@ export interface ApiClient {
 	}): Promise<Absence>;
 	/** Absences of every employee in a period (needs `absence.approve`) */
 	absencesOverview(from: string, to: string): Promise<Absence[]>;
+	/** Changes an absence; the own one, or any with `absence.edit_other` */
+	updateAbsence(
+		id: number,
+		patch: {
+			typeCode?: string;
+			dateFrom?: string;
+			dateTo?: string;
+			dayPortion?: number;
+			note?: string;
+			reason?: string;
+		},
+	): Promise<Absence>;
+	/** Deletes an absence; the own one, or any with `absence.edit_other` */
+	deleteAbsence(id: number): Promise<void>;
+	/** Asks for the cancellation of an approved absence */
+	requestAbsenceCancel(id: number, note?: string): Promise<Absence>;
+	/** Takes a cancellation request back (the employee withdraws it) */
+	withdrawAbsenceCancel(id: number): Promise<Absence>;
+	/** Declines a cancellation request (needs `absence.approve`) */
+	declineAbsenceCancel(id: number, note?: string): Promise<Absence>;
 	/** Approves or rejects a request (needs `absence.approve`) */
 	decideAbsence(id: number, approval: "approved" | "rejected", note?: string): Promise<Absence>;
 	/** Subscription link of the own calendar; `rotate` makes the old link invalid */
@@ -981,6 +1001,34 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 				query: { scope: "all", from, to },
 			});
 			return result.absences ?? [];
+		},
+
+		async updateAbsence(id, patch): Promise<Absence> {
+			const result = await request<{ absence: Absence }>("PATCH", `/absences/${id}`, { body: patch });
+			return result.absence;
+		},
+
+		async deleteAbsence(id): Promise<void> {
+			await request("DELETE", `/absences/${id}`);
+		},
+
+		async requestAbsenceCancel(id, note): Promise<Absence> {
+			const result = await request<{ absence: Absence }>("POST", `/absences/${id}/cancellation`, {
+				body: note ? { note } : {},
+			});
+			return result.absence;
+		},
+
+		async withdrawAbsenceCancel(id): Promise<Absence> {
+			const result = await request<{ absence: Absence }>("DELETE", `/absences/${id}/cancellation`);
+			return result.absence;
+		},
+
+		async declineAbsenceCancel(id, note): Promise<Absence> {
+			const result = await request<{ absence: Absence }>("POST", `/absences/${id}/cancellation/decline`, {
+				body: note ? { note } : {},
+			});
+			return result.absence;
 		},
 
 		async decideAbsence(id, approval, note): Promise<Absence> {

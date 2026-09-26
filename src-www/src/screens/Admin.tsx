@@ -2169,11 +2169,11 @@ function TriggersTab({ language }: { language: string }): React.JSX.Element {
  *
  * Every rule is one row — caption, kind, time, target and weekdays at a glance, with the actions on the right. The
  * rows are edited in a dialog, so the list stays readable and the form only appears for the rule that is worked on.
- * Below the list the last runs are shown, so the administration can see whether a rule works the way it is meant to.
+ * Each row also names its newest run, so the administration can see whether a rule works the way it is meant to.
  *
  * @param props - rules, runs, employees, permission and handlers
  * @param props.rules - rules as they are shown
- * @param props.runs - last runs of the rules
+ * @param props.runs - newest run of every rule (one row per rule)
  * @param props.people - employees a rule can be limited to
  * @param props.disabled - true when the caller may not change them
  * @param props.saving - true while a save is running
@@ -2235,12 +2235,14 @@ function AutomationRulesCard({
 	 * Weekdays of a rule as a short text.
 	 *
 	 * @param weekdays - weekdays the rule runs on
-	 * @returns the names of the days, or the `daily` hint for all seven
+	 * @returns the names of the days, or an empty text when the rule runs on every day
 	 */
 	const weekdaySummary = (weekdays: number[]): string => {
 		const names = weekdayOptions(language);
 		if (weekdays.length >= 7) {
-			return t("admin.automation.repeatDay");
+			// all seven days are no limitation: the row already says “once a day” or “once a week”, and repeating
+			// that text here would be the same sentence twice
+			return "";
 		}
 		return weekdays.map(value => names.find(option => option.value === value)?.label ?? String(value)).join(", ");
 	};
@@ -2316,6 +2318,21 @@ function AutomationRulesCard({
 	 */
 	const nameOf = (id: number): string => people.find(user => user.id === id)?.displayName ?? `#${id}`;
 
+	/**
+	 * The newest run of a rule as one line.
+	 *
+	 * The server sends one run per rule, so a rule that has not run yet gets the hint instead of a date.
+	 *
+	 * @param rule - rule to describe
+	 * @returns stamp and employee of the last run, or the “never ran” text
+	 */
+	const lastRunOf = (rule: AutomationRule): string => {
+		const found = rule.id === undefined ? undefined : runs.find(candidate => candidate.ruleId === rule.id);
+		return found
+			? `${t("admin.automation.runs")}: ${formatStamp(found.firedAt, language)} · ${nameOf(found.userId)}`
+			: t("admin.automation.neverRun");
+	};
+
 	return (
 		<Card
 			sx={{ mb: 2 }}
@@ -2340,24 +2357,30 @@ function AutomationRulesCard({
 						<ActionRow
 							key={rule.id ?? `new-${index}`}
 							primary={rule.label?.trim() ? rule.label : kindLabel(rule.kind)}
-							secondary={[
-								kindLabel(rule.kind),
-								rule.kind === "breakReminder"
-									? `${t("admin.automation.after")} ${rule.afterMinutes ?? 360}`
-									: timeOf(rule.atMinute),
-								rule.userId === null || rule.userId === undefined
-									? t("admin.automation.allUsers")
-									: nameOf(rule.userId),
-								weekdaySummary(rule.weekdays ?? [1, 2, 3, 4, 5, 6, 7]),
-								t(
-									rule.repeat === "week"
-										? "admin.automation.repeatWeek"
-										: "admin.automation.repeatDay",
-								),
-								validitySummary(rule),
-							]
-								.filter(part => part !== "")
-								.join(" · ")}
+							secondary={
+								<>
+									{[
+										kindLabel(rule.kind),
+										rule.kind === "breakReminder"
+											? `${t("admin.automation.after")} ${rule.afterMinutes ?? 360}`
+											: timeOf(rule.atMinute),
+										rule.userId === null || rule.userId === undefined
+											? t("admin.automation.allUsers")
+											: nameOf(rule.userId),
+										weekdaySummary(rule.weekdays ?? [1, 2, 3, 4, 5, 6, 7]),
+										t(
+											rule.repeat === "week"
+												? "admin.automation.repeatWeek"
+												: "admin.automation.repeatDay",
+										),
+										validitySummary(rule),
+									]
+										.filter(part => part !== "")
+										.join(" · ")}
+									<br />
+									{lastRunOf(rule)}
+								</>
+							}
 						>
 							<Button
 								size="small"
@@ -2421,6 +2444,12 @@ function AutomationRulesCard({
 							{t("admin.automation.save")}
 						</Button>
 					</Stack>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+					>
+						{t("admin.automation.saveHint")}
+					</Typography>
 					{rules.length === 0 && (
 						<Typography
 							variant="body2"
@@ -2649,29 +2678,6 @@ function AutomationRulesCard({
 						</Button>
 					</DialogActions>
 				</Dialog>
-				{runs.length > 0 && (
-					<>
-						<Typography
-							variant="subtitle2"
-							sx={{ mt: 2 }}
-						>
-							{t("admin.automation.runs")}
-						</Typography>
-						<List dense>
-							{runs.map((run, index) => (
-								<ListItem
-									key={`${run.ruleId}-${run.userId}-${run.period}-${index}`}
-									disableGutters
-								>
-									<ListItemText
-										primary={`${formatStamp(run.firedAt, language)} · ${nameOf(run.userId)}`}
-										secondary={run.action}
-									/>
-								</ListItem>
-							))}
-						</List>
-					</>
-				)}
 			</CardContent>
 		</Card>
 	);

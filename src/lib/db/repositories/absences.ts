@@ -4,6 +4,10 @@
  * An absence is a date range plus a day portion, so half days and multi-day absences share one
  * representation. The status separates requested (`planned`) from booked (`taken`) absences; the
  * vacation balance reports used and planned days separately.
+ *
+ * A request of an employee is decided by the administration (`approval`); an absence that is already approved is not
+ * cancelled silently either — `cancel_requested_at` notes the wish, and the administration deletes the absence or
+ * declines the request. The absence keeps counting while the cancellation waits.
  */
 
 import type { Db } from "../database";
@@ -111,6 +115,10 @@ export interface AbsenceRecord {
 	decidedBy: number | null;
 	/** Reason of the decision, shown to the employee */
 	decisionNote: string | null;
+	/** Instant the employee asked for the cancellation of an approved absence, `null` while none is open */
+	cancelRequestedAt: number | null;
+	/** Reason the employee gave for that cancellation request */
+	cancelNote: string | null;
 	/** Free-form note */
 	note: string | null;
 	/** Instant of creation, UTC epoch seconds */
@@ -233,6 +241,24 @@ export interface AbsencesRepository {
 		actorIp?: string | null;
 		now?: number;
 	}): AbsenceRecord;
+	/** Notes that the employee wants an approved absence cancelled and audits it */
+	requestCancel(input: {
+		id: number;
+		note?: string | null;
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): AbsenceRecord;
+	/** Ends a pending cancellation request: the employee withdraws it or the administration declines it */
+	clearCancel(input: {
+		id: number;
+		/** True when the administration declined the request instead of the employee withdrawing it */
+		declined?: boolean;
+		note?: string | null;
+		actorId: number;
+		actorIp?: string | null;
+		now?: number;
+	}): AbsenceRecord;
 	/** Deletes an absence by id */
 	remove(input: { id: number; actorId: number; actorIp?: string | null; now?: number }): boolean;
 	/** Absences of one user within an optional period, sorted by start date */
@@ -270,6 +296,8 @@ interface AbsenceRow {
 	decided_at: number | null;
 	decided_by: number | null;
 	decision_note: string | null;
+	cancel_requested_at: number | null;
+	cancel_note: string | null;
 	note: string | null;
 	created_at: number;
 	created_by: number | null;
@@ -284,7 +312,7 @@ interface AbsenceWithTypeRow extends AbsenceRow {
 }
 
 const TYPE_COLUMNS = "id, user_id, code, name, paid, factor, reduce_vacation, is_active, color";
-const ABSENCE_COLUMNS = `id, user_id, type_id, date_from, date_to, day_portion, hours, status, approval, decided_at, decided_by, decision_note, note,
+const ABSENCE_COLUMNS = `id, user_id, type_id, date_from, date_to, day_portion, hours, status, approval, decided_at, decided_by, decision_note, cancel_requested_at, cancel_note, note,
 \tcreated_at, created_by`;
 
 /** Field names of an absence that are compared for the audit trail. */
@@ -330,6 +358,8 @@ export function mapAbsenceRow(row: AbsenceRow): AbsenceRecord {
 		decidedAt: row.decided_at,
 		decidedBy: row.decided_by,
 		decisionNote: row.decision_note,
+		cancelRequestedAt: row.cancel_requested_at,
+		cancelNote: row.cancel_note,
 		note: row.note,
 		createdAt: row.created_at,
 		createdBy: row.created_by,
@@ -384,7 +414,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	);
 	const selectWithTypes = db.prepare(
 		`SELECT a.id, a.user_id, a.type_id, a.date_from, a.date_to, a.day_portion, a.hours, a.status, a.approval,
-		        a.decided_at, a.decided_by, a.decision_note, a.note, a.created_at, a.created_by,
+		        a.decided_at, a.decided_by, a.decision_note, a.cancel_requested_at, a.cancel_note, a.note, a.created_at, a.created_by,
 		        t.code AS type_code, t.name AS type_name, t.paid AS type_paid, t.factor AS type_factor,
 		        t.reduce_vacation AS type_reduce_vacation
 		 FROM absences a JOIN absence_types t ON t.id = a.type_id
@@ -394,7 +424,7 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	// the same list for the administration: every employee in one answer, so the overview needs one request
 	const selectAllWithTypes = db.prepare(
 		`SELECT a.id, a.user_id, a.type_id, a.date_from, a.date_to, a.day_portion, a.hours, a.status, a.approval,
-		        a.decided_at, a.decided_by, a.decision_note, a.note, a.created_at, a.created_by,
+		        a.decided_at, a.decided_by, a.decision_note, a.cancel_requested_at, a.cancel_note, a.note, a.created_at, a.created_by,
 		        t.code AS type_code, t.name AS type_name, t.paid AS type_paid, t.factor AS type_factor,
 		        t.reduce_vacation AS type_reduce_vacation
 		 FROM absences a JOIN absence_types t ON t.id = a.type_id
@@ -414,6 +444,10 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 	const updateStatusStatement = db.prepare("UPDATE absences SET status = ? WHERE id = ?");
 	const updateApprovalStatement = db.prepare(
 		"UPDATE absences SET approval = ?, decided_at = ?, decided_by = ?, decision_note = ? WHERE id = ?",
+	);
+	const updateCancelRequest = db.prepare("UPDATE absences SET cancel_requested_at = ?, cancel_note = ? WHERE id = ?");
+	const clearCancelRequest = db.prepare(
+		"UPDATE absences SET cancel_requested_at = NULL, cancel_note = NULL WHERE id = ?",
 	);
 	const deleteAbsence = db.prepare("DELETE FROM absences WHERE id = ?");
 	const insertType = db.prepare(
@@ -781,6 +815,10 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 
 			const run = db.transaction((): void => {
 				updateApprovalStatement.run(input.approval, now, input.actorId, input.note ?? null, input.id);
+				if (input.approval !== "approved") {
+					// the days stop counting with this decision, so a cancellation that waits for one is pointless
+					clearCancelRequest.run(input.id);
+				}
 				writeAuditLog(db, {
 					atUtc: now,
 					actorId: input.actorId,
@@ -799,6 +837,94 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 			const updated = read(input.id);
 			if (!updated) {
 				throw new Error(`absence ${input.id} disappeared right after the decision`);
+			}
+			return updated;
+		},
+
+		requestCancel(input: {
+			id: number;
+			note?: string | null;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): AbsenceRecord {
+			const current = read(input.id);
+			if (!current) {
+				throw new NotFoundError(`absence ${input.id} not found`);
+			}
+			// only an approved absence is cancelled: a request that still waits for its decision is withdrawn
+			if (current.approval !== "approved") {
+				throw new ValidationError(
+					`only an approved absence can be cancelled (approval is ${current.approval})`,
+				);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+
+			const run = db.transaction((): void => {
+				updateCancelRequest.run(now, input.note ?? null, input.id);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: "absence.cancel_request",
+					entity: "absence",
+					entityId: input.id,
+					detail: {
+						userId: current.userId,
+						dateFrom: current.dateFrom,
+						dateTo: current.dateTo,
+						...(input.note ? { note: input.note } : {}),
+					},
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			const updated = read(input.id);
+			if (!updated) {
+				throw new Error(`absence ${input.id} disappeared right after the cancellation request`);
+			}
+			return updated;
+		},
+
+		clearCancel(input: {
+			id: number;
+			declined?: boolean;
+			note?: string | null;
+			actorId: number;
+			actorIp?: string | null;
+			now?: number;
+		}): AbsenceRecord {
+			const current = read(input.id);
+			if (!current) {
+				throw new NotFoundError(`absence ${input.id} not found`);
+			}
+			if (current.cancelRequestedAt === null) {
+				throw new ValidationError(`absence ${input.id} has no open cancellation request`);
+			}
+			const now = input.now ?? Math.floor(Date.now() / 1000);
+
+			const run = db.transaction((): void => {
+				clearCancelRequest.run(input.id);
+				writeAuditLog(db, {
+					atUtc: now,
+					actorId: input.actorId,
+					action: input.declined ? "absence.cancel_decline" : "absence.cancel_withdraw",
+					entity: "absence",
+					entityId: input.id,
+					detail: {
+						userId: current.userId,
+						dateFrom: current.dateFrom,
+						dateTo: current.dateTo,
+						...(input.note ? { note: input.note } : {}),
+					},
+					ip: input.actorIp ?? null,
+				});
+			});
+			run();
+
+			const updated = read(input.id);
+			if (!updated) {
+				throw new Error(`absence ${input.id} disappeared right after the cancellation was taken back`);
 			}
 			return updated;
 		},
@@ -823,6 +949,8 @@ export function createAbsencesRepository(db: Db): AbsencesRepository {
 						dateFrom: current.dateFrom,
 						dateTo: current.dateTo,
 						status: current.status,
+						// the log then shows whether this deletion was the answer to a cancellation request
+						cancelRequested: current.cancelRequestedAt !== null,
 					},
 					ip: input.actorIp ?? null,
 				});

@@ -299,8 +299,53 @@ und liegt der Regelzeitpunkt des ersten Tages vor „gültig ab", fällt dieser 
 **Nachweis:** `src/lib/adapter/automation.test.ts` (Tag davor, genau „ab", genau „bis", Tag danach, beide Enden leer),
 `src/lib/db/repositories/automations.test.ts` (Speichern und Lesen, „weglassen behält", „leer leert", 30.02. wird
 abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/api.test.ts` (die Daten reisen mit der Regel, 400 bei
-ungültigem Datum) und die Abnahme **T23** in `docs/testplan.md`. Die Liste unter der Tabelle zeigt außerdem nur noch
-die **fünf** jüngsten Ausführungen (vorher zwanzig) — sie ist ein Blick auf das letzte Verhalten, kein Archiv.
+ungültigem Datum) und die Abnahme **T23** in `docs/testplan.md`. Die Liste unter der Tabelle ist inzwischen **entfallen**
+(sie war zuletzt auf fünf Einträge begrenzt): `GET /automation-rules/runs` liefert eine Zeile **je Regel** (die
+jüngste, per `latestRuns`) und die Regelzeile schreibt sie in eine eigene Zeile — siehe **D12** in
+`docs/entscheidungen.md` und **T25** in `docs/testplan.md`.
+
+## D12 — Die Regelübersicht zeigt die letzte Ausführung je Regel (26.09.2026)
+
+**Anlass:** Die Liste „Letzte Ausführungen" unter der Regeltabelle war ein Log ohne Regelbezug: sie zeigte die fünf
+jüngsten Zeilen aller Regeln, und eine Regel, die seit einer Woche nicht mehr lief, tauchte darin nicht mehr auf.
+
+**Entscheidung:** Die Liste ist entfernt. `GET /automation-rules/runs` liefert statt der jüngsten Zeilen **eine Zeile je
+Regel** (die jüngste Ausführung; `latestRuns()` im Repository nutzt die SQLite-Regel, dass bei genau einem Aggregat
+(`MAX`) die übrigen Spalten aus der passenden Zeile stammen) und die Regelzeile nennt sie als eigene Zeile
+(`Letzte Ausführung: … · Mitarbeiter`, sonst `noch nie ausgeführt`). Zusätzlich steht neben „Regeln speichern" der
+Hinweis, dass die Tabelle **als Ganzes** gespeichert wird — bis dahin ist eine Änderung nur im Formular unterwegs.
+
+**Nebenbei:** Eine Regel, die an **allen sieben** Tagen läuft, schrieb zweimal dasselbe in ihre Zeile
+(„einmal pro Tag" aus den Wochentagen und aus der Wiederholung). Die Wochentagsangabe bleibt jetzt leer, wenn sie
+keine Einschränkung ist — genau wie die Gültigkeit, die ebenfalls nur erscheint, wenn sie gesetzt ist.
+
+**Nachweis:** `src/lib/db/repositories/automations.test.ts` („reports one run per rule — the newest"),
+`src/lib/web/api.test.ts` (die Antwort trägt eine Zeile je Regel) und **T25** in `docs/testplan.md`.
+
+## D13 — Ein Storno wird beantragt, nicht stillschweigend gebucht (26.09.2026)
+
+**Anlass:** Eine genehmigte Abwesenheit ließ sich weder vom Mitarbeiter ändern noch wegnehmen; löschen konnte sie nur
+die Verwaltung, und dafür gab es in der App keinen Weg. Fälle wie „der Urlaub wird doch in eine andere Woche gelegt"
+blieben Handarbeit.
+
+**Entscheidung:** Das Löschen einer genehmigten Abwesenheit bleibt eine Entscheidung der Verwaltung. Der Mitarbeiter
+**beantragt** das Storno (`POST /absences/:id/cancellation`, Grund optional in `cancel_note`); die Abwesenheit zählt
+dabei **weiter**, weil `isApproved` allein an `approval` hängt. Die Verwaltung antwortet mit dem vorhandenen
+`DELETE /absences/:id` — das ist das „Ja", und die Löschung trägt `cancelRequested: true` im Audit-Detail — oder mit
+`POST /absences/:id/cancellation/decline` (das „Nein", Grund im Audit). Einen **offenen** Antrag zieht der Mitarbeiter
+selbst zurück (`DELETE /absences/:id/cancellation`); seine Zeile darf er ohnehin löschen. Ändert ein Mitarbeiter eine
+genehmigte Abwesenheit, läuft der bisherige Weg weiter: sie geht zurück auf `requested`, und ein wartendes Storno
+verfällt mit der alten Entscheidung (`setApproval` räumt es ab).
+
+Zwei Gründe für dieses Modell: `approval` trägt einen `CHECK` aus Migration 21, ein weiterer Zustand (`cancelled`)
+hätte die Tabelle nach SQLite-Regeln neu aufbauen müssen — die Spalten `cancel_requested_at` und `cancel_note`
+(Migration 28) genügen und lassen `isApproved` unverändert. Und ein Storno, das ohne Antwort verschwindet, wäre im
+Audit nicht mehr von einem Datenfehler zu unterscheiden.
+
+**Nachweis:** `src/lib/db/repositories/absences.test.ts` (Antrag zählt weiter, Zurückziehen und Ablehnen schreiben die
+Audit-Aktionen `absence.cancel_request`/`_withdraw`/`_decline`, nur genehmigte Abwesenheiten lassen sich stornieren,
+die Entscheidung räumt ein wartendes Storno ab), `src/lib/web/api.test.ts` (Antrag, Rechte, Zurückziehen, Ablehnen,
+400 für eine noch nicht genehmigte Abwesenheit) und die Abnahmen **T26** in `docs/testplan.md`.
 
 ## D11 — Der Dateiserver ist kein Weg zum Kalender (25.09.2026)
 

@@ -751,4 +751,20 @@ export const migrations: Migration[] = [
 			ALTER TABLE automation_rules ADD COLUMN active_until TEXT;
 		`,
 	},
+	{
+		version: 28,
+		name: "absences: a cancellation can be requested",
+		run: (db: Db): void => {
+			// An approved absence is not changed behind the back of the administration: the employee asks for the
+			// cancellation (`cancel_requested_at`), names a reason (`cancel_note`) and waits for the decision. The
+			// absence keeps counting until then — that is what `isApproved` answers, which looks at `approval`
+			// alone. Withdrawing the request or declining it clears both columns again.
+			if (!hasColumn(db, "absences", "cancel_requested_at")) {
+				db.exec("ALTER TABLE absences ADD COLUMN cancel_requested_at INTEGER");
+			}
+			if (!hasColumn(db, "absences", "cancel_note")) {
+				db.exec("ALTER TABLE absences ADD COLUMN cancel_note TEXT");
+			}
+		},
+	},
 ];

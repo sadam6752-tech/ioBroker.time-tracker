@@ -31,6 +31,8 @@ function absence(overrides: Partial<AbsenceWithType> = {}): AbsenceWithType {
 		decidedAt: null,
 		decidedBy: null,
 		decisionNote: null,
+		cancelRequestedAt: null,
+		cancelNote: null,
 		note: null,
 		createdAt: 1_800_000_000,
 		createdBy: 7,

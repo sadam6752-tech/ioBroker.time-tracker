@@ -156,6 +156,45 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 		},
 	});
 
+	/** The cancellation the administration decides about, `null` while the dialog is closed. */
+	const [cancelDecision, setCancelDecision] = useState<{ absence: Absence; accept: boolean } | null>(null);
+	/** The absence the form changes, `null` while a new one is entered. */
+	const [editing, setEditing] = useState<Absence | null>(null);
+	/** The absence a deletion was asked for, `null` while nothing is to be deleted. */
+	const [removing, setRemoving] = useState<Absence | null>(null);
+
+	/** Deleting an absence is the “yes” to a cancellation request — and the same button without one. */
+	const remove = useMutation({
+		mutationFn: (id: number) => api.deleteAbsence(id),
+		onSuccess: async () => {
+			setRemoving(null);
+			setCancelDecision(null);
+			await invalidate();
+		},
+	});
+
+	const declineCancel = useMutation({
+		mutationFn: (input: { id: number; note?: string }) => api.declineAbsenceCancel(input.id, input.note),
+		onSuccess: async () => {
+			setCancelDecision(null);
+			setReason("");
+			await invalidate();
+		},
+	});
+
+	/** Changes the dates of an existing absence (the administration books for everybody). */
+	const update = useMutation({
+		mutationFn: (input: {
+			id: number;
+			patch: { typeCode?: string; dateFrom?: string; dateTo?: string; note?: string };
+		}) => api.updateAbsence(input.id, input.patch),
+		onSuccess: async () => {
+			setEditing(null);
+			setFormOpen(false);
+			await invalidate();
+		},
+	});
+
 	const create = useMutation({
 		mutationFn: () =>
 			api.createAbsence({
@@ -167,9 +206,44 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 			}),
 		onSuccess: async () => {
 			setFormOpen(false);
+			setEditing(null);
 			await invalidate();
 		},
 	});
+
+	/**
+	 * Opens the form with the values of an existing absence.
+	 *
+	 * @param absence - the absence to change
+	 */
+	const openEditor = (absence: Absence): void => {
+		setDraft({
+			userId: absence.userId,
+			typeCode: absence.typeCode,
+			dateFrom: absence.dateFrom,
+			dateTo: absence.dateTo,
+			note: absence.note ?? "",
+		});
+		setReason("");
+		setEditing(absence);
+	};
+
+	/** Saves the form: a new absence for an employee, or the change of an existing one. */
+	const submitForm = (): void => {
+		if (editing) {
+			update.mutate({
+				id: editing.id,
+				patch: {
+					typeCode: draft.typeCode,
+					dateFrom: draft.dateFrom,
+					...(draft.dateTo ? { dateTo: draft.dateTo } : {}),
+					...(draft.note ? { note: draft.note } : {}),
+				},
+			});
+			return;
+		}
+		create.mutate();
+	};
 
 	/** Colour of every absence type, keyed by code — the calendar paints a day with it. */
 	const typeColors = new Map(
@@ -203,6 +277,8 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 			: `${formatDate(absence.dateFrom, language)} – ${formatDate(absence.dateTo, language)}`;
 
 	const open = all.filter(absence => absence.approval === "requested");
+	/** Approved absences whose employee asked for a cancellation — the administration answers here. */
+	const cancellations = all.filter(absence => absence.approval === "approved" && absence.cancelRequestedAt);
 	const today = localDate();
 	const away = all
 		.filter(absence => absence.approval === "approved" && covers(absence, today))
@@ -270,6 +346,58 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 								</Typography>
 							)}
 						</>
+					)}
+				</CardContent>
+			</Card>
+
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Typography
+						variant="subtitle1"
+						gutterBottom
+					>
+						{t("admin.absences.cancelRequests")}
+					</Typography>
+					<ErrorAlert error={declineCancel.error ?? remove.error} />
+					<List
+						dense
+						data-testid="absence-cancellations"
+					>
+						{cancellations.map(absence => (
+							<ActionRow
+								key={absence.id}
+								primary={`${nameOf(absence.userId)}: ${absence.typeCode} — ${range(absence)}`}
+								secondary={
+									absence.cancelNote ?? t("admin.absences.portion", { portion: absence.dayPortion })
+								}
+							>
+								<Button
+									size="small"
+									startIcon={<CheckIcon />}
+									data-testid={`absence-cancel-accept-${absence.id}`}
+									onClick={() => setCancelDecision({ absence, accept: true })}
+								>
+									{t("admin.absences.cancelAccept")}
+								</Button>
+								<Button
+									size="small"
+									color="warning"
+									startIcon={<CloseIcon />}
+									data-testid={`absence-cancel-decline-${absence.id}`}
+									onClick={() => setCancelDecision({ absence, accept: false })}
+								>
+									{t("admin.absences.cancelDecline")}
+								</Button>
+							</ActionRow>
+						))}
+					</List>
+					{cancellations.length === 0 && (
+						<Typography
+							variant="body2"
+							color="text.secondary"
+						>
+							{t("admin.absences.cancelRequestsEmpty")}
+						</Typography>
 					)}
 				</CardContent>
 			</Card>
@@ -440,6 +568,7 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 									dateTo: "",
 									note: "",
 								});
+								setEditing(null);
 								setFormOpen(true);
 							}}
 						>
@@ -492,6 +621,29 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 								primary={`${nameOf(absence.userId)}: ${absence.typeCode} — ${range(absence)}`}
 								secondary={absence.typeName ?? ""}
 							>
+								<Button
+									size="small"
+									data-testid={`absence-edit-${absence.id}`}
+									onClick={() => openEditor(absence)}
+								>
+									{t("admin.absences.edit")}
+								</Button>
+								<Button
+									size="small"
+									color="warning"
+									data-testid={`absence-remove-${absence.id}`}
+									onClick={() => setRemoving(absence)}
+								>
+									{t("admin.absences.remove")}
+								</Button>
+								{absence.cancelRequestedAt ? (
+									<Chip
+										size="small"
+										color="warning"
+										variant="outlined"
+										label={t("absences.cancelPending")}
+									/>
+								) : null}
 								<Chip
 									size="small"
 									label={t(`absences.state.${absence.approval}`)}
@@ -517,6 +669,109 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 					)}
 				</CardContent>
 			</Card>
+
+			<Dialog
+				open={cancelDecision !== null}
+				onClose={() => setCancelDecision(null)}
+				fullWidth
+				maxWidth="xs"
+			>
+				<DialogTitle>
+					{cancelDecision?.accept
+						? t("admin.absences.cancelAcceptTitle")
+						: t("admin.absences.cancelDeclineTitle")}
+				</DialogTitle>
+				<DialogContent>
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<ErrorAlert error={cancelDecision?.accept ? remove.error : declineCancel.error} />
+						<Typography variant="body2">
+							{cancelDecision
+								? `${nameOf(cancelDecision.absence.userId)}: ${cancelDecision.absence.typeCode} — ${range(cancelDecision.absence)}`
+								: ""}
+						</Typography>
+						{cancelDecision?.accept ? (
+							<Typography
+								variant="body2"
+								color="text.secondary"
+							>
+								{t("admin.absences.cancelAcceptHint")}
+							</Typography>
+						) : (
+							<TextField
+								label={t("admin.absences.reasonOptional")}
+								value={reason}
+								size="small"
+								multiline
+								minRows={2}
+								onChange={event => setReason(event.target.value)}
+							/>
+						)}
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setCancelDecision(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						color={cancelDecision?.accept ? "primary" : "warning"}
+						data-testid="absence-cancel-decision-save"
+						disabled={remove.isPending || declineCancel.isPending}
+						onClick={() => {
+							if (!cancelDecision) {
+								return;
+							}
+							if (cancelDecision.accept) {
+								remove.mutate(cancelDecision.absence.id);
+								return;
+							}
+							declineCancel.mutate({
+								id: cancelDecision.absence.id,
+								...(reason.trim() ? { note: reason.trim() } : {}),
+							});
+						}}
+					>
+						{cancelDecision?.accept ? t("admin.absences.cancelAccept") : t("admin.absences.cancelDecline")}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog
+				open={removing !== null}
+				onClose={() => setRemoving(null)}
+				fullWidth
+				maxWidth="xs"
+			>
+				<DialogTitle>{t("admin.absences.removeTitle")}</DialogTitle>
+				<DialogContent>
+					<Stack
+						spacing={2}
+						sx={{ mt: 1 }}
+					>
+						<ErrorAlert error={remove.error} />
+						<Typography variant="body2">
+							{removing
+								? t("admin.absences.removeConfirm", {
+										name: `${nameOf(removing.userId)} (${range(removing)})`,
+									})
+								: ""}
+						</Typography>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setRemoving(null)}>{t("common.cancel")}</Button>
+					<Button
+						variant="contained"
+						color="warning"
+						data-testid="absence-remove-save"
+						disabled={remove.isPending}
+						onClick={() => removing && remove.mutate(removing.id)}
+					>
+						{t("admin.absences.remove")}
+					</Button>
+				</DialogActions>
+			</Dialog>
 
 			<Dialog
 				open={decision !== null}
@@ -570,23 +825,28 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 			</Dialog>
 
 			<Dialog
-				open={formOpen}
-				onClose={() => setFormOpen(false)}
+				open={formOpen || editing !== null}
+				onClose={() => {
+					setFormOpen(false);
+					setEditing(null);
+				}}
 				fullWidth
 				maxWidth="xs"
 			>
-				<DialogTitle>{t("admin.absences.addTitle")}</DialogTitle>
+				<DialogTitle>{t(editing ? "admin.absences.editTitle" : "admin.absences.addTitle")}</DialogTitle>
 				<DialogContent>
 					<Stack
 						spacing={2}
 						sx={{ mt: 1 }}
 					>
-						<ErrorAlert error={create.error} />
+						<ErrorAlert error={create.error ?? update.error} />
 						<TextField
 							select
 							label={t("admin.absences.employee")}
 							value={String(draft.userId)}
 							size="small"
+							disabled={editing !== null}
+							helperText={editing ? t("admin.absences.employeeHint") : undefined}
 							onChange={event => setDraft({ ...draft, userId: Number(event.target.value) })}
 						>
 							{(people.data ?? []).map(person => (
@@ -646,9 +906,13 @@ export function AbsencesTab({ language }: { language: string }): React.JSX.Eleme
 						variant="contained"
 						data-testid="absence-create-save"
 						disabled={
-							create.isPending || draft.userId === 0 || draft.typeCode === "" || draft.dateFrom === ""
+							create.isPending ||
+							update.isPending ||
+							draft.userId === 0 ||
+							draft.typeCode === "" ||
+							draft.dateFrom === ""
 						}
-						onClick={() => create.mutate()}
+						onClick={submitForm}
 					>
 						{t("common.save")}
 					</Button>

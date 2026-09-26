@@ -8,6 +8,19 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.3 (2026-09-24)
+
+- (Alex) new: the calendar goes to ioBroker. The adapter writes `calendar.ics` into its instance folder — the `ical`
+  adapter reads that as a **local file**, without URL, token or network — and publishes the subscription link of the
+  **company** in `calendar.feedUrl` plus the same days as JSON in `calendar.absences` (`calendar.updatedAt` says how
+  fresh they are). That link opens the absences of **all** employees, so nothing happens by itself:
+  `commands.rotateCalendarToken` creates the token and replaces it on every further call, which kills an old link at
+  once. The personal link of an employee is unchanged
+- (Alex) cleanup: the guard `requireInsideEditWindow` is gone (with the problem `edit_window_closed`). It had been
+  unreachable since times belong to the administration: it only ever checked punches of the own account, and changing
+  one of those already needs `time.edit_other`. The setting `edit_window_days` stays and now has exactly one job — it
+  tells the **offline queue** how far back it may hand in a punch on its own (`too_old`); README and D6 say that
+
 ### 0.7.2 (2026-09-24)
 
 - (Alex) security: the administration cannot lock itself out any more. Deactivating or taking the admin role away from

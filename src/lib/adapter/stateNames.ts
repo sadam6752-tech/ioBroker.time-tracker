@@ -524,6 +524,20 @@ export const STATE_NAMES = {
 		uk: "Джерело останньої події",
 		"zh-cn": "最后事件的来源",
 	},
+	/** Mount point of the files of the instance (the calendar hangs on it, D11) */
+	storageFolder: {
+		en: "File storage",
+		de: "Dateiablage",
+		ru: "Хранилище файлов",
+		pt: "Armazenamento de ficheiros",
+		nl: "Bestandsopslag",
+		fr: "Stockage de fichiers",
+		it: "Archivio dei file",
+		es: "Almacenamiento de archivos",
+		pl: "Magazyn plików",
+		uk: "Сховище файлів",
+		"zh-cn": "文件存储",
+	},
 	/** Channel with the calendar of the instance */
 	calendarChannel: {
 		en: "Calendar",

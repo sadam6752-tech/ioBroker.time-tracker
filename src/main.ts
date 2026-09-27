@@ -54,7 +54,7 @@ import {
 	companyFeedUrl,
 	COMPANY_CALENDAR_NAME,
 } from "./lib/services/calendar";
-import { CALENDAR_FILE_NAME, ensureCalendarFolder, writeCalendarFile } from "./lib/adapter/calendarFile";
+import { calendarFilePath, calendarMount, ensureCalendarFolder, writeCalendarFile } from "./lib/adapter/calendarFile";
 import {
 	COMMAND_IDS,
 	createCalendarStates,
@@ -227,16 +227,16 @@ class TimeTracker extends utils.Adapter {
 			this.runAutomationRules();
 			this.setInterval(() => this.runAutomationRules(), AUTOMATION_CHECK_MINUTES * 60 * 1000);
 			await this.publishInstanceInfo();
-			// The folder below `files/` is created through the file API of the adapter, and the note file makes sure it
-			// exists before the first calendar is written: a folder made with `fs.mkdir` stays unknown to the file
-			// manager (D11), and a folder of a fresh instance would stay empty until the first absence shows up.
+			// Files below `files/` hang on a **mount point** — an object of type `meta`. Only there writes the file API
+			// of the adapter; below the instance namespace itself the object database refuses with
+			// `time-tracker.0 is not an object of type "meta"` (D11). Creating it here means the folder is in the file
+			// manager from the first start on — before the first calendar was written and also on an instance that was
+			// installed earlier.
 			try {
-				if (await ensureCalendarFolder(this, this.namespace)) {
-					this.log.debug(`prepared the folder 'files/${this.namespace}'`);
-				}
+				await ensureCalendarFolder(this, this.namespace);
 			} catch (error) {
 				this.log.warn(
-					`the folder 'files/${this.namespace}' could not be prepared: ${(error as Error).message}`,
+					`the mount point '${calendarMount(this.namespace)}' could not be prepared: ${(error as Error).message}`,
 				);
 			}
 			await this.refreshStates();
@@ -730,13 +730,20 @@ class TimeTracker extends utils.Adapter {
 			this.log.debug(`published ${snapshots.length} employee state(s)`);
 			// the company figures are derived from the same snapshots, so they never disagree
 			await publishCompanySnapshot(this, readCompanySnapshot(snapshots));
-			// the calendar of the instance: the file the `ical` adapter reads and the states around it
-			await this.publishCalendar();
 			// the target employee of the punch commands is mirrored into the state the user writes (acknowledged, so
 			// the adapter ignores its own write — see `onStateChange`). `0` means "the only employee".
 			await this.setState(COMMAND_IDS.punchUserId, services.settings.getNumber("command_punch_user_id", 0), true);
 		} catch (error) {
 			this.log.warn(`states could not be published: ${(error as Error).message}`);
+		}
+
+		// The calendar is a file and not a state, so its failure is reported as what it is. Until 0.7.11 it ran inside
+		// the block above: a write error of the file API then appeared as „states could not be published" and hid the
+		// real cause (the log of the acceptance test showed exactly that line — see D11).
+		try {
+			await this.publishCalendar();
+		} catch (error) {
+			this.log.warn(`the calendar could not be written: ${(error as Error).message}`);
 		}
 	}
 
@@ -768,11 +775,10 @@ class TimeTracker extends utils.Adapter {
 		);
 		const list = services.absences.allInRange(from, to);
 
-		// The file lives below `files/<namespace>/` in the instance data, because the instance folder next to it can
-		// only be read by the adapter itself. It is written through the file API of the adapter: that call registers
-		// the folder, so the file manager shows it and a `web` instance can serve it (D11) — a file written with `fs`
-		// stays a private file. The absolute path is what `calendar.feedFile` carries for the `ical` adapter.
-		const file = path.join(utils.getAbsoluteDefaultDataDir(), "files", this.namespace, CALENDAR_FILE_NAME);
+		// The file lives below `files/<namespace>/<mount point>/` and is written through the file API of the adapter:
+		// only that way is it a folder the file manager shows and a `web` instance hands out (D11) — a file written
+		// with `fs` stays a private file. The absolute path is what `calendar.feedFile` carries for the `ical` adapter.
+		const file = calendarFilePath(utils.getAbsoluteDefaultDataDir(), this.namespace);
 		const document = calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp);
 		await writeCalendarFile(this, this.namespace, document);
 

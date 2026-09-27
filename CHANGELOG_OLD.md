@@ -8,6 +8,11 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.7 (2026-09-25)
+
+- (Alex) change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab”/“Gültig
+  bis”) stand in a row of their own below it — the two date fields no longer wrap around the button
+
 ### 0.7.6 (2026-09-25)
 
 - (Alex) new: an automatic rule can be limited to a period. The rule dialog knows “Valid from” and “Valid until” as

@@ -233,7 +233,9 @@ muss unter dem Präfix `/api` liegen — ohne es bekommt ein Browser die Web-Obe
 Kalenders (`companyFeedUrl` in `src/lib/services/calendar.ts` hält das fest, die Routine wird getestet).
 
 *(Nachtrag 25.09.2026: der Dateiserver-Weg hat sich als nicht tragfähig erwiesen — siehe **D11**. Nachtrag 27.09.2026:
-die Datei entsteht seit 0.7.11 über die Datei-API des Adapters; ob der Dateiserver sie danach ausliefert, prüft **T28**.)*
+die Datei entsteht seit 0.7.11 über die Datei-API des Adapters; seit 0.7.12 hängt sie dafür an einem **Ablagepunkt** und
+liegt unter `files/time-tracker.<n>/storage/calendar.ics` — warum der Instanz-Namensraum selbst nicht der Ablagepunkt
+sein kann, steht in **D11**. Ob der Dateiserver sie danach ausliefert, prüft **T28**.)*
 
 Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
 legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link
@@ -401,6 +403,39 @@ Schreiben** — bleibt offen: `writeFileAsync` schreibt ebenfalls erst leer und 
 
 **Nachweis:** `src/lib/adapter/calendarFile.test.ts` (die Hinweisdatei entsteht genau einmal, der Kalender landet
 unverändert als `calendar.ics`) und die beiden Stellen in `src/main.ts` (`onReady`, `publishCalendar`).
+
+**Nachtrag (27.09.2026, 0.7.12):** Der Weg von 0.7.11 war **falsch gezielt**, und die Abnahme hat es aufgedeckt. Im Log
+der echten Installation stand:
+
+```
+error Cannot write file INFO.txt: time-tracker.0 is not an object of type "meta"
+warn  the folder 'files/time-tracker.0' could not be prepared: time-tracker.0 is not an object of type "meta"
+error Cannot write file calendar.ics: time-tracker.0 is not an object of type "meta"
+```
+
+`writeFileAsync(<namespace>, …)` wird von der Objektdatenbank abgewiesen. Die ioBroker-Dokumentation *Save files* im
+Entwicklerhandbuch sagt, warum: Dateien hängen **immer** an einem Objekt vom Typ `meta` — dem **Ablagepunkt** —, und
+geschrieben wird **darunter** (`writeFileAsync(ablagepunkt, "datei", …)`). Der
+Instanz-Namensraum ist kein Ablagepunkt; er gehört zum Instanzobjekt `system.adapter.time-tracker.0`. Die Prüfung
+`validateMetaObject` in `objectsInRedisClient` wirft dabei nicht nur bei einem Objekt mit falschem Typ, sondern auch,
+wenn dort gar kein Objekt steht — ein von Hand im Dateimanager angelegter Ordner hätte den Namen also ebenso belegt.
+
+**Entscheidung:** Die Datei hängt jetzt an `<namespace>.storage` (`type: "meta"`, `common.type: "meta.folder"`), der
+Pfad lautet `files/time-tracker.<n>/storage/calendar.ics`. Der Name ist `storage` und nicht `calendar`, weil
+`calendar` im Objektbaum bereits der Kanal der Kalender-Zustände ist (`calendar.feedUrl` und seine Geschwister), und
+ein Objekt kann nicht Kanal und Ablagepunkt zugleich sein. `meta.folder` statt `meta.user`: Der Adapter schreibt die
+Datei bei jedem Start und bei jeder Änderung neu, sie gehört damit **nicht** in die Datensicherung. Der Ablagepunkt
+entsteht beim Start (idempotent über `setObjectNotExists`, wie der übrige Objektbaum) — bewusst **nicht** über
+`instanceObjects` in `io-package.json`, weil dessen einsprachiger Name einen zweiten Ort für dieselben elf Texte
+aufgemacht hätte. Die Hinweisdatei `INFO.txt` entfällt: Nicht mehr die Datei hält den Ordner offen, sondern das
+Objekt selbst. Und der Kalender wird jetzt in einem eigenen `try`-Block veröffentlicht (`the calendar could not be
+written: …`) — in 0.7.11 lief er im State-Block mit, weshalb ein Dateifehler als `states could not be published` im
+Log stand und die eigentliche Ursache verdeckte.
+
+**Nachweis:** `src/lib/adapter/calendarFile.test.ts` (die Datei hängt an einem Ablagepunkt und **nie** am Namespace
+selbst, das Objekt entsteht genau einmal als `meta.folder` mit elf Sprachen, der absolute Pfad endet auf
+`files/time-tracker.0/storage/calendar.ics`), `src/lib/adapter/states.test.ts` (jeder Objektname in elf Sprachen) und
+die beiden Stellen in `src/main.ts` (`onReady`, `publishCalendar`).
 
 ## D14 — Der Feiertagsreiter erfasst mit dem Datumsfeld des Browsers (26.09.2026)
 

@@ -255,21 +255,23 @@ link with the instance token:
 
 | What     | Where                                                                                                              | Who uses it                                                                                     |
 | -------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| **File** | `<iobroker-data>/files/time-tracker.<n>/calendar.ics`, rewritten on every change and every 5 minutes                | the `ical` adapter as a **local file** — no URL, no token, no network                           |
+| **File** | `<iobroker-data>/files/time-tracker.<n>/storage/calendar.ics`, rewritten on every change and every 5 minutes     | the `ical` adapter as a **local file** — no URL, no token, no network                           |
 | **URL**  | `calendar.feedUrl` (`http://<host>:<port>/api/calendar.ics?token=…`)                                                | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                      |
 | **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                            |
 | **When** | `calendar.updatedAt`                                                                                                | to see how current the three above are                                                          |
 
-The file lives below `files/time-tracker.<n>/`, because the instance folder next to it can only be read by the adapter
-itself. It is written through the **file API** of ioBroker (`writeFileAsync`), so the file manager knows the folder and
-its `INFO.txt` from the very first start — a folder created behind that API stays an unknown folder. The `ical`
-adapter points at the **path** from `calendar.feedFile`.
+The file lives below `files/time-tracker.<n>/storage/`, because the instance folder next to it can only be read by the
+adapter itself. `storage` is a **mount point**: an object of type `meta` the file hangs on, and the id the file API of
+ioBroker writes below. Only through that object does the file manager know the folder — the instance namespace itself
+is no mount point, and a write below it is refused (the background stands in D11). The object is created on every
+start, so the folder shows up from the first start on, before the first calendar was written. The `ical` adapter points
+at the **path** from `calendar.feedFile`.
 
-The file server of a `web` instance is **not** a promised way to that file yet: while the folder came from `fs`, it
-answered with an empty archive. The calendar is written through the file API now, and whether a `web` instance hands it
-out after that is the open acceptance case **T28** in [`docs/testplan.md`](docs/testplan.md). Until it is answered, a
-browser, a calendar app or a script uses `calendar.feedUrl`, the link with the instance token — the background stands in
-D11 of [`docs/entscheidungen.md`](docs/entscheidungen.md).
+The file server of a `web` instance is **not** a promised way to that file yet: while the file came from `fs`, the
+server answered with an empty archive. Whether a `web` instance hands it out now is the open acceptance case **T28** in
+[`docs/testplan.md`](docs/testplan.md). Until it is answered, a browser, a calendar app or a script uses
+`calendar.feedUrl`, the link with the instance token — the background stands in D11 of
+[`docs/entscheidungen.md`](docs/entscheidungen.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
 for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
@@ -424,6 +426,15 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.12 (2026-09-27)
+
+- (Alex) fix: the calendar file hangs on a **mount point** now (`files/time-tracker.<n>/storage/calendar.ics`). 0.7.11
+  wrote it directly below the instance namespace, which the objects database refuses with “is not an object of type
+  meta” — no file was written and the folder stayed invisible in the file manager. The object `storage`
+  (`meta.folder`) is created on every start and is what keeps the folder visible; the `INFO.txt` helper is gone, a
+  failure of the calendar has a log line of its own (before it hid behind “states could not be published”), and
+  `calendar.feedFile` carries the new path for the `ical` adapter
+
 ### 0.7.11 (2026-09-27)
 
 - (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder
@@ -462,11 +473,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) docs: the calendar file is described as what it is — the **path** for the `ical` adapter
   (`calendar.feedFile`). The file server of a `web` instance does not deliver it (that public area answers with an
   empty archive), so a browser, a calendar app or a script uses the token link `calendar.feedUrl`.
-
-### 0.7.7 (2026-09-25)
-
-- (Alex) change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab”/“Gültig
-  bis”) stand in a row of their own below it — the two date fields no longer wrap around the button
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

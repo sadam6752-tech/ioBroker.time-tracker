@@ -265,12 +265,13 @@ adapter itself. `storage` is a **mount point**: an object of type `meta` the fil
 ioBroker writes below. Only through that object does the file manager know the folder — the instance namespace itself
 is no mount point, and a write below it is refused (the background stands in D11). The object is created on every
 start, so the folder shows up from the first start on, before the first calendar was written. The `ical` adapter points
-at the **path** from `calendar.feedFile`.
+at the **path** from `calendar.feedFile`. The file manager of the admin UI (`Objects` → `files`) shows the folder
+`time-tracker.<n>` with `storage` inside and downloads the file — that is confirmed on a real installation (acceptance
+case **T28** in [`docs/testplan.md`](docs/testplan.md), passed with 0.7.12).
 
-The file server of a `web` instance is **not** a promised way to that file yet: while the file came from `fs`, the
-server answered with an empty archive. Whether a `web` instance hands it out now is the open acceptance case **T28** in
-[`docs/testplan.md`](docs/testplan.md). Until it is answered, a browser, a calendar app or a script uses
-`calendar.feedUrl`, the link with the instance token — the background stands in D11 of
+The file server of a `web` instance stays **unpromised** on purpose: while the file came from `fs`, the server answered
+with an empty archive, and the direct URL of the file server was not part of the last check either. So a browser, a
+calendar app or a script uses `calendar.feedUrl`, the link with the instance token — the background stands in D11 of
 [`docs/entscheidungen.md`](docs/entscheidungen.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked

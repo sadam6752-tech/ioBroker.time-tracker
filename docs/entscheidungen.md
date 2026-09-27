@@ -236,8 +236,9 @@ Kalenders (`companyFeedUrl` in `src/lib/services/calendar.ts` hält das fest, di
 die Datei entsteht seit 0.7.11 über die Datei-API des Adapters; seit 0.7.12 hängt sie dafür an einem **Ablagepunkt** und
 liegt unter `files/time-tracker.<n>/storage/calendar.ics` — warum der Instanz-Namensraum selbst nicht der Ablagepunkt
 sein kann, steht in **D11**. Ob der Dateiserver sie danach ausliefert, prüft **T28** — der Fall ist am 27.09.2026 mit
-0.7.12 bestanden: das Log ist fehlerfrei, der Ordner steht im Dateimanager und der Download liefert eine fehlerfreie
-Datei. Die Direkt-Links des Dateiservers wurden dabei nicht geprüft und bleiben deshalb unversprochen.)*
+0.7.12 bestanden: das Log ist fehlerfrei, der Ordner steht im Dateimanager, der Download liefert eine fehlerfreie Datei
+und der Dateiserver reicht sie unter dem Ablagepunkt heraus
+(`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`). Nur der Pfad ohne `storage` bleibt ohne Datei.)*
 
 Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
 legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link
@@ -441,8 +442,11 @@ die beiden Stellen in `src/main.ts` (`onReady`, `publishCalendar`).
 
 **Nachweis in der Installation (27.09.2026, T28):** Mit 0.7.12 ist das Log fehlerfrei, im Dateimanager steht der Ordner
 `time-tracker.0` → `storage`, darin die `calendar.ics`, und der Download liefert eine inhaltlich fehlerfreie Datei — der
-Fall ist damit bestanden. Die Direkt-Links des Dateiservers wurden nicht geprüft, der Link bleibt deshalb weiterhin aus
-README und T21 heraus.
+Fall ist damit bestanden. Auch der **Dateiserver** liefert die Datei jetzt: der Direkt-Link
+`http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (also **unterhalb** des Ablagepunkts) wurde geprüft, die
+heruntergeladene Datei war fehlerfrei. Der alte Pfad ohne `storage` (`…/files/time-tracker/calendar.ics`) bleibt
+draußen — dort kommt weiterhin ein leeres ZIP an. Das erklärt auch, warum der Link in 0.7.7/0.7.8 aus Dokumentation und
+T21 verschwand: Nicht der Dateiserver war der falsche Weg, sondern der Pfad war es.
 
 ## D14 — Der Feiertagsreiter erfasst mit dem Datumsfeld des Browsers (26.09.2026)
 

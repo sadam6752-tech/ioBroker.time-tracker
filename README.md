@@ -8,7 +8,7 @@
 
 [![NPM](https://nodei.co/npm/iobroker.time-tracker.png?downloads=true)](https://nodei.co/npm/iobroker.time-tracker/)
 
-**Tests:** ![Test and Release](https://github.com/sadam6752-tech/ioBroker.time-tracker/workflows/Test%20and%20Release/badge.svg)
+![Test and Release](https://github.com/sadam6752-tech/ioBroker.time-tracker/workflows/Test%20and%20Release/badge.svg)
 
 A punch clock for ioBroker. Employees clock in and out, the adapter calculates target time and balance, absences and
 vacation are managed, and the monthly statement is downloaded as PDF or Excel. Everything runs in the browser —
@@ -269,9 +269,11 @@ at the **path** from `calendar.feedFile`. The file manager of the admin UI (`Obj
 `time-tracker.<n>` with `storage` inside and downloads the file — that is confirmed on a real installation (acceptance
 case **T28** in [`docs/testplan.md`](docs/testplan.md), passed with 0.7.12).
 
-The file server of a `web` instance stays **unpromised** on purpose: while the file came from `fs`, the server answered
-with an empty archive, and the direct URL of the file server was not part of the last check either. So a browser, a
-calendar app or a script uses `calendar.feedUrl`, the link with the instance token — the background stands in D11 of
+The file server of a `web` instance delivers that file as well — below the **mount point** the link works
+(`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`, checked on a real installation: the download gives
+the `VCALENDAR` file). The former path without `storage` (`…/files/time-tracker/calendar.ics`) answers with an empty
+archive and therefore stays out of this file. So a browser, a calendar app or a script uses either `calendar.feedUrl`
+(the link with the instance token) or the file server link above — the background stands in D11 of
 [`docs/entscheidungen.md`](docs/entscheidungen.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
@@ -427,6 +429,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.13 (2026-09-27)
+
+- (Alex) docs: the file server of a `web` instance is a documented way to the calendar file again — under the new mount
+  point the server hands the file out (`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`, checked on a real
+  installation); only the former path without `storage` still answers with an empty archive. The protocol in
+  `docs/testplan.md` is complete now (T1–T17 were carried over afterwards, T28 stands last), the test badge at the top
+  of this file carries no label any more, and the background of the path sits in D11 of `docs/entscheidungen.md`
+
 ### 0.7.12 (2026-09-27)
 
 - (Alex) fix: the calendar file hangs on a **mount point** now (`files/time-tracker.<n>/storage/calendar.ics`). 0.7.11
@@ -456,24 +466,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   year takes the shown year along
 - (Alex) fix: “Abbrechen” closes the form of an absence while it is being changed as well — it cleared only the flag of
   the new absence and left the dialog of the change on the screen
-
-### 0.7.8 (2026-09-26)
-
-- (Alex) new: an absence can be taken back. An employee withdraws a request that is still open, and for an approved
-  absence he asks for the cancellation and names a reason — the days keep counting until the administration answers.
-  It accepts the request (the absence is deleted) or declines it, and the employee can take his request back as well
-- (Alex) new: the administration changes and deletes absences in the app. “Ändern” opens the dates of an existing
-  absence (the employee belongs to it and stays), “Löschen” asks once and removes the row — the same button that
-  accepts a cancellation request
-- (Alex) change: the rules show their newest run in their own row, so a rule that fell silent is visible at a glance.
-  The list of the last runs below the table is gone, and a hint beside “Save rules” says that the table is saved as a
-  whole
-- (Alex) fix: a rule that runs on every day no longer prints “once a day” twice in its row
-- (Alex) docs: the two `iobroker.live` badges are gone from the top of this file — they belong to an entry in the
-  official repository, which does not exist yet, and showed a broken picture; a licence badge stands in their place
-- (Alex) docs: the calendar file is described as what it is — the **path** for the `ical` adapter
-  (`calendar.feedFile`). The file server of a `web` instance does not deliver it (that public area answers with an
-  empty archive), so a browser, a calendar app or a script uses the token link `calendar.feedUrl`.
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

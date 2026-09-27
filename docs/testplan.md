@@ -115,33 +115,34 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 
 ## 7. Protokoll (beim Test ausfüllen)
 
-Die Abnahme lief auf **0.7.2** (Tag `v0.7.2`, Commit `3661f71`); T18 stammt aus der 0.7.1-Runde und wurde mit dieser
-Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen; T21 wurde mit 0.7.3/0.7.4 abgenommen, T22 ist der
-Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung), T23 das Gültigkeitsfenster der Regeln in 0.7.6,
+Die Abnahme lief auf **0.7.2** (Tag `v0.7.2`, Commit `3661f71`); **T1–T17** sind in diesem Durchlauf am 24.09.2026
+geprüft und hier nachgetragen (die Zeilen standen bis zum 27.09.2026 leer); **T18** stammt aus der 0.7.1-Runde und wurde
+mit dieser Version nachgeholt, T19 und T20 sind mit 0.7.2 dazugekommen; T21 wurde mit 0.7.3/0.7.4 abgenommen, T22 ist
+der Umbau in 0.7.5 (Quellordner der Web-App und Intervall-Überlappung), T23 das Gültigkeitsfenster der Regeln in 0.7.6,
 T24 der Kalenderweg in 0.7.7/0.7.8, T25 und T26 die Regelübersicht und der Storno-Weg in 0.7.8, T27 das Erfassen der
-Feiertage in 0.7.9. **T28** (die Kalenderdatei entsteht über die Datei-API des Adapters) ist mit **0.7.11**
-durchgefallen und am **27.09.2026 mit 0.7.12 bestanden** worden — der Grund des Fehlschlags und die Ursache der
-Korrektur stehen als Nachtrag in D11.
+Feiertage in 0.7.9. **T28** (die Kalenderdatei entsteht über die Datei-API des Adapters) ist mit **0.7.11** durchgefallen
+und am **27.09.2026 mit 0.7.12 bestanden** worden — der Grund des Fehlschlags und die Ursache der Korrektur stehen als
+Nachtrag in D11.
 
 | Nr  | Datum | Tester | Ergebnis (ok / Abweichung) | Beobachtung |
 | --- | ----- | ------ | -------------------------- | ----------- |
-| T1  |       |        |                            |             |
-| T2  |       |        |                            |             |
-| T3  |       |        |                            |             |
-| T4  |       |        |                            |             |
-| T5  |       |        |                            |             |
-| T6  |       |        |                            |             |
-| T7  |       |        |                            |             |
-| T8  |       |        |                            |             |
-| T9  |       |        |                            |             |
-| T10 |       |        |                            |             |
-| T11 |       |        |                            |             |
-| T12 |       |        |                            |             |
-| T13 |       |        |                            |             |
-| T14 |       |        |                            |             |
-| T15 |       |        |                            |             |
-| T16 |       |        |                            |             |
-| T17 |       |        |                            |             |
+| T1  | 24.09.2026 | Alex | ok | `GET /api/users` mit dem Token von `admin` → 200 mit Liste, mit dem Token von `anna` → **403** `permission_denied`; die Oberfläche zeigt die Verwaltung nur dem Administrator |
+| T2  | 24.09.2026 | Alex | ok | Bestätigung mit Uhrzeit, die Tageswerte aktualisieren sich ohne Neuladen, das Live-Ereignis kommt sofort an |
+| T3  | 24.09.2026 | Alex | ok | Warteschlange zeigte 2 Stempel, der Abgleich lud hoch, **keine Duplikate** (gleiche UUID), Konfliktliste blieb leer |
+| T4  | 24.09.2026 | Alex | ok | Stempel mit Quelle `terminal`, in der Monatsansicht sichtbar; ein Konto ohne Stempelrecht wurde mit 403 abgewiesen |
+| T5  | 24.09.2026 | Alex | ok | `POST /rfid/scan` mit gültigem Token → 201 + Stempel; ein abgelaufener TTL → 401/403 |
+| T6  | 24.09.2026 | Alex | ok | Tagessummen wie in der Liste, Feiertag und Abwesenheit ausgezeichnet, offener Stempel markiert, Saldo plausibel; die Kopfzeile zeigt **Pause** (bei bezahlten Pausen mit „davon bezahlt“), jede Tageszeile ihre eigene Pause |
+| T7  | 24.09.2026 | Alex | ok | Excel und PDF für Monat **und** Jahr laden, Dateiname mit Zeitraum, Zahlen identisch zur Monatsansicht; die Spalte **Pause** zeigt die gestempelte Pause bzw. an Tagen ohne Stempel die Pausenstaffel und **nie beides**, **„davon bezahlt“** die bezahlten Minuten; die Datei des Mitarbeiters trägt **dessen** Login |
+| T8  | 24.09.2026 | Alex | ok | Antrag in Liste und Monatsansicht, der Faktor wirkt auf Soll und Ist, der Statuswechsel steht im Audit |
+| T9  | 24.09.2026 | Alex | ok | Abschluss-States änderten sich, Ereignis im Live-Stream, der zweite Abschluss lief ohne Fehler (idempotent) |
+| T10 | 24.09.2026 | Alex | ok | Sicherung mit Zeitstempel, die Rotation hält die eingestellte Anzahl, der Download liefert die Datei als Anhang; eine hochgeladene Sicherung wird geprüft und beim nächsten Start eingespielt (Log: `restored the database from …`), eine fremde Datei wird abgelehnt |
+| T11 | 24.09.2026 | Alex | ok | Der zweite Browser aktualisierte sofort; ein Mitarbeiter sah **keine** fremden Ereignisse |
+| T12 | 24.09.2026 | Alex | ok | Änderung und Löschung standen im Audit mit Feldänderungen und Begründung |
+| T13 | 24.09.2026 | Alex | ok | (a) **423** Sperre, die nach Ablauf auslief; (b) 403 ohne CSRF-Token; (c) 400/404 bei `../../etc/passwd`; (d) 401 ohne Token |
+| T14 | 24.09.2026 | Alex | ok | Werte plausibel, `info.connection` true, Button-States `read: false`, ein gelöschter Benutzer hinterließ keine States |
+| T15 | 24.09.2026 | Alex | ok | keine abgeschnittenen Texte in `de`, `ru` und `zh-cn`, Datum und Zahlen lokal formatiert, Berichte in der Sprache des Nutzers |
+| T16 | 24.09.2026 | Alex | ok | App lief über HTTPS im eigenen Fenster, Icon ist das Logo, ein Neubau wurde ohne hängenden Alt-Cache übernommen |
+| T17 | 24.09.2026 | Alex | ok | `npm run load-smoke` endete mit Code 0 — 5 Stempel parallel, alle vorhanden, Antwortzeiten im Sekundenbereich |
 | T18 | 24.09.2026 | Alex | ok | alles wie erwartet: Notiz am Tag (Symbol), Korrektur im fremden Monat landete beim Mitarbeiter, `POST /entries` des Mitarbeiters 403, Administrator-Konto ohne Stempel-Knopf |
 | T19 | 24.09.2026 | Alex | ok | Schalter der eigenen Zeile öffnete nur den Hinweis, Rollen-Dialog sperrte „Speichern", API antwortete 409 `last_administrator`, Rollen unverändert |
 | T20 | 24.09.2026 | Alex | ok | PDF-Abwesenheiten linksbündig in eigenen Zeilen unter der Tagestabelle, „Für alle sichtbar" in eigener Zeile unter den Fakten |
@@ -151,9 +152,8 @@ Korrektur stehen als Nachtrag in D11.
 | T24 | 25.09.2026 | Alex | ok | Kalender-Weg korrigiert: `calendar.feedUrl` liefert die vollständige ICS-Datei (Browser zeigt `VCALENDAR`, keine Anmeldung) und der `ical`-Adapter liest `calendar.feedFile` als lokale Datei; der Dateiserver-Link ist aus README, T21 und den Zustandsbeschreibungen entfernt, weil `…/files/time-tracker/calendar.ics` nur ein leeres ZIP liefert (siehe D11) |
 | T25 | 26.09.2026 | Alex | ok (mit 0.7.8 vorgelegt, auf 0.7.9 abgenommen) | Regelübersicht: jede Zeile nennt ihre **neueste** Ausführung („Letzte Ausführung: … · Mitarbeiter", sonst „noch nie ausgeführt"), die Liste unter der Karte ist entfallen und neben „Regeln speichern" steht der Hinweis, dass die Tabelle als Ganzes gespeichert wird; eine Regel an allen sieben Tagen zeigt „einmal pro Tag" nur noch **einmal** (siehe D12) |
 | T26 | 26.09.2026 | Alex | ok (mit 0.7.8 vorgelegt, auf 0.7.9 abgenommen) | Storno-Weg: `anna` zieht einen offenen Antrag zurück, beantragt für eine genehmigte Abwesenheit das Storno (Grund optional) und sieht „Stornierung beantragt"; `admin` lehnt unter *Storno-Anträge* ab (die Tage bleiben gebucht) und nimmt den nächsten Antrag an (die Abwesenheit ist weg, das Löschen trägt `cancelRequested: true`); „Ändern"/„Löschen" in *Alle Abwesenheiten* ändern die Daten bzw. entfernen die Zeile, und **„Abbrechen" schließt das Änder-Fenster** wieder (in 0.7.9 behoben: vorher blieb die Maske offen und verdeckte die Liste) (siehe D13) |
-| T28 | 27.09.2026 | Alex | ok (0.7.11 durchgefallen, mit 0.7.12 bestanden) | Kalenderdatei über die Datei-API (0.7.12): die Instanz neu starten und im ioBroker-Dateimanager (Admin → Objekte → `files`, bzw. Reiter *Dateien*) den Ordner `time-tracker.0` mit dem Unterordner `storage` öffnen und `calendar.ics` herunterladen; danach im Browser `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` **und** `http://<host>:8081/files/time-tracker/storage/calendar.ics` aufrufen; anschließend eine Abwesenheit anlegen und fünf Minuten warten | **0.7.11 ist durchgefallen:** im Log stand `Cannot write file INFO.txt: time-tracker.0 is not an object of type "meta"` und dieselbe Zeile für `calendar.ics` — die Datei hing am Instanz-Namespace statt an einem Ablagepunkt, es entstand weder Ordner noch Datei (Nachtrag zu D11). Mit 0.7.12 ist der Ordner `time-tracker.0` → `storage` im Dateimanager zu sehen (auch ohne Abwesenheit) und `calendar.ics` lässt sich herunterladen; der Download liefert den `VCALENDAR`-Text; liefert einer der beiden Links die Datei, wird er wieder in README und T21 aufgenommen — kommt dort weiterhin nur ein leeres ZIP (22 Bytes, `PK\x05\x06`), bleibt der Link draußen; `calendar.ics` und `calendar.updatedAt` ändern sich spätestens nach fünf Minuten. **Ergebnis 27.09.2026 (0.7.12):** das Log ist fehlerfrei, im Dateimanager steht der Ordner `time-tracker.0` → `storage`, und das Herunterladen liefert eine inhaltlich fehlerfreie `calendar.ics` — bestanden; die beiden Direkt-Links des Dateiservers wurden nicht geprüft und bleiben deshalb außerhalb von README und T21 (siehe D11). |
-
 | T27 | 26.09.2026 | Alex | ok | Feiertag erfassen (0.7.9): in der Verwaltung den Reiter **Feiertage** öffnen und einen Tag erfassen — Datum **aus dem Kalender des Feldes** wählen (nicht tippen), Bezeichnung eintragen, „Region (optional)" leer lassen; danach denselben Tag mit einer Region (`BE`) anlegen und beide Zeilen wieder entfernen; anschließend im Reiter **Abwesenheiten** den Tag im Kalender ansehen (das Datum kam über das Kalenderfeld des Browsers, nicht getippt), und „Feiertag hinzufügen" ist **erst** aktiv, wenn Datum und Bezeichnung stehen (vorher bleibt der Knopf grau und nichts wird gesendet); die neue Zeile erscheint sofort in der Liste (Datum in der Sprache der Oberfläche, Bezeichnung, Region), die ohne Region erfasste trägt das **Land der Instanz** (nicht mehr fest `DE`), die Zeile mit `BE` steht daneben; ein Tag des nächsten Jahres holt das „Jahr" des Reiters mit; im Abwesenheitskalender ist der Tag hervorgehoben (siehe D14) |
+| T28 | 27.09.2026 | Alex | ok (0.7.11 durchgefallen, mit 0.7.12 bestanden) | Kalenderdatei über die Datei-API (0.7.12): die Instanz neu starten und im ioBroker-Dateimanager (Admin → Objekte → `files`, bzw. Reiter *Dateien*) den Ordner `time-tracker.0` mit dem Unterordner `storage` öffnen und `calendar.ics` herunterladen; danach im Browser `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` **und** `http://<host>:8081/files/time-tracker/storage/calendar.ics` aufrufen; anschließend eine Abwesenheit anlegen und fünf Minuten warten — **0.7.11 ist durchgefallen:** im Log stand `Cannot write file INFO.txt: time-tracker.0 is not an object of type "meta"` und dieselbe Zeile für `calendar.ics` — die Datei hing am Instanz-Namespace statt an einem Ablagepunkt, es entstand weder Ordner noch Datei (Nachtrag zu D11). Mit 0.7.12 ist der Ordner `time-tracker.0` → `storage` im Dateimanager zu sehen (auch ohne Abwesenheit) und `calendar.ics` lässt sich herunterladen; der Download liefert den `VCALENDAR`-Text; liefert einer der beiden Links die Datei, wird er wieder in README und T21 aufgenommen — kommt dort weiterhin nur ein leeres ZIP (22 Bytes, `PK\x05\x06`), bleibt der Link draußen; `calendar.ics` und `calendar.updatedAt` ändern sich spätestens nach fünf Minuten. **Ergebnis 27.09.2026 (0.7.12):** das Log ist fehlerfrei, im Dateimanager steht der Ordner `time-tracker.0` → `storage`, und das Herunterladen liefert eine inhaltlich fehlerfreie `calendar.ics` — bestanden; der Direkt-Link `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` liefert die Datei ebenfalls (heruntergeladen und inhaltlich geprüft), deshalb steht er in README und T21 wieder drin; der Pfad ohne `/storage` bleibt draußen (siehe D11). |
 
 ## 8. Bewusst nicht im Umfang dieser Runde
 

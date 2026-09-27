@@ -8,6 +8,24 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.8 (2026-09-26)
+
+- (Alex) new: an absence can be taken back. An employee withdraws a request that is still open, and for an approved
+  absence he asks for the cancellation and names a reason — the days keep counting until the administration answers.
+  It accepts the request (the absence is deleted) or declines it, and the employee can take his request back as well
+- (Alex) new: the administration changes and deletes absences in the app. “Ändern” opens the dates of an existing
+  absence (the employee belongs to it and stays), “Löschen” asks once and removes the row — the same button that
+  accepts a cancellation request
+- (Alex) change: the rules show their newest run in their own row, so a rule that fell silent is visible at a glance.
+  The list of the last runs below the table is gone, and a hint beside “Save rules” says that the table is saved as a
+  whole
+- (Alex) fix: a rule that runs on every day no longer prints “once a day” twice in its row
+- (Alex) docs: the two `iobroker.live` badges are gone from the top of this file — they belong to an entry in the
+  official repository, which does not exist yet, and showed a broken picture; a licence badge stands in their place
+- (Alex) docs: the calendar file is described as what it is — the **path** for the `ical` adapter
+  (`calendar.feedFile`). The file server of a `web` instance does not deliver it (that public area answers with an
+  empty archive), so a browser, a calendar app or a script uses the token link `calendar.feedUrl`.
+
 ### 0.7.7 (2026-09-25)
 
 - (Alex) change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab”/“Gültig

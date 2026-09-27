@@ -232,7 +232,8 @@ eine `web`-Instanz dagegen als Download aus (`http://<host>:8081/files/time-trac
 muss unter dem Präfix `/api` liegen — ohne es bekommt ein Browser die Web-Oberfläche samt Anmeldung statt des
 Kalenders (`companyFeedUrl` in `src/lib/services/calendar.ts` hält das fest, die Routine wird getestet).
 
-*(Nachtrag 25.09.2026: der Dateiserver-Weg hat sich als nicht tragfähig erwiesen — siehe **D11**.)*
+*(Nachtrag 25.09.2026: der Dateiserver-Weg hat sich als nicht tragfähig erwiesen — siehe **D11**. Nachtrag 27.09.2026:
+die Datei entsteht seit 0.7.11 über die Datei-API des Adapters; ob der Dateiserver sie danach ausliefert, prüft **T28**.)*
 
 Der Instanz-Token entsteht **nicht** von selbst: `commands.rotateCalendarToken` (Boolean-State wie `commands.backup`)
 legt ihn an und ersetzt ihn bei jedem weiteren Aufruf — ein alter Link ist damit sofort tot. Das ist Absicht: der Link
@@ -383,6 +384,23 @@ jedem Start, deshalb erreicht die Korrektur auch bestehende Instanzen und nicht 
 „Abo-Link der Firma" und `calendar.absences` / `calendar.updatedAt` sind unverändert.
 **Nachweis:** die Prüfung des Namens in `src/lib/adapter/states.test.ts` (deutsch und englisch) und die Zeile der
 Zustandstabelle im README.
+
+**Nachtrag (27.09.2026, 0.7.11):** Der Grund für das leere ZIP war die **Schreibweise** der Datei. Sie entstand mit
+`fs.mkdirSync`/`fs.writeFileSync` — also **neben** der Datei-API des Adapters. Nur was über die Datei-API entsteht, ist
+beim Dateimanager bekannt (der Aufruf legt den Ordner mit an); ein Ordner, den `fs` anlegt, bleibt für ihn ein fremder
+Ordner. Die Datei wandert deshalb auf die Datei-API: `publishCalendar` schreibt mit
+`writeFileAsync(<namespace>, "calendar.ics", …)`, der neue Baustein `src/lib/adapter/calendarFile.ts` hält den Weg fest,
+und `onReady` legt über eine Hinweisdatei (`INFO.txt`) sicher, dass der Ordner schon **vor** dem ersten Kalender
+existiert — eine frische Instanz hätte sonst bis zur ersten Abwesenheit einen leeren Ordner. Der absolute Pfad für
+`calendar.feedFile` bleibt derselbe; der `ical`-Adapter liest unverändert die lokale Datei.
+
+Ob der Dateiserver-Link (`…/files/time-tracker.0/calendar.ics`) damit wirklich die Datei liefert, ist **noch nicht**
+bestätigt: das prüft **T28** auf der echten Installation. Bis dahin bleibt der Link aus README und Doku heraus, und
+`calendar.feedUrl` ist der Weg für Browser, Kalender-Apps und Skripte. Der zweite offene Punkt — das **atomare
+Schreiben** — bleibt offen: `writeFileAsync` schreibt ebenfalls erst leer und dann voll.
+
+**Nachweis:** `src/lib/adapter/calendarFile.test.ts` (die Hinweisdatei entsteht genau einmal, der Kalender landet
+unverändert als `calendar.ics`) und die beiden Stellen in `src/main.ts` (`onReady`, `publishCalendar`).
 
 ## D14 — Der Feiertagsreiter erfasst mit dem Datumsfeld des Browsers (26.09.2026)
 

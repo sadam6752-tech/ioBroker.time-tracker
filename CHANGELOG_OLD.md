@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.6 (2026-09-25)
+
+- (Alex) new: an automatic rule can be limited to a period. The rule dialog knows “Valid from” and “Valid until” as
+  dates — an empty field means “from now on” or “without an end” — and the adapter compares them with the local
+  calendar day of the employee, exactly like the weekdays; a holiday stand-in, a seasonal worker or a project phase
+  therefore ends by itself
+- (Alex) change: the list of the last runs below the rules shows the five most recent entries instead of twenty
+
 ### 0.7.5 (2026-09-24)
 
 - (Alex) change: the sources of the web app moved from `src-pwa/` to `src-www/`. The repository checker reads every folder it does not know by name and had reported five `W5042` for react, MUI and i18next - packages only the web app needs and that an adapter installation should not carry; the new name is on its list, so the warnings are gone. Nothing changes for a running installation: the built app is still served from `www/`

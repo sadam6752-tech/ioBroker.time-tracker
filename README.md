@@ -260,13 +260,16 @@ link with the instance token:
 | **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                            |
 | **When** | `calendar.updatedAt`                                                                                                | to see how current the three above are                                                          |
 
-The file lives in the `files` folder of the instance data, because the instance folder next to it can only be read by
-the adapter itself. The `ical` adapter points at the **path** from `calendar.feedFile`.
+The file lives below `files/time-tracker.<n>/`, because the instance folder next to it can only be read by the adapter
+itself. It is written through the **file API** of ioBroker (`writeFileAsync`), so the file manager knows the folder and
+its `INFO.txt` from the very first start — a folder created behind that API stays an unknown folder. The `ical`
+adapter points at the **path** from `calendar.feedFile`.
 
-The file server of a `web` instance is **not** a way to that file: the written calendar is not offered there as a
-download. For a browser, a calendar app or a script use `calendar.feedUrl`, the link with the instance token — the
-technical detail of why the file server does not work is written down in D11 of
-[`docs/entscheidungen.md`](docs/entscheidungen.md).
+The file server of a `web` instance is **not** a promised way to that file yet: while the folder came from `fs`, it
+answered with an empty archive. The calendar is written through the file API now, and whether a `web` instance hands it
+out after that is the open acceptance case **T28** in [`docs/testplan.md`](docs/testplan.md). Until it is answered, a
+browser, a calendar app or a script uses `calendar.feedUrl`, the link with the instance token — the background stands in
+D11 of [`docs/entscheidungen.md`](docs/entscheidungen.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
 for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
@@ -421,6 +424,12 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.11 (2026-09-27)
+
+- (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder
+  `files/time-tracker.<n>/` is known to the file manager and exists from the first start, because a small `INFO.txt`
+  keeps it in place; the state `calendar.feedFile` still carries the path for the `ical` adapter
+
 ### 0.7.10 (2026-09-26)
 
 - (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.
@@ -458,14 +467,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 - (Alex) change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab”/“Gültig
   bis”) stand in a row of their own below it — the two date fields no longer wrap around the button
-
-### 0.7.6 (2026-09-25)
-
-- (Alex) new: an automatic rule can be limited to a period. The rule dialog knows “Valid from” and “Valid until” as
-  dates — an empty field means “from now on” or “without an end” — and the adapter compares them with the local
-  calendar day of the employee, exactly like the weekdays; a holiday stand-in, a seasonal worker or a project phase
-  therefore ends by itself
-- (Alex) change: the list of the last runs below the rules shows the five most recent entries instead of twenty
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

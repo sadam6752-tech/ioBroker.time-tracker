@@ -54,6 +54,7 @@ import {
 	companyFeedUrl,
 	COMPANY_CALENDAR_NAME,
 } from "./lib/services/calendar";
+import { CALENDAR_FILE_NAME, ensureCalendarFolder, writeCalendarFile } from "./lib/adapter/calendarFile";
 import {
 	COMMAND_IDS,
 	createCalendarStates,
@@ -85,9 +86,6 @@ const SESSION_PURGE_MINUTES = 30;
 
 /** How often the published figures are refreshed (minutes). */
 const STATE_REFRESH_MINUTES = 5;
-
-/** File the company calendar is written into (inside the instance folder). */
-const CALENDAR_FILE_NAME = "calendar.ics";
 
 /** How old the newest backup may be before the daily check writes a new one. */
 const BACKUP_MAX_AGE_HOURS = 20;
@@ -229,6 +227,18 @@ class TimeTracker extends utils.Adapter {
 			this.runAutomationRules();
 			this.setInterval(() => this.runAutomationRules(), AUTOMATION_CHECK_MINUTES * 60 * 1000);
 			await this.publishInstanceInfo();
+			// The folder below `files/` is created through the file API of the adapter, and the note file makes sure it
+			// exists before the first calendar is written: a folder made with `fs.mkdir` stays unknown to the file
+			// manager (D11), and a folder of a fresh instance would stay empty until the first absence shows up.
+			try {
+				if (await ensureCalendarFolder(this, this.namespace)) {
+					this.log.debug(`prepared the folder 'files/${this.namespace}'`);
+				}
+			} catch (error) {
+				this.log.warn(
+					`the folder 'files/${this.namespace}' could not be prepared: ${(error as Error).message}`,
+				);
+			}
 			await this.refreshStates();
 
 			// figures are refreshed regularly (the timer is cleared automatically on unload). A tick that finds the
@@ -758,17 +768,13 @@ class TimeTracker extends utils.Adapter {
 		);
 		const list = services.absences.allInRange(from, to);
 
-		// The file lives in the `files` folder of the instance data, so the web file server hands it out as well
-		// (`http://<host>:8081/files/<adapter>.<instance>/calendar.ics`) while the `ical` adapter reads it as a local
-		// file — the instance folder itself is readable for the adapter only.
-		const folder = path.join(utils.getAbsoluteDefaultDataDir(), "files", `${this.name}.${this.instance}`);
-		const file = path.join(folder, CALENDAR_FILE_NAME);
-		fs.mkdirSync(folder, { recursive: true });
-		fs.writeFileSync(
-			file,
-			calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp),
-			"utf8",
-		);
+		// The file lives below `files/<namespace>/` in the instance data, because the instance folder next to it can
+		// only be read by the adapter itself. It is written through the file API of the adapter: that call registers
+		// the folder, so the file manager shows it and a `web` instance can serve it (D11) — a file written with `fs`
+		// stays a private file. The absolute path is what `calendar.feedFile` carries for the `ical` adapter.
+		const file = path.join(utils.getAbsoluteDefaultDataDir(), "files", this.namespace, CALENDAR_FILE_NAME);
+		const document = calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp);
+		await writeCalendarFile(this, this.namespace, document);
 
 		const token = services.settings.get("calendar_token");
 		await publishCalendarSnapshot(this, {

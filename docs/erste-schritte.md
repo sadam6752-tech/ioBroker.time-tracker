@@ -46,7 +46,8 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
    HMAC-Secret sind signierte Badge-Links abgeschaltet). Bleibt das **Session secret** leer, erzeugt der Adapter
    beim ersten Start eines und legt es als Datei `session-secret` neben der Datenbank ab — damit überleben Sitzungen
    und CSRF-Tokens einen Neustart. Ein Eintrag im Feld hat immer Vorrang und erlaubt dir die bewusste Rotation.
-2. Port/Bind prüfen (`127.0.0.1` = nur lokal, `0.0.0.0` = LAN — bewusst opt-in).
+2. Port/Bind prüfen (`127.0.0.1` = nur lokal, `0.0.0.0` = LAN — bewusst opt-in). Der Link in der Instanzzeile
+   (Schritt 4) folgt genau diesen beiden Werten.
 3. Zeitzone (`Europe/Berlin`), Standardsprache und Feiertagsland kontrollieren.
 4. **Startpasswort des Erst-Administrators** setzen — oder leer lassen: dann wird ein Zufallspasswort **einmalig
    ins Log** geschrieben (`info.lastError` bleibt leer, wenn nichts schiefging). Der Wert gilt auch, wenn du ihn
@@ -63,7 +64,9 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
 
 ## 4. Erster Login
 
-Web-App öffnen (`http://<host>:8092/`), mit dem Admin-Login und dem Startpasswort anmelden. Der Server verlangt
+Web-App öffnen (`http://<host>:8092/`) — bequemer: in der Admin-Liste **Instanzen** in der Zeile `time-tracker.0` auf
+das Symbol klicken („Zeiterfassungs-App öffnen“); es führt auf dieselbe Adresse, die Host und Port aus den
+Instanzeinstellungen zusammensetzt. Dann mit dem Admin-Login und dem Startpasswort anmelden. Der Server verlangt
 sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschirm. Danach:
 
 1. **Verwaltung → Benutzer**: Mitarbeiter anlegen (Login, Name, Passwort, Rolle), jedem eine **Badge-PIN**

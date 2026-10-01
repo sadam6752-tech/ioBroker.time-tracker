@@ -512,3 +512,35 @@ diese Stille war der Fehler.
   instance settings") — sie ist damit nachvollziehbar.
 - `README.md` („First start"), `docs/erste-schritte.md` (Schritt 3.4) und `docs/testplan.md` (Testdaten und das
   Log-Beispiel des Dev-Servers) nennen die vier Logzeilen.
+
+## D16 — Die Instanzzeile führt in die App (`common.localLinks`) (01.10.2026)
+
+**Anlass:** Wer die App im Admin sucht, findet dort nur die **Instanz**: Das Symbol einer Zeile in der Liste
+**Instanzen** öffnet die Einstellungen, nicht die Oberfläche. Host und Port stehen in den Instanzeinstellungen
+(Standard 8092) und mussten bisher abgetippt werden — auf dem Handy die häufigste Hürde beim Einstieg. Adapter mit
+eigener Oberfläche melden dem Admin dagegen seit Langem `common.localLinks`; der Admin rendert daraus ein Symbol in
+der Instanzzeile (und auf der Übersicht), das direkt dorthin führt.
+
+**Entscheidung:** Der Adapter meldet `common.localLinks._default` mit `%protocol%://%ip%:%port%/` an — **keine** feste
+Adresse, sondern die Platzhalter des Admins: er setzt `%protocol%`/`%ip%` aus der Bind-Adresse und `%port%` aus dem
+Instanzport zusammen. Damit bleibt der Link auch nach einem Portwechsel richtig. Der Eintrag trägt einen Namen in
+**elf** Sprachen und `order: 5` (der Name erscheint wörtlich in der Oberfläche, deshalb keine feste Sprache). Bewusst
+**ohne** eigenes `icon`/`color`: der Admin zeigt dann sein Standardsymbol für eine Adapter-Oberfläche — eine Bilddatei,
+die im npm-Paket mitgeliefert werden müsste, wäre eine zusätzliche Fehlerquelle ohne Mehrwert. `intro` bleibt ungesetzt
+(Standard `true`), der Link steht damit zusätzlich auf der Übersichtsseite.
+
+**Folgen**
+
+- Der Link folgt der **Bind-Adresse**: mit `127.0.0.1` (Standard) führt er auf die ioBroker-Maschine selbst, mit
+  `0.0.0.0` auf die Adresse, mit der der Browser den Admin erreicht hat. Wer im LAN stempelt, hat `0.0.0.0` gesetzt —
+  dann funktioniert derselbe Link von Handy und PC. Steht ein Reverse-Proxy davor, ersetzt eine Proxy-Regel für
+  `time-tracker.0` den Link durch ihren Pfad (der Admin macht das selbst).
+- `/` ist die Anmeldung, solange keine Sitzung besteht: der Link öffnet genau die Anmeldeseite, nicht die Einstellungen.
+- `README.md` (Installationsschritt 2), `docs/erste-schritte.md` (Schritte 3 und 4) und `docs/technik.md`
+  (HTTP-Oberfläche) nennen den Link.
+- `tools/check-i18n.ps1` prüft die Sprachschlüssel von `common.titleLang`, `common.desc`, `common.news` — **und
+  jetzt auch** `common.localLinks.<key>.name`: der Name wird wörtlich angezeigt, ein fehlender Schlüssel fiele sonst
+  erst im Betrieb auf. Alle übrigen Prüfungen bleiben unberührt (der Adapterchecker kennt `localLinks` seit Langem).
+
+**Nachweis:** der Eintrag `_default` in `io-package.json`, die Meldung von `npm run check:i18n` und die Instanzzeile
+im Admin, die das Symbol „Zeiterfassungs-App öffnen“ trägt.

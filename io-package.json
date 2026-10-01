@@ -1,9 +1,41 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.14",
+		"version": "0.7.15",
 		"nogit": true,
+		"localLinks": {
+			"_default": {
+				"link": "%protocol%://%ip%:%port%/",
+				"name": {
+					"en": "Open the time tracking app",
+					"de": "Zeiterfassungs-App öffnen",
+					"ru": "Открыть приложение учёта времени",
+					"pt": "Abrir a aplicação de controlo de tempo",
+					"nl": "Tijdregistratie-app openen",
+					"fr": "Ouvrir l'application de suivi du temps",
+					"it": "Apri l'app di monitoraggio del tempo",
+					"es": "Abrir la aplicación de seguimiento del tiempo",
+					"pl": "Otwórz aplikację śledzenia czasu",
+					"uk": "Відкрити застосунок обліку часу",
+					"zh-cn": "打开时间追踪应用"
+				},
+				"order": 5
+			}
+		},
 		"news": {
+			"0.7.15": {
+				"en": "new: the instance tile in the admin opens the time tracking app now - the adapter announces its web interface as common.localLinks, so the admin shows a symbol next to the instance and on the overview page. The address comes from the bind address and the port of the instance settings, nothing is hardcoded.",
+				"de": "new: Die Instanzkachel im Admin öffnet jetzt die Zeiterfassungs-App — der Adapter meldet seine Oberfläche als `common.localLinks` an, deshalb zeigt der Admin ein Symbol neben der Instanz und auf der Übersichtsseite. Die Adresse setzt sich aus der Bind-Adresse und dem Port der Instanzeinstellungen zusammen, fest verdrahtet ist nichts.",
+				"ru": "новое: плитка экземпляра в admin теперь открывает приложение учёта времени — адаптер объявляет свой веб-интерфейс как `common.localLinks`, поэтому admin показывает символ рядом с экземпляром и на странице обзора. Адрес складывается из адреса привязки и порта из настроек экземпляра, жёстко ничего не задано.",
+				"pt": "novidade: o mosaico da instância no admin abre agora a aplicação de controlo de tempo — o adaptador anuncia a sua interface web como `common.localLinks`, por isso o admin mostra um símbolo ao lado da instância e na página de resumo. O endereço resulta do endereço de escuta e da porta das definições da instância; nada está fixo no código.",
+				"nl": "nieuw: de tegel van de instantie in de admin opent nu de tijdregistratie-app — de adapter meldt zijn webinterface aan als `common.localLinks`, daarom toont de admin een symbool naast de instantie en op de overzichtspagina. Het adres komt uit het bindadres en de poort uit de instellingen van de instantie, niets is hard gecodeerd.",
+				"fr": "nouveauté : la tuile de l'instance dans l'admin ouvre désormais l'application de suivi du temps — l'adaptateur annonce son interface web sous `common.localLinks`, c'est pourquoi l'admin affiche un symbole à côté de l'instance et sur la page de vue d'ensemble. L'adresse provient de l'adresse d'écoute et du port des réglages de l'instance, rien n'est codé en dur.",
+				"it": "novità: il riquadro dell'istanza nell'admin apre ora l'app di monitoraggio del tempo — l'adattatore annuncia la propria interfaccia web come `common.localLinks`, perciò l'admin mostra un simbolo accanto all'istanza e nella pagina di panoramica. L'indirizzo deriva dall'indirizzo di bind e dalla porta delle impostazioni dell'istanza, nulla è codificato a mano.",
+				"es": "novedad: el mosaico de la instancia en el admin abre ahora la aplicación de seguimiento del tiempo — el adaptador anuncia su interfaz web como `common.localLinks`, por eso el admin muestra un símbolo junto a la instancia y en la página de resumen. La dirección resulta de la dirección de escucha y del puerto de los ajustes de la instancia, nada está fijado en el código.",
+				"pl": "nowość: kafelek instancji w adminie otwiera teraz aplikację śledzenia czasu — adapter zgłasza swój interfejs web jako `common.localLinks`, dlatego admin pokazuje symbol obok instancji i na stronie przeglądu. Adres składa się z adresu bindowania i portu z ustawień instancji, nic nie jest zapisane na stałe.",
+				"uk": "нове: плитка екземпляра в admin тепер відкриває застосунок обліку часу — адаптер оголошує свій веб-інтерфейс як `common.localLinks`, тому admin показує символ поруч із екземпляром і на сторінці огляду. Адреса складається з адреси прив'язки та порту з налаштувань екземпляра, жорстко нічого не прописано.",
+				"zh-cn": "新增：管理界面中的实例卡片现在可以打开时间追踪应用——适配器将其 Web 界面声明为 `common.localLinks`，因此管理界面会在实例旁和概览页显示一个图标。地址由绑定地址和实例设置中的端口组成，没有任何内容被写死。"
+			},
 			"0.7.14": {
 				"en": "fix: a start password that is entered after the first start opens the installation now — as long as the first administrator still carries his unchanged start password, the configured value is applied on every start and the log names what happened; once the password was changed in the app the setting stays out of play and the log says so.",
 				"de": "fix: Ein Startpasswort, das erst nach dem ersten Start eingetragen wird, öffnet die Installation jetzt — solange der Erst-Administrator sein Startpasswort noch nicht gewechselt hat, setzt der Adapter den konfigurierten Wert bei jedem Start und nennt im Log, was passiert ist; nach einem Passwortwechsel in der App bleibt die Einstellung wirkungslos und das Log sagt es.",
@@ -81,19 +113,6 @@
 				"pl": "poprawka: „Feiertag hinzufügen” był wyszarzony, dopóki dzień trzeba było wpisywać jako tekst — teraz pochodzi z pola daty przeglądarki, a etykieta nie podaje już formatu. Święto dodane bez regionu należy do kraju instancji, a nie zawsze do „DE”, lista pokazuje dni wszystkich regionów roku, a dzień następnego roku pociąga za sobą wyświetlany rok. „Abbrechen” zamyka też okno zmiany.",
 				"uk": "виправлення: «Feiertag hinzufügen» залишалася сірою, доки день потрібно було вводити текстом — тепер він надходить із поля дати браузера, і підпис більше не називає формат. Свято, додане без регіону, належить країні екземпляра, а не завжди «DE», список показує дні всіх регіонів року, а день наступного року тягне за собою показаний рік. «Abbrechen» закриває й вікно зміни.",
 				"zh-cn": "修复：“Feiertag hinzufügen”在必须以文本输入日期时一直是灰色——现在日期来自浏览器的日期字段，标签也不再说明格式。未填写地区的节日属于实例所在国家，而不再固定为“DE”，列表会显示该年度所有地区的日期，下一年度的日期会一并切换显示的年份。“Abbrechen”也会关闭修改窗口。"
-			},
-			"0.7.7": {
-				"en": "change: the rule dialog keeps “Aktiv” beside “Wiederholung”, and the validity dates (“Gültig ab” and “Gültig bis”) stand in a row of their own below it — the two date fields no longer wrap around the button.",
-				"de": "change: Im Regel-Dialog bleibt „Aktiv“ neben „Wiederholung“, und die Gültigkeitsfelder „Gültig ab“ und „Gültig bis“ stehen in einer eigenen Zeile darunter – die beiden Datumsfelder umfließen den Knopf nicht mehr.",
-				"ru": "изменение: в диалоге правила «Aktiv» остаётся рядом с «Wiederholung», а поля срока действия «Gültig ab» и «Gültig bis» стоят в отдельной строке под ним — два поля даты больше не обтекают кнопку.",
-				"pt": "alteração: no diálogo da regra «Aktiv» fica ao lado de «Wiederholung», e os campos de validade «Gültig ab» e «Gültig bis» ficam numa linha própria abaixo dele — as duas datas deixam de contornar o botão.",
-				"nl": "wijziging: in het regeldialoog blijft ‘Aktiv’ naast ‘Wiederholung’ staan, en de geldigheidsvelden ‘Gültig ab’ en ‘Gültig bis’ staan in een eigen regel daaronder — de twee datumvelden lopen niet meer om de knop heen.",
-				"fr": "changement : dans la boîte de dialogue, « Aktiv » reste à côté de « Wiederholung » et les champs de validité « Gültig ab » et « Gültig bis » occupent une ligne à part en dessous — les deux dates ne s'enroulent plus autour du bouton.",
-				"it": "modifica: nella finestra della regola «Aktiv» resta accanto a «Wiederholung», mentre i campi di validità «Gültig ab» e «Gültig bis» stanno su una riga propria sotto di esso — le due date non si avvolgono più attorno al pulsante.",
-				"es": "cambio: en el diálogo de la regla «Aktiv» se queda junto a «Wiederholung», y los campos de validez «Gültig ab» y «Gültig bis» ocupan una fila propia debajo — las dos fechas ya no rodean el botón.",
-				"pl": "zmiana: w oknie reguły „Aktiv” pozostaje obok „Wiederholung”, a pola ważności „Gültig ab” i „Gültig bis” stoją w osobnym wierszu pod nim — dwa pola daty nie opływają już przycisku.",
-				"uk": "зміна: у вікні правила «Aktiv» залишається поруч із «Wiederholung», а поля терміну дії «Gültig ab» і «Gültig bis» стоять в окремому рядку під ним — два поля дати більше не обтікають кнопку.",
-				"zh-cn": "变更：规则对话框中“Aktiv”仍与“Wiederholung”同一行，而有效期字段“Gültig ab”和“Gültig bis”单独位于下一行——两个日期字段不再围绕按钮换行。"
 			}
 		},
 		"titleLang": {

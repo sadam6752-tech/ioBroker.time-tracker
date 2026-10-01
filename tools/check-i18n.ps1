@@ -10,7 +10,8 @@
       * Platzhalter (`{{name}}`) heißen in jeder Sprache wie in der Basis – übersetzte Namen setzt i18next nicht
         ein, sie erscheinen wörtlich in der Oberfläche
       * jeder im PWA-Code benutzte Textschlüssel existiert in en.json (Tippfehler fallen sofort auf)
-      * io-package.json enthält alle Sprachschlüssel in common.titleLang, common.desc und common.news
+      * io-package.json enthält alle Sprachschlüssel in common.titleLang, common.desc, common.news und
+        common.localLinks.<key>.name
     Noch nicht vorhandene Komponenten (z. B. vor Phase 1) werden übersprungen und gemeldet.
 
     Exit-Codes:
@@ -272,6 +273,24 @@ else {
                 $missing = @($Languages | Where-Object { $keys -notcontains $_ })
                 if ($missing.Count -gt 0) {
                     [void]$issues.Add("Metadaten: common.news['$version'] ohne Sprachschlüssel: $($missing -join ', ')")
+                }
+            }
+        }
+
+        # common.localLinks nennt den Link in der Instanzzeile; den Namen zeigt der Admin wörtlich an.
+        if ($null -ne $common -and $common.Contains('localLinks') `
+                -and $common['localLinks'] -is [System.Collections.IDictionary]) {
+            foreach ($linkKey in $common['localLinks'].Keys) {
+                $entry = $common['localLinks'][$linkKey]
+                if ($entry -isnot [System.Collections.IDictionary] -or -not $entry.Contains('name')) { continue }
+
+                $name = $entry['name']
+                if ($name -isnot [System.Collections.IDictionary]) { continue }  # ein einzelner Name ist keine Übersetzung
+
+                $keys    = Get-FlattenedKeys -Node $name
+                $missing = @($Languages | Where-Object { $keys -notcontains $_ })
+                if ($missing.Count -gt 0) {
+                    [void]$issues.Add("Metadaten: common.localLinks['$linkKey'].name ohne Sprachschlüssel: $($missing -join ', ')")
                 }
             }
         }

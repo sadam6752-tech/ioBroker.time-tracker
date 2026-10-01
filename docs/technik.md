@@ -13,6 +13,10 @@ Adapters genügt das README; hier steht, wie es innen aussieht.
 - `/api/stream` ist der WebSocket für Live-Ereignisse. Er akzeptiert das Sitzungscookie, der Browser braucht also
   kein Token in der URL; ein Mitarbeiter sieht nur die eigenen Ereignisse.
 - Fehlt `www/`, läuft der Adapter weiter und bedient nur die API — eine Logzeile sagt, welcher Fall gilt.
+- Der Adapter meldet seinen Weg in die eigene Oberfläche als `common.localLinks` (`%protocol%://%ip%:%port%/`): der
+  Admin zeigt dafür ein Symbol in der Instanzzeile und auf der Übersicht. Die Platzhalter füllt **er** — `%ip%` aus
+  `bind` (bei `0.0.0.0` die Adresse, mit der der Browser den Admin erreicht hat), `%port%` aus dem Instanzport; eine
+  Reverse-Proxy-Regel für `time-tracker.0` ersetzt den Link durch ihren Pfad.
 
 ## Sitzungen, CSRF und Ratenlimits
 

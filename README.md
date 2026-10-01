@@ -41,8 +41,20 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
    **The instance `time-tracker.0` is created automatically** — `iobroker add time-tracker` is only needed if you want
    the instance on its own.
 2. Start the instance and open the web app on the port of the instance settings (default **8092**):
-   `http://<ioBroker host>:8092/`
+   `http://<ioBroker host>:8092/`. The instance tile in the admin carries the same way in as a symbol (see
+   [The link in the instance list](#the-link-in-the-instance-list)), so host and port do not have to be typed.
 3. Log in with the start password (see [First start](#first-start)) and create your employees.
+
+### The link in the instance list
+
+The adapter reports its own way into the web interface (`common.localLinks`), and the admin renders a symbol out of it:
+the tile of `time-tracker.0` in **Instances** offers *Open the time tracking app*, the overview page does the same — one
+click and the login screen shows up, without typing host and port.
+
+The address is **not** written into the adapter; the admin puts it together from the instance settings — the bind
+address gives the host, the port the port. With the default `127.0.0.1` the link leads to the ioBroker machine itself
+(that is where the app answers), with `0.0.0.0` it takes the address you reached the admin with, so phone and PC use the
+same link. A reverse proxy rule for `time-tracker.0` replaces the link with its own path.
 
 ## First start
 
@@ -445,6 +457,14 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.15 (2026-10-01)
+
+- (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way
+  into its own web interface as `common.localLinks`, so the admin shows *Open the time tracking app* next to the
+  instance — one click and the login screen shows up, without typing host and port. The link uses the bind address and
+  the port of the instance settings; with the default `127.0.0.1` it leads to the ioBroker machine itself, with
+  `0.0.0.0` to the address the browser reached the admin with.
+
 ### 0.7.14 (2026-10-01)
 
 - (Alex) fix: a start password that is entered **after** the first start opens the installation now. The first
@@ -478,12 +498,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder
   `files/time-tracker.<n>/` is known to the file manager and exists from the first start, because a small `INFO.txt`
   keeps it in place; the state `calendar.feedFile` still carries the path for the `ical` adapter
-
-### 0.7.10 (2026-09-26)
-
-- (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.
-  The old name said “calendar file” and let the value look like a download, while it is the **path** that the `ical`
-  adapter reads; browsers and calendar apps use the link `calendar.feedUrl`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

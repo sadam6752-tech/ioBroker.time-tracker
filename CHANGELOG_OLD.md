@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.10 (2026-09-26)
+
+- (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.
+  The old name said “calendar file” and let the value look like a download, while it is the **path** that the `ical`
+  adapter reads; browsers and calendar apps use the link `calendar.feedUrl`
+
 ### 0.7.9 (2026-09-26)
 
 - (Alex) fix: “Feiertag hinzufügen” stayed grey while the day had to be typed as text — it comes from the date field of

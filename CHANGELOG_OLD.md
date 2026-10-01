@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.9 (2026-09-26)
+
+- (Alex) fix: “Feiertag hinzufügen” stayed grey while the day had to be typed as text — it comes from the date field of
+  the browser now, and the label no longer names a format. A holiday entered without a region belongs to the country of
+  the instance instead of always `DE`, the list shows the days of **every** region of the year, and a day of the next
+  year takes the shown year along
+- (Alex) fix: “Abbrechen” closes the form of an absence while it is being changed as well — it cleared only the flag of
+  the new absence and left the dialog of the change on the screen
+
 ### 0.7.8 (2026-09-26)
 
 - (Alex) new: an absence can be taken back. An employee withdraws a request that is still open, and for an approved

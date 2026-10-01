@@ -480,3 +480,35 @@ das Feld ist ein Datumsfeld, die Zeile trägt ihre Region, sie lässt sich entfe
 Jahr nach), die erweiterte Prüfung in `src/lib/web/api.test.ts` (ein Tag ohne Region trägt das Land der Instanz),
 `src/lib/db/repositories/holidays.test.ts` („lists every region of a year when no region is asked for"), die
 Änder-Brücke in `test/e2e/absences-admin.spec.ts` und **T27** in `docs/testplan.md`.
+
+## D15 — Das Startpasswort wirkt auch nach dem ersten Start (01.10.2026)
+
+**Anlass:** Die Instanzeinstellung „Startpasswort des ersten Administrators" wirkte nur beim **Anlegen** des Kontos.
+Wer das Feld erst nach dem ersten Start füllte — also nach dem Lauf, in dem das Konto mit dem erzeugten Passwort
+entstanden war — erlebte genau das aus dem Fehlerbericht: **kein Passwort im Log** (das Konto gab es schon, es wurde
+also keines erzeugt) und **kein Login** mit dem eigenen Wert (der Adapter hat ihn nie gesehen). Die alte Fassung von
+`ensureAdministrator` stieg bei vorhandenem Administrator sofort aus — ohne Logzeile, also ohne jeden Hinweis darauf,
+dass die Einstellung wirkungslos war.
+
+**Entscheidung:** Solange der Erst-Administrator sein **Startpasswort noch nicht gewechselt** hat (er trägt
+`must_change_pw = 1`, die App fordert den Wechsel beim ersten Login), übernimmt der Adapter das konfigurierte Passwort
+bei **jedem** Start. Ziel ist das Konto mit dem konfigurierten Login, sonst der **älteste** Administrator. Nach dem
+Wechsel ist die Einstellung wirkungslos — ein vergessenes Feld darf ein Passwort, das der Administrator in der App
+gesetzt hat, **nie** zurücksetzen. Jeder Start meldet genau eines von sechs Ergebnissen: `created` (mit erzeugtem oder
+konfiguriertem Passwort), `start_password_reset`, `start_password_unchanged`, `password_changed`, `existing`,
+`failed`. Der Fall „schon gewechselt" ist eine **Warnung**, weil die Einstellung dann sichtbar wirkungslos ist — genau
+diese Stille war der Fehler.
+
+**Folgen**
+
+- Die Entscheidung liegt testbar in `src/lib/services/firstAdministrator.ts`; `src/main.ts` meldet nur noch das
+  Ergebnis (`switch` über die sechs Fälle). `src/lib/services/firstAdministrator.test.ts` deckt sie ab: Anlegen mit
+  konfiguriertem und mit erzeugtem Passwort (samt Richtlinie), Übernahme bei unverändertem Startpasswort,
+  unverändertes Passwort ohne Audit-Eintrag, gewechseltes Passwort (Hash bleibt), vorhandener Administrator ohne
+  konfiguriertes Passwort sowie ein vergebenes Login (`failed`).
+- Ein **vergebenes** Login bleibt ein Fehler; der Notausgang aus D7 (Neustart mit einem freien `adminLogin`) gilt
+  unverändert, weil er nur greift, wenn es keinen **aktiven** Administrator gibt.
+- Die Übernahme schreibt einen Audit-Eintrag (`user.update`, `passwordChanged`, Begründung „start password from the
+  instance settings") — sie ist damit nachvollziehbar.
+- `README.md` („First start"), `docs/erste-schritte.md` (Schritt 3.4) und `docs/testplan.md` (Testdaten und das
+  Log-Beispiel des Dev-Servers) nennen die vier Logzeilen.

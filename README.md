@@ -61,6 +61,22 @@ The start password appears **once in the ioBroker log**: open `Logs` in the admi
 `administrator "admin" created with the start password "…" - change it at the first login`. The instance settings
 show the same hint — enter your own password there and nothing has to be searched.
 
+**Entering the password later works too.** As long as the account still carries its unchanged start password (the
+forced password change was never completed), the adapter applies the configured start password on **every** start. A
+value filled in after the first start — or after restoring a database — therefore works right away. Every start says
+in the log which of these four cases it is:
+
+- `administrator "admin" created with the start password "Zf-…" - change it at the first login` — no administrator
+  existed and the field was empty; this is the generated password.
+- `administrator "admin" created with the configured start password - it has to be changed at the first login` — no
+  administrator existed, the value of the instance settings was used.
+- `administrator "admin" exists already and still has its start password - it was set from the instance settings now`
+  — the account existed, the configured start password took over (the entry in the audit trail is
+  `start password from the instance settings`).
+- `the configured start password is not used: administrator "admin" changed his password already` — the account
+  changed its password in the app, so the setting has no effect any more: clear the field (the password belongs to
+  the profile page of that account) or restore a database that still carries the start password.
+
 After that the usual order is: create employees (**Administration → Employees**), set their working time
 (**Arbeitsprofil** button of the row: employment level, weekly hours, working days, overtime model, vacation,
 carryover, paid break minutes, own break rules), and — if a tablet is used — create a terminal and switch the kiosk on
@@ -429,6 +445,17 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.14 (2026-10-01)
+
+- (Alex) fix: a start password that is entered **after** the first start opens the installation now. The first
+  administrator was only ever created once, so a later value of the instance setting was ignored in silence — no log
+  line and no way in. As long as the account still carries its unchanged start password, the adapter applies the
+  configured value on every start, names the account in the log and notes it in the audit trail; once the password
+  was changed in the app the setting stays out of play and the log says so. That is exactly the “I set a password and
+  nothing appears in the log” case from the field report. The decision sits in
+  `src/lib/services/firstAdministrator.ts` next to its unit test; `README.md` (“First start”), `docs/erste-schritte.md`,
+  `docs/testplan.md` and D15 of `docs/entscheidungen.md` describe the four log lines
+
 ### 0.7.13 (2026-09-27)
 
 - (Alex) docs: the file server of a `web` instance is a documented way to the calendar file again — under the new mount
@@ -457,15 +484,6 @@ local SQLite file, access is role-based, and every correction is written to an a
 - (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.
   The old name said “calendar file” and let the value look like a download, while it is the **path** that the `ical`
   adapter reads; browsers and calendar apps use the link `calendar.feedUrl`
-
-### 0.7.9 (2026-09-26)
-
-- (Alex) fix: “Feiertag hinzufügen” stayed grey while the day had to be typed as text — it comes from the date field of
-  the browser now, and the label no longer names a format. A holiday entered without a region belongs to the country of
-  the instance instead of always `DE`, the list shows the days of **every** region of the year, and a day of the next
-  year takes the shown year along
-- (Alex) fix: “Abbrechen” closes the form of an absence while it is being changed as well — it cleared only the flag of
-  the new absence and left the dialog of the change on the screen
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

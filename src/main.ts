@@ -3,7 +3,6 @@
  * Scaffolded with @iobroker/create-adapter v3.1.5
  */
 
-import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { hostname } from "node:os";
@@ -35,7 +34,8 @@ import type { EntriesRepository } from "./lib/db/repositories/entries";
 import type { AbsencesRepository } from "./lib/db/repositories/absences";
 import type { SettingsRepository } from "./lib/db/repositories/settings";
 import { createAggregationService, type AggregationService } from "./lib/services/aggregation";
-import { createAuthService, hashPassword } from "./lib/services/auth";
+import { createAuthService } from "./lib/services/auth";
+import { ensureFirstAdministrator } from "./lib/services/firstAdministrator";
 import { SECRET_FILE_NAME, resolveSessionSecret } from "./lib/services/sessionSecret";
 import { createClosingService, type ClosingService } from "./lib/services/closing";
 import {
@@ -293,46 +293,52 @@ class TimeTracker extends utils.Adapter {
 	/**
 	 * Creates the first administrator when the instance has none.
 	 *
-	 * The account is created with `must_change_pw = 1`, so the start password opens the door exactly once.
-	 * Login and password can be configured; without a configured password a random one is generated and written
-	 * to the log, because there is no other way to hand it to the operator.
+	 * The decision itself sits in `services/firstAdministrator.ts` (it is unit tested there); this method only
+	 * reports the result. Every start says what happened, so “I set a start password and nothing appears in the
+	 * log” cannot happen again — see `docs/entscheidungen.md`, D15.
 	 *
 	 * @param db - open database handle
 	 */
 	private ensureAdministrator(db: Db): void {
-		const users = createUsersRepository(db);
-		const administrators = users.list().filter(user => users.roles(user.id).includes("admin"));
-		if (administrators.length > 0) {
-			return;
-		}
+		const outcome = ensureFirstAdministrator({
+			users: createUsersRepository(db),
+			login: this.config.adminLogin,
+			password: this.config.adminPassword,
+			timezone: this.config.timezone,
+		});
 
-		const login = (this.config.adminLogin ?? "").trim() || "admin";
-		const configured = (this.config.adminPassword ?? "").trim();
-		const password = configured || `Zf-${randomBytes(9).toString("base64url")}-7`;
-
-		try {
-			users.create({
-				login,
-				displayName: login,
-				passwordHash: hashPassword(password),
-				mustChangePw: true,
-				timezone: this.config.timezone || "Europe/Berlin",
-				roleKeys: ["admin"],
-				now: Math.floor(Date.now() / 1000),
-			});
-		} catch (error) {
-			this.log.warn(`the administrator "${login}" could not be created: ${(error as Error).message}`);
-			return;
-		}
-
-		if (configured) {
-			this.log.info(
-				`administrator "${login}" created with the configured start password - it has to be changed at the first login`,
-			);
-		} else {
-			this.log.warn(
-				`administrator "${login}" created with the start password "${password}" - change it at the first login`,
-			);
+		switch (outcome.action) {
+			case "created":
+				if (outcome.generated) {
+					this.log.warn(
+						`administrator "${outcome.login}" created with the start password "${outcome.password}" - change it at the first login`,
+					);
+				} else {
+					this.log.info(
+						`administrator "${outcome.login}" created with the configured start password - it has to be changed at the first login`,
+					);
+				}
+				return;
+			case "start_password_reset":
+				this.log.info(
+					`administrator "${outcome.login}" exists already and still has its start password - it was set from the instance settings now, it has to be changed at the first login`,
+				);
+				return;
+			case "start_password_unchanged":
+				this.log.debug(`administrator "${outcome.login}" carries the configured start password already`);
+				return;
+			case "password_changed":
+				this.log.warn(
+					`the configured start password is not used: administrator "${outcome.login}" changed his password already (empty the field "Start password of the first administrator" to silence this)`,
+				);
+				return;
+			case "existing":
+				this.log.debug(
+					`administrator "${outcome.login}" exists already - no start password is configured, so none is generated`,
+				);
+				return;
+			default:
+				this.log.warn(`the administrator "${outcome.login}" could not be created: ${outcome.reason}`);
 		}
 	}
 

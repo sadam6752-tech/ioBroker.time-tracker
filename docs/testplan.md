@@ -65,6 +65,11 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
    Instanzeinstellung — ist sie leer, steht ein zufälliges Startpasswort **einmalig im Adapter-Log** —
    **Passwort sofort ändern**
    (der Adapter verlangt das beim ersten Login).
+   Ein **nach** dem ersten Start eingetragenes Startpasswort gilt ebenfalls, solange der Erst-Administrator sein
+   Startpasswort noch nicht gewechselt hat: Instanz neu starten, dann steht im Log `… exists already and still has
+   its start password - it was set from the instance settings now` und der Login klappt mit dem eingetragenen Wert.
+   Nach dem Wechsel in der App warnt der Adapter dagegen `the configured start password is not used` (D15 in
+   `docs/entscheidungen.md`).
 2. In der Web-App unter **Verwaltung → Mitarbeiter** anlegen:
     - `anna` (Rolle _Mitarbeiter_), Passwort nach Policy (≥ 8 Zeichen, Groß-/Kleinbuchstaben, Ziffern)
     - `chef` (Rolle _Manager_, falls Abnahme fremder Monate geprüft werden soll)
@@ -254,6 +259,8 @@ und **einmalig** ins Log geschrieben:
 
 ```text
 warn: time-tracker.0 administrator "admin" created with the start password "Zf-…" - change it at the first login
+info: time-tracker.0 administrator "admin" exists already and still has its start password - it was set from the instance settings now
+warn: time-tracker.0 the configured start password is not used: administrator "admin" changed his password already (empty the field "Start password of the first administrator" to silence this)
 ```
 
 > **Windows 11 ohne `wmic`:** `dev-server watch` bricht dort mit `spawn wmic.exe ENOENT` ab — das Werkzeug liest die

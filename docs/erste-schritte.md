@@ -49,7 +49,14 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
 2. Port/Bind prüfen (`127.0.0.1` = nur lokal, `0.0.0.0` = LAN — bewusst opt-in).
 3. Zeitzone (`Europe/Berlin`), Standardsprache und Feiertagsland kontrollieren.
 4. **Startpasswort des Erst-Administrators** setzen — oder leer lassen: dann wird ein Zufallspasswort **einmalig
-   ins Log** geschrieben (`info.lastError` bleibt leer, wenn nichts schiefging).
+   ins Log** geschrieben (`info.lastError` bleibt leer, wenn nichts schiefging). Der Wert gilt auch, wenn du ihn
+   erst **nach** dem ersten Start einträgst: Solange der Erst-Administrator sein Startpasswort noch nicht
+   gewechselt hat — die App verlangt den Wechsel beim ersten Login — setzt der Adapter das konfigurierte Passwort
+   bei **jedem** Start und sagt es im Log (`… exists already and still has its start password - it was set from
+   the instance settings now`). Hat er es bereits gewechselt, bleibt die Einstellung **wirkungslos** und der
+   Adapter **warnt**: `the configured start password is not used` — dann das Feld leer räumen (das Passwort ändert
+   der Administrator in der App im eigenen Profil) oder eine Sicherung einspielen, die noch das Startpasswort
+   trägt. Jeder Start meldet genau einen dieser Fälle — eine stumme Instanz gibt es nicht mehr.
 5. Optional: **Enable kiosk terminal** und die Aufbewahrung der Backups.
 6. Bei Betrieb hinter einem Proxy: **Trust the reverse proxy** einschalten (sonst werden `X-Forwarded-*`
    ignoriert).

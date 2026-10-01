@@ -16,6 +16,6 @@ RFID, Monatsberichte, Live-Events, Sicherungen mit getestetem Restore, gemessene
 Verwaltung). Zeiten ändert die Verwaltung: ein Mitarbeiter stempelt und hinterlässt an einem Tag eine Notiz
 („An-/Ausstempeln vergessen"), die die Verwaltung im Monat sieht, den Tag bucht und als erledigt abhakt; das
 Administrator-Konto gehört niemandem und stempelt nicht. Die Suiten laufen grün:
-545 Unit-, 60 Paket-, 10 Integrations- und 29 End-to-End-Tests. Die Veröffentlichung läuft über die CI (npm trusted
-publishing mit Herkunftsnachweis); offen sind der Abnahmelauf auf echter Hardware (Layouts, PDF-Schriften) und der
-Eintrag im offiziellen Adapter-Repository — siehe [`docs/entwicklung.md`](entwicklung.md).
+581 Unit-, 60 Paket-, 9 Integrations- und 31 End-to-End-Tests. Die Veröffentlichung läuft über die CI (npm trusted
+publishing mit Herkunftsnachweis); offen ist nur noch der
+Eintrag im offiziellen Adapter-Repository (Antrag ioBroker/ioBroker.repositories#6702, wartet auf die Prüfung) — siehe [`docs/entwicklung.md`](entwicklung.md).

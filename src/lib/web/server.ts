@@ -11,6 +11,7 @@
  */
 
 import * as http from "node:http";
+import * as https from "node:https";
 import type { AddressInfo } from "node:net";
 import { HttpProblem, PROBLEM_CONTENT_TYPE } from "./problem";
 import { DEFAULT_MAX_BODY_BYTES, type HttpRequest, type Router } from "./router";
@@ -43,8 +44,20 @@ export interface WebServerOptions {
 	stream?: Omit<EventStreamOptions, "server">;
 	/** Maximum body size in bytes (default 2 MiB) */
 	maxBodyBytes?: number;
+	/** Certificate of the server; with it the server speaks HTTPS instead of HTTP */
+	tls?: TlsOptions;
 	/** Logger */
 	log?: ServerLogger;
+}
+
+/** Certificate material of an HTTPS server (PEM text). */
+export interface TlsOptions {
+	/** Private key */
+	key: string;
+	/** Public certificate */
+	cert: string;
+	/** Chain (intermediate certificates), optional */
+	ca?: string;
 }
 
 /** A running server. */
@@ -221,9 +234,13 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 		}
 	};
 
-	const server = http.createServer((request, response) => {
+	const onRequest = (request: http.IncomingMessage, response: http.ServerResponse): void => {
 		void handle(request, response);
-	});
+	};
+	const scheme = options.tls ? "https" : "http";
+	const server: http.Server | https.Server = options.tls
+		? https.createServer({ key: options.tls.key, cert: options.tls.cert, ca: options.tls.ca }, onRequest)
+		: http.createServer(onRequest);
 	server.on("clientError", (_error, socket) => socket.destroy());
 
 	await new Promise<void>((resolve, reject) => {
@@ -245,14 +262,14 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 			})
 		: undefined;
 	options.log?.info(
-		`API listening on http://${bind}:${port}${apiPrefix}${
+		`API listening on ${scheme}://${bind}:${port}${apiPrefix}${
 			options.staticFiles ? " - web interface is served from disk" : ""
 		}${stream ? " - live events on /stream" : ""}`,
 	);
 
 	return {
 		port,
-		url: `http://${bind === "0.0.0.0" ? "127.0.0.1" : bind}:${port}`,
+		url: `${scheme}://${bind === "0.0.0.0" ? "127.0.0.1" : bind}:${port}`,
 		stream,
 		close: async (): Promise<void> => {
 			await stream?.close();

@@ -330,6 +330,21 @@ describe("web router", () => {
 				headers: { "x-session-token": employeeToken, "x-forwarded-proto": "https" },
 			});
 			expect(bodyOf<{ secure: boolean }>(untrusted).secure).to.equal(false);
+
+			// a server with its own certificate is secure without any header, and without a proxy to trust
+			const direct = createRouter({ auth, now: () => 2000, secureTransport: true });
+			direct.add({
+				method: "GET",
+				path: "/session-info",
+				handler: context => json(200, { secure: context.secure, address: context.request.remoteAddress }),
+			});
+			const own = await direct.handle({
+				method: "GET",
+				path: "/session-info",
+				headers: { "x-session-token": employeeToken },
+				remoteAddress: "192.0.2.1",
+			});
+			expect(bodyOf(own)).to.deep.equal({ secure: true, address: "192.0.2.1" });
 		});
 
 		it("renews the cookie of an old browser session and drops the old token", async () => {

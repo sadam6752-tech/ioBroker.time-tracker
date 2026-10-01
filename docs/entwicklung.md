@@ -54,11 +54,12 @@ npm run build
 
 ## Offen
 
-- **Abnahmelauf auf echter Hardware:** Freigabe der Layouts und der PDF-Darstellung für `ru`, `uk`, `zh-cn` und
-  Polnisch (dafür braucht es eine Unicode-Schrift über `report_font_path`). Der **Import der Altdaten** des
+- **Abnahmelauf auf echter Hardware:** erledigt — die PDF-Darstellung für `ru`, `uk`, `zh-cn` und Polnisch
+  funktioniert (Unicode-Schrift über `report_font_path`, am 01.10.2026 vom Eigentümer geprüft). Der **Import der Altdaten** des
   Vorgängersystems gehört nicht zum Umfang — die Begründung steht in [`entscheidungen.md`](entscheidungen.md).
 - **Veröffentlichung:** Das Paket liegt auf npm (die CI veröffentlicht es über npm trusted publishing mit
-  Herkunftsnachweis); offen ist der Eintrag in `ioBroker.repositories`.
+  Herkunftsnachweis); der Eintrag in `ioBroker.repositories` ist beantragt
+  ([PR #6702](https://github.com/ioBroker/ioBroker.repositories/pull/6702)) und wartet auf die Prüfung.
 - **Kleinere Lücken:** die maschinell übersetzten Sprachdateien der Web-App warten auf eine Durchsicht durch
   Muttersprachler. Der frühere Wunsch „NFC-Komfort im Adminbereich" ist **erledigt** — statt einer Handy-NFC-App
   (die nur Android-Chrome kann) löst jetzt jeder ioBroker-State eine Aktion aus (siehe README, „Actions"): der

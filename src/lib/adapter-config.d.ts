@@ -43,6 +43,14 @@ declare global {
 			 * limits and the audit trail, `x-forwarded-proto: https` makes the session cookie `Secure`.
 			 */
 			trustProxy: boolean;
+			/** Serve the app over HTTPS with a certificate of the ioBroker certificate collection */
+			secure: boolean;
+			/** Name of the public certificate in the collection (HTTPS only) */
+			certPublic: string;
+			/** Name of the private key in the collection (HTTPS only) */
+			certPrivate: string;
+			/** Name of the certificate chain in the collection, optional (HTTPS only) */
+			certChained: string;
 		}
 	}
 }

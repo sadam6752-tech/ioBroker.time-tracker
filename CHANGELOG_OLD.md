@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.11 (2026-09-27)
+
+- (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder
+  `files/time-tracker.<n>/` is known to the file manager and exists from the first start, because a small `INFO.txt`
+  keeps it in place; the state `calendar.feedFile` still carries the path for the `ical` adapter
+
 ### 0.7.10 (2026-09-26)
 
 - (Alex) change: the state `calendar.feedFile` is called “Path of the calendar file” now — in all eleven languages.

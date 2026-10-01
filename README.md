@@ -107,6 +107,7 @@ The adapter is configured in the **instance settings** of the ioBroker admin:
 | Holiday country                     | country used to generate the public holidays (default `DE`)                                                                 |
 | Database file                       | optional path; empty = adapter data directory                                                                               |
 | Enable kiosk terminal               | switches the shared badge/PIN terminal on                                                                                   |
+| Use HTTPS                           | the adapter answers over HTTPS itself; then choose the public certificate, the private key and, if you have one, the chain from the certificate collection of ioBroker |
 | Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)                                                                      |
 | Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)                                                          |
 | Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest); empty = generated on the first start and stored next to the database |
@@ -407,7 +408,19 @@ settings are removed automatically; the newest one always stays.
 
 ## HTTPS and reverse proxy
 
-The app on a phone needs **HTTPS** — a service worker only runs on a secure origin. Put nginx or caddy in front of
+The app on a phone needs **HTTPS** — a service worker only runs on a secure origin. There are two ways.
+
+**HTTPS in the adapter itself.** In the instance settings switch **Use HTTPS** on and choose the public certificate,
+the private key and, if you have one, the chain. The certificates come from the certificate collection of ioBroker
+(**Admin > Settings > Certificates**; the entries `defaultPublic` / `defaultPrivate` are the self-signed pair ioBroker
+creates itself, a Let's Encrypt certificate works the same way). The app then answers at `https://<host>:<port>/`, the
+session cookie is `Secure`, and the link in the instance list and the calendar link switch to `https` on their own.
+If the certificate is missing or cannot be read, the web interface does **not** fall back to plain HTTP: it stays
+unavailable and the log names the reason. A self-signed certificate makes the browser warn once; a phone only installs
+the app when it trusts the certificate (install the certificate on the phone, or use a certificate of a real
+authority). Changing the setting restarts the instance.
+
+**A reverse proxy in front.** Put nginx or caddy in front of
 the adapter and switch **Trust the reverse proxy** on: the adapter then takes the client address from
 `x-forwarded-for` for the rate limits and the audit trail, and `x-forwarded-proto: https` makes the session cookie
 `Secure`. Without that switch both headers are ignored, because any client could send them.
@@ -457,6 +470,16 @@ local SQLite file, access is role-based, and every correction is written to an a
 
 ### **WORK IN PROGRESS**
 
+### 0.7.16 (2026-10-01)
+
+- (Alex) new: **HTTPS in the adapter itself.** The instance settings offer *Use HTTPS* with a choice of the public
+  certificate, the private key and the chain from the certificate collection of ioBroker, so a local installation
+  needs no reverse proxy for the app on the phone. The session cookie is `Secure`, the instance link and the calendar
+  link switch to `https`, and a missing or unreadable certificate keeps the web interface off (with a log line) instead
+  of falling back to plain HTTP.
+- (Alex) fix: the dependency `uuid` below `exceljs` is pinned to a version without the published weakness
+  (`overrides`), `npm audit --omit=dev` is clean again; other dependencies updated within their ranges.
+
 ### 0.7.15 (2026-10-01)
 
 - (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way
@@ -492,12 +515,6 @@ local SQLite file, access is role-based, and every correction is written to an a
   (`meta.folder`) is created on every start and is what keeps the folder visible; the `INFO.txt` helper is gone, a
   failure of the calendar has a log line of its own (before it hid behind “states could not be published”), and
   `calendar.feedFile` carries the new path for the `ical` adapter
-
-### 0.7.11 (2026-09-27)
-
-- (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder
-  `files/time-tracker.<n>/` is known to the file manager and exists from the first start, because a small `INFO.txt`
-  keeps it in place; the state `calendar.feedFile` still carries the path for the `ical` adapter
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

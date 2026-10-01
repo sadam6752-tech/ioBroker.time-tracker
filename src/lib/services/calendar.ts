@@ -35,10 +35,11 @@ export const API_PREFIX = "/api";
  * @param host - host name or address the devices can reach
  * @param port - port of the adapter
  * @param token - token of the instance
+ * @param secure - true when the adapter itself speaks HTTPS
  * @returns the URL a calendar app subscribes to
  */
-export function companyFeedUrl(host: string, port: number, token: string): string {
-	return `http://${host}:${port}${API_PREFIX}/calendar.ics?token=${encodeURIComponent(token)}`;
+export function companyFeedUrl(host: string, port: number, token: string, secure = false): string {
+	return `${secure ? "https" : "http"}://${host}:${port}${API_PREFIX}/calendar.ics?token=${encodeURIComponent(token)}`;
 }
 
 /** The few fields of an employee a calendar needs. */

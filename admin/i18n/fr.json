@@ -30,5 +30,10 @@
 	"Time rules": "Règles de temps de travail",
 	"Trust the reverse proxy (X-Forwarded-*)": "Faire confiance au proxy inverse (X-Forwarded-*)",
 	"used once: the account is created when the instance has no administrator yet": "utilisé une seule fois : le compte est créé lorsque l'instance n'a pas encore d'administrateur",
-	"time-tracker adapter settings": "Paramètres de l'adaptateur pour time-tracker"
+	"time-tracker adapter settings": "Paramètres de l'adaptateur pour time-tracker",
+	"Use HTTPS": "Utiliser HTTPS",
+	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "l'application répond en HTTPS avec un certificat de la collection de certificats d'ioBroker ; sans certificat valide, l'application reste indisponible",
+	"Public certificate": "Certificat public",
+	"Private key": "Clé privée",
+	"Certificate chain (optional)": "Chaîne de certificats (facultatif)"
 }

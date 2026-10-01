@@ -544,3 +544,35 @@ die im npm-Paket mitgeliefert werden müsste, wäre eine zusätzliche Fehlerquel
 
 **Nachweis:** der Eintrag `_default` in `io-package.json`, die Meldung von `npm run check:i18n` und die Instanzzeile
 im Admin, die das Symbol „Zeiterfassungs-App öffnen“ trägt.
+
+## D17 — HTTPS im Adapter selbst, mit den Zertifikaten von ioBroker (01.10.2026)
+
+**Anlass:** Die App am Handy braucht HTTPS (Service Worker, Installation). Bisher gab es nur den Weg über einen
+Reverse Proxy (`trustProxy`). Der `web`-Adapter von ioBroker kann hier **nicht** helfen: Er leitet keinen fremden
+Port weiter, sondern liefert nur Adapter aus, die sich als Web-Erweiterung einklinken — die Zeiterfassung hat einen
+eigenen Server (`http.createServer`). Betrieb: eine lokale Installation ohne Zugang aus dem Internet.
+
+**Entscheidung:** Der Server kann selbst HTTPS sprechen (`https.createServer`). Neue Instanzeinstellungen: `secure`
+(Schalter) und die **Namen** `certPublic`, `certPrivate`, `certChained` aus der Zertifikatsverwaltung von ioBroker
+(`getCertificatesAsync`, in der Maske als Typ `certificate`). Es gibt keine eigene Zertifikatsverwaltung und keine
+Dateipfade. Der Schlüssel heißt bewusst `secure`: Der Admin setzt daraus den Platzhalter `%protocol%` des Links in der
+Instanzliste (`common.localLinks`), der Link wird also ohne weiteres zu `https://…`. Ein reiner Transportwechsel:
+Routen, Rechte, CSRF und Limits sind unberührt.
+
+**Folgen**
+
+- Die Sitzungs-Cookie trägt `Secure`, ohne dass ein Proxy-Kopf nötig ist (`secureTransport` im Router). `trustProxy`
+  bleibt für den Betrieb hinter einem Proxy unverändert.
+- Der Kalenderlink (`calendar.feedUrl`) und der Ausweislink folgen dem Schema (`https`).
+- **Kein stiller Rückfall auf HTTP:** Fehlt das Zertifikat oder lässt es sich nicht lesen, startet der Webserver nicht,
+  und das Log nennt den Grund — wie bei einer belegten Portnummer. Ein Rückfall würde eine Anmeldung unverschlüsselt
+  durchlassen, also genau das, was der Betreiber mit dem Schalter ausschließen wollte.
+- Ein selbstsigniertes Zertifikat (`defaultPublic`/`defaultPrivate`) reicht für den Browser mit einmaliger Warnung;
+  für die **Installation der App am Handy** muss das Handy dem Zertifikat vertrauen (Zertifikat dort installieren
+  oder ein Zertifikat einer echten Stelle nehmen). Am Rechner mit `localhost` ist HTTP auch ohne HTTPS ein sicherer
+  Ursprung.
+- Ein Zertifikatswechsel wirkt nach einem Neustart der Instanz.
+
+**Nachweis:** `src/lib/web/server.tls.test.ts` (echte HTTPS-Verbindung mit einem Testzertifikat, `Secure`-Cookie,
+Abweisung eines Clients ohne Vertrauen, kaputtes Zertifikat), Router- und Kalendertest; Abnahme auf einer echten
+Instanz: Testfall T29 in `docs/testplan.md`.

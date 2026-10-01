@@ -59,7 +59,10 @@ In den Instanz-Einstellungen (Reiter *General*, *Security*, *Migration and backu
    der Administrator in der App im eigenen Profil) oder eine Sicherung einspielen, die noch das Startpasswort
    trägt. Jeder Start meldet genau einen dieser Fälle — eine stumme Instanz gibt es nicht mehr.
 5. Optional: **Enable kiosk terminal** und die Aufbewahrung der Backups.
-6. Bei Betrieb hinter einem Proxy: **Trust the reverse proxy** einschalten (sonst werden `X-Forwarded-*`
+6. HTTPS ohne Proxy: **Use HTTPS** einschalten und Zertifikat und Schlüssel aus der Zertifikatsverwaltung von
+   ioBroker wählen (**Admin → Einstellungen → Zertifikate**). Fehlt das Zertifikat, bleibt die App aus — es gibt
+   **keinen** stillen Rückfall auf HTTP; die Ursache steht im Log.
+7. Bei Betrieb hinter einem Proxy: **Trust the reverse proxy** einschalten (sonst werden `X-Forwarded-*`
    ignoriert).
 
 ## 4. Erster Login
@@ -170,5 +173,5 @@ werden in der Oberfläche angelegt:
 | Kiosk nimmt keine PIN | Zustand `info.lastError`, Kontosperre nach 5 Fehlversuchen (15 Minuten) |
 | Alles unklar | `npm run test:ts`, `npm run test:package`, `npm run test:integration` lokal ausführen |
 
-Die Abnahmekriterien und das Protokollblatt stehen in `docs/testplan.md` (T1–T17); der jeweilige Stand der
-Restarbeiten in `PROJECT_PROMPT.md`.
+Die Abnahmekriterien und das Protokollblatt stehen in `docs/testplan.md` (T1–T28); Abweichungen und
+Entscheidungen in `docs/entscheidungen.md`.

@@ -118,6 +118,11 @@ export interface RouterOptions {
 	 * client that is allowed to set the header itself could shift both.
 	 */
 	trustProxy?: boolean;
+	/**
+	 * The server itself speaks HTTPS (own certificate). Then every request is secure without a proxy header, and
+	 * the session cookie carries `Secure`.
+	 */
+	secureTransport?: boolean;
 }
 
 /** The router. */
@@ -378,7 +383,9 @@ export function createRouter(options: RouterOptions): Router {
 			// because any client can send that header on its own. One hop is assumed, which is what a single
 			// nginx/caddy in front produces.
 			const clientAddress = resolveClientAddress(request, headerValue, options.trustProxy === true);
-			const secure = options.trustProxy === true && forwardedProto(headerValue) === "https";
+			const secure =
+				options.secureTransport === true ||
+				(options.trustProxy === true && forwardedProto(headerValue) === "https");
 			// the handlers see the address the rate limit counted and the audit trail stores
 			const routedRequest: HttpRequest =
 				(request.remoteAddress ?? null) === clientAddress

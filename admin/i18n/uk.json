@@ -30,5 +30,10 @@
 	"Time rules": "Правила робочого часу",
 	"Trust the reverse proxy (X-Forwarded-*)": "Довіряти зворотному проксі (X-Forwarded-*)",
 	"used once: the account is created when the instance has no administrator yet": "використовується одноразово: обліковий запис створюється, коли в екземпляра ще немає адміністратора",
-	"time-tracker adapter settings": "Налаштування адаптера для time-tracker"
+	"time-tracker adapter settings": "Налаштування адаптера для time-tracker",
+	"Use HTTPS": "Використовувати HTTPS",
+	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "застосунок відповідає по HTTPS із сертифікатом зі сховища сертифікатів ioBroker; без робочого сертифіката застосунок залишається недоступним",
+	"Public certificate": "Публічний сертифікат",
+	"Private key": "Закритий ключ",
+	"Certificate chain (optional)": "Ланцюжок сертифікатів (необов'язково)"
 }

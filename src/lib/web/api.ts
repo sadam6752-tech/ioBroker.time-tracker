@@ -125,6 +125,8 @@ export interface ApiDeps {
 	 * audit trail, and `x-forwarded-proto: https` makes the session cookie `Secure`.
 	 */
 	trustProxy?: boolean;
+	/** The server itself speaks HTTPS: the session cookie carries `Secure` without a proxy header */
+	secureTransport?: boolean;
 	/** Aggregation service (reports and refreshes) */
 	aggregation: AggregationService;
 	/** Offline synchronisation */
@@ -755,7 +757,12 @@ export function createApi(deps: ApiDeps): Api {
 	const now = deps.now ?? (() => Math.floor(Date.now() / 1000));
 	const events = deps.events ?? createEventBus();
 	const registered: ApiRoute[] = [];
-	const router = createRouter({ auth, trustProxy: deps.trustProxy === true, now });
+	const router = createRouter({
+		auth,
+		trustProxy: deps.trustProxy === true,
+		secureTransport: deps.secureTransport === true,
+		now,
+	});
 	// wrong PINs at the terminal are counted per account (specification 4.10); the counters are short lived
 	const pinGuard = createPinGuard();
 

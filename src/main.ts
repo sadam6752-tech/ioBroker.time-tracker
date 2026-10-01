@@ -75,7 +75,7 @@ import { evaluateAutomation, isoWeekday, runPeriod, workBlock } from "./lib/adap
 import { handleMessage } from "./lib/adapter/messages";
 import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
 import type { ApiEvent, EventBus } from "./lib/web/events";
-import { startWebServer, type WebServer } from "./lib/web/server";
+import { startWebServer, type TlsOptions, type WebServer } from "./lib/web/server";
 import { localDateTime } from "./lib/util/time";
 import { createStaticHandler } from "./lib/web/static";
 
@@ -518,6 +518,8 @@ class TimeTracker extends utils.Adapter {
 			// a reverse proxy in front is the normal case for HTTPS; without the switch the forwarded
 			// headers are ignored, so a client cannot choose its own address or the HTTPS flag
 			trustProxy: this.config.trustProxy === true,
+			// with an own certificate the session cookie is `Secure` without any proxy header
+			secureTransport: this.config.secure === true,
 			hmacSecret: this.tagSecret(),
 			version: this.version,
 			// a saved trigger rule changes the states the adapter has to watch
@@ -560,9 +562,21 @@ class TimeTracker extends utils.Adapter {
 				: `no web interface at ${webDir} - only the API (and the terminal) is available`,
 		);
 
+		// HTTPS is a choice of the operator: if the certificate cannot be loaded the server does NOT fall back to
+		// plain HTTP, because a login over an unencrypted line is exactly what the operator wanted to avoid
+		let tls: TlsOptions | undefined;
+		if (this.config.secure === true) {
+			tls = await this.loadCertificate();
+			if (!tls) {
+				this.webServer = null;
+				return;
+			}
+		}
+
 		try {
 			this.webServer = await startWebServer({
 				router: api.router,
+				tls,
 				port: this.config.port || 8092,
 				bind: this.config.bind || "127.0.0.1",
 				// the same prefix the calendar link carries (`/api`) — the web app and its login live beside it
@@ -792,7 +806,9 @@ class TimeTracker extends utils.Adapter {
 		await publishCalendarSnapshot(this, {
 			// the host part is the name of this machine: an address that is reachable from the LAN and simple enough
 			// to correct by hand (a reverse proxy or another address is a matter of the copy in the calendar app)
-			feedUrl: token ? companyFeedUrl(hostname(), this.config.port || 8092, token) : "",
+			feedUrl: token
+				? companyFeedUrl(hostname(), this.config.port || 8092, token, this.config.secure === true)
+				: "",
 			feedFile: file,
 			updatedAt: stamp,
 			absences: JSON.stringify(absenceFeed(list, employees)),
@@ -860,6 +876,41 @@ class TimeTracker extends utils.Adapter {
 			await this.setState(id, false, true);
 		}
 		await this.refreshStates();
+	}
+
+	/**
+	 * Loads the certificate named in the instance settings from the certificate collection of ioBroker.
+	 *
+	 * @returns certificate material, or `undefined` (with a log line) when it is missing or incomplete
+	 */
+	private async loadCertificate(): Promise<TlsOptions | undefined> {
+		const publicName = this.config.certPublic;
+		const privateName = this.config.certPrivate;
+		if (!publicName || !privateName) {
+			this.log.error(
+				"HTTPS is switched on, but no public certificate and private key are chosen in the instance settings - the web interface and the terminal stay unavailable",
+			);
+			return undefined;
+		}
+		try {
+			const [certificates] = await this.getCertificatesAsync(
+				publicName,
+				privateName,
+				this.config.certChained || undefined,
+			);
+			if (!certificates?.key || !certificates.cert) {
+				this.log.error(
+					`HTTPS is switched on, but the certificate "${publicName}" / "${privateName}" is not in the certificate collection of ioBroker (Admin > Settings > Certificates) - the web interface and the terminal stay unavailable`,
+				);
+				return undefined;
+			}
+			return { key: certificates.key, cert: certificates.cert, ca: certificates.ca };
+		} catch (error) {
+			this.log.error(
+				`the certificate could not be loaded: ${(error as Error).message} - the web interface and the terminal stay unavailable`,
+			);
+			return undefined;
+		}
 	}
 
 	/**

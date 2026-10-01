@@ -41,6 +41,50 @@
 					"lg": 3,
 					"xl": 3
 				},
+				"secure": {
+					"type": "checkbox",
+					"label": "Use HTTPS",
+					"help": "the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"certPublic": {
+					"type": "certificate",
+					"certType": "public",
+					"label": "Public certificate",
+					"hidden": "!data.secure",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"certPrivate": {
+					"type": "certificate",
+					"certType": "private",
+					"label": "Private key",
+					"hidden": "!data.secure",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
+				"certChained": {
+					"type": "certificate",
+					"certType": "chained",
+					"label": "Certificate chain (optional)",
+					"hidden": "!data.secure",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 3,
+					"xl": 3
+				},
 				"timezone": {
 					"type": "text",
 					"label": "Instance time zone",

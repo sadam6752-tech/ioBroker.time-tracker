@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.15",
+		"version": "0.7.16",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.16": {
+				"en": "new: HTTPS in the adapter itself - the instance settings offer Use HTTPS with a certificate from the certificate collection of ioBroker; a missing certificate keeps the web interface off instead of falling back to plain HTTP. fix: the weakness reported for uuid below exceljs is closed, npm audit is clean",
+				"de": "new: HTTPS im Adapter selbst — die Instanzeinstellungen bieten „HTTPS verwenden“ mit einem Zertifikat aus der Zertifikatsverwaltung von ioBroker; fehlt das Zertifikat, bleibt die Oberfläche aus, statt auf einfaches HTTP zurückzufallen. fix: die gemeldete Schwachstelle von uuid unter exceljs ist geschlossen, npm audit ist sauber",
+				"ru": "new: HTTPS в самом адаптере — в настройках экземпляра появился пункт «Использовать HTTPS» с сертификатом из хранилища сертификатов ioBroker; при отсутствии сертификата веб-интерфейс остаётся выключенным, а не переходит на обычный HTTP. fix: закрыта уязвимость uuid в exceljs, npm audit чист",
+				"pt": "new: HTTPS no próprio adaptador — as definições da instância oferecem «Usar HTTPS» com um certificado da coleção de certificados do ioBroker; se faltar o certificado, a interface web fica desligada em vez de voltar a HTTP simples. fix: a vulnerabilidade reportada em uuid dentro de exceljs foi fechada, o npm audit está limpo",
+				"nl": "new: HTTPS in de adapter zelf — de instantie-instellingen bieden «HTTPS gebruiken» met een certificaat uit de certificaatverzameling van ioBroker; ontbreekt het certificaat, dan blijft de webinterface uit in plaats van terug te vallen op gewoon HTTP. fix: de gemelde kwetsbaarheid van uuid onder exceljs is gedicht, npm audit is schoon",
+				"fr": "new: HTTPS dans l'adaptateur lui-même — les paramètres de l'instance proposent « Utiliser HTTPS » avec un certificat de la collection de certificats d'ioBroker ; si le certificat manque, l'interface web reste désactivée au lieu de revenir à un HTTP simple. fix: la faille signalée pour uuid sous exceljs est corrigée, npm audit est propre",
+				"it": "new: HTTPS nell'adattatore stesso — le impostazioni dell'istanza offrono «Usa HTTPS» con un certificato della raccolta certificati di ioBroker; se manca il certificato, l'interfaccia web resta spenta invece di tornare a HTTP semplice. fix: la vulnerabilità segnalata per uuid sotto exceljs è chiusa, npm audit è pulito",
+				"es": "new: HTTPS en el propio adaptador — los ajustes de la instancia ofrecen «Usar HTTPS» con un certificado de la colección de certificados de ioBroker; si falta el certificado, la interfaz web queda apagada en lugar de volver a HTTP simple. fix: se cerró la vulnerabilidad notificada de uuid bajo exceljs, npm audit está limpio",
+				"pl": "new: HTTPS w samym adapterze — ustawienia instancji oferują «Używaj HTTPS» z certyfikatem z kolekcji certyfikatów ioBroker; gdy brakuje certyfikatu, interfejs WWW pozostaje wyłączony zamiast wracać do zwykłego HTTP. fix: zgłoszona luka w uuid pod exceljs jest zamknięta, npm audit jest czysty",
+				"uk": "new: HTTPS у самому адаптері — у налаштуваннях екземпляра з'явився пункт «Використовувати HTTPS» із сертифікатом зі сховища сертифікатів ioBroker; за відсутності сертифіката веб-інтерфейс лишається вимкненим, а не повертається до звичайного HTTP. fix: закрито вразливість uuid в exceljs, npm audit чистий",
+				"zh-cn": "new: 适配器自带 HTTPS — 实例设置提供“使用 HTTPS”，证书来自 ioBroker 的证书集合；缺少证书时网页界面保持关闭，而不会退回普通 HTTP。fix: 已修复 exceljs 下 uuid 的已报告漏洞，npm audit 无问题"
+			},
 			"0.7.15": {
 				"en": "new: the instance tile in the admin opens the time tracking app now - the adapter announces its web interface as common.localLinks, so the admin shows a symbol next to the instance and on the overview page. The address comes from the bind address and the port of the instance settings, nothing is hardcoded.",
 				"de": "new: Die Instanzkachel im Admin öffnet jetzt die Zeiterfassungs-App — der Adapter meldet seine Oberfläche als `common.localLinks` an, deshalb zeigt der Admin ein Symbol neben der Instanz und auf der Übersichtsseite. Die Adresse setzt sich aus der Bind-Adresse und dem Port der Instanzeinstellungen zusammen, fest verdrahtet ist nichts.",
@@ -100,19 +113,6 @@
 				"pl": "zmiana: stan `calendar.feedFile` nazywa się teraz „Ścieżka pliku kalendarza (.ics)” — dawna nazwa „plik kalendarza” wyglądała jak pobieranie, a to ścieżka, którą czyta adapter `ical`; przeglądarka, aplikacja kalendarza lub skrypt używa linku `calendar.feedUrl`.",
 				"uk": "зміна: стан `calendar.feedFile` тепер називається «Шлях до файлу календаря (.ics)» — стара назва «файл календаря» виглядала як завантаження, хоча це шлях, який читає адаптер `ical`; браузер, календарний застосунок або скрипт використовує посилання `calendar.feedUrl`.",
 				"zh-cn": "变更：状态 `calendar.feedFile` 现在名为“日历文件的路径（.ics）”——旧名称“日历文件”让人以为该值是一个下载文件，实际上它是 `ical` 适配器读取的路径；浏览器、日历应用或脚本使用链接 `calendar.feedUrl`。"
-			},
-			"0.7.9": {
-				"en": "fix: “Feiertag hinzufügen” stayed grey as long as the day had to be typed as text — it comes from the date field of the browser now, and the label no longer names a format. A holiday entered without a region belongs to the country of the instance instead of always “DE”, the list shows the days of every region of the year, and a day of the next year takes the shown year along. “Abbrechen” closes the form of an absence while it is being changed as well.",
-				"de": "fix: „Feiertag hinzufügen“ blieb grau, solange der Tag als Text eingetippt werden musste – jetzt kommt er aus dem Datumsfeld des Browsers, und die Beschriftung nennt kein Format mehr. Ein ohne Region erfasster Feiertag gehört dem Land der Instanz statt immer „DE“, die Liste zeigt die Tage aller Regionen des Jahres, und ein Tag des nächsten Jahres holt das angezeigte Jahr mit. „Abbrechen“ schließt auch das Fenster einer Änderung.",
-				"ru": "исправление: «Feiertag hinzufügen» оставалась серой, пока день нужно было вводить текстом — теперь он приходит из поля даты браузера, и подпись больше не называет формат. Праздник, добавленный без региона, принадлежит стране экземпляра, а не всегда «DE», список показывает дни всех регионов года, а день следующего года тянет за собой показанный год. «Abbrechen» закрывает и окно изменения.",
-				"pt": "correção: «Feiertag hinzufügen» ficava cinzento enquanto o dia tinha de ser escrito como texto — agora vem do campo de data do navegador, e a etiqueta já não indica um formato. Um feriado registado sem região pertence ao país da instância em vez de sempre «DE», a lista mostra os dias de todas as regiões do ano, e um dia do ano seguinte traz consigo o ano apresentado. «Abbrechen» fecha também a janela de uma alteração.",
-				"nl": "fix: ‘Feiertag hinzufügen’ bleef grijs zolang de dag als tekst getypt moest worden — hij komt nu uit het datumveld van de browser, en het label noemt geen formaat meer. Een feestdag zonder regio hoort bij het land van de instantie in plaats van altijd ‘DE’, de lijst toont de dagen van alle regio's van het jaar, en een dag van het volgende jaar neemt het getoonde jaar mee. ‘Abbrechen’ sluit ook het venster van een wijziging.",
-				"fr": "correctif : « Feiertag hinzufügen » restait grisé tant que le jour devait être saisi comme texte — il vient désormais du champ de date du navigateur, et le libellé ne nomme plus de format. Un jour férié saisi sans région appartient au pays de l'instance au lieu de toujours « DE », la liste affiche les jours de toutes les régions de l'année, et un jour de l'année suivante entraîne l'année affichée. « Abbrechen » ferme aussi la fenêtre d'une modification.",
-				"it": "correzione: «Feiertag hinzufügen» restava grigio finché il giorno andava digitato come testo — ora arriva dal campo data del browser, e l'etichetta non indica più un formato. Una festività inserita senza regione appartiene al paese dell'istanza invece che sempre «DE», l'elenco mostra i giorni di tutte le regioni dell'anno, e un giorno dell'anno successivo porta con sé l'anno mostrato. «Abbrechen» chiude anche la finestra di una modifica.",
-				"es": "corrección: «Feiertag hinzufügen» seguía gris mientras el día hubiera que escribirlo como texto — ahora viene del campo de fecha del navegador, y la etiqueta ya no indica un formato. Un festivo introducido sin región pertenece al país de la instancia en lugar de siempre «DE», la lista muestra los días de todas las regiones del año, y un día del año siguiente trae consigo el año mostrado. «Abbrechen» también cierra la ventana de una modificación.",
-				"pl": "poprawka: „Feiertag hinzufügen” był wyszarzony, dopóki dzień trzeba było wpisywać jako tekst — teraz pochodzi z pola daty przeglądarki, a etykieta nie podaje już formatu. Święto dodane bez regionu należy do kraju instancji, a nie zawsze do „DE”, lista pokazuje dni wszystkich regionów roku, a dzień następnego roku pociąga za sobą wyświetlany rok. „Abbrechen” zamyka też okno zmiany.",
-				"uk": "виправлення: «Feiertag hinzufügen» залишалася сірою, доки день потрібно було вводити текстом — тепер він надходить із поля дати браузера, і підпис більше не називає формат. Свято, додане без регіону, належить країні екземпляра, а не завжди «DE», список показує дні всіх регіонів року, а день наступного року тягне за собою показаний рік. «Abbrechen» закриває й вікно зміни.",
-				"zh-cn": "修复：“Feiertag hinzufügen”在必须以文本输入日期时一直是灰色——现在日期来自浏览器的日期字段，标签也不再说明格式。未填写地区的节日属于实例所在国家，而不再固定为“DE”，列表会显示该年度所有地区的日期，下一年度的日期会一并切换显示的年份。“Abbrechen”也会关闭修改窗口。"
 			}
 		},
 		"titleLang": {
@@ -211,7 +211,11 @@
 		"adminLogin": "admin",
 		"adminPassword": "",
 		"kioskEnabled": false,
-		"trustProxy": false
+		"trustProxy": false,
+		"secure": false,
+		"certPublic": "",
+		"certPrivate": "",
+		"certChained": ""
 	},
 	"objects": [],
 	"instanceObjects": [

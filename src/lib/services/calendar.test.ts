@@ -109,6 +109,10 @@ describe("calendar service", () => {
 		expect(companyFeedUrl("iobroker.lan", 8092, "abc123")).to.equal(
 			"http://iobroker.lan:8092/api/calendar.ics?token=abc123",
 		);
+		// an adapter that speaks HTTPS itself hands out an https link
+		expect(companyFeedUrl("iobroker.lan", 8092, "abc123", true)).to.equal(
+			"https://iobroker.lan:8092/api/calendar.ics?token=abc123",
+		);
 		// a token that is not plain stays usable
 		expect(companyFeedUrl("10.0.0.2", 8093, "a b/c")).to.equal(
 			"http://10.0.0.2:8093/api/calendar.ics?token=a%20b%2Fc",

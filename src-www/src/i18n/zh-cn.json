@@ -465,5 +465,6 @@
 	"absences.previousMonth": "上个月",
 	"absences.nextMonth": "下个月",
 	"admin.absenceTypes.color": "日历中的颜色",
-	"admin.absenceTypes.colorClear": "移除颜色"
+	"admin.absenceTypes.colorClear": "移除颜色",
+	"app.disclaimer": "免责声明：本程序免费提供，不附带任何保证。它不能替代法律咨询，也不是官方批准的考勤系统。运营方应自行负责所记录时间的准确性、遵守适用的规定（劳动时间法规、数据保护）以及数据备份。"
 }

@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Poprzedni miesiąc",
 	"absences.nextMonth": "Następny miesiąc",
 	"admin.absenceTypes.color": "Kolor w kalendarzu",
-	"admin.absenceTypes.colorClear": "Usuń kolor"
+	"admin.absenceTypes.colorClear": "Usuń kolor",
+	"app.disclaimer": "Wyłączenie odpowiedzialności: program jest udostępniany nieodpłatnie i bez gwarancji. Nie zastępuje porady prawnej i nie jest oficjalnie zatwierdzonym systemem ewidencji czasu pracy. Operator odpowiada za poprawność zapisanych czasów, przestrzeganie obowiązujących przepisów (prawo pracy, ochrona danych) oraz kopie zapasowe."
 }

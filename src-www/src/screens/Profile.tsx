@@ -15,6 +15,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { AppShell } from "../components/AppShell";
+import { Disclaimer } from "../components/Disclaimer";
 import { ErrorAlert } from "../components/feedback";
 import { SUPPORTED_LANGUAGES } from "../i18n";
 import { useSession } from "../state/session";
@@ -130,6 +131,7 @@ export function Profile(): React.JSX.Element {
 					</Box>
 				</CardContent>
 			</Card>
+			<Disclaimer />
 		</AppShell>
 	);
 }

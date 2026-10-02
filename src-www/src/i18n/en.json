@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Previous month",
 	"absences.nextMonth": "Next month",
 	"admin.absenceTypes.color": "Colour in the calendar",
-	"admin.absenceTypes.colorClear": "Remove the colour"
+	"admin.absenceTypes.colorClear": "Remove the colour",
+	"app.disclaimer": "Disclaimer: this software is provided free of charge and without warranty. It is not legal advice and not an officially approved time recording system. You are responsible for the correctness of the recorded times, for compliance with the rules that apply to you (working time law, data protection) and for your backups."
 }

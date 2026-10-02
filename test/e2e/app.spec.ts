@@ -57,6 +57,8 @@ async function signInEmployee(page: Page): Promise<void> {
 
 test("refuses a wrong password and lets the administrator in", async ({ page }) => {
 	await page.goto("/");
+	// the liability notice is on the sign-in page, before anybody is logged in
+	await expect(page.locator("#app-disclaimer")).toContainText("Haftungsausschluss");
 	await page.getByLabel("Benutzername").fill(admin.login);
 	await page.getByLabel("Passwort").fill("Falsch-2026-gemischt");
 	await page.getByRole("button", { name: "Anmelden" }).click();

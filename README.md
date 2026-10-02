@@ -447,6 +447,22 @@ with `Intl`. Further translations are welcome: [`docs/i18n.md`](docs/i18n.md).
 Everything runs on your own ioBroker host: no cloud service, no telemetry. Punches and personal data stay in the
 local SQLite file, access is role-based, and every correction is written to an audit trail.
 
+## Disclaimer
+
+**Disclaimer.** This software is provided free of charge and "as is", without warranty of any kind and without any assurance of fitness for a particular purpose. It is not legal, tax or labour-law advice, and it is not an officially approved or certified time recording system. To the extent permitted by law, liability is excluded; liability for intent and gross negligence, for injury to life, body or health, and under mandatory law remains unaffected. You are responsible for:
+
+- the correctness of the recorded times, absences, balances and reports and for checking the results (e.g. against your payroll or with your payroll office),
+- compliance with the rules that apply to you (e.g. working time and labour law, the rights of a works council, employee information and consent, retention periods, GDPR),
+- regular backups – also outside the adapter – and testing that they can be restored.
+
+**Haftungsausschluss.** Dieses Programm wird unentgeltlich und so bereitgestellt, wie es ist – ohne Gewähr und ohne Zusicherung einer bestimmten Beschaffenheit oder Eignung. Es ersetzt keine Rechts-, Steuer- oder arbeitsrechtliche Beratung und ist kein amtlich zugelassenes oder zertifiziertes Zeiterfassungssystem. Soweit gesetzlich zulässig, ist die Haftung ausgeschlossen; unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie für Schäden an Leben, Körper und Gesundheit und nach zwingendem Recht. Du bist selbst verantwortlich für:
+
+- die inhaltliche und rechnerische Richtigkeit der erfassten Zeiten, Abwesenheiten, Salden und Berichte sowie die Prüfung der Ergebnisse (z. B. gegen die Lohnabrechnung oder mit deiner Lohnbuchhaltung),
+- die Einhaltung der geltenden Vorschriften (u. a. Arbeitszeit- und Arbeitsrecht, Rechte eines Betriebsrats, Information und Einwilligung der Beschäftigten, Aufbewahrungsfristen, DSGVO),
+- regelmäßige Datensicherungen – auch außerhalb des Adapters – und deren Wiederherstellungstest.
+
+The same notice, short, is shown on the sign-in page and in the profile of the web app.
+
 ## Documentation
 
 | Document                                           | Content                                                  |
@@ -469,6 +485,11 @@ local SQLite file, access is role-based, and every correction is written to an a
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) docs: the README carries a **disclaimer** (English and German) – free of charge and without warranty, no
+  legal advice, no officially approved time recording system, responsibility for the correct times, for the rules that
+  apply (working time law, works council, GDPR) and for the backups. The web app shows the same notice in short on the
+  sign-in page and in the profile, in all 11 languages.
 
 ### 0.7.16 (2026-10-01)
 

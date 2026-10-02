@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Mese precedente",
 	"absences.nextMonth": "Mese successivo",
 	"admin.absenceTypes.color": "Colore nel calendario",
-	"admin.absenceTypes.colorClear": "Rimuovere il colore"
+	"admin.absenceTypes.colorClear": "Rimuovere il colore",
+	"app.disclaimer": "Esclusione di responsabilità: questo programma è fornito gratuitamente e senza garanzia. Non sostituisce una consulenza legale e non è un sistema di rilevazione presenze ufficialmente approvato. Il gestore è responsabile della correttezza dei tempi registrati, del rispetto delle norme applicabili (diritto del lavoro, protezione dei dati) e dei backup."
 }

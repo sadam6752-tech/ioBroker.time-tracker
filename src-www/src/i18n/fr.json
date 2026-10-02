@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Mois précédent",
 	"absences.nextMonth": "Mois suivant",
 	"admin.absenceTypes.color": "Couleur dans le calendrier",
-	"admin.absenceTypes.colorClear": "Supprimer la couleur"
+	"admin.absenceTypes.colorClear": "Supprimer la couleur",
+	"app.disclaimer": "Avis de non-responsabilité : ce programme est fourni gratuitement et sans garantie. Il ne remplace pas un conseil juridique et n'est pas un système de pointage officiellement agréé. L'exploitant est responsable de l'exactitude des temps enregistrés, du respect des règles applicables (droit du temps de travail, protection des données) et des sauvegardes."
 }

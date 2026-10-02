@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Voriger Monat",
 	"absences.nextMonth": "Nächster Monat",
 	"admin.absenceTypes.color": "Farbe im Kalender",
-	"admin.absenceTypes.colorClear": "Farbe entfernen"
+	"admin.absenceTypes.colorClear": "Farbe entfernen",
+	"app.disclaimer": "Haftungsausschluss: Das Programm wird unentgeltlich und ohne Gewähr bereitgestellt. Es ersetzt keine Rechtsberatung und ist kein amtlich zugelassenes Zeiterfassungssystem. Für die Richtigkeit der erfassten Zeiten, die Einhaltung der geltenden Vorschriften (Arbeitszeitrecht, Datenschutz) und die Datensicherung ist der Betreiber selbst verantwortlich."
 }

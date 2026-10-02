@@ -465,5 +465,6 @@
 	"absences.previousMonth": "Mês anterior",
 	"absences.nextMonth": "Mês seguinte",
 	"admin.absenceTypes.color": "Cor no calendário",
-	"admin.absenceTypes.colorClear": "Remover a cor"
+	"admin.absenceTypes.colorClear": "Remover a cor",
+	"app.disclaimer": "Aviso legal: este programa é fornecido gratuitamente e sem garantia. Não substitui aconselhamento jurídico e não é um sistema de registo de tempo oficialmente aprovado. O operador é responsável pela exatidão dos tempos registados, pelo cumprimento das regras aplicáveis (direito do trabalho, proteção de dados) e pelas cópias de segurança."
 }

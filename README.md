@@ -486,10 +486,14 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+### 0.7.17 (2026-10-02)
+
 - (Alex) docs: the README carries a **disclaimer** (English and German) – free of charge and without warranty, no
   legal advice, no officially approved time recording system, responsibility for the correct times, for the rules that
   apply (working time law, works council, GDPR) and for the backups. The web app shows the same notice in short on the
   sign-in page and in the profile, in all 11 languages.
+- (Alex) change: the administration screen of the web app (`Admin.tsx`, 3,900 lines) is split into one file per tab
+  under `src-www/src/screens/admin/`. The code was moved, not rewritten – no change of behaviour.
 
 ### 0.7.16 (2026-10-01)
 
@@ -527,15 +531,6 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
   installation); only the former path without `storage` still answers with an empty archive. The protocol in
   `docs/testplan.md` is complete now (T1–T17 were carried over afterwards, T28 stands last), the test badge at the top
   of this file carries no label any more, and the background of the path sits in D11 of `docs/entscheidungen.md`
-
-### 0.7.12 (2026-09-27)
-
-- (Alex) fix: the calendar file hangs on a **mount point** now (`files/time-tracker.<n>/storage/calendar.ics`). 0.7.11
-  wrote it directly below the instance namespace, which the objects database refuses with “is not an object of type
-  meta” — no file was written and the folder stayed invisible in the file manager. The object `storage`
-  (`meta.folder`) is created on every start and is what keeps the folder visible; the `INFO.txt` helper is gone, a
-  failure of the calendar has a log line of its own (before it hid behind “states could not be published”), and
-  `calendar.feedFile` carries the new path for the `ical` adapter
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

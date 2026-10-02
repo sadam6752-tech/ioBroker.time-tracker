@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.16",
+		"version": "0.7.17",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.17": {
+				"en": "docs: the README carries a disclaimer (English and German) and the web app shows it in short on the sign-in page and in the profile. change: the administration screen of the web app is split into one file per tab (no change of behaviour)",
+				"de": "docs: Die README enthält einen Haftungsausschluss (Englisch und Deutsch), die Web-App zeigt ihn in Kurzform auf der Anmeldeseite und im Profil. change: Die Verwaltungsseite der Web-App ist in eine Datei je Reiter aufgeteilt (keine Verhaltensänderung)",
+				"ru": "docs: в README добавлен отказ от ответственности (английский и немецкий), веб-приложение показывает его кратко на странице входа и в профиле. change: страница администрирования веб-приложения разделена на один файл на вкладку (поведение не изменилось)",
+				"pt": "docs: o README inclui um aviso legal (inglês e alemão) e a aplicação web mostra-o resumido na página de início de sessão e no perfil. change: o ecrã de administração da aplicação web foi dividido num ficheiro por separador (sem alteração de comportamento)",
+				"nl": "docs: de README bevat een disclaimer (Engels en Duits) en de webapp toont die in het kort op de aanmeldpagina en in het profiel. change: het beheerscherm van de webapp is opgesplitst in één bestand per tabblad (geen gedragswijziging)",
+				"fr": "docs : le README contient un avis de non-responsabilité (anglais et allemand) et l'application web l'affiche en version courte sur la page de connexion et dans le profil. change : l'écran d'administration de l'application web est divisé en un fichier par onglet (aucun changement de comportement)",
+				"it": "docs: il README contiene un'esclusione di responsabilità (inglese e tedesco) e l'app web la mostra in forma breve nella pagina di accesso e nel profilo. change: la schermata di amministrazione dell'app web è divisa in un file per scheda (nessuna modifica del comportamento)",
+				"es": "docs: el README incluye un aviso legal (inglés y alemán) y la aplicación web lo muestra en versión breve en la página de inicio de sesión y en el perfil. change: la pantalla de administración de la aplicación web se divide en un archivo por pestaña (sin cambios de comportamiento)",
+				"pl": "docs: README zawiera wyłączenie odpowiedzialności (angielski i niemiecki), a aplikacja web pokazuje je w skrócie na stronie logowania i w profilu. change: ekran administracji aplikacji web został podzielony na jeden plik na kartę (bez zmiany zachowania)",
+				"uk": "docs: README містить відмову від відповідальності (англійською та німецькою), а вебзастосунок показує її коротко на сторінці входу та в профілі. change: екран адміністрування вебзастосунку розділено на один файл на вкладку (поведінка не змінилась)",
+				"zh-cn": "docs: README 增加了免责声明（英文和德文），网页应用在登录页和个人资料中以简短形式显示。change: 网页应用的管理界面已拆分为每个标签页一个文件（行为无变化）"
+			},
 			"0.7.16": {
 				"en": "new: HTTPS in the adapter itself - the instance settings offer Use HTTPS with a certificate from the certificate collection of ioBroker; a missing certificate keeps the web interface off instead of falling back to plain HTTP. fix: the weakness reported for uuid below exceljs is closed, npm audit is clean",
 				"de": "new: HTTPS im Adapter selbst — die Instanzeinstellungen bieten „HTTPS verwenden“ mit einem Zertifikat aus der Zertifikatsverwaltung von ioBroker; fehlt das Zertifikat, bleibt die Oberfläche aus, statt auf einfaches HTTP zurückzufallen. fix: die gemeldete Schwachstelle von uuid unter exceljs ist geschlossen, npm audit ist sauber",
@@ -100,19 +113,6 @@
 				"pl": "poprawka: plik kalendarza jest teraz zapisywany przez **API plików** adaptera, a nie jako prywatny plik w danych instancji.",
 				"uk": "виправлення: файл календаря тепер записується через **файловий API** адаптера, а не як приватний файл у даних екземпляра.",
 				"zh-cn": "修复：日历文件现在通过适配器的**文件 API** 写入，而不再是实例数据下的私有文件。"
-			},
-			"0.7.10": {
-				"en": "change: the state `calendar.feedFile` is called “Path of the calendar file (.ics)” now — the old name “calendar file” made the value look like a download, while it is the path that the `ical` adapter reads; a browser, a calendar app or a script uses the link `calendar.feedUrl`.",
-				"de": "change: Der Zustand `calendar.feedFile` heißt jetzt „Pfad der Kalenderdatei (.ics)“ – der alte Name „Kalenderdatei“ ließ den Wert wie einen Download aussehen, obwohl er der Pfad ist, den der `ical`-Adapter liest; ein Browser, eine Kalender-App oder ein Skript nutzt den Link `calendar.feedUrl`.",
-				"ru": "изменение: состояние `calendar.feedFile` теперь называется «Путь к файлу календаря (.ics)» — прежнее имя «файл календаря» выглядело как загрузка, хотя это путь, который читает адаптер `ical`; браузер, календарное приложение или скрипт использует ссылку `calendar.feedUrl`.",
-				"pt": "alteração: o estado `calendar.feedFile` chama-se agora «Caminho do ficheiro de calendário (.ics)» — o nome antigo «ficheiro de calendário» fazia o valor parecer uma transferência, embora seja o caminho que o adaptador `ical` lê; um navegador, uma aplicação de calendário ou um script usa a ligação `calendar.feedUrl`.",
-				"nl": "wijziging: de toestand `calendar.feedFile` heet nu ‘Pad van het kalenderbestand (.ics)’ — de oude naam ‘kalenderbestand’ deed de waarde als een download lijken, terwijl het het pad is dat de `ical`-adapter leest; een browser, een agenda-app of een script gebruikt de link `calendar.feedUrl`.",
-				"fr": "changement : l'état `calendar.feedFile` s'appelle désormais « Chemin du fichier de calendrier (.ics) » — l'ancien nom « fichier de calendrier » faisait passer la valeur pour un téléchargement, alors que c'est le chemin que lit l'adaptateur `ical` ; un navigateur, une application d'agenda ou un script utilise le lien `calendar.feedUrl`.",
-				"it": "modifica: lo stato `calendar.feedFile` ora si chiama «Percorso del file di calendario (.ics)» — il vecchio nome «file di calendario» faceva sembrare il valore un download, mentre è il percorso che legge l'adattatore `ical`; un browser, un'app di calendario o uno script usa il link `calendar.feedUrl`.",
-				"es": "cambio: el estado `calendar.feedFile` ahora se llama «Ruta del archivo de calendario (.ics)» — el nombre antiguo «archivo de calendario» hacía que el valor pareciera una descarga, aunque es la ruta que lee el adaptador `ical`; un navegador, una app de calendario o un script usa el enlace `calendar.feedUrl`.",
-				"pl": "zmiana: stan `calendar.feedFile` nazywa się teraz „Ścieżka pliku kalendarza (.ics)” — dawna nazwa „plik kalendarza” wyglądała jak pobieranie, a to ścieżka, którą czyta adapter `ical`; przeglądarka, aplikacja kalendarza lub skrypt używa linku `calendar.feedUrl`.",
-				"uk": "зміна: стан `calendar.feedFile` тепер називається «Шлях до файлу календаря (.ics)» — стара назва «файл календаря» виглядала як завантаження, хоча це шлях, який читає адаптер `ical`; браузер, календарний застосунок або скрипт використовує посилання `calendar.feedUrl`.",
-				"zh-cn": "变更：状态 `calendar.feedFile` 现在名为“日历文件的路径（.ics）”——旧名称“日历文件”让人以为该值是一个下载文件，实际上它是 `ical` 适配器读取的路径；浏览器、日历应用或脚本使用链接 `calendar.feedUrl`。"
 			}
 		},
 		"titleLang": {

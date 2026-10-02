@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.12 (2026-09-27)
+
+- (Alex) fix: the calendar file hangs on a **mount point** now (`files/time-tracker.<n>/storage/calendar.ics`). 0.7.11
+  wrote it directly below the instance namespace, which the objects database refuses with “is not an object of type
+  meta” — no file was written and the folder stayed invisible in the file manager. The object `storage`
+  (`meta.folder`) is created on every start and is what keeps the folder visible; the `INFO.txt` helper is gone, a
+  failure of the calendar has a log line of its own (before it hid behind “states could not be published”), and
+  `calendar.feedFile` carries the new path for the `ical` adapter
+
 ### 0.7.11 (2026-09-27)
 
 - (Alex) fix: the calendar file goes through the **file API** of the adapter now — the folder

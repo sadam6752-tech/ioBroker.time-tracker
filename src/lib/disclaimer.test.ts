@@ -6,11 +6,15 @@ import * as path from "node:path";
 const root = path.join(__dirname, "..", "..");
 
 describe("disclaimer", () => {
-	it("is part of the README in English and German", () => {
+	it("is part of the README in English, with the German version in docs", () => {
 		const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 		expect(readme).to.contain("## Disclaimer");
 		expect(readme).to.contain("**Disclaimer.**");
-		expect(readme).to.contain("**Haftungsausschluss.**");
+		// the checker (E6015) wants the README in English only, so the German text lives in docs/
+		expect(readme).to.not.contain("Haftungsausschluss.");
+		expect(readme).to.contain("docs/haftungsausschluss.md");
+		const german = fs.readFileSync(path.join(root, "docs", "haftungsausschluss.md"), "utf8");
+		expect(german).to.contain("**Haftungsausschluss.**");
 	});
 
 	it("is shown in the web app in every language", () => {

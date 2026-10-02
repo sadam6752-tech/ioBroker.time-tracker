@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.17",
+		"version": "0.7.18",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.18": {
+				"en": "fix: the README is English only again (the German disclaimer moved to docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"de": "fix: Die README ist wieder rein englisch (der deutsche Haftungsausschluss steht jetzt in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"ru": "fix: README снова только на английском (немецкий отказ от ответственности перенесён в docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"pt": "fix: o README volta a estar só em inglês (o aviso legal em alemão passou para docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"nl": "fix: de README is weer alleen Engels (de Duitse disclaimer staat nu in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"fr": "fix : le README est de nouveau uniquement en anglais (l'avis de non-responsabilité allemand est passé dans docs/haftungsausschluss.md) ; chore : @iobroker/testing 6.3.0",
+				"it": "fix: il README è di nuovo solo in inglese (l'esclusione di responsabilità in tedesco è ora in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"es": "fix: el README vuelve a estar solo en inglés (el aviso legal en alemán pasó a docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"pl": "fix: README jest znowu tylko po angielsku (niemieckie wyłączenie odpowiedzialności przeniesiono do docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"uk": "fix: README знову лише англійською (німецьку відмову від відповідальності перенесено до docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
+				"zh-cn": "fix: README 再次仅使用英文（德文免责声明已移至 docs/haftungsausschluss.md）；chore: @iobroker/testing 6.3.0"
+			},
 			"0.7.17": {
 				"en": "docs: the README carries a disclaimer (English and German) and the web app shows it in short on the sign-in page and in the profile. change: the administration screen of the web app is split into one file per tab (no change of behaviour)",
 				"de": "docs: Die README enthält einen Haftungsausschluss (Englisch und Deutsch), die Web-App zeigt ihn in Kurzform auf der Anmeldeseite und im Profil. change: Die Verwaltungsseite der Web-App ist in eine Datei je Reiter aufgeteilt (keine Verhaltensänderung)",
@@ -100,19 +113,6 @@
 				"pl": "poprawka: plik kalendarza wisi teraz na punkcie montowania — `files/time-tracker.<n>/storage/calendar.ics`. W 0.7.11 był zapisywany bezpośrednio pod przestrzenią nazw instancji; baza obiektów odrzuca to z `is not an object of type meta`, więc plik nie powstawał, a folder pozostawał niewidoczny w menedżerze plików.",
 				"uk": "виправлення: файл календаря тепер прикріплено до точки монтування — `files/time-tracker.<n>/storage/calendar.ics`. У 0.7.11 він записувався безпосередньо під простором імен екземпляра; база об'єктів відхиляє це з `is not an object of type meta`, тому файл не створювався, а тека залишалася невидимою у файловому менеджері.",
 				"zh-cn": "修复：日历文件现在挂载在挂载点上——`files/time-tracker.<n>/storage/calendar.ics`。0.7.11 直接写入实例命名空间之下，对象数据库以 `is not an object of type meta` 拒绝，因此没有生成文件，文件夹在文件管理器中始终不可见。"
-			},
-			"0.7.11": {
-				"en": "fix: the calendar file is written through the **file API** of the adapter now instead of a private file below the instance data.",
-				"de": "fix: Die Kalenderdatei wird jetzt über die **Datei-API** des Adapters geschrieben statt als private Datei unter den Instanzdaten.",
-				"ru": "исправление: файл календаря теперь записывается через **файловый API** адаптера, а не как приватный файл в данных экземпляра.",
-				"pt": "correção: o ficheiro de calendário é agora escrito através da **API de ficheiros** do adaptador, em vez de um ficheiro privado nos dados da instância.",
-				"nl": "fix: het kalenderbestand wordt nu via de **bestands-API** van de adapter geschreven in plaats van als privébestand in de instantiegegevens.",
-				"fr": "correction : le fichier de calendrier est désormais écrit via l'**API de fichiers** de l'adaptateur, et non comme fichier privé dans les données de l'instance.",
-				"it": "correzione: il file del calendario viene ora scritto tramite l'**API dei file** dell'adattatore, invece che come file privato nei dati dell'istanza.",
-				"es": "corrección: el archivo de calendario ahora se escribe mediante la **API de archivos** del adaptador, en lugar de un archivo privado en los datos de la instancia.",
-				"pl": "poprawka: plik kalendarza jest teraz zapisywany przez **API plików** adaptera, a nie jako prywatny plik w danych instancji.",
-				"uk": "виправлення: файл календаря тепер записується через **файловий API** адаптера, а не як приватний файл у даних екземпляра.",
-				"zh-cn": "修复：日历文件现在通过适配器的**文件 API** 写入，而不再是实例数据下的私有文件。"
 			}
 		},
 		"titleLang": {

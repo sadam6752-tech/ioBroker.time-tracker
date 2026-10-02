@@ -185,7 +185,7 @@ Everything is served on the port of the instance settings:
 
 The board shows every employee with the state of the day. The **worked time of today** appears next to it
 (`1:23`, `0:00` before the first punch of the day) once the **work profile** of that employee allows it
-(*Arbeitszeit auf der Anwesenheitskarte*, off by default): the board is visible before the PIN is entered, so the
+(*Working time on the presence card*, off by default): the board is visible before the PIN is entered, so the
 administration decides this per employee — the API only sends the minutes for employees who agreed.
 
 ### Terminal (kiosk)
@@ -455,13 +455,9 @@ local SQLite file, access is role-based, and every correction is written to an a
 - compliance with the rules that apply to you (e.g. working time and labour law, the rights of a works council, employee information and consent, retention periods, GDPR),
 - regular backups – also outside the adapter – and testing that they can be restored.
 
-**Haftungsausschluss.** Dieses Programm wird unentgeltlich und so bereitgestellt, wie es ist – ohne Gewähr und ohne Zusicherung einer bestimmten Beschaffenheit oder Eignung. Es ersetzt keine Rechts-, Steuer- oder arbeitsrechtliche Beratung und ist kein amtlich zugelassenes oder zertifiziertes Zeiterfassungssystem. Soweit gesetzlich zulässig, ist die Haftung ausgeschlossen; unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie für Schäden an Leben, Körper und Gesundheit und nach zwingendem Recht. Du bist selbst verantwortlich für:
+The German version of this notice is in [`docs/haftungsausschluss.md`](docs/haftungsausschluss.md).
 
-- die inhaltliche und rechnerische Richtigkeit der erfassten Zeiten, Abwesenheiten, Salden und Berichte sowie die Prüfung der Ergebnisse (z. B. gegen die Lohnabrechnung oder mit deiner Lohnbuchhaltung),
-- die Einhaltung der geltenden Vorschriften (u. a. Arbeitszeit- und Arbeitsrecht, Rechte eines Betriebsrats, Information und Einwilligung der Beschäftigten, Aufbewahrungsfristen, DSGVO),
-- regelmäßige Datensicherungen – auch außerhalb des Adapters – und deren Wiederherstellungstest.
-
-The same notice, short, is shown on the sign-in page and in the profile of the web app.
+The same notice, short, is shown on the sign-in page and in the profile of the web app, in all 11 languages.
 
 ## Documentation
 
@@ -485,6 +481,12 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+### 0.7.18 (2026-10-02)
+
+- (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to
+  `docs/haftungsausschluss.md`, and a German name of a setting in the README is the English one now.
+- (Alex) chore: `@iobroker/testing` ^6.3.0 (checker warning W0037).
 
 ### 0.7.17 (2026-10-02)
 
@@ -523,14 +525,6 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
   nothing appears in the log” case from the field report. The decision sits in
   `src/lib/services/firstAdministrator.ts` next to its unit test; `README.md` (“First start”), `docs/erste-schritte.md`,
   `docs/testplan.md` and D15 of `docs/entscheidungen.md` describe the four log lines
-
-### 0.7.13 (2026-09-27)
-
-- (Alex) docs: the file server of a `web` instance is a documented way to the calendar file again — under the new mount
-  point the server hands the file out (`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`, checked on a real
-  installation); only the former path without `storage` still answers with an empty archive. The protocol in
-  `docs/testplan.md` is complete now (T1–T17 were carried over afterwards, T28 stands last), the test badge at the top
-  of this file carries no label any more, and the background of the path sits in D11 of `docs/entscheidungen.md`
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

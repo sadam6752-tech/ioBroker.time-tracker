@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.13 (2026-09-27)
+
+- (Alex) docs: the file server of a `web` instance is a documented way to the calendar file again — under the new mount
+  point the server hands the file out (`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`, checked on a real
+  installation); only the former path without `storage` still answers with an empty archive. The protocol in
+  `docs/testplan.md` is complete now (T1–T17 were carried over afterwards, T28 stands last), the test badge at the top
+  of this file carries no label any more, and the background of the path sits in D11 of `docs/entscheidungen.md`
+
 ### 0.7.12 (2026-09-27)
 
 - (Alex) fix: the calendar file hangs on a **mount point** now (`files/time-tracker.<n>/storage/calendar.ics`). 0.7.11

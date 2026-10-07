@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.18",
+		"version": "0.7.19",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.19": {
+				"en": "fix: a fingerprint reader punches again (a rule that reads the employee from the value fires on every scan, a value map keeps a slot number from being taken for an employee id); security: body limit per route, length limits for input without a session, security headers, origin check of the live stream, login lock per address",
+				"de": "fix: Ein Fingerabdruck-Leser stempelt wieder (eine Regel, die den Mitarbeiter aus dem Wert liest, löst bei jedem Scan aus; eine Wertzuordnung verhindert, dass eine Speichernummer für eine Mitarbeiter-ID gehalten wird); Sicherheit: Body-Limit je Route, Längengrenzen für Eingaben ohne Sitzung, Schutzköpfe, Origin-Prüfung des Live-Streams, Anmeldesperre je Adresse",
+				"ru": "fix: считыватель отпечатков снова штемпелюет (правило, читающее сотрудника из значения, срабатывает при каждом сканировании; таблица значений не даёт принять номер ячейки за id сотрудника); безопасность: лимит тела запроса по маршруту, ограничения длины для ввода без сессии, защитные заголовки, проверка Origin у живого потока, блокировка входа по адресу",
+				"pt": "fix: um leitor de impressões digitais volta a picar (uma regra que lê o funcionário a partir do valor dispara em cada leitura; uma tabela de valores impede que um número de posição seja tomado por um id de funcionário); segurança: limite do corpo por rota, limites de tamanho para entradas sem sessão, cabeçalhos de segurança, verificação de origem do fluxo em direto, bloqueio de início de sessão por endereço",
+				"nl": "fix: een vingerafdruklezer stempelt weer (een regel die de medewerker uit de waarde leest, wordt bij elke scan uitgevoerd; een waardetabel voorkomt dat een slotnummer voor een medewerker-id wordt aangezien); beveiliging: body-limiet per route, lengtegrenzen voor invoer zonder sessie, beveiligingsheaders, Origin-controle van de live-stream, aanmeldblokkade per adres",
+				"fr": "fix : un lecteur d'empreintes pointe de nouveau (une règle qui lit l'employé dans la valeur se déclenche à chaque scan ; une table de valeurs évite qu'un numéro d'emplacement soit pris pour l'id d'un employé) ; sécurité : limite du corps par route, limites de longueur pour les entrées sans session, en-têtes de sécurité, contrôle de l'origine du flux en direct, blocage de connexion par adresse",
+				"it": "fix: un lettore di impronte timbra di nuovo (una regola che legge il dipendente dal valore scatta a ogni scansione; una tabella dei valori impedisce di scambiare un numero di slot per l'id di un dipendente); sicurezza: limite del corpo per route, limiti di lunghezza per input senza sessione, intestazioni di sicurezza, controllo dell'origine del flusso live, blocco dell'accesso per indirizzo",
+				"es": "fix: un lector de huellas vuelve a fichar (una regla que lee el empleado del valor se activa en cada escaneo; una tabla de valores evita que un número de posición se tome por el id de un empleado); seguridad: límite del cuerpo por ruta, límites de longitud para entradas sin sesión, cabeceras de seguridad, comprobación del origen del flujo en vivo, bloqueo de inicio de sesión por dirección",
+				"pl": "fix: czytnik linii papilarnych znowu odbija (reguła czytająca pracownika z wartości uruchamia się przy każdym skanie; tabela wartości zapobiega pomyleniu numeru slotu z id pracownika); bezpieczeństwo: limit treści żądania na trasę, limity długości dla danych bez sesji, nagłówki bezpieczeństwa, kontrola Origin strumienia na żywo, blokada logowania według adresu",
+				"uk": "fix: зчитувач відбитків знову штампує (правило, що читає співробітника зі значення, спрацьовує при кожному скануванні; таблиця значень не дає прийняти номер комірки за id співробітника); безпека: ліміт тіла запиту за маршрутом, обмеження довжини для вводу без сесії, захисні заголовки, перевірка Origin живого потоку, блокування входу за адресою",
+				"zh-cn": "fix: 指纹读取器再次可以打卡（从值中读取员工的规则在每次扫描时都会触发；值对照表可避免把槽位编号误当作员工 id）；安全：按路由限制请求体、对无会话输入限制长度、安全响应头、实时流的 Origin 检查、按地址锁定登录"
+			},
 			"0.7.18": {
 				"en": "fix: the README is English only again (the German disclaimer moved to docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
 				"de": "fix: Die README ist wieder rein englisch (der deutsche Haftungsausschluss steht jetzt in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
@@ -100,19 +113,6 @@
 				"pl": "docs: plik kalendarza jest znowu dostępny przez serwer plików instancji `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (sprawdzone na prawdziwej instalacji, folder `storage` jest częścią ścieżki). Protokół odbioru `docs/testplan.md` jest kompletny.",
 				"uk": "docs: файл календаря знову доступний через файловий сервер екземпляра `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (перевірено на реальній інсталяції, тека `storage` входить до шляху). Протокол приймання `docs/testplan.md` заповнено повністю.",
 				"zh-cn": "docs：日历文件重新可以通过 `web` 实例的文件服务器访问——`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`（已在真实安装中验证，`storage` 文件夹属于路径的一部分）。`docs/testplan.md` 的验收记录已完整。"
-			},
-			"0.7.12": {
-				"en": "fix: the calendar file hangs on a mount point now — `files/time-tracker.<n>/storage/calendar.ics`. 0.7.11 wrote it directly below the instance namespace; the objects database refuses that with `is not an object of type meta`, so no file was written and the folder stayed invisible in the file manager.",
-				"de": "fix: Die Kalenderdatei hängt jetzt an einem Ablagepunkt — `files/time-tracker.<n>/storage/calendar.ics`. 0.7.11 schrieb sie direkt unter den Instanz-Namensraum; die Objektdatenbank weist das mit `is not an object of type meta` ab, deshalb entstand keine Datei und der Ordner blieb im Dateimanager unsichtbar.",
-				"ru": "исправление: файл календаря теперь находится на точке монтирования — `files/time-tracker.<n>/storage/calendar.ics`. В 0.7.11 он записывался прямо под пространством имён экземпляра; база объектов отклоняет это с `is not an object of type meta`, поэтому файл не создавался, а папка оставалась невидимой в файловом менеджере.",
-				"pt": "correção: o ficheiro de calendário está agora num ponto de montagem — `files/time-tracker.<n>/storage/calendar.ics`. Na 0.7.11 era escrito diretamente sob o espaço de nomes da instância; a base de objetos rejeita isso com `is not an object of type meta`, por isso não era criado nenhum ficheiro e a pasta permanecia invisível no gestor de ficheiros.",
-				"nl": "fix: het kalenderbestand hangt nu aan een mountpunt — `files/time-tracker.<n>/storage/calendar.ics`. In 0.7.11 werd het direct onder de instantie-naamruimte geschreven; de objectendatabase weigert dat met `is not an object of type meta`, waardoor er geen bestand ontstond en de map onzichtbaar bleef in de bestandsbeheerder.",
-				"fr": "correction : le fichier de calendrier se trouve désormais sur un point de montage — `files/time-tracker.<n>/storage/calendar.ics`. En 0.7.11, il était écrit directement sous l'espace de noms de l'instance ; la base d'objets refuse cela avec `is not an object of type meta`, aucun fichier n'était donc créé et le dossier restait invisible dans le gestionnaire de fichiers.",
-				"it": "correzione: il file del calendario si trova ora su un punto di montaggio — `files/time-tracker.<n>/storage/calendar.ics`. Nella 0.7.11 veniva scritto direttamente sotto lo spazio dei nomi dell'istanza; il database degli oggetti lo rifiuta con `is not an object of type meta`, quindi non veniva creato alcun file e la cartella restava invisibile nel gestore dei file.",
-				"es": "corrección: el archivo de calendario ahora cuelga de un punto de montaje — `files/time-tracker.<n>/storage/calendar.ics`. En 0.7.11 se escribía directamente bajo el espacio de nombres de la instancia; la base de objetos lo rechaza con `is not an object of type meta`, así que no se creaba ningún archivo y la carpeta seguía invisible en el gestor de archivos.",
-				"pl": "poprawka: plik kalendarza wisi teraz na punkcie montowania — `files/time-tracker.<n>/storage/calendar.ics`. W 0.7.11 był zapisywany bezpośrednio pod przestrzenią nazw instancji; baza obiektów odrzuca to z `is not an object of type meta`, więc plik nie powstawał, a folder pozostawał niewidoczny w menedżerze plików.",
-				"uk": "виправлення: файл календаря тепер прикріплено до точки монтування — `files/time-tracker.<n>/storage/calendar.ics`. У 0.7.11 він записувався безпосередньо під простором імен екземпляра; база об'єктів відхиляє це з `is not an object of type meta`, тому файл не створювався, а тека залишалася невидимою у файловому менеджері.",
-				"zh-cn": "修复：日历文件现在挂载在挂载点上——`files/time-tracker.<n>/storage/calendar.ics`。0.7.11 直接写入实例命名空间之下，对象数据库以 `is not an object of type meta` 拒绝，因此没有生成文件，文件夹在文件管理器中始终不可见。"
 			}
 		},
 		"titleLang": {

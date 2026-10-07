@@ -8,6 +8,17 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.14 (2026-10-01)
+
+- (Alex) fix: a start password that is entered **after** the first start opens the installation now. The first
+  administrator was only ever created once, so a later value of the instance setting was ignored in silence — no log
+  line and no way in. As long as the account still carries its unchanged start password, the adapter applies the
+  configured value on every start, names the account in the log and notes it in the audit trail; once the password
+  was changed in the app the setting stays out of play and the log says so. That is exactly the “I set a password and
+  nothing appears in the log” case from the field report. The decision sits in
+  `src/lib/services/firstAdministrator.ts` next to its unit test; `README.md` (“First start”), `docs/erste-schritte.md`,
+  `docs/testplan.md` and D15 of `docs/entscheidungen.md` describe the four log lines
+
 ### 0.7.13 (2026-09-27)
 
 - (Alex) docs: the file server of a `web` instance is a documented way to the calendar file again — under the new mount

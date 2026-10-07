@@ -512,6 +512,8 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+### 0.7.19 (2026-10-07)
+
 - (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the _value_ of its state changed, so the
   same person scanning twice in a row (in at 8:00, out at 17:00, nobody in between) was ignored the second time. A rule
   has the option _Fire on every write_ now – on by default for _Value is the employee_ (existing rules of that mode
@@ -568,17 +570,6 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
   instance — one click and the login screen shows up, without typing host and port. The link uses the bind address and
   the port of the instance settings; with the default `127.0.0.1` it leads to the ioBroker machine itself, with
   `0.0.0.0` to the address the browser reached the admin with.
-
-### 0.7.14 (2026-10-01)
-
-- (Alex) fix: a start password that is entered **after** the first start opens the installation now. The first
-  administrator was only ever created once, so a later value of the instance setting was ignored in silence — no log
-  line and no way in. As long as the account still carries its unchanged start password, the adapter applies the
-  configured value on every start, names the account in the log and notes it in the audit trail; once the password
-  was changed in the app the setting stays out of play and the log says so. That is exactly the “I set a password and
-  nothing appears in the log” case from the field report. The decision sits in
-  `src/lib/services/firstAdministrator.ts` next to its unit test; `README.md` (“First start”), `docs/erste-schritte.md`,
-  `docs/testplan.md` and D15 of `docs/entscheidungen.md` describe the four log lines
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

@@ -8,6 +8,14 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.15 (2026-10-01)
+
+- (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way
+  into its own web interface as `common.localLinks`, so the admin shows _Open the time tracking app_ next to the
+  instance — one click and the login screen shows up, without typing host and port. The link uses the bind address and
+  the port of the instance settings; with the default `127.0.0.1` it leads to the ioBroker machine itself, with
+  `0.0.0.0` to the address the browser reached the admin with.
+
 ### 0.7.14 (2026-10-01)
 
 - (Alex) fix: a start password that is entered **after** the first start opens the installation now. The first

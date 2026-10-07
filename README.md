@@ -512,6 +512,8 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+### 0.7.20 (2026-10-07)
+
 - (Alex) change: **Administration → Actions** is a list now: one line per action – label, value, an _Active_ box
   and the time of its last fire – and a click on the line opens the card with all fields (a click on the box only
   switches the rule). A long list of actions stays readable; on a phone the line wraps to three short rows.
@@ -566,14 +568,6 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
   of falling back to plain HTTP.
 - (Alex) fix: the dependency `uuid` below `exceljs` is pinned to a version without the published weakness
   (`overrides`), `npm audit --omit=dev` is clean again; other dependencies updated within their ranges.
-
-### 0.7.15 (2026-10-01)
-
-- (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way
-  into its own web interface as `common.localLinks`, so the admin shows _Open the time tracking app_ next to the
-  instance — one click and the login screen shows up, without typing host and port. The link uses the bind address and
-  the port of the instance settings; with the default `127.0.0.1` it leads to the ioBroker machine itself, with
-  `0.0.0.0` to the address the browser reached the admin with.
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

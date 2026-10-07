@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.19",
+		"version": "0.7.20",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.20": {
+				"en": "change: the actions of the administration are a list with one line per action (label, value, active box, last fire); a click on the line opens the card",
+				"de": "change: Die Aktionen der Verwaltung sind eine Liste mit einer Zeile je Aktion (Bezeichnung, Wert, Aktiv-Feld, letzte Auslösung); ein Klick auf die Zeile öffnet die Karte",
+				"ru": "change: действия в администрировании теперь список с одной строкой на действие (название, значение, флажок «активно», последнее срабатывание); клик по строке открывает карточку",
+				"pt": "change: as ações da administração são uma lista com uma linha por ação (designação, valor, caixa de ativo, último disparo); um clique na linha abre o cartão",
+				"nl": "change: de acties van het beheer zijn een lijst met één regel per actie (naam, waarde, actief-vak, laatste uitvoering); een klik op de regel opent de kaart",
+				"fr": "change : les actions de l'administration forment une liste avec une ligne par action (nom, valeur, case active, dernier déclenchement) ; un clic sur la ligne ouvre la fiche",
+				"it": "change: le azioni dell'amministrazione sono un elenco con una riga per azione (nome, valore, casella attiva, ultimo avvio); un clic sulla riga apre la scheda",
+				"es": "change: las acciones de la administración son una lista con una línea por acción (nombre, valor, casilla de activo, último disparo); un clic en la línea abre la ficha",
+				"pl": "change: akcje w administracji są listą z jednym wierszem na akcję (nazwa, wartość, pole aktywności, ostatnie uruchomienie); kliknięcie wiersza otwiera kartę",
+				"uk": "change: дії в адмініструванні тепер список з одним рядком на дію (назва, значення, прапорець «активно», останнє спрацьовування); клік по рядку відкриває картку",
+				"zh-cn": "change: 管理中的操作改为列表，每个操作一行（名称、值、启用复选框、最近触发）；点击该行即可展开卡片"
+			},
 			"0.7.19": {
 				"en": "fix: a fingerprint reader punches again (a rule that reads the employee from the value fires on every scan, a value map keeps a slot number from being taken for an employee id); security: body limit per route, length limits for input without a session, security headers, origin check of the live stream, login lock per address",
 				"de": "fix: Ein Fingerabdruck-Leser stempelt wieder (eine Regel, die den Mitarbeiter aus dem Wert liest, löst bei jedem Scan aus; eine Wertzuordnung verhindert, dass eine Speichernummer für eine Mitarbeiter-ID gehalten wird); Sicherheit: Body-Limit je Route, Längengrenzen für Eingaben ohne Sitzung, Schutzköpfe, Origin-Prüfung des Live-Streams, Anmeldesperre je Adresse",
@@ -100,19 +113,6 @@
 				"pl": "poprawka: hasło startowe wpisane po pierwszym uruchomieniu otwiera teraz instalację — dopóki pierwszy administrator nie zmienił jeszcze swojego hasła startowego, adapter stosuje skonfigurowaną wartość przy każdym uruchomieniu i podaje w logu, co się stało; po zmianie hasła w aplikacji ustawienie pozostaje bez znaczenia, a log o tym mówi.",
 				"uk": "виправлення: стартовий пароль, введений після першого запуску, тепер відкриває інсталяцію — поки перший адміністратор ще не змінив свій стартовий пароль, адаптер застосовує налаштоване значення під час кожного запуску і повідомляє в журналі, що сталося; після зміни пароля в застосунку налаштування не діє, і журнал про це говорить.",
 				"zh-cn": "修复：在首次启动之后才填入的启动密码现在可以打开安装——只要第一位管理员尚未更改其启动密码，适配器每次启动都会应用所配置的值并在日志中说明发生了什么；在应用中更改密码后，该设置不再生效，日志也会说明这一点。"
-			},
-			"0.7.13": {
-				"en": "docs: the calendar file is reachable through the file server of a `web` instance again — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (checked on a real installation, the `storage` folder belongs to the path); the acceptance protocol `docs/testplan.md` is complete.",
-				"de": "docs: Die Kalenderdatei ist über den Dateiserver einer `web`-Instanz wieder erreichbar — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (in einer echten Installation geprüft, der Ordner `storage` gehört zum Pfad). Das Abnahmeprotokoll `docs/testplan.md` ist vollständig.",
-				"ru": "docs: файл календаря снова доступен через файловый сервер экземпляра `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (проверено на реальной установке, папка `storage` входит в путь). Протокол приёмки `docs/testplan.md` заполнен полностью.",
-				"pt": "docs: o ficheiro de calendário volta a estar acessível através do servidor de ficheiros de uma instância `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (verificado numa instalação real, a pasta `storage` faz parte do caminho). O protocolo de aceitação `docs/testplan.md` está completo.",
-				"nl": "docs: het kalenderbestand is weer bereikbaar via de bestandsserver van een `web`-instantie — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (gecontroleerd op een echte installatie, de map `storage` hoort bij het pad). Het acceptatieprotocol `docs/testplan.md` is compleet.",
-				"fr": "docs : le fichier de calendrier est de nouveau accessible via le serveur de fichiers d'une instance `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (vérifié sur une installation réelle, le dossier `storage` fait partie du chemin). Le protocole de recette `docs/testplan.md` est complet.",
-				"it": "docs: il file del calendario è di nuovo raggiungibile tramite il file server di un'istanza `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (verificato su un'installazione reale, la cartella `storage` fa parte del percorso). Il protocollo di collaudo `docs/testplan.md` è completo.",
-				"es": "docs: el archivo de calendario vuelve a estar disponible a través del servidor de archivos de una instancia `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (comprobado en una instalación real, la carpeta `storage` forma parte de la ruta). El protocolo de aceptación `docs/testplan.md` está completo.",
-				"pl": "docs: plik kalendarza jest znowu dostępny przez serwer plików instancji `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (sprawdzone na prawdziwej instalacji, folder `storage` jest częścią ścieżki). Protokół odbioru `docs/testplan.md` jest kompletny.",
-				"uk": "docs: файл календаря знову доступний через файловий сервер екземпляра `web` — `http://<host>:8081/files/time-tracker.0/storage/calendar.ics` (перевірено на реальній інсталяції, тека `storage` входить до шляху). Протокол приймання `docs/testplan.md` заповнено повністю.",
-				"zh-cn": "docs：日历文件重新可以通过 `web` 实例的文件服务器访问——`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`（已在真实安装中验证，`storage` 文件夹属于路径的一部分）。`docs/testplan.md` 的验收记录已完整。"
 			}
 		},
 		"titleLang": {

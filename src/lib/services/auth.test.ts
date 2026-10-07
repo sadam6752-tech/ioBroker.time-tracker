@@ -298,6 +298,52 @@ describe("auth service", () => {
 		});
 	});
 
+	describe("what an anonymous caller can make the adapter keep", () => {
+		it("writes a long login name to the audit trail in a short form", () => {
+			const long = `${"x".repeat(5000)}`;
+			expect(service.login({ login: long, password: "egal", now: 5000 }).ok).to.equal(false);
+			const detail = lastDetail("auth.login_failed");
+			expect((detail.login as string).length).to.equal(128);
+		});
+
+		it("shortens the user agent of a session and of the audit row", () => {
+			const agent = "A".repeat(2000);
+			const result = service.login({ login: "anna", password, userAgent: agent, now: 5000 });
+			expect(result.ok).to.equal(true);
+			expect((lastDetail("auth.login").userAgent as string).length).to.equal(256);
+			expect(service.sessions(annaId, 5000)[0].userAgent?.length).to.equal(256);
+		});
+
+		it("purges the audit rows of failed and locked logins after 90 days, and nothing else", () => {
+			service.login({ login: "anna", password: "falsch", now: 1000 });
+			service.login({ login: "anna", password, now: 1001 });
+			expect(countAudit("auth.login_failed")).to.equal(1);
+			expect(countAudit("auth.login")).to.equal(1);
+
+			// 89 days later the failed attempt is still there
+			service.purge(1000 + 89 * 86400);
+			expect(countAudit("auth.login_failed")).to.equal(1);
+
+			service.purge(1000 + 91 * 86400);
+			expect(countAudit("auth.login_failed")).to.equal(0);
+			// the sign-in itself stays in the trail
+			expect(countAudit("auth.login")).to.equal(1);
+		});
+
+		it("forgets old failed attempts of names that were tried once", () => {
+			for (let index = 0; index < 250; index++) {
+				service.login({ login: `fremd${index}`, password: "falsch", now: 1000 });
+			}
+			// a day later the next attempt makes room again (no way to read the map, so the behaviour is the proof:
+			// the same name starts at one failed attempt, not at a locked login)
+			for (let attempt = 0; attempt < 2; attempt++) {
+				service.login({ login: "fremd0", password: "falsch", now: 1000 + 86400 });
+			}
+			expect(service.login({ login: "fremd0", password: "falsch", now: 1000 + 86401 }).ok).to.equal(false);
+			expect(countAudit("auth.login_locked")).to.equal(0);
+		});
+	});
+
 	describe("csrf", () => {
 		it("binds the token to the session and the secret", () => {
 			const result = service.login({ login: "anna", password, now: 2000 });

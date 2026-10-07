@@ -466,5 +466,12 @@
 	"absences.nextMonth": "Mês seguinte",
 	"admin.absenceTypes.color": "Cor no calendário",
 	"admin.absenceTypes.colorClear": "Remover a cor",
-	"app.disclaimer": "Aviso legal: este programa é fornecido gratuitamente e sem garantia. Não substitui aconselhamento jurídico e não é um sistema de registo de tempo oficialmente aprovado. O operador é responsável pela exatidão dos tempos registados, pelo cumprimento das regras aplicáveis (direito do trabalho, proteção de dados) e pelas cópias de segurança."
+	"app.disclaimer": "Aviso legal: este programa é fornecido gratuitamente e sem garantia. Não substitui aconselhamento jurídico e não é um sistema de registo de tempo oficialmente aprovado. O operador é responsável pela exatidão dos tempos registados, pelo cumprimento das regras aplicáveis (direito do trabalho, proteção de dados) e pelas cópias de segurança.",
+	"admin.trigger.fireOnRepeat": "Disparar em cada escrita (mesmo com o mesmo valor)",
+	"admin.trigger.fireOnRepeatHint": "Um leitor de impressões digitais escreve de novo o mesmo nome quando a mesma pessoa volta a ler. O tempo de espera e a proteção contra picagem dupla de 30 segundos mantêm-se. Desligue para um estado que um painel atualiza sozinho.",
+	"admin.trigger.valueMap": "Valor → funcionário",
+	"admin.trigger.valueMapHint": "Necessário quando o estado traz um número de posição ou um código que não é o id de um funcionário (por exemplo lastMatch.id do adaptador fingerprint: a posição 3 não é o funcionário 3). Um valor que não está na lista não faz nada. Vazio: o próprio valor indica o funcionário (id, login ou nome mostrado).",
+	"admin.trigger.mapValue": "Valor",
+	"admin.trigger.mapAdd": "Adicionar valor",
+	"admin.trigger.mapRemove": "Remover valor"
 }

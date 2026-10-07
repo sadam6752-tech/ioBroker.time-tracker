@@ -576,3 +576,30 @@ Routen, Rechte, CSRF und Limits sind unberührt.
 **Nachweis:** `src/lib/web/server.tls.test.ts` (echte HTTPS-Verbindung mit einem Testzertifikat, `Secure`-Cookie,
 Abweisung eines Clients ohne Vertrauen, kaputtes Zertifikat), Router- und Kalendertest; Abnahme auf einer echten
 Instanz: Testfall T29 in `docs/testplan.md`.
+
+## D18 — Eine Regel darf bei jeder Meldung feuern, und eine Wertzuordnung benennt den Mitarbeiter (07.10.2026)
+
+**Anlass:** Die Prüfung des Adapters (`BERICHT_Codepruefung.md`, Punkte A1/A2) gegen den Adapter `ioBroker.fingerprint`:
+Eine Regel feuerte nur, wenn sich der **Wert** des States änderte. Der Fingerabdruck-Adapter schreibt bei jedem Treffer
+denselben Namen (`lastMatch.name`) und lässt `lastMatch.matched` auf `true` — wer morgens und abends allein scannt,
+wurde am Abend **nicht** ausgestempelt. Und `lastMatch.id` ist die **Speichernummer** des Fingers (1–200), kein
+Mitarbeiter-ID; der Modus „Wert ist der Mitarbeiter" las Zahlen aber zuerst als Mitarbeiter-ID.
+
+**Entscheidung:** (1) Neue Regeleigenschaft `fireOnRepeat` („bei jeder Meldung auslösen"): Standard **an** für den
+Modus `user`, **aus** für einen festen Wert; die Migration 29 schaltet sie für bestehende Regeln des Modus `user` an.
+Sperrzeit und der Schutz vor Doppelstempeln (30 Sekunden) bleiben unverändert und fangen ein geschwätziges Gerät ab.
+(2) Neue Regeleigenschaft `valueMap` (Wert → Mitarbeiter, JSON in `value_map`). Hat eine Regel eine Zuordnung, löst nur
+ein Wert aus ihr etwas aus; alles andere nicht — auch dann nicht, wenn die Zahl zufällig eine Mitarbeiter-ID ist. Ohne
+Zuordnung bleibt das alte Verhalten (ID, Login oder angezeigter Name).
+
+**Bewusst nicht gemacht:** Die Auflösung „Zahl = Mitarbeiter-ID" bleibt ohne Zuordnung bestehen, damit Skripte, die
+eine ID schreiben, weiter laufen; die Maske und die README nennen die Falle.
+
+**Zugehörig (B1/B2 derselben Prüfung):** Der Transport liest den Body mit dem Limit der **Route** und erst nach der
+Prüfung der Sitzung, wenn die Route ein höheres Limit trägt (Sicherung einspielen); ein angekündigter Body über dem Limit
+wird ohne Lesen abgewiesen. Eingaben, die jeder ohne Anmeldung senden kann, haben Längengrenzen; Anmeldename und User-Agent
+werden gekürzt gespeichert; die Audit-Zeilen fehlgeschlagener und gesperrter Anmeldungen werden nach 90 Tagen gelöscht
+(alle anderen bleiben).
+
+**Nachweis:** `src/lib/adapter/triggers.test.ts`, `src/lib/db/repositories/triggers.test.ts`, `src/lib/web/server.test.ts`,
+`src/lib/services/auth.test.ts`, Browser-Test `test/e2e/triggers.spec.ts`.

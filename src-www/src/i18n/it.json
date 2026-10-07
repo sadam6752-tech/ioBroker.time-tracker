@@ -466,5 +466,12 @@
 	"absences.nextMonth": "Mese successivo",
 	"admin.absenceTypes.color": "Colore nel calendario",
 	"admin.absenceTypes.colorClear": "Rimuovere il colore",
-	"app.disclaimer": "Esclusione di responsabilità: questo programma è fornito gratuitamente e senza garanzia. Non sostituisce una consulenza legale e non è un sistema di rilevazione presenze ufficialmente approvato. Il gestore è responsabile della correttezza dei tempi registrati, del rispetto delle norme applicabili (diritto del lavoro, protezione dei dati) e dei backup."
+	"app.disclaimer": "Esclusione di responsabilità: questo programma è fornito gratuitamente e senza garanzia. Non sostituisce una consulenza legale e non è un sistema di rilevazione presenze ufficialmente approvato. Il gestore è responsabile della correttezza dei tempi registrati, del rispetto delle norme applicabili (diritto del lavoro, protezione dei dati) e dei backup.",
+	"admin.trigger.fireOnRepeat": "Attiva a ogni scrittura (anche con lo stesso valore)",
+	"admin.trigger.fireOnRepeatHint": "Un lettore di impronte riscrive lo stesso nome quando la stessa persona scansiona di nuovo. Il tempo di attesa e la protezione contro la doppia timbratura di 30 secondi restano attivi. Disattivare per uno stato che una dashboard aggiorna da sola.",
+	"admin.trigger.valueMap": "Valore → dipendente",
+	"admin.trigger.valueMapHint": "Necessario quando lo stato contiene un numero di slot o un codice che non è l'id di un dipendente (per esempio lastMatch.id dell'adattatore fingerprint: lo slot 3 non è il dipendente 3). Un valore non presente nell'elenco non fa nulla. Vuoto: il valore stesso indica il dipendente (id, login o nome mostrato).",
+	"admin.trigger.mapValue": "Valore",
+	"admin.trigger.mapAdd": "Aggiungi valore",
+	"admin.trigger.mapRemove": "Rimuovi valore"
 }

@@ -329,6 +329,26 @@ describe("web api", () => {
 			expect(punch.status).to.equal(201);
 		});
 
+		it("refuses a login or a password that is longer than anybody needs, before any work is done", async () => {
+			const longLogin = await send("POST", "/auth/login", { body: { login: "x".repeat(129), password } });
+			expect(longLogin.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(longLogin).detail).to.contain("login is too long");
+
+			const longPassword = await send("POST", "/auth/login", {
+				body: { login: "anna", password: "p".repeat(1025) },
+			});
+			expect(longPassword.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(longPassword).detail).to.contain("password is too long");
+
+			// the refused attempts leave nothing in the audit trail
+			const rows = db
+				.prepare("SELECT COUNT(*) AS count FROM audit_log WHERE action = 'auth.login_failed'")
+				.get() as {
+				count: number;
+			};
+			expect(rows.count).to.equal(0);
+		});
+
 		it("ends the browser session when the password changes", async () => {
 			const changed = await send("POST", "/auth/password", {
 				body: { password: "Neu-2026-komplett" },
@@ -3302,6 +3322,43 @@ describe("web api", () => {
 			});
 			expect(bodyOf<{ triggerRules: unknown[] }>(cleared).triggerRules).to.be.empty;
 			expect(triggers.list({ includeInactive: true })).to.be.empty;
+		});
+
+		it("saves the value map and fire-on-every-write, with the defaults of the mode", async () => {
+			const saved = await send("PUT", "/trigger-rules", {
+				body: {
+					triggerRules: [
+						{
+							sourceState: "fingerprint.0.lastMatch.id",
+							mode: "user",
+							valueMap: [{ value: "3", userId: annaId }],
+						},
+						{ sourceState: "a.0.b", condition: "1", userId: annaId },
+					],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(saved.status).to.equal(200);
+			const rules = bodyOf<{
+				triggerRules: { mode: string; fireOnRepeat: boolean; valueMap: { value: string; userId: number }[] }[];
+			}>(saved).triggerRules;
+			expect(rules[0]).to.deep.include({ mode: "user", fireOnRepeat: true });
+			expect(rules[0].valueMap).to.deep.equal([{ value: "3", userId: annaId }]);
+			expect(rules[1]).to.deep.include({ mode: "condition", fireOnRepeat: false });
+
+			const unknown = await send("PUT", "/trigger-rules", {
+				body: {
+					triggerRules: [{ sourceState: "a.0.b", mode: "user", valueMap: [{ value: "1", userId: 999 }] }],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(unknown.status).to.equal(400);
+			expect(bodyOf<{ detail: string }>(unknown).detail).to.contain("existing employees");
+			const notList = await send("PUT", "/trigger-rules", {
+				body: { triggerRules: [{ sourceState: "a.0.b", mode: "user", valueMap: "nope" }] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(notList.status).to.equal(400);
 		});
 
 		it("refuses a rule that cannot work", async () => {

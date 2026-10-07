@@ -23,6 +23,14 @@ export type TriggerMode = "condition" | "user";
 /** What a rule does when it fires. */
 export type TriggerAction = "punch" | "quickPunch" | "present" | "absent";
 
+/** One line of the value map of a rule: a value of the state belongs to an employee. */
+export interface TriggerValueMapEntry {
+	/** Value the state carries, compared without regard to case */
+	value: string;
+	/** Employee the value belongs to */
+	userId: number;
+}
+
 /** A trigger rule as it is stored. */
 export interface TriggerRuleRecord {
 	/** Primary key */
@@ -43,6 +51,10 @@ export interface TriggerRuleRecord {
 	isActive: boolean;
 	/** Seconds that have to pass between two fires, `0` = no limit */
 	cooldownSec: number;
+	/** Fire on every write, also when the value is the same as before (a reader that scans the same finger twice) */
+	fireOnRepeat: boolean;
+	/** Which employee a value belongs to (mode `user`); empty = the value itself names the employee */
+	valueMap: TriggerValueMapEntry[];
 	/** Instant the rule fired last, `null` when it never fired */
 	lastFiredAt: number | null;
 }
@@ -67,6 +79,10 @@ export interface SaveTriggerRuleInput {
 	isActive?: boolean;
 	/** Seconds that have to pass between two fires */
 	cooldownSec?: number;
+	/** Fire on every write, defaults to `true` for mode `user` and `false` for mode `condition` */
+	fireOnRepeat?: boolean;
+	/** Value to employee map (mode `user` only) */
+	valueMap?: TriggerValueMapEntry[];
 	/** Who changes the rule */
 	actorId: number;
 	/** Client IP address of the actor */
@@ -100,11 +116,17 @@ interface TriggerRuleRow {
 	action: string;
 	is_active: number;
 	cooldown_sec: number;
+	fire_on_repeat: number;
+	value_map: string | null;
 	last_fired_at: number | null;
 }
 
 const TRIGGER_COLUMNS =
-	"id, label, source_state, mode, condition, user_id, action, is_active, cooldown_sec, last_fired_at";
+	"id, label, source_state, mode, condition, user_id, action, is_active, cooldown_sec, fire_on_repeat, value_map, last_fired_at";
+
+/** Longest value of the map, longest map: a rule is a setting, not a database. */
+const MAX_MAP_VALUE_LENGTH = 128;
+const MAX_MAP_ENTRIES = 200;
 
 /** Field names of a rule that are compared for the audit trail. */
 const AUDITED_TRIGGER_FIELDS: (keyof TriggerRuleRecord)[] = [
@@ -116,6 +138,8 @@ const AUDITED_TRIGGER_FIELDS: (keyof TriggerRuleRecord)[] = [
 	"action",
 	"isActive",
 	"cooldownSec",
+	"fireOnRepeat",
+	"valueMap",
 ];
 
 /** Modes a rule may use. */
@@ -141,8 +165,69 @@ export function mapTriggerRuleRow(row: TriggerRuleRow): TriggerRuleRecord {
 		action: ACTIONS.includes(row.action as TriggerAction) ? (row.action as TriggerAction) : "punch",
 		isActive: row.is_active !== 0,
 		cooldownSec: row.cooldown_sec,
+		fireOnRepeat: row.fire_on_repeat !== 0,
+		valueMap: parseValueMap(row.value_map),
 		lastFiredAt: row.last_fired_at,
 	};
+}
+
+/**
+ * Reads the stored value map; a damaged value is an empty map, not a crash of the adapter.
+ *
+ * @param text - JSON text of the column
+ * @returns the entries that are usable
+ */
+function parseValueMap(text: string | null): TriggerValueMapEntry[] {
+	if (!text) {
+		return [];
+	}
+	try {
+		const parsed: unknown = JSON.parse(text);
+		if (!Array.isArray(parsed)) {
+			return [];
+		}
+		return parsed.filter(
+			(entry): entry is TriggerValueMapEntry =>
+				typeof entry === "object" &&
+				entry !== null &&
+				typeof (entry as TriggerValueMapEntry).value === "string" &&
+				Number.isInteger((entry as TriggerValueMapEntry).userId),
+		);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Validates the value map of a rule.
+ *
+ * @param map - map from the request
+ * @param mode - mode of the rule: a map only belongs to mode `user`
+ * @returns the cleaned map, in the order it was given
+ */
+function requireValueMap(map: TriggerValueMapEntry[] | undefined, mode: TriggerMode): TriggerValueMapEntry[] {
+	if (mode !== "user" || map === undefined || map.length === 0) {
+		return [];
+	}
+	if (!Array.isArray(map) || map.length > MAX_MAP_ENTRIES) {
+		throw new ValidationError(`valueMap must be a list of at most ${MAX_MAP_ENTRIES} entries`);
+	}
+	const seen = new Set<string>();
+	return map.map(entry => {
+		const value = String(entry?.value ?? "").trim();
+		if (!value || value.length > MAX_MAP_VALUE_LENGTH) {
+			throw new ValidationError(`a value of the map must have 1 to ${MAX_MAP_VALUE_LENGTH} characters`);
+		}
+		const key = value.toLowerCase();
+		if (seen.has(key)) {
+			throw new ValidationError(`the value "${value}" is in the map twice`);
+		}
+		seen.add(key);
+		if (!Number.isInteger(entry.userId) || entry.userId <= 0) {
+			throw new ValidationError(`the value "${value}" needs an employee`);
+		}
+		return { value, userId: entry.userId };
+	});
 }
 
 /**
@@ -220,13 +305,14 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 	const selectActive = db.prepare(`SELECT ${TRIGGER_COLUMNS} FROM trigger_rules WHERE is_active = 1 ORDER BY id`);
 	const insertRule = db.prepare(
 		`INSERT INTO trigger_rules
-		 (label, source_state, mode, condition, user_id, action, is_active, cooldown_sec, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (label, source_state, mode, condition, user_id, action, is_active, cooldown_sec, fire_on_repeat, value_map,
+		  created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	);
 	const updateRule = db.prepare(
 		`UPDATE trigger_rules
 		 SET label = ?, source_state = ?, mode = ?, condition = ?, user_id = ?, action = ?, is_active = ?,
-		     cooldown_sec = ?, updated_at = ?
+		     cooldown_sec = ?, fire_on_repeat = ?, value_map = ?, updated_at = ?
 		 WHERE id = ?`,
 	);
 	const deleteRule = db.prepare("DELETE FROM trigger_rules WHERE id = ?");
@@ -256,6 +342,8 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 			const mode = requireMode(input.mode);
 			const action = requireAction(input.action);
 			const cooldownSec = requireCooldown(input.cooldownSec);
+			const fireOnRepeat = input.fireOnRepeat ?? mode === "user";
+			const valueMap = requireValueMap(input.valueMap, mode);
 			const label = (input.label ?? "").trim() || null;
 			const isActive = input.isActive !== false;
 			const now = input.now ?? Math.floor(Date.now() / 1000);
@@ -285,12 +373,19 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 				action,
 				isActive,
 				cooldownSec,
+				fireOnRepeat,
+				valueMap,
 				lastFiredAt: current?.lastFiredAt ?? null,
 			};
+			// the map is a list, so it is compared (and written to the audit trail) as its JSON text
+			const auditView = (rule: TriggerRuleRecord): Record<string, unknown> => ({
+				...rule,
+				valueMap: JSON.stringify(rule.valueMap),
+			});
 			const changes = current
 				? diffFields(
-						current as unknown as Record<string, unknown>,
-						next as unknown as Record<string, unknown>,
+						auditView(current),
+						auditView(next),
 						AUDITED_TRIGGER_FIELDS as unknown as (keyof Record<string, unknown>)[],
 					)
 				: null;
@@ -310,6 +405,8 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 						action,
 						isActive ? 1 : 0,
 						cooldownSec,
+						fireOnRepeat ? 1 : 0,
+						valueMap.length > 0 ? JSON.stringify(valueMap) : null,
 						now,
 						current.id,
 					);
@@ -324,6 +421,8 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 							action,
 							isActive ? 1 : 0,
 							cooldownSec,
+							fireOnRepeat ? 1 : 0,
+							valueMap.length > 0 ? JSON.stringify(valueMap) : null,
 							now,
 							now,
 						).lastInsertRowid,
@@ -337,7 +436,17 @@ export function createTriggersRepository(db: Db): TriggersRepository {
 					entityId: ruleId,
 					detail: current
 						? { changes }
-						: { sourceState, mode, condition, userId, action, isActive, cooldownSec },
+						: {
+								sourceState,
+								mode,
+								condition,
+								userId,
+								action,
+								isActive,
+								cooldownSec,
+								fireOnRepeat,
+								valueMap,
+							},
 					ip: input.actorIp ?? null,
 				});
 			});

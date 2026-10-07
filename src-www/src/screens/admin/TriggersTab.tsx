@@ -143,7 +143,11 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 										label={t("admin.trigger.mode")}
 										value={rule.mode ?? "condition"}
 										onChange={event =>
-											change(index, { mode: event.target.value as TriggerRule["mode"] })
+											change(index, {
+												mode: event.target.value as TriggerRule["mode"],
+												// a reader that names the employee reports the same name for every scan
+												fireOnRepeat: event.target.value === "user",
+											})
 										}
 										disabled={!mayEdit}
 										sx={{ minWidth: 200 }}
@@ -233,6 +237,114 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 										<DeleteIcon fontSize="small" />
 									</IconButton>
 								</Stack>
+								<FormControlLabel
+									control={
+										<Checkbox
+											size="small"
+											checked={rule.fireOnRepeat === true}
+											disabled={!mayEdit}
+											onChange={event => change(index, { fireOnRepeat: event.target.checked })}
+										/>
+									}
+									label={t("admin.trigger.fireOnRepeat")}
+								/>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+								>
+									{t("admin.trigger.fireOnRepeatHint")}
+								</Typography>
+								{(rule.mode ?? "condition") === "user" && (
+									<Stack spacing={1}>
+										<Typography variant="body2">{t("admin.trigger.valueMap")}</Typography>
+										<Typography
+											variant="caption"
+											color="text.secondary"
+										>
+											{t("admin.trigger.valueMapHint")}
+										</Typography>
+										{(rule.valueMap ?? []).map((entry, position) => (
+											<Stack
+												key={position}
+												direction="row"
+												spacing={1}
+												useFlexGap
+												sx={{ alignItems: "center", flexWrap: "wrap" }}
+											>
+												<TextField
+													size="small"
+													label={t("admin.trigger.mapValue")}
+													value={entry.value}
+													onChange={event =>
+														change(index, {
+															valueMap: (rule.valueMap ?? []).map((item, at) =>
+																at === position
+																	? { ...item, value: event.target.value }
+																	: item,
+															),
+														})
+													}
+													disabled={!mayEdit}
+													sx={{ minWidth: 160 }}
+												/>
+												<TextField
+													select
+													size="small"
+													label={t("admin.trigger.user")}
+													value={entry.userId ? String(entry.userId) : ""}
+													onChange={event =>
+														change(index, {
+															valueMap: (rule.valueMap ?? []).map((item, at) =>
+																at === position
+																	? { ...item, userId: Number(event.target.value) }
+																	: item,
+															),
+														})
+													}
+													disabled={!mayEdit}
+													sx={{ minWidth: 190 }}
+												>
+													{(people.data ?? []).map(user => (
+														<MenuItem
+															key={user.id}
+															value={String(user.id)}
+														>
+															{user.displayName}
+														</MenuItem>
+													))}
+												</TextField>
+												<IconButton
+													size="small"
+													title={t("admin.trigger.mapRemove")}
+													disabled={!mayEdit}
+													onClick={() =>
+														change(index, {
+															valueMap: (rule.valueMap ?? []).filter(
+																(_, at) => at !== position,
+															),
+														})
+													}
+												>
+													<DeleteIcon fontSize="small" />
+												</IconButton>
+											</Stack>
+										))}
+										<Box>
+											<Button
+												size="small"
+												startIcon={<AddIcon />}
+												disabled={!mayEdit}
+												onClick={() =>
+													change(index, {
+														valueMap: [...(rule.valueMap ?? []), { value: "", userId: 0 }],
+													})
+												}
+											>
+												{t("admin.trigger.mapAdd")}
+											</Button>
+										</Box>
+									</Stack>
+								)}
 								<Typography
 									variant="caption"
 									color="text.secondary"
@@ -261,6 +373,8 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 											action: "punch",
 											isActive: true,
 											cooldownSec: 0,
+											fireOnRepeat: false,
+											valueMap: [],
 										},
 									])
 								}

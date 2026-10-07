@@ -44,7 +44,7 @@ SQLite über `better-sqlite3`, im WAL-Modus, im Datenverzeichnis des Adapters. S
 ausschließlich als versionierte Migration in `src/lib/db/migrations.ts` (`schema_migrations`); Migrationen sind
 append-only, jede Änderung ist eine neue Nummer. Veröffentlicht werden Aggregate und Steuerbefehle — dazu die
 Firmen-Kennzahlen (`company.*`), die Monats-/Jahreswerte je Mitarbeiter, das jeweils neueste Ereignis (`events.*`)
-und die Aktionen: Regeln in `trigger_rules`, deren States der Adapter abonniert (nur bei Wertwechsel, mit
+und die Aktionen: Regeln in `trigger_rules`, deren States der Adapter abonniert (bei Wertwechsel oder, je Regel, bei jeder Meldung; mit
 Sperrzeit), die Automatik in `automation_rules`/`automation_runs` (Einstempeln, Ausstempeln, Meldung,
 Pausenerinnerung — innerhalb der gewählten Wochentage, höchstens einmal pro Mitarbeiter und Tag bzw. ISO-Woche) sowie
 `sendTo`-Nachrichten (`punch`, `present`, `status`, `report`, `backup`). Stempel selbst bleiben in der Datenbank.

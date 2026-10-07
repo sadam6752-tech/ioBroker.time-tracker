@@ -87,3 +87,78 @@ test("creates a trigger rule for a state of another adapter and removes it again
 	await page.getByRole("button", { name: "Speichern", exact: true }).click();
 	await expect.poll(async () => (await stored()).length, { timeout: 20_000 }).toBe(0);
 });
+
+test("a rule that reads the employee from the value fires on every write and keeps a value map", async ({
+	page,
+	request,
+}) => {
+	const session = await signInApi(request);
+	const headers = { "x-session-token": session.token, "x-csrf-token": session.csrfToken };
+	const stored = async (): Promise<
+		{ sourceState: string; mode: string; fireOnRepeat: boolean; valueMap: { value: string; userId: number }[] }[]
+	> =>
+		(
+			(await (await request.get("/api/trigger-rules", { headers })).json()) as {
+				triggerRules: {
+					sourceState: string;
+					mode: string;
+					fireOnRepeat: boolean;
+					valueMap: { value: string; userId: number }[];
+				}[];
+			}
+		).triggerRules;
+
+	const people = await request.get("/api/users", { headers });
+	const users = ((await people.json()) as { users: { id: number; login: string; displayName: string }[] }).users;
+	const anna = users.find(user => user.login === "anna") ?? users[0];
+
+	await page.goto("/");
+	await signIn(page);
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Aktionen (ioBroker)" }).click();
+
+	await page.getByRole("button", { name: "Aktion hinzufügen" }).click();
+	await page.getByLabel("Datenpunkt").fill("fingerprint.0.lastMatch.id");
+	await page.getByLabel("Auslöser").click();
+	await page.getByRole("option", { name: "Wert ist der Mitarbeiter" }).click();
+
+	// the choice of the mode switches the repeat option on, and the value map appears
+	await expect(page.getByLabel("Bei jeder Meldung auslösen (auch bei gleichem Wert)")).toBeChecked();
+	await expect(page.getByText("Wert → Mitarbeiter")).toBeVisible();
+	await page.getByRole("button", { name: "Wert hinzufügen" }).click();
+	await page.getByLabel("Wert", { exact: true }).fill("3");
+	// the mode select ("Wert ist der Mitarbeiter") carries the word as well, so the name has to match exactly
+	await page.getByRole("combobox", { name: "Mitarbeiter", exact: true }).click();
+	await page.getByRole("option", { name: anna.displayName }).click();
+	await page.getByRole("button", { name: "Speichern", exact: true }).click();
+
+	// the server answers with more fields (id, label, …): only the ones this rule is about are compared
+	await expect
+		.poll(
+			async () =>
+				JSON.stringify(
+					(await stored()).map(({ sourceState, mode, fireOnRepeat, valueMap }) => ({
+						sourceState,
+						mode,
+						fireOnRepeat,
+						valueMap,
+					})),
+				),
+			{ timeout: 20_000 },
+		)
+		.toBe(
+			JSON.stringify([
+				{
+					sourceState: "fingerprint.0.lastMatch.id",
+					mode: "user",
+					fireOnRepeat: true,
+					valueMap: [{ value: "3", userId: anna.id }],
+				},
+			]),
+		);
+
+	// clean up for the other specs
+	await page.getByTitle("Löschen").first().click();
+	await page.getByRole("button", { name: "Speichern", exact: true }).click();
+	await expect.poll(async () => (await stored()).length, { timeout: 20_000 }).toBe(0);
+});

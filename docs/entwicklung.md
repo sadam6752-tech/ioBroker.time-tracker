@@ -63,7 +63,7 @@ npm run build
 - **Kleinere Lücken:** die maschinell übersetzten Sprachdateien der Web-App warten auf eine Durchsicht durch
   Muttersprachler. Der frühere Wunsch „NFC-Komfort im Adminbereich" ist **erledigt** — statt einer Handy-NFC-App
   (die nur Android-Chrome kann) löst jetzt jeder ioBroker-State eine Aktion aus (siehe README, „Actions"): der
-  Adapter abonniert die States der Tabelle, feuert nur bei Wertwechsel und stempelt, rundet oder setzt die
+  Adapter abonniert die States der Tabelle, feuert bei Wertwechsel (je Regel auch bei jeder Meldung) und stempelt, rundet oder setzt die
   Anwesenheit.
 
 ## Paketgrenzen (und was der ioBroker-Repochecker dazu sagt)

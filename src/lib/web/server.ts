@@ -175,15 +175,34 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 
 	const handle = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {
 		try {
-			const body = await readBody(request, maxBodyBytes);
+			const url = new URL(request.url ?? "/", "http://localhost");
+
+			// The limit is decided per route and BEFORE the body is read: a client that is not signed in is held to
+			// the general limit even on the route of the backup upload, and a body that announces more than the
+			// limit is refused without reading a single byte of it.
+			const isApi = apiPrefix !== "" && url.pathname.startsWith(`${apiPrefix}/`);
+			const limit = isApi
+				? Math.max(
+						0,
+						options.router.bodyLimit?.(
+							{
+								method: request.method ?? "GET",
+								path: url.pathname.slice(apiPrefix.length),
+								headers: request.headers,
+							},
+							maxBodyBytes,
+						) ?? maxBodyBytes,
+					)
+				: maxBodyBytes;
+			const announced = Number(request.headers["content-length"] ?? 0);
+			const body = announced > limit ? null : await readBody(request, limit);
 			if (body === null) {
-				const details = new HttpProblem(413, "payload_too_large", `body exceeds ${maxBodyBytes} bytes`);
-				response.writeHead(413, { "content-type": PROBLEM_CONTENT_TYPE });
+				const details = new HttpProblem(413, "payload_too_large", `body exceeds ${limit} bytes`);
+				response.writeHead(413, { "content-type": PROBLEM_CONTENT_TYPE, connection: "close" });
 				response.end(JSON.stringify(details.toProblem(request.url ?? "/")));
 				return;
 			}
 
-			const url = new URL(request.url ?? "/", "http://localhost");
 			const headers = request.headers;
 			const remoteAddress = request.socket.remoteAddress ?? null;
 

@@ -36,7 +36,7 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 
 ## Installation
 
-1. Install the adapter in the ioBroker admin: **Adapters** → filter for *time-tracker* → install. On a machine
+1. Install the adapter in the ioBroker admin: **Adapters** → filter for _time-tracker_ → install. On a machine
    without the admin the same package can be installed from the registry with `iobroker install iobroker.time-tracker`.
    **The instance `time-tracker.0` is created automatically** — `iobroker add time-tracker` is only needed if you want
    the instance on its own.
@@ -48,7 +48,7 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 ### The link in the instance list
 
 The adapter reports its own way into the web interface (`common.localLinks`), and the admin renders a symbol out of it:
-the tile of `time-tracker.0` in **Instances** offers *Open the time tracking app*, the overview page does the same — one
+the tile of `time-tracker.0` in **Instances** offers _Open the time tracking app_, the overview page does the same — one
 click and the login screen shows up, without typing host and port.
 
 The address is **not** written into the adapter; the admin puts it together from the instance settings — the bind
@@ -98,25 +98,25 @@ carryover, paid break minutes, own break rules), and — if a tablet is used —
 
 The adapter is configured in the **instance settings** of the ioBroker admin:
 
-| Setting                             | Meaning                                                                                                                     |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Port                                | port of the HTTP server (web app, API, terminal)                                                                            |
-| Bind address                        | interface to listen on, picked from the local addresses (`0.0.0.0` = all)                                                   |
-| Instance time zone                  | fallback time zone (IANA name), e.g. `Europe/Berlin`                                                                        |
-| Default language for new users      | one of the 11 supported languages                                                                                           |
-| Holiday country                     | country used to generate the public holidays (default `DE`)                                                                 |
-| Database file                       | optional path; empty = adapter data directory                                                                               |
-| Enable kiosk terminal               | switches the shared badge/PIN terminal on                                                                                   |
-| Use HTTPS                           | the adapter answers over HTTPS itself; then choose the public certificate, the private key and, if you have one, the chain from the certificate collection of ioBroker |
-| Trust the reverse proxy             | use `X-Forwarded-*` of a proxy (client address, HTTPS)                                                                      |
-| Session secret                      | secret for CSRF tokens (encrypted at rest; empty = generated once)                                                          |
-| Badge link secret (HMAC)            | secret for signed badge/NFC links (encrypted at rest); empty = generated on the first start and stored next to the database |
-| Session lifetime in minutes         | how long a login lasts                                                                                                      |
-| Days the offline queue accepts on its own | how far back the punches of the offline queue are accepted without a decision of the administration          |
-| Round quick punches to minutes      | rounding of the quick punch (0 = off)                                                                                       |
-| Calculate absences only until today | future absences do not reduce the target time                                                                               |
-| Subtract working time from absences | lets vacation turn into overtime                                                                                            |
-| Keep database backups for days      | retention of the backups                                                                                                    |
+| Setting                                   | Meaning                                                                                                                                                                |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Port                                      | port of the HTTP server (web app, API, terminal)                                                                                                                       |
+| Bind address                              | interface to listen on, picked from the local addresses (`0.0.0.0` = all)                                                                                              |
+| Instance time zone                        | fallback time zone (IANA name), e.g. `Europe/Berlin`                                                                                                                   |
+| Default language for new users            | one of the 11 supported languages                                                                                                                                      |
+| Holiday country                           | country used to generate the public holidays (default `DE`)                                                                                                            |
+| Database file                             | optional path; empty = adapter data directory                                                                                                                          |
+| Enable kiosk terminal                     | switches the shared badge/PIN terminal on                                                                                                                              |
+| Use HTTPS                                 | the adapter answers over HTTPS itself; then choose the public certificate, the private key and, if you have one, the chain from the certificate collection of ioBroker |
+| Trust the reverse proxy                   | use `X-Forwarded-*` of a proxy (client address, HTTPS)                                                                                                                 |
+| Session secret                            | secret for CSRF tokens (encrypted at rest; empty = generated once)                                                                                                     |
+| Badge link secret (HMAC)                  | secret for signed badge/NFC links (encrypted at rest); empty = generated on the first start and stored next to the database                                            |
+| Session lifetime in minutes               | how long a login lasts                                                                                                                                                 |
+| Days the offline queue accepts on its own | how far back the punches of the offline queue are accepted without a decision of the administration                                                                    |
+| Round quick punches to minutes            | rounding of the quick punch (0 = off)                                                                                                                                  |
+| Calculate absences only until today       | future absences do not reduce the target time                                                                                                                          |
+| Subtract working time from absences       | lets vacation turn into overtime                                                                                                                                       |
+| Keep database backups for days            | retention of the backups                                                                                                                                               |
 
 These settings win over the values stored in the database and are applied on every start.
 
@@ -136,18 +136,18 @@ The pause of a day appears in the month view of the app and in the monthly state
 
 ## Roles
 
-| Role       | May                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------ |
-| `employee` | punch, see the own month and year, request absences, leave a note for the administration at one day     |
-| `manager`  | everything an employee may, plus punching, statements and corrections for other employees              |
-| `admin`    | everything except punching: employees, roles, terminals, settings, backups                              |
+| Role       | May                                                                                                 |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| `employee` | punch, see the own month and year, request absences, leave a note for the administration at one day |
+| `manager`  | everything an employee may, plus punching, statements and corrections for other employees           |
+| `admin`    | everything except punching: employees, roles, terminals, settings, backups                          |
 
 The **administrator** account is created by the installation and belongs to nobody: it administers the employees
 instead of working with them, so it does not punch (the role has no `time.punch`). Whoever also works gets the right
 back through the `employee` role — permissions are the union of the roles of an account. A `manager` punches and
 corrects.
 
-**One active administrator always remains:** deactivating or taking the `admin` role away from the *last* active
+**One active administrator always remains:** deactivating or taking the `admin` role away from the _last_ active
 administrator is refused (problem `last_administrator`, 409) — without that role nobody could administer the
 installation any more, and the way back would be a restart of the instance with a free `adminLogin`. The web app says
 it before the change: the switch of the **own** account explains why an account cannot deactivate itself (`PATCH` and
@@ -185,7 +185,7 @@ Everything is served on the port of the instance settings:
 
 The board shows every employee with the state of the day. The **worked time of today** appears next to it
 (`1:23`, `0:00` before the first punch of the day) once the **work profile** of that employee allows it
-(*Working time on the presence card*, off by default): the board is visible before the PIN is entered, so the
+(_Working time on the presence card_, off by default): the board is visible before the PIN is entered, so the
 administration decides this per employee — the API only sends the minutes for employees who agreed.
 
 ### Terminal (kiosk)
@@ -208,56 +208,56 @@ needed for the first start.
 
 Punches stay in the database; the adapter publishes aggregates and controls:
 
-| State                                                                                          | Type    | Purpose                                    |
-| ---------------------------------------------------------------------------------------------- | ------- | ------------------------------------------ |
-| `time-tracker.0.info.connection`                                                              | boolean | adapter/service ready                      |
-| `time-tracker.0.info.lastBackup`                                                              | number  | instant of the newest database backup      |
-| `time-tracker.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                       |
-| `time-tracker.0.users.<id>.displayName`                                                       | string  | name of the employee                       |
-| `time-tracker.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                     |
-| `time-tracker.0.users.<id>.lastPunch`                                                         | number  | instant of the last punch of today         |
-| `time-tracker.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                       |
-| `time-tracker.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                |
-| `time-tracker.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision             |
+| State                                                                                         | Type    | Purpose                                                   |
+| --------------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------- |
+| `time-tracker.0.info.connection`                                                              | boolean | adapter/service ready                                     |
+| `time-tracker.0.info.lastBackup`                                                              | number  | instant of the newest database backup                     |
+| `time-tracker.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                                      |
+| `time-tracker.0.users.<id>.displayName`                                                       | string  | name of the employee                                      |
+| `time-tracker.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                                    |
+| `time-tracker.0.users.<id>.lastPunch`                                                         | number  | instant of the last punch of today                        |
+| `time-tracker.0.users.<id>.todayWorkedMinutes`                                                | number  | minutes worked today                                      |
+| `time-tracker.0.users.<id>.todayBalanceMinutes`                                               | number  | balance of today in minutes                               |
+| `time-tracker.0.users.<id>.openConflicts`                                                     | number  | punches waiting for a decision                            |
 | `time-tracker.0.commands.punchUserId`                                                         | number  | employee the punch commands apply to (`0` = the only one) |
-| `time-tracker.0.commands.punch`                                                               | boolean | punch in or out (button)                   |
-| `time-tracker.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding   |
-| `time-tracker.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`             |
-| `time-tracker.0.commands.recalc`                                                              | string  | recalculate a period, `YYYY-MM` or `YYYY`  |
-| `time-tracker.0.commands.backup`                                                              | boolean | write a database backup (button)           |
-| `time-tracker.0.users.<id>.monthWorkedMinutes` / `monthBalanceMinutes` / `yearBalanceMinutes` | number  | month and year figures                     |
-| `time-tracker.0.company.presentCount`                                                         | number  | employees clocked in right now             |
-| `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma          |
-| `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch |
-| `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance               |
-| `time-tracker.0.calendar.feedFile`                                                            | string  | the `.ics` file **path** (for `ical`)      |
-| `time-tracker.0.calendar.feedUrl`                                                             | string  | subscription link of the company calendar  |
-| `time-tracker.0.calendar.absences`                                                            | string  | the absences of the window as JSON         |
-| `time-tracker.0.calendar.updatedAt`                                                           | number  | when the calendar was written              |
+| `time-tracker.0.commands.punch`                                                               | boolean | punch in or out (button)                                  |
+| `time-tracker.0.commands.quickPunch`                                                          | boolean | punch with the configured quick rounding                  |
+| `time-tracker.0.commands.closeMonth`                                                          | string  | close a month, value `YYYY-MM`                            |
+| `time-tracker.0.commands.recalc`                                                              | string  | recalculate a period, `YYYY-MM` or `YYYY`                 |
+| `time-tracker.0.commands.backup`                                                              | boolean | write a database backup (button)                          |
+| `time-tracker.0.users.<id>.monthWorkedMinutes` / `monthBalanceMinutes` / `yearBalanceMinutes` | number  | month and year figures                                    |
+| `time-tracker.0.company.presentCount`                                                         | number  | employees clocked in right now                            |
+| `time-tracker.0.company.present`                                                              | string  | their names, separated by a comma                         |
+| `time-tracker.0.company.openConflicts` / `company.lastPunch`                                  | number  | punches waiting for a decision, last punch                |
+| `time-tracker.0.events.lastAt` / `lastType` / `lastUser` / `lastDirection` / `lastSource`     | —       | newest event of the instance                              |
+| `time-tracker.0.calendar.feedFile`                                                            | string  | the `.ics` file **path** (for `ical`)                     |
+| `time-tracker.0.calendar.feedUrl`                                                             | string  | subscription link of the company calendar                 |
+| `time-tracker.0.calendar.absences`                                                            | string  | the absences of the window as JSON                        |
+| `time-tracker.0.calendar.updatedAt`                                                           | number  | when the calendar was written                             |
 
 ### Commands (states)
 
 A script, a Blockly block, a dashboard or another adapter drives the instance through states — no HTTP and no login
-involved. The adapter writes such actions into the audit log as *system* (`actorId: 0`) and the log line says what
+involved. The adapter writes such actions into the audit log as _system_ (`actorId: 0`) and the log line says what
 happened.
 
-| State | Value | Effect |
-| --- | --- | --- |
-| `commands.punchUserId` | employee id, `0` = automatic | the employee the two punch buttons apply to |
-| `commands.punch` | `true` | punches in or out — the direction comes from the punches of the day |
-| `commands.quickPunch` | `true` | same, but the instant is rounded with *Round quick punches to minutes* |
-| `commands.closeMonth` | `YYYY-MM` | closes the month (the log line reports balance and overtime) |
-| `commands.recalc` | `YYYY-MM` or `YYYY` | recalculates the aggregates of that period |
-| `commands.backup` | `true` | writes a database backup |
-| `commands.rotateCalendarToken` | `true` | creates or renews the calendar link of the company |
+| State                          | Value                        | Effect                                                                 |
+| ------------------------------ | ---------------------------- | ---------------------------------------------------------------------- |
+| `commands.punchUserId`         | employee id, `0` = automatic | the employee the two punch buttons apply to                            |
+| `commands.punch`               | `true`                       | punches in or out — the direction comes from the punches of the day    |
+| `commands.quickPunch`          | `true`                       | same, but the instant is rounded with _Round quick punches to minutes_ |
+| `commands.closeMonth`          | `YYYY-MM`                    | closes the month (the log line reports balance and overtime)           |
+| `commands.recalc`              | `YYYY-MM` or `YYYY`          | recalculates the aggregates of that period                             |
+| `commands.backup`              | `true`                       | writes a database backup                                               |
+| `commands.rotateCalendarToken` | `true`                       | creates or renews the calendar link of the company                     |
 
 ```js
-setState("time-tracker.0.commands.punchUserId", 3);          // target employee (0 = the only one)
-setState("time-tracker.0.commands.punch", true);             // punch in or out
-setState("time-tracker.0.commands.quickPunch", true);        // punch with quick rounding
-setState("time-tracker.0.commands.recalc", "2026-08");       // a month, or "2026" for a year
-setState("time-tracker.0.commands.closeMonth", "2026-08");   // closing needs YYYY-MM
-setState("time-tracker.0.commands.backup", true);            // write a backup now
+setState("time-tracker.0.commands.punchUserId", 3); // target employee (0 = the only one)
+setState("time-tracker.0.commands.punch", true); // punch in or out
+setState("time-tracker.0.commands.quickPunch", true); // punch with quick rounding
+setState("time-tracker.0.commands.recalc", "2026-08"); // a month, or "2026" for a year
+setState("time-tracker.0.commands.closeMonth", "2026-08"); // closing needs YYYY-MM
+setState("time-tracker.0.commands.backup", true); // write a backup now
 ```
 
 Two things to know:
@@ -271,7 +271,7 @@ Two things to know:
   `several employees exist - set command_punch_user_id or write users.<id> commands`.
 
 Per employee, without any target: write `users.<id>.present` (`true` = clock in, `false` = clock out, idempotent —
-see *First start*) or send a message (see *Messages (`sendTo`)* below).
+see _First start_) or send a message (see _Messages (`sendTo`)_ below).
 
 Every command ends with a refreshed state tree (`users.*`, `company.*`, `events.*`), so a dashboard follows along.
 A wrong period, an unknown or deactivated employee is answered with a warning in the adapter log — never with a
@@ -282,12 +282,12 @@ broken instance.
 The absences of the whole company reach ioBroker in two ways — the file without a session and without a token, the
 link with the instance token:
 
-| What     | Where                                                                                                              | Who uses it                                                                                     |
-| -------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| **File** | `<iobroker-data>/files/time-tracker.<n>/storage/calendar.ics`, rewritten on every change and every 5 minutes     | the `ical` adapter as a **local file** — no URL, no token, no network                           |
-| **URL**  | `calendar.feedUrl` (`http://<host>:<port>/api/calendar.ics?token=…`)                                                | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger`                      |
-| **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                                            |
-| **When** | `calendar.updatedAt`                                                                                                | to see how current the three above are                                                          |
+| What     | Where                                                                                                                                | Who uses it                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| **File** | `<iobroker-data>/files/time-tracker.<n>/storage/calendar.ics`, rewritten on every change and every 5 minutes                         | the `ical` adapter as a **local file** — no URL, no token, no network       |
+| **URL**  | `calendar.feedUrl` (`http://<host>:<port>/api/calendar.ics?token=…`)                                                                 | a calendar app, or a script that hands the link to `ical.0.iCalReadTrigger` |
+| **Data** | `calendar.absences` — the same days as JSON (`login`, `name`, `from`, `to`, `code`, `type`, `portion`, `approval`, `status`, `note`) | scripts, Blockly, VIS                                                       |
+| **When** | `calendar.updatedAt`                                                                                                                 | to see how current the three above are                                      |
 
 The file lives below `files/time-tracker.<n>/storage/`, because the instance folder next to it can only be read by the
 adapter itself. `storage` is a **mount point**: an object of type `meta` the file hangs on, and the id the file API of
@@ -312,8 +312,8 @@ The personal link of an employee stays what it was (`POST /calendar/token`, the 
 only that employee.
 
 ```js
-setState("time-tracker.0.commands.rotateCalendarToken", true);   // create or renew the link of the company
-log(getState("time-tracker.0.calendar.feedUrl").val);            // paste it into a calendar app
+setState("time-tracker.0.commands.rotateCalendarToken", true); // create or renew the link of the company
+log(getState("time-tracker.0.calendar.feedUrl").val); // paste it into a calendar app
 setState("ical.0.iCalReadTrigger", "read " + getState("time-tracker.0.calendar.feedUrl").val);
 ```
 
@@ -325,28 +325,39 @@ setState("ical.0.iCalReadTrigger", "read " + getState("time-tracker.0.calendar.f
 The ioBroker way of connecting hardware is a state: a fingerprint reader, a button, a door contact or a dashboard
 writes it and the adapter does the rest. A rule is maintained in **Administration → Actions**:
 
-| Field    | Meaning                                                                                                                                                         |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| State    | the state of the other adapter, e.g. `fingerprint.0.lastMatch`                                                                                                  |
-| Trigger  | _State carries the value_: the value has to equal _Value_ — or _Value is the employee_, where the value names the employee (id, login or shown name)            |
-| Value    | the value that fires the rule (mode _State carries the value_) — `toggle` (or `*`) fires for **every** change, so a switch that goes on and off again works too |
-| Employee | who is punched (mode _State carries the value_)                                                                                                                 |
-| Action   | punch in or out, punch with the quick rounding, set to present, set to absent                                                                                   |
-| Cooldown | seconds that have to pass before the rule may fire again                                                                                                        |
+| Field               | Meaning                                                                                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| State               | the state of the other adapter, e.g. `fingerprint.0.lastMatch.name`                                                                                             |
+| Trigger             | _State carries the value_: the value has to equal _Value_ — or _Value is the employee_, where the value names the employee (id, login or shown name)            |
+| Value               | the value that fires the rule (mode _State carries the value_) — `toggle` (or `*`) fires for **every** change, so a switch that goes on and off again works too |
+| Employee            | who is punched (mode _State carries the value_)                                                                                                                 |
+| Action              | punch in or out, punch with the quick rounding, set to present, set to absent                                                                                   |
+| Cooldown            | seconds that have to pass before the rule may fire again                                                                                                        |
+| Fire on every write | the rule also fires when the value is the **same** as before. On by default for _Value is the employee_, off for a fixed value                                  |
+| Value → employee    | (mode _Value is the employee_) which employee a value belongs to; empty = the value itself names the employee                                                   |
 
-A rule fires only when the **value changes**, so a reader that repeats itself is harmless, and the cooldown keeps a
-rapidly blinking state in check. Every punch appears in the audit trail with the note `trigger.<id>`, so its origin
-stays traceable.
+By default a rule fires only when the **value changes**, so a dashboard that refreshes a state by itself is harmless,
+and the cooldown keeps a rapidly blinking state in check. A reader that reports **who** touched it needs the other
+behaviour: it writes the same name again when the same person scans again, and that is a new punch — _Fire on every
+write_ is therefore on by default for _Value is the employee_ (the cooldown and the duplicate protection of 30
+seconds stay in place). Every punch appears in the audit trail with the note `trigger.<id>`, so its origin stays
+traceable.
+
+**With the `fingerprint` adapter.** Use the state `fingerprint.0.lastMatch.name`, mode _Value is the employee_ and
+let the name of the enrolled finger be the **shown name or the login** of the employee. `lastMatch.id` is the _slot_
+of the finger (1–200), not the id of an employee: take it only together with a **value map** (slot 3 → Anna). A value
+that is missing in a map fires nothing. `lastMatch.matched` stays `true` for every match, so it does not fit a rule
+that fires on a change — with _Fire on every write_ it would, but it does not say who it was.
 
 ### Rules (automatic)
 
 The adapter can act on its own as well — that table lives in **Administration → Settings**:
 
-| Kind                    | What it does                                                                                            |
-| ----------------------- | ------------------------------------------------------------------------------------------------------- |
-| Clock out automatically | At the configured local time of the employee the open day is closed with a punch (note `auto.clockOut`) |
-| Report a missing punch  | The same moment, but nothing is written — the instance only reports it                                  |
-| Break reminder          | Reminds an employee whose running work block reached the configured length                              |
+| Kind                    | What it does                                                                                                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clock out automatically | At the configured local time of the employee the open day is closed with a punch (note `auto.clockOut`)                                                                     |
+| Report a missing punch  | The same moment, but nothing is written — the instance only reports it                                                                                                      |
+| Break reminder          | Reminds an employee whose running work block reached the configured length                                                                                                  |
 | Validity period         | Optional “valid from” and “valid until” as dates: the rule stays quiet outside them, both ends belong to the period, an empty field means “from now on” or “without an end” |
 
 Every rule runs **at most once per employee and local date**; `automation_runs` holds that decision and doubles as the
@@ -427,14 +438,14 @@ the adapter and switch **Trust the reverse proxy** on: the adapter then takes th
 
 ## Troubleshooting
 
-| Problem                                | Cause and fix                                                                                            |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/` answers `404 not_found`            | the web app is missing: reinstall the adapter — the package ships the built web app in `www/`            |
-| Not installable as an app on the phone | the page is not reachable over HTTPS — see above                                                         |
-| The PDF refuses or shows empty boxes   | `report_font_path` is missing — see [Reports](#reports)                                                  |
-| A restore seems to do nothing          | it is applied on the next start: restart the instance                                                    |
-| An employee cannot log in              | the start password has to be changed on first use; the administration can set a new one                  |
-| A punch is missing                     | it may wait in the offline queue or be marked as a conflict (see _Synchronisation_ in the app)           |
+| Problem                                | Cause and fix                                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `/` answers `404 not_found`            | the web app is missing: reinstall the adapter — the package ships the built web app in `www/`  |
+| Not installable as an app on the phone | the page is not reachable over HTTPS — see above                                               |
+| The PDF refuses or shows empty boxes   | `report_font_path` is missing — see [Reports](#reports)                                        |
+| A restore seems to do nothing          | it is applied on the next start: restart the instance                                          |
+| An employee cannot log in              | the start password has to be changed on first use; the administration can set a new one        |
+| A punch is missing                     | it may wait in the offline queue or be marked as a conflict (see _Synchronisation_ in the app) |
 
 ## Languages
 
@@ -482,6 +493,23 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+- (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the *value* of its state changed, so the
+  same person scanning twice in a row (in at 8:00, out at 17:00, nobody in between) was ignored the second time. A rule
+  has the option *Fire on every write* now – on by default for *Value is the employee* (existing rules of that mode
+  are switched on by the migration), off for a fixed value. The cooldown and the duplicate protection of 30 seconds stay
+  in place.
+- (Alex) fix: a rule can carry a **value map** (value → employee). The slot number of a reader (`lastMatch.id` of the
+  fingerprint adapter) was read as the id of an employee, so slot 3 punched employee 3 – with a map only the listed
+  values fire, everything else does nothing.
+- (Alex) fix: the transport no longer reads up to 64 MiB of body for every request before the sign-in is checked. The
+  general limit is 2 MiB again; the backup upload gets its bigger limit only for a signed-in caller who may restore, and
+  a body that announces more than the limit is refused without reading it.
+- (Alex) fix: what an anonymous caller can make the adapter keep is limited: login (128), password (1024), device
+  token, badge, PIN and scan token (512) and the note of a terminal punch (500) have a length limit, the login and the
+  user agent are shortened in the audit trail and in the session, the audit rows of failed and locked logins are
+  deleted after 90 days (every other audit row stays), and the failed attempts that are older than a lock lasts are
+  forgotten.
+
 ### 0.7.18 (2026-10-02)
 
 - (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to
@@ -499,7 +527,7 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### 0.7.16 (2026-10-01)
 
-- (Alex) new: **HTTPS in the adapter itself.** The instance settings offer *Use HTTPS* with a choice of the public
+- (Alex) new: **HTTPS in the adapter itself.** The instance settings offer _Use HTTPS_ with a choice of the public
   certificate, the private key and the chain from the certificate collection of ioBroker, so a local installation
   needs no reverse proxy for the app on the phone. The session cookie is `Secure`, the instance link and the calendar
   link switch to `https`, and a missing or unreadable certificate keeps the web interface off (with a log line) instead
@@ -510,7 +538,7 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 ### 0.7.15 (2026-10-01)
 
 - (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way
-  into its own web interface as `common.localLinks`, so the admin shows *Open the time tracking app* next to the
+  into its own web interface as `common.localLinks`, so the admin shows _Open the time tracking app_ next to the
   instance — one click and the login screen shows up, without typing host and port. The link uses the bind address and
   the port of the instance settings; with the default `127.0.0.1` it leads to the ioBroker machine itself, with
   `0.0.0.0` to the address the browser reached the admin with.

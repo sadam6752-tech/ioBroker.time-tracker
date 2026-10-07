@@ -5,9 +5,12 @@
  * ioBroker way of connecting a fingerprint reader, a button or a door contact. This module only *decides*:
  * the adapter subscribes to the states and runs the decision, so the logic itself stays free of ioBroker.
  *
- * A rule fires on a **change** of the value (a reader that repeats itself is harmless) and only after the
- * configured cooldown. In mode `condition` the value has to equal the stored one and the punch goes to the
- * stored employee; in mode `user` the value names the employee — as id, login or display name.
+ * A rule fires on a **change** of the value (a dashboard that refreshes itself is harmless) and only after the
+ * configured cooldown. With `fireOnRepeat` it fires on **every write**: a fingerprint reader reports the same
+ * name again when the same person scans again, and that is a new punch (the cooldown and the duplicate protection
+ * of the punch keep a chatty reader in check). In mode `condition` the value has to equal the stored one and the
+ * punch goes to the stored employee; in mode `user` the value names the employee — through the value map of the
+ * rule when it has one, otherwise as id, login or display name.
  */
 
 import type { TriggerRuleRecord } from "../db/repositories/triggers";
@@ -107,7 +110,7 @@ export function evaluateTrigger(
 	if (!text) {
 		return { fire: false, userId: null, reason: "empty value" };
 	}
-	if (context.previous !== null && context.previous === text) {
+	if (!rule.fireOnRepeat && context.previous !== null && context.previous === text) {
 		return { fire: false, userId: null, reason: `value ${text} did not change` };
 	}
 	if (rule.cooldownSec > 0 && rule.lastFiredAt !== null && rule.lastFiredAt + rule.cooldownSec > context.now) {
@@ -116,7 +119,18 @@ export function evaluateTrigger(
 
 	let user: UserRecord | null = null;
 	if (rule.mode === "user") {
-		user = resolveTriggerUser(context.value, users);
+		if (rule.valueMap.length > 0) {
+			// a map is an explicit decision: a value that is not in it fires nothing — a slot number of a reader
+			// must never be mistaken for the id of an employee
+			const lower = text.toLowerCase();
+			const entry = rule.valueMap.find(item => item.value.toLowerCase() === lower);
+			user = entry ? users.findById(entry.userId) : null;
+			if (!user) {
+				return { fire: false, userId: null, reason: `no entry of the value map matches "${text}"` };
+			}
+		} else {
+			user = resolveTriggerUser(context.value, users);
+		}
 		if (!user) {
 			return { fire: false, userId: null, reason: `no employee matches "${text}"` };
 		}

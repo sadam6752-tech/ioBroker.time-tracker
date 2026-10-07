@@ -188,14 +188,30 @@ export interface Api {
  *
  * @param body - parsed request body
  * @param field - field name
+ * @param maxLength - longest allowed value in characters (the routes that anybody may call set a small one)
  * @returns the trimmed value
  */
-function requireString(body: Record<string, unknown>, field: string): string {
+function requireString(body: Record<string, unknown>, field: string, maxLength?: number): string {
 	const value = body[field];
 	if (typeof value !== "string" || !value.trim()) {
 		throw new ValidationError(`${field} is required`);
 	}
-	return value.trim();
+	return limitLength(value.trim(), field, maxLength);
+}
+
+/**
+ * Refuses a value that is longer than the route allows.
+ *
+ * @param value - trimmed value
+ * @param field - field name for the message
+ * @param maxLength - longest allowed value, `undefined` = no limit of its own
+ * @returns the value
+ */
+function limitLength(value: string, field: string, maxLength: number | undefined): string {
+	if (maxLength !== undefined && value.length > maxLength) {
+		throw new ValidationError(`${field} is too long (at most ${maxLength} characters)`);
+	}
+	return value;
 }
 
 /**
@@ -203,9 +219,10 @@ function requireString(body: Record<string, unknown>, field: string): string {
  *
  * @param body - parsed request body
  * @param field - field name
+ * @param maxLength - longest allowed value in characters (the routes that anybody may call set a small one)
  * @returns the trimmed value or `null`
  */
-function optionalString(body: Record<string, unknown>, field: string): string | null {
+function optionalString(body: Record<string, unknown>, field: string, maxLength?: number): string | null {
 	const value = body[field];
 	if (value === undefined || value === null) {
 		return null;
@@ -213,8 +230,15 @@ function optionalString(body: Record<string, unknown>, field: string): string | 
 	if (typeof value !== "string") {
 		throw new ValidationError(`${field} must be a string`);
 	}
-	return value.trim() || null;
+	const trimmed = value.trim();
+	return trimmed ? limitLength(trimmed, field, maxLength) : null;
 }
+
+/** Longest login, password, device token, badge, PIN, scan token and note a caller may send without a session. */
+const MAX_LOGIN_LENGTH = 128;
+const MAX_PASSWORD_LENGTH = 1024;
+const MAX_CODE_LENGTH = 512;
+const MAX_PUBLIC_NOTE_LENGTH = 500;
 
 /**
  * Reads an optional number field.
@@ -910,8 +934,8 @@ export function createApi(deps: ApiDeps): Api {
 		context => {
 			const body = context.jsonBody();
 			const result = auth.login({
-				login: requireString(body, "login"),
-				password: requireString(body, "password"),
+				login: requireString(body, "login", MAX_LOGIN_LENGTH),
+				password: requireString(body, "password", MAX_PASSWORD_LENGTH),
 				userAgent: context.header("user-agent"),
 				ip: context.request.remoteAddress ?? null,
 				now: now(),
@@ -2024,6 +2048,19 @@ export function createApi(deps: ApiDeps): Api {
 			if (mode === "user" && target !== null) {
 				throw new ValidationError("mode user reads the employee from the state, userId has to stay empty");
 			}
+			// the value map: which employee a value of the state belongs to (mode `user`)
+			const rawMap = rule.valueMap;
+			if (rawMap !== undefined && rawMap !== null && !Array.isArray(rawMap)) {
+				throw new ValidationError("valueMap must be a list");
+			}
+			const valueMap = ((rawMap as unknown[] | undefined | null) ?? []).map(entry => {
+				const item = (entry ?? {}) as Record<string, unknown>;
+				const userId = optionalNumber(item, "userId");
+				if (userId === null || !users.findById(userId)) {
+					throw new ValidationError(`valueMap must reference existing employees (got ${userId})`);
+				}
+				return { value: typeof item.value === "string" ? item.value : "", userId };
+			});
 			return {
 				id: optionalNumber(rule, "id") ?? undefined,
 				label: optionalString(rule, "label"),
@@ -2034,6 +2071,8 @@ export function createApi(deps: ApiDeps): Api {
 				action: optionalString(rule, "action") ?? "punch",
 				isActive: optionalBoolean(rule, "isActive") ?? true,
 				cooldownSec: optionalNumber(rule, "cooldownSec") ?? 0,
+				fireOnRepeat: optionalBoolean(rule, "fireOnRepeat") ?? mode === "user",
+				valueMap,
 			};
 		});
 
@@ -2055,6 +2094,8 @@ export function createApi(deps: ApiDeps): Api {
 				action: rule.action as TriggerAction,
 				isActive: rule.isActive,
 				cooldownSec: rule.cooldownSec,
+				fireOnRepeat: rule.fireOnRepeat,
+				valueMap: rule.valueMap,
 				...actor,
 			}),
 		);
@@ -3016,7 +3057,7 @@ export function createApi(deps: ApiDeps): Api {
 		context => {
 			requireKiosk();
 			const body = context.jsonBody();
-			const deviceToken = requireString(body, "deviceToken");
+			const deviceToken = requireString(body, "deviceToken", MAX_CODE_LENGTH);
 			const terminal = terminals.findByToken(deviceToken, now());
 			if (!terminal) {
 				throw problem(401, "invalid_credentials", "the device token is not valid any more");
@@ -3109,8 +3150,8 @@ export function createApi(deps: ApiDeps): Api {
 		context => {
 			const terminal = requireTerminal(context);
 			const body = context.jsonBody();
-			const badge = optionalString(body, "badge");
-			const pin = optionalString(body, "pin");
+			const badge = optionalString(body, "badge", MAX_CODE_LENGTH);
+			const pin = optionalString(body, "pin", MAX_CODE_LENGTH);
 			const targetId = optionalNumber(body, "userId");
 
 			if (badge === null && targetId === null) {
@@ -3151,7 +3192,7 @@ export function createApi(deps: ApiDeps): Api {
 				timeZone: user.timezone,
 				source: "terminal",
 				direction: optionalDirection(body),
-				note: optionalString(body, "note"),
+				note: optionalString(body, "note", MAX_PUBLIC_NOTE_LENGTH),
 				actorId: user.id,
 				actorIp: context.request.remoteAddress ?? null,
 				now: timestamp,
@@ -3500,7 +3541,7 @@ export function createApi(deps: ApiDeps): Api {
 		context => {
 			const secret = requireHmacSecret();
 			const body = context.jsonBody();
-			const parsed = parseTagToken(requireString(body, "token"));
+			const parsed = parseTagToken(requireString(body, "token", MAX_CODE_LENGTH));
 			if (!parsed) {
 				throw new ValidationError("token is not valid");
 			}
@@ -3535,7 +3576,7 @@ export function createApi(deps: ApiDeps): Api {
 				timeZone: user.timezone,
 				source: "nfc",
 				direction: optionalDirection(body),
-				note: optionalString(body, "note"),
+				note: optionalString(body, "note", MAX_PUBLIC_NOTE_LENGTH),
 				actorId: user.id,
 				actorIp: context.request.remoteAddress ?? null,
 				now: timestamp,

@@ -466,5 +466,12 @@
 	"absences.nextMonth": "Volgende maand",
 	"admin.absenceTypes.color": "Kleur in de agenda",
 	"admin.absenceTypes.colorClear": "Kleur verwijderen",
-	"app.disclaimer": "Disclaimer: dit programma wordt kosteloos en zonder garantie aangeboden. Het vervangt geen juridisch advies en is geen officieel goedgekeurd tijdregistratiesysteem. De beheerder is zelf verantwoordelijk voor de juistheid van de geregistreerde tijden, voor de naleving van de geldende regels (arbeidstijdenrecht, gegevensbescherming) en voor de back-ups."
+	"app.disclaimer": "Disclaimer: dit programma wordt kosteloos en zonder garantie aangeboden. Het vervangt geen juridisch advies en is geen officieel goedgekeurd tijdregistratiesysteem. De beheerder is zelf verantwoordelijk voor de juistheid van de geregistreerde tijden, voor de naleving van de geldende regels (arbeidstijdenrecht, gegevensbescherming) en voor de back-ups.",
+	"admin.trigger.fireOnRepeat": "Bij elke schrijfactie uitvoeren (ook bij dezelfde waarde)",
+	"admin.trigger.fireOnRepeatHint": "Een vingerafdruklezer schrijft dezelfde naam opnieuw als dezelfde persoon opnieuw scant. De wachttijd en de bescherming tegen dubbel stempelen van 30 seconden blijven gelden. Schakel uit voor een status die een dashboard zelf ververst.",
+	"admin.trigger.valueMap": "Waarde → medewerker",
+	"admin.trigger.valueMapHint": "Nodig wanneer de status een slotnummer of een code bevat die niet de id van een medewerker is (bijvoorbeeld lastMatch.id van de fingerprint-adapter: slot 3 is niet medewerker 3). Een waarde die niet in de lijst staat, doet niets. Leeg: de waarde zelf noemt de medewerker (id, login of getoonde naam).",
+	"admin.trigger.mapValue": "Waarde",
+	"admin.trigger.mapAdd": "Waarde toevoegen",
+	"admin.trigger.mapRemove": "Waarde verwijderen"
 }

@@ -117,6 +117,14 @@ describe("web server", () => {
 			},
 		});
 
+		// a route that raises its own limit, like the backup upload: only a signed-in caller gets the bigger one
+		api.router.add({
+			method: "POST",
+			path: "/probe/upload",
+			maxBodyBytes: 4096,
+			handler: context => json(200, { bytes: context.rawBody().length }),
+		});
+
 		const hash = hashPassword(password, { cost: 1024 });
 		users.create({ login: "anna", displayName: "Anna", passwordHash: hash, roleKeys: ["employee"] });
 
@@ -262,6 +270,49 @@ describe("web server", () => {
 		expect(huge.status).to.equal(413);
 		expect(huge.headers.get("content-type")).to.equal("application/problem+json; charset=utf-8");
 		expect(await huge.json()).to.deep.include({ status: 413, code: "payload_too_large" });
+	});
+
+	it("gives the raised limit of a route only to a signed-in caller and refuses an announced size at once", async () => {
+		const big = Buffer.alloc(3000, 0x41);
+
+		// the transport limit of this test is 1024 bytes: an unknown client does not get the 4096 of the route
+		const anonymous = await fetch(`${server.url}/api/probe/upload`, {
+			method: "POST",
+			headers: { "content-type": "application/octet-stream" },
+			body: big,
+		});
+		expect(anonymous.status).to.equal(413);
+		expect(await anonymous.json()).to.deep.include({ code: "payload_too_large" });
+
+		// a wrong session does not help either
+		const forged = await fetch(`${server.url}/api/probe/upload`, {
+			method: "POST",
+			headers: { "content-type": "application/octet-stream", "x-session-token": "erfunden" },
+			body: big,
+		});
+		expect(forged.status).to.equal(413);
+
+		const login = await fetch(`${server.url}/api/auth/login`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ login: "anna", password }),
+		});
+		const session = (await login.json()) as { token: string };
+		const allowed = await fetch(`${server.url}/api/probe/upload`, {
+			method: "POST",
+			headers: { "content-type": "application/octet-stream", "x-session-token": session.token },
+			body: big,
+		});
+		expect(allowed.status).to.equal(200);
+		expect(await allowed.json()).to.deep.equal({ bytes: 3000 });
+
+		// even the signed-in caller stays below the limit of the route
+		const tooBig = await fetch(`${server.url}/api/probe/upload`, {
+			method: "POST",
+			headers: { "content-type": "application/octet-stream", "x-session-token": session.token },
+			body: Buffer.alloc(5000, 0x41),
+		});
+		expect(tooBig.status).to.equal(413);
 	});
 
 	it("hands a binary upload over as bytes, not as text", async () => {

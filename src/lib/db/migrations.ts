@@ -767,4 +767,23 @@ export const migrations: Migration[] = [
 			}
 		},
 	},
+	{
+		version: 29,
+		name: "trigger rules: fire on every write, value map",
+		run: (db: Db): void => {
+			// `fire_on_repeat`: a reader such as the fingerprint adapter writes the same value again for the same
+			// person, and that is a new scan. Rules that read the employee from the value (mode `user`) therefore
+			// fire on every write from now on — the cooldown and the duplicate protection of the punch stay in
+			// place. Rules with a fixed value keep the old behaviour (a changed value only).
+			if (!hasColumn(db, "trigger_rules", "fire_on_repeat")) {
+				db.exec("ALTER TABLE trigger_rules ADD COLUMN fire_on_repeat INTEGER NOT NULL DEFAULT 0");
+				db.exec("UPDATE trigger_rules SET fire_on_repeat = 1 WHERE mode = 'user'");
+			}
+			// `value_map`: JSON list of `{ value, userId }`. A reader reports a slot number or a name that is not an
+			// employee id; the map says which employee a value belongs to, without guessing.
+			if (!hasColumn(db, "trigger_rules", "value_map")) {
+				db.exec("ALTER TABLE trigger_rules ADD COLUMN value_map TEXT");
+			}
+		},
+	},
 ];

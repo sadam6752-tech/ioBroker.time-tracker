@@ -466,5 +466,12 @@
 	"absences.nextMonth": "下个月",
 	"admin.absenceTypes.color": "日历中的颜色",
 	"admin.absenceTypes.colorClear": "移除颜色",
-	"app.disclaimer": "免责声明：本程序免费提供，不附带任何保证。它不能替代法律咨询，也不是官方批准的考勤系统。运营方应自行负责所记录时间的准确性、遵守适用的规定（劳动时间法规、数据保护）以及数据备份。"
+	"app.disclaimer": "免责声明：本程序免费提供，不附带任何保证。它不能替代法律咨询，也不是官方批准的考勤系统。运营方应自行负责所记录时间的准确性、遵守适用的规定（劳动时间法规、数据保护）以及数据备份。",
+	"admin.trigger.fireOnRepeat": "每次写入都触发（值相同时也触发）",
+	"admin.trigger.fireOnRepeatHint": "同一个人再次扫描时，指纹读取器会再次写入相同的名字。冷却时间和 30 秒的重复打卡保护仍然有效。对于仪表板自行刷新的状态请关闭。",
+	"admin.trigger.valueMap": "值 → 员工",
+	"admin.trigger.valueMapHint": "当状态携带的是槽位编号或不是员工 id 的代码时需要（例如 fingerprint 适配器的 lastMatch.id：槽位 3 不是员工 3）。不在列表中的值不会触发任何操作。留空：由值本身指明员工（id、登录名或显示名）。",
+	"admin.trigger.mapValue": "值",
+	"admin.trigger.mapAdd": "添加值",
+	"admin.trigger.mapRemove": "删除值"
 }

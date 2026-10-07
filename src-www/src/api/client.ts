@@ -476,6 +476,10 @@ export interface TriggerRule {
 	isActive?: boolean;
 	/** Seconds that have to pass between two fires, `0` = no limit */
 	cooldownSec?: number;
+	/** Fire on every write, also when the value is the same as before */
+	fireOnRepeat?: boolean;
+	/** Which employee a value of the state belongs to (mode `user`); empty = the value names the employee */
+	valueMap?: { value: string; userId: number }[];
 	/** Instant the rule fired last, `null` when it never fired */
 	lastFiredAt?: number | null;
 }

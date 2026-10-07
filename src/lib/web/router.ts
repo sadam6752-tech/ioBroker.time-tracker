@@ -133,6 +133,18 @@ export interface Router {
 	handle(request: HttpRequest): Promise<HttpResponse>;
 	/** Registered routes (method and path), e.g. for the API documentation */
 	routes(): { method: string; path: string }[];
+	/**
+	 * How many body bytes the transport may read for a request, **before** the body is read.
+	 *
+	 * A route that raises its limit for itself (the backup upload) gets the higher limit only for a caller whose
+	 * session is valid and allowed to use it; everybody else is held to the general limit, so an unknown client
+	 * cannot make the adapter buffer tens of megabytes.
+	 *
+	 * @param request - method, path and headers of the request
+	 * @param general - the general limit of the transport
+	 * @returns the limit that applies to this request
+	 */
+	bodyLimit(request: Pick<HttpRequest, "method" | "path" | "headers">, general: number): number;
 }
 
 /** Marker to tell a handler result from a plain JSON payload. */
@@ -366,6 +378,35 @@ export function createRouter(options: RouterOptions): Router {
 
 		routes(): { method: string; path: string }[] {
 			return routes.flatMap(route => route.methods.map(method => ({ method, path: route.definition.path })));
+		},
+
+		bodyLimit(request: Pick<HttpRequest, "method" | "path" | "headers">, general: number): number {
+			const method = (request.method ?? "GET").toUpperCase();
+			const pathSegments = splitPath(request.path ?? "/");
+			const route = routes.find(
+				entry =>
+					entry.methods.includes(method as HttpMethod) &&
+					entry.segments.length === pathSegments.length &&
+					entry.segments.every(
+						(segment, index) => segment.literal === null || segment.literal === pathSegments[index],
+					),
+			);
+			const raised = route?.definition.maxBodyBytes;
+			if (!route || raised === undefined || raised <= general) {
+				return general;
+			}
+			// the higher limit is for a signed-in caller who may use the route; a public route never gets it
+			if (route.definition.requiresAuth === false) {
+				return general;
+			}
+			const headers = request.headers ?? {};
+			const read = (name: string): string => {
+				const value = headers[name];
+				return (Array.isArray(value) ? value[0] : value) ?? "";
+			};
+			const token = read("x-session-token") || (parseCookies(read("cookie"))[SESSION_COOKIE] ?? "");
+			const result = options.auth.authenticate({ token, permission: route.definition.permission, now: now() });
+			return result.ok ? raised : general;
 		},
 
 		async handle(request: HttpRequest): Promise<HttpResponse> {

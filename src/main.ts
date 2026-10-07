@@ -73,7 +73,7 @@ import { handleCommand, punchEmployee, punchEvent, type CommandResult } from "./
 import { evaluateTrigger, triggerText } from "./lib/adapter/triggers";
 import { evaluateAutomation, isoWeekday, runPeriod, workBlock } from "./lib/adapter/automation";
 import { handleMessage } from "./lib/adapter/messages";
-import { createApi, MAX_BACKUP_UPLOAD_BYTES } from "./lib/web/api";
+import { createApi } from "./lib/web/api";
 import type { ApiEvent, EventBus } from "./lib/web/events";
 import { startWebServer, type TlsOptions, type WebServer } from "./lib/web/server";
 import { localDateTime } from "./lib/util/time";
@@ -582,8 +582,8 @@ class TimeTracker extends utils.Adapter {
 				// the same prefix the calendar link carries (`/api`) — the web app and its login live beside it
 				apiPrefix: API_PREFIX,
 				staticFiles,
-				// an uploaded backup is bigger than the default limit; the route carries the same bound
-				maxBodyBytes: MAX_BACKUP_UPLOAD_BYTES,
+				// the general limit stays at its default; the route of the backup upload raises its own limit, and the
+				// transport grants it only to a signed-in caller who may use that route
 				// live events for the PWA and the terminal: `/api/stream?token=...`
 				stream: {
 					auth,

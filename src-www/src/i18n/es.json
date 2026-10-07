@@ -466,5 +466,12 @@
 	"absences.nextMonth": "Mes siguiente",
 	"admin.absenceTypes.color": "Color en el calendario",
 	"admin.absenceTypes.colorClear": "Quitar el color",
-	"app.disclaimer": "Aviso legal: este programa se ofrece de forma gratuita y sin garantía. No sustituye el asesoramiento jurídico ni es un sistema de registro horario oficialmente homologado. El operador es responsable de la exactitud de los tiempos registrados, del cumplimiento de las normas aplicables (derecho laboral, protección de datos) y de las copias de seguridad."
+	"app.disclaimer": "Aviso legal: este programa se ofrece de forma gratuita y sin garantía. No sustituye el asesoramiento jurídico ni es un sistema de registro horario oficialmente homologado. El operador es responsable de la exactitud de los tiempos registrados, del cumplimiento de las normas aplicables (derecho laboral, protección de datos) y de las copias de seguridad.",
+	"admin.trigger.fireOnRepeat": "Activar en cada escritura (también con el mismo valor)",
+	"admin.trigger.fireOnRepeatHint": "Un lector de huellas escribe de nuevo el mismo nombre cuando la misma persona vuelve a escanear. El tiempo de espera y la protección contra doble fichaje de 30 segundos siguen activos. Desactívelo para un estado que un panel actualiza por sí solo.",
+	"admin.trigger.valueMap": "Valor → empleado",
+	"admin.trigger.valueMapHint": "Necesario cuando el estado lleva un número de posición o un código que no es el id de un empleado (por ejemplo lastMatch.id del adaptador fingerprint: la posición 3 no es el empleado 3). Un valor que no está en la lista no hace nada. Vacío: el propio valor nombra al empleado (id, login o nombre mostrado).",
+	"admin.trigger.mapValue": "Valor",
+	"admin.trigger.mapAdd": "Añadir valor",
+	"admin.trigger.mapRemove": "Quitar valor"
 }

@@ -192,6 +192,13 @@ export interface AuthService {
 	}): void;
 }
 
+/** Characters of a login name that are remembered and written to the audit trail. */
+const MAX_LOGIN_RECORDED = 128;
+/** Characters of a user agent that are stored. */
+const MAX_AGENT_RECORDED = 256;
+/** Days the audit rows of failed and locked logins are kept. */
+const FAILED_LOGIN_AUDIT_DAYS = 90;
+
 /** Default cost parameters (interactive login, ~50 ms on a modern machine). */
 const DEFAULT_HASH: Required<PasswordHashOptions> = {
 	cost: 16384,
@@ -309,7 +316,7 @@ export function createAuthService(deps: AuthDeps): AuthService {
 	const policy = deps.policy ?? {};
 
 	/** Failed attempts per login name (process-local, which is enough for one adapter instance). */
-	const failures = new Map<string, { count: number; blockedUntil: number }>();
+	const failures = new Map<string, { count: number; blockedUntil: number; at: number }>();
 
 	const selectSession = db.prepare(
 		`SELECT id, user_id AS userId, created_at AS createdAt, expires_at AS expiresAt,
@@ -330,6 +337,36 @@ export function createAuthService(deps: AuthDeps): AuthService {
 	const revokeUserSessions = db.prepare("UPDATE sessions SET revoked = 1 WHERE user_id = ? AND revoked = 0");
 	const extendSession = db.prepare("UPDATE sessions SET expires_at = ? WHERE id = ?");
 	const purgeSessions = db.prepare("DELETE FROM sessions WHERE expires_at <= ? OR revoked = 1");
+	// failed and locked attempts are written by anybody who can reach the login: they do not stay forever
+	const purgeFailedLogins = db.prepare(
+		"DELETE FROM audit_log WHERE action IN ('auth.login_failed', 'auth.login_locked') AND at_utc < ?",
+	);
+
+	/**
+	 * Shortens a user agent for the session table and the audit trail.
+	 *
+	 * @param value - header of the request
+	 * @returns at most `MAX_AGENT_RECORDED` characters, `null` when there is none
+	 */
+	const shortAgent = (value: string | null | undefined): string | null =>
+		value ? value.slice(0, MAX_AGENT_RECORDED) : null;
+
+	/**
+	 * Forgets the failed attempts that are older than a lock lasts, so the table does not grow with every name that
+	 * somebody tries once.
+	 *
+	 * @param now - instant of the attempt
+	 */
+	const pruneFailures = (now: number): void => {
+		if (failures.size < 200) {
+			return;
+		}
+		for (const [name, entry] of failures) {
+			if (entry.at + lockoutSeconds < now) {
+				failures.delete(name);
+			}
+		}
+	};
 
 	/**
 	 * Only the hash of a token is stored, so a database leak cannot be replayed.
@@ -359,7 +396,10 @@ export function createAuthService(deps: AuthDeps): AuthService {
 	return {
 		login(input: LoginInput): LoginResult {
 			const now = input.now ?? Math.floor(Date.now() / 1000);
-			const key = input.login.trim().toLowerCase();
+			// what an anonymous caller types is kept short wherever it is remembered or written down
+			const shownLogin = input.login.trim().slice(0, MAX_LOGIN_RECORDED);
+			const key = shownLogin.toLowerCase();
+			pruneFailures(now);
 			const previous = failures.get(key);
 
 			if (previous && previous.blockedUntil > now) {
@@ -368,7 +408,7 @@ export function createAuthService(deps: AuthDeps): AuthService {
 					action: "auth.login_locked",
 					entity: "user",
 					entityId: null,
-					detail: { login: input.login.trim(), blockedUntil: previous.blockedUntil },
+					detail: { login: shownLogin, blockedUntil: previous.blockedUntil },
 					ip: input.ip ?? null,
 				});
 				return { ok: false, error: "locked_out" };
@@ -385,14 +425,14 @@ export function createAuthService(deps: AuthDeps): AuthService {
 				const expiredLock = previous !== undefined && previous.blockedUntil > 0 && previous.blockedUntil <= now;
 				const count = previous === undefined || expiredLock ? 1 : previous.count + 1;
 				const blockedUntil = count >= maxFailed ? now + lockoutSeconds : 0;
-				failures.set(key, { count, blockedUntil });
+				failures.set(key, { count, blockedUntil, at: now });
 
 				writeAuditLog(db, {
 					atUtc: now,
 					action: "auth.login_failed",
 					entity: "user",
 					entityId: userId,
-					detail: { login: input.login.trim(), reason, attempts: count, blockedUntil },
+					detail: { login: shownLogin, reason, attempts: count, blockedUntil },
 					ip: input.ip ?? null,
 				});
 				return { ok: false, error: "invalid_credentials" };
@@ -421,14 +461,14 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			const expiresAt = now + ttlSeconds();
 
 			const run = db.transaction((): void => {
-				insertSession.run(sessionId, user.id, now, expiresAt, input.userAgent ?? null, input.ip ?? null);
+				insertSession.run(sessionId, user.id, now, expiresAt, shortAgent(input.userAgent), input.ip ?? null);
 				writeAuditLog(db, {
 					atUtc: now,
 					actorId: user.id,
 					action: "auth.login",
 					entity: "session",
 					entityId: sessionId,
-					detail: { login: user.login, userAgent: input.userAgent ?? null },
+					detail: { login: user.login, userAgent: shortAgent(input.userAgent) },
 					ip: input.ip ?? null,
 				});
 			});
@@ -539,7 +579,9 @@ export function createAuthService(deps: AuthDeps): AuthService {
 		},
 
 		purge(now?: number): number {
-			return purgeSessions.run(now ?? Math.floor(Date.now() / 1000)).changes;
+			const instant = now ?? Math.floor(Date.now() / 1000);
+			purgeFailedLogins.run(instant - FAILED_LOGIN_AUDIT_DAYS * 86400);
+			return purgeSessions.run(instant).changes;
 		},
 
 		rotateIfDue(input: { token: string; now?: number }): { token: string; expiresAt: number } | null {

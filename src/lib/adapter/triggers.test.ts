@@ -21,6 +21,8 @@ function rule(overrides: Partial<TriggerRuleRecord> = {}): TriggerRuleRecord {
 		action: "punch",
 		isActive: true,
 		cooldownSec: 0,
+		fireOnRepeat: false,
+		valueMap: [],
 		lastFiredAt: null,
 		...overrides,
 	};
@@ -77,6 +79,55 @@ describe("trigger rules", () => {
 		const cooling = rule({ cooldownSec: 60, lastFiredAt: 1000 });
 		expect(evaluateTrigger(cooling, { value: "1", previous: "0", now: 1030 }, users).reason).to.contain("cooldown");
 		expect(evaluateTrigger(cooling, { value: "1", previous: "0", now: 1060 }, users).fire).to.equal(true);
+	});
+
+	it("fires again for the same value when the rule fires on every write", () => {
+		// a fingerprint reader reports the same name again when the same person scans again
+		const scan = rule({ mode: "user", condition: null, userId: null, fireOnRepeat: true });
+		const first = evaluateTrigger(scan, { value: "anna", previous: null, now: 1000 }, users);
+		const second = evaluateTrigger(scan, { value: "anna", previous: "anna", now: 30000 }, users);
+		expect(first.fire).to.equal(true);
+		expect(second).to.deep.equal({ fire: true, userId: 2, reason: "punch for Anna Weber" });
+
+		// the cooldown still keeps a chatty reader in check
+		const cooling = rule({ ...scan, cooldownSec: 60, lastFiredAt: 1000 });
+		expect(evaluateTrigger(cooling, { value: "anna", previous: "anna", now: 1030 }, users).reason).to.contain(
+			"cooldown",
+		);
+		expect(evaluateTrigger(cooling, { value: "anna", previous: "anna", now: 1060 }, users).fire).to.equal(true);
+
+		// without the option the old behaviour stays: the same value twice fires once
+		const quiet = rule({ mode: "user", condition: null, userId: null });
+		expect(evaluateTrigger(quiet, { value: "anna", previous: "anna", now: 1000 }, users).reason).to.contain(
+			"did not change",
+		);
+	});
+
+	it("takes the employee from the value map and never mistakes a slot number for an id", () => {
+		// slot 3 of the reader belongs to Anna (id 2); employee id 3 is somebody else
+		const mapped = rule({
+			mode: "user",
+			condition: null,
+			userId: null,
+			fireOnRepeat: true,
+			valueMap: [
+				{ value: "3", userId: 2 },
+				{ value: "Bo Slot", userId: 3 },
+			],
+		});
+		expect(evaluateTrigger(mapped, { value: 3, previous: "3", now: 1 }, users)).to.deep.equal({
+			fire: true,
+			userId: 2,
+			reason: "punch for Anna Weber",
+		});
+		// a value that is not in the map fires nothing, even when it is the id of an employee
+		const other = evaluateTrigger(mapped, { value: 2, previous: null, now: 1 }, users);
+		expect(other.fire).to.equal(false);
+		expect(other.reason).to.contain("value map");
+		// the comparison ignores the case, and a mapped employee that is deactivated still does not punch
+		expect(evaluateTrigger(mapped, { value: "bo slot", previous: null, now: 1 }, users).reason).to.contain(
+			"deactivated",
+		);
 	});
 
 	it("finds the employee in mode user by id, login and name", () => {

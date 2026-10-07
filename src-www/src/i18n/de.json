@@ -466,5 +466,12 @@
 	"absences.nextMonth": "Nächster Monat",
 	"admin.absenceTypes.color": "Farbe im Kalender",
 	"admin.absenceTypes.colorClear": "Farbe entfernen",
-	"app.disclaimer": "Haftungsausschluss: Das Programm wird unentgeltlich und ohne Gewähr bereitgestellt. Es ersetzt keine Rechtsberatung und ist kein amtlich zugelassenes Zeiterfassungssystem. Für die Richtigkeit der erfassten Zeiten, die Einhaltung der geltenden Vorschriften (Arbeitszeitrecht, Datenschutz) und die Datensicherung ist der Betreiber selbst verantwortlich."
+	"app.disclaimer": "Haftungsausschluss: Das Programm wird unentgeltlich und ohne Gewähr bereitgestellt. Es ersetzt keine Rechtsberatung und ist kein amtlich zugelassenes Zeiterfassungssystem. Für die Richtigkeit der erfassten Zeiten, die Einhaltung der geltenden Vorschriften (Arbeitszeitrecht, Datenschutz) und die Datensicherung ist der Betreiber selbst verantwortlich.",
+	"admin.trigger.fireOnRepeat": "Bei jeder Meldung auslösen (auch bei gleichem Wert)",
+	"admin.trigger.fireOnRepeatHint": "Ein Fingerabdruck-Leser schreibt denselben Namen noch einmal, wenn dieselbe Person erneut scannt. Die Sperrzeit und der Doppelstempel-Schutz von 30 Sekunden bleiben wirksam. Für einen Zustand, den ein Dashboard von selbst auffrischt, ausschalten.",
+	"admin.trigger.valueMap": "Wert → Mitarbeiter",
+	"admin.trigger.valueMapHint": "Nötig, wenn der Zustand eine Speichernummer oder einen Code trägt, der nicht die ID eines Mitarbeiters ist (zum Beispiel lastMatch.id des Fingerprint-Adapters: Speicherplatz 3 ist nicht Mitarbeiter 3). Ein Wert, der nicht in der Liste steht, löst nichts aus. Leer: Der Wert selbst nennt den Mitarbeiter (ID, Login oder angezeigter Name).",
+	"admin.trigger.mapValue": "Wert",
+	"admin.trigger.mapAdd": "Wert hinzufügen",
+	"admin.trigger.mapRemove": "Wert entfernen"
 }

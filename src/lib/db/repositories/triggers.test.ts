@@ -69,6 +69,8 @@ describe("triggers repository", () => {
 			action: "punch",
 			isActive: true,
 			cooldownSec: 0,
+			fireOnRepeat: false,
+			valueMap: [],
 			lastFiredAt: null,
 		});
 		expect(repo.list()).to.have.length(1);
@@ -103,6 +105,96 @@ describe("triggers repository", () => {
 		});
 
 		expect(rule).to.deep.include({ mode: "user", condition: null, userId: null, action: "present" });
+	});
+
+	it("fires on every write by default in mode user and keeps a map only there", () => {
+		const user = repo.save({ sourceState: "fingerprint.0.lastMatch.name", mode: "user", actorId: adminId });
+		expect(user).to.deep.include({ fireOnRepeat: true, valueMap: [] });
+
+		const fixed = repo.save({ sourceState: "a.0.b", condition: "1", userId: annaId, actorId: adminId });
+		expect(fixed.fireOnRepeat).to.equal(false);
+
+		// the operator can switch it off in mode user and on in mode condition
+		expect(
+			repo.save({ sourceState: "a.0.c", mode: "user", fireOnRepeat: false, actorId: adminId }).fireOnRepeat,
+		).to.equal(false);
+		expect(
+			repo.save({
+				sourceState: "a.0.d",
+				condition: "toggle",
+				userId: annaId,
+				fireOnRepeat: true,
+				actorId: adminId,
+			}).fireOnRepeat,
+		).to.equal(true);
+
+		// a map belongs to mode user: a rule of mode condition drops it
+		const dropped = repo.save({
+			sourceState: "a.0.e",
+			condition: "1",
+			userId: annaId,
+			valueMap: [{ value: "1", userId: annaId }],
+			actorId: adminId,
+		});
+		expect(dropped.valueMap).to.deep.equal([]);
+	});
+
+	it("stores the value map, audits a change of it and refuses a bad map", () => {
+		const rule = repo.save({
+			sourceState: "fingerprint.0.lastMatch.id",
+			mode: "user",
+			valueMap: [
+				{ value: " 3 ", userId: annaId },
+				{ value: "12", userId: adminId },
+			],
+			actorId: adminId,
+			now: 1000,
+		});
+		expect(rule.valueMap).to.deep.equal([
+			{ value: "3", userId: annaId },
+			{ value: "12", userId: adminId },
+		]);
+		expect(repo.findById(rule.id)?.valueMap).to.deep.equal(rule.valueMap);
+		expect(lastDetail("trigger_rule.create")).to.have.property("valueMap");
+
+		// the same map again is no change
+		const before = countAudit("trigger_rule.update");
+		repo.save({
+			id: rule.id,
+			sourceState: "fingerprint.0.lastMatch.id",
+			mode: "user",
+			valueMap: [
+				{ value: "3", userId: annaId },
+				{ value: "12", userId: adminId },
+			],
+			actorId: adminId,
+		});
+		expect(countAudit("trigger_rule.update")).to.equal(before);
+
+		// another employee for slot 3 is a change that the trail names
+		repo.save({
+			id: rule.id,
+			sourceState: "fingerprint.0.lastMatch.id",
+			mode: "user",
+			valueMap: [{ value: "3", userId: adminId }],
+			actorId: adminId,
+		});
+		expect(countAudit("trigger_rule.update")).to.equal(before + 1);
+		expect(lastDetail("trigger_rule.update")).to.have.property("changes").that.has.property("valueMap");
+
+		const twice = [
+			{ value: "Alex", userId: annaId },
+			{ value: "alex", userId: adminId },
+		];
+		expect(() => repo.save({ sourceState: "a.0.b", mode: "user", valueMap: twice, actorId: adminId })).to.throw(
+			"twice",
+		);
+		expect(() =>
+			repo.save({ sourceState: "a.0.b", mode: "user", valueMap: [{ value: "", userId: 1 }], actorId: adminId }),
+		).to.throw("characters");
+		expect(() =>
+			repo.save({ sourceState: "a.0.b", mode: "user", valueMap: [{ value: "1", userId: 0 }], actorId: adminId }),
+		).to.throw("needs an employee");
 	});
 
 	it("audits only the changed fields and keeps a stretch of the same rule quiet", () => {

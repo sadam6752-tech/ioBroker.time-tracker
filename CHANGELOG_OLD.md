@@ -8,6 +8,16 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.16 (2026-10-01)
+
+- (Alex) new: **HTTPS in the adapter itself.** The instance settings offer _Use HTTPS_ with a choice of the public
+  certificate, the private key and the chain from the certificate collection of ioBroker, so a local installation
+  needs no reverse proxy for the app on the phone. The session cookie is `Secure`, the instance link and the calendar
+  link switch to `https`, and a missing or unreadable certificate keeps the web interface off (with a log line) instead
+  of falling back to plain HTTP.
+- (Alex) fix: the dependency `uuid` below `exceljs` is pinned to a version without the published weakness
+  (`overrides`), `npm audit --omit=dev` is clean again; other dependencies updated within their ranges.
+
 ### 0.7.15 (2026-10-01)
 
 - (Alex) new: the instance tile in the admin carries a **symbol that opens the app** now. The adapter announces the way

@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.20",
+		"version": "0.7.21",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.21": {
+				"en": "new: the menu of the web app has the entry Info and ends with the version of the app and of the adapter, for the administrator account only; the page Info says when the browser still shows an old app and reloads it",
+				"de": "new: Das Menü der Web-App hat den Eintrag Info und endet mit der Version von App und Adapter, nur für das Administrator-Konto; die Seite Info sagt, wenn der Browser noch eine alte App zeigt, und lädt sie neu",
+				"ru": "new: в меню веб-приложения появился пункт «Информация», а внизу меню — версии приложения и адаптера, только для учётной записи администратора; страница сообщает, если браузер ещё показывает старое приложение, и перезагружает его",
+				"pt": "new: o menu da aplicação web tem a entrada Info e termina com a versão da aplicação e do adaptador, só para a conta de administrador; a página Info avisa quando o navegador ainda mostra uma aplicação antiga e volta a carregá-la",
+				"nl": "new: het menu van de webapp heeft het onderdeel Info en eindigt met de versie van app en adapter, alleen voor het beheerdersaccount; de pagina Info meldt wanneer de browser nog een oude app toont en laadt die opnieuw",
+				"fr": "new : le menu de l'application web a l'entrée Infos et se termine par la version de l'application et de l'adaptateur, pour le compte administrateur seulement ; la page Infos signale quand le navigateur montre encore une ancienne application et la recharge",
+				"it": "new: il menu dell'app web ha la voce Info e termina con la versione dell'app e dell'adattatore, solo per l'account amministratore; la pagina Info segnala quando il browser mostra ancora una vecchia app e la ricarica",
+				"es": "new: el menú de la aplicación web tiene la entrada Info y termina con la versión de la aplicación y del adaptador, solo para la cuenta de administrador; la página Info avisa cuando el navegador aún muestra una aplicación antigua y la vuelve a cargar",
+				"pl": "new: menu aplikacji web ma pozycję Informacje i kończy się wersją aplikacji i adaptera, tylko dla konta administratora; strona Informacje informuje, gdy przeglądarka nadal pokazuje starą aplikację, i ładuje ją ponownie",
+				"uk": "new: у меню вебзастосунку з'явився пункт «Інформація», а внизу меню — версії застосунку та адаптера, лише для облікового запису адміністратора; сторінка повідомляє, коли браузер ще показує старий застосунок, і перезавантажує його",
+				"zh-cn": "new: 网页应用的菜单新增“信息”条目，菜单末尾显示应用和适配器的版本，仅限管理员账户；当浏览器仍显示旧版应用时，“信息”页会提示并重新加载"
+			},
 			"0.7.20": {
 				"en": "change: the actions of the administration are a list with one line per action (label, value, active box, last fire); a click on the line opens the card",
 				"de": "change: Die Aktionen der Verwaltung sind eine Liste mit einer Zeile je Aktion (Bezeichnung, Wert, Aktiv-Feld, letzte Auslösung); ein Klick auf die Zeile öffnet die Karte",
@@ -100,19 +113,6 @@
 				"pl": "nowość: kafelek instancji w adminie otwiera teraz aplikację śledzenia czasu — adapter zgłasza swój interfejs web jako `common.localLinks`, dlatego admin pokazuje symbol obok instancji i na stronie przeglądu. Adres składa się z adresu bindowania i portu z ustawień instancji, nic nie jest zapisane na stałe.",
 				"uk": "нове: плитка екземпляра в admin тепер відкриває застосунок обліку часу — адаптер оголошує свій веб-інтерфейс як `common.localLinks`, тому admin показує символ поруч із екземпляром і на сторінці огляду. Адреса складається з адреси прив'язки та порту з налаштувань екземпляра, жорстко нічого не прописано.",
 				"zh-cn": "新增：管理界面中的实例卡片现在可以打开时间追踪应用——适配器将其 Web 界面声明为 `common.localLinks`，因此管理界面会在实例旁和概览页显示一个图标。地址由绑定地址和实例设置中的端口组成，没有任何内容被写死。"
-			},
-			"0.7.14": {
-				"en": "fix: a start password that is entered after the first start opens the installation now — as long as the first administrator still carries his unchanged start password, the configured value is applied on every start and the log names what happened; once the password was changed in the app the setting stays out of play and the log says so.",
-				"de": "fix: Ein Startpasswort, das erst nach dem ersten Start eingetragen wird, öffnet die Installation jetzt — solange der Erst-Administrator sein Startpasswort noch nicht gewechselt hat, setzt der Adapter den konfigurierten Wert bei jedem Start und nennt im Log, was passiert ist; nach einem Passwortwechsel in der App bleibt die Einstellung wirkungslos und das Log sagt es.",
-				"ru": "исправление: стартовый пароль, введённый после первого запуска, теперь открывает установку — пока первый администратор ещё не сменил свой стартовый пароль, адаптер применяет заданное значение при каждом запуске и сообщает в логе, что произошло; после смены пароля в приложении настройка не действует, и лог говорит об этом.",
-				"pt": "correção: uma palavra-passe inicial introduzida depois do primeiro arranque abre agora a instalação — enquanto o primeiro administrador ainda não alterou a sua palavra-passe inicial, o adaptador aplica o valor configurado em cada arranque e indica no log o que aconteceu; depois de a palavra-passe ser alterada na aplicação, a definição fica sem efeito e o log di-lo.",
-				"nl": "fix: een startwachtwoord dat pas na de eerste start wordt ingevuld, opent de installatie nu — zolang de eerste beheerder zijn startwachtwoord nog niet heeft gewijzigd, past de adapter de ingestelde waarde bij elke start toe en zegt het logboek wat er is gebeurd; na een wachtwoordwijziging in de app blijft de instelling buiten werking en zegt het logboek dat.",
-				"fr": "correctif : un mot de passe de démarrage saisi après le premier démarrage ouvre désormais l'installation — tant que le premier administrateur n'a pas encore changé son mot de passe de démarrage, l'adaptateur applique la valeur configurée à chaque démarrage et indique dans le journal ce qui s'est passé ; après un changement de mot de passe dans l'application, le réglage reste sans effet et le journal le dit.",
-				"it": "correzione: una password iniziale inserita dopo il primo avvio ora apre l'installazione — finché il primo amministratore non ha ancora cambiato la password iniziale, l'adattatore applica il valore configurato a ogni avvio e indica nel log che cosa è successo; dopo il cambio della password nell'app l'impostazione resta inefficace e il log lo dice.",
-				"es": "corrección: una contraseña inicial introducida después del primer inicio abre ahora la instalación — mientras el primer administrador aún no haya cambiado su contraseña inicial, el adaptador aplica el valor configurado en cada inicio e indica en el registro qué ha ocurrido; una vez cambiada la contraseña en la aplicación, el ajuste queda sin efecto y el registro lo dice.",
-				"pl": "poprawka: hasło startowe wpisane po pierwszym uruchomieniu otwiera teraz instalację — dopóki pierwszy administrator nie zmienił jeszcze swojego hasła startowego, adapter stosuje skonfigurowaną wartość przy każdym uruchomieniu i podaje w logu, co się stało; po zmianie hasła w aplikacji ustawienie pozostaje bez znaczenia, a log o tym mówi.",
-				"uk": "виправлення: стартовий пароль, введений після першого запуску, тепер відкриває інсталяцію — поки перший адміністратор ще не змінив свій стартовий пароль, адаптер застосовує налаштоване значення під час кожного запуску і повідомляє в журналі, що сталося; після зміни пароля в застосунку налаштування не діє, і журнал про це говорить.",
-				"zh-cn": "修复：在首次启动之后才填入的启动密码现在可以打开安装——只要第一位管理员尚未更改其启动密码，适配器每次启动都会应用所配置的值并在日志中说明发生了什么；在应用中更改密码后，该设置不再生效，日志也会说明这一点。"
 			}
 		},
 		"titleLang": {

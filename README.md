@@ -512,6 +512,8 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+### 0.7.21 (2026-10-07)
+
 - (Alex) new: the **menu of the web app** has an entry _Info_ for the administrator account, and the menu ends with the
   version of the app and of the adapter in small letters. The page _Info_ names both versions and says when they
   differ – the browser then still shows the app from its cache after an update – with a button that loads the app
@@ -564,16 +566,6 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
   sign-in page and in the profile, in all 11 languages.
 - (Alex) change: the administration screen of the web app (`Admin.tsx`, 3,900 lines) is split into one file per tab
   under `src-www/src/screens/admin/`. The code was moved, not rewritten – no change of behaviour.
-
-### 0.7.16 (2026-10-01)
-
-- (Alex) new: **HTTPS in the adapter itself.** The instance settings offer _Use HTTPS_ with a choice of the public
-  certificate, the private key and the chain from the certificate collection of ioBroker, so a local installation
-  needs no reverse proxy for the app on the phone. The session cookie is `Secure`, the instance link and the calendar
-  link switch to `https`, and a missing or unreadable certificate keeps the web interface off (with a log line) instead
-  of falling back to plain HTTP.
-- (Alex) fix: the dependency `uuid` below `exceljs` is pinned to a version without the published weakness
-  (`overrides`), `npm audit --omit=dev` is clean again; other dependencies updated within their ranges.
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

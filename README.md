@@ -512,6 +512,12 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+- (Alex) new: the **menu of the web app** has an entry _Info_ for the administrator account, and the menu ends with the
+  version of the app and of the adapter in small letters. The page _Info_ names both versions and says when they
+  differ – the browser then still shows the app from its cache after an update – with a button that loads the app
+  anew (it removes the service worker and its caches). Only a signed-in account with the right to change the settings
+  sees the entry; the new route `GET /api/system/info` answers 403 to everybody else (`GET /api/version` stays open).
+
 ### 0.7.20 (2026-10-07)
 
 - (Alex) change: **Administration → Actions** is a list now: one line per action – label, value, an _Active_ box

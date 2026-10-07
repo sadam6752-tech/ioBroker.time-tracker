@@ -474,5 +474,13 @@
 	"admin.trigger.mapValue": "Value",
 	"admin.trigger.mapAdd": "Add a value",
 	"admin.trigger.mapRemove": "Remove the value",
-	"admin.trigger.unnamed": "(no label)"
+	"admin.trigger.unnamed": "(no label)",
+	"nav.info": "Info",
+	"info.title": "Info",
+	"info.app": "App",
+	"info.adapter": "Adapter",
+	"info.same": "App and adapter have the same version.",
+	"info.mismatch": "App and adapter have different versions. The browser probably still shows the app from its cache – reload it.",
+	"info.reload": "Reload",
+	"info.source": "Source code and documentation"
 }

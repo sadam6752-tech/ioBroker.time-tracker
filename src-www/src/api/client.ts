@@ -288,6 +288,8 @@ export interface ApiClient {
 	): Promise<{ tag: RfidTagRecord; token: string; url: string }>;
 	/** Removes a revoked badge from the list for good */
 	deleteTagPermanently(id: number): Promise<void>;
+	/** Name and version of the adapter (administrator only) */
+	systemInfo(): Promise<{ name: string; version: string }>;
 	/** Rules that turn states of other adapters into punches (fingerprint reader, button, …) */
 	triggerRules(): Promise<TriggerRule[]>;
 	/** Replaces the whole table of trigger rules with the given one */
@@ -1187,6 +1189,11 @@ export function createApiClient(storage: Storage = window.localStorage): ApiClie
 		async rfidTags(): Promise<RfidTagRecord[]> {
 			const result = await request<{ tags: RfidTagRecord[] }>("GET", "/rfid/tags");
 			return result.tags ?? [];
+		},
+
+		// the version of the adapter, for the page "Info"
+		async systemInfo(): Promise<{ name: string; version: string }> {
+			return request<{ name: string; version: string }>("GET", "/system/info");
 		},
 
 		// trigger rules of the instance (read in the administration, written as a whole table)

@@ -474,5 +474,13 @@
 	"admin.trigger.mapValue": "Waarde",
 	"admin.trigger.mapAdd": "Waarde toevoegen",
 	"admin.trigger.mapRemove": "Waarde verwijderen",
-	"admin.trigger.unnamed": "(zonder naam)"
+	"admin.trigger.unnamed": "(zonder naam)",
+	"nav.info": "Info",
+	"info.title": "Info",
+	"info.app": "App",
+	"info.adapter": "Adapter",
+	"info.same": "App en adapter hebben dezelfde versie.",
+	"info.mismatch": "App en adapter hebben verschillende versies. De browser toont waarschijnlijk nog de app uit zijn cache – laad opnieuw.",
+	"info.reload": "Opnieuw laden",
+	"info.source": "Broncode en documentatie"
 }

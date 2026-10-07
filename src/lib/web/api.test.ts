@@ -1395,6 +1395,14 @@ describe("web api", () => {
 			).to.equal(404);
 		});
 
+		it("shows the system information only to the administrator", async () => {
+			expect((await send("GET", "/system/info")).status).to.equal(401);
+			expect((await send("GET", "/system/info", { headers: headers(annaToken) })).status).to.equal(403);
+			const info = await send("GET", "/system/info", { headers: headers(adminToken) });
+			expect(info.status).to.equal(200);
+			expect(bodyOf(info)).to.deep.equal({ name: "iobroker.time-tracker", version: "9.9.9" });
+		});
+
 		it("reports the adapter version without a session", async () => {
 			const version = await send("GET", "/version");
 			expect(version.status).to.equal(200);

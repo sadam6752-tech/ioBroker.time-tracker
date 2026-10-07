@@ -474,5 +474,13 @@
 	"admin.trigger.mapValue": "Значение",
 	"admin.trigger.mapAdd": "Добавить значение",
 	"admin.trigger.mapRemove": "Удалить значение",
-	"admin.trigger.unnamed": "(без названия)"
+	"admin.trigger.unnamed": "(без названия)",
+	"nav.info": "Информация",
+	"info.title": "Информация",
+	"info.app": "Приложение",
+	"info.adapter": "Адаптер",
+	"info.same": "Приложение и адаптер одной версии.",
+	"info.mismatch": "У приложения и адаптера разные версии. Скорее всего, браузер ещё показывает приложение из кэша — перезагрузите его.",
+	"info.reload": "Перезагрузить",
+	"info.source": "Исходный код и документация"
 }

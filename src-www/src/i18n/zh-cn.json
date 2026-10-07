@@ -474,5 +474,13 @@
 	"admin.trigger.mapValue": "值",
 	"admin.trigger.mapAdd": "添加值",
 	"admin.trigger.mapRemove": "删除值",
-	"admin.trigger.unnamed": "（无名称）"
+	"admin.trigger.unnamed": "（无名称）",
+	"nav.info": "信息",
+	"info.title": "信息",
+	"info.app": "应用",
+	"info.adapter": "适配器",
+	"info.same": "应用与适配器版本一致。",
+	"info.mismatch": "应用与适配器版本不同。浏览器可能仍在显示缓存中的应用——请重新加载。",
+	"info.reload": "重新加载",
+	"info.source": "源代码和文档"
 }

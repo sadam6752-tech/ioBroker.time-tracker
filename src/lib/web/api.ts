@@ -2265,6 +2265,12 @@ export function createApi(deps: ApiDeps): Api {
 		json(200, { name: "iobroker.time-tracker", version: deps.version ?? "0.0.0" }),
 	);
 
+	// What the administration page "Info" shows. `GET /version` stays open (tools and monitoring read it); this
+	// route is for the signed-in administrator, who also sees the version of the web app next to it.
+	route("GET", "/system/info", { permission: "settings.edit" }, () =>
+		json(200, { name: "iobroker.time-tracker", version: deps.version ?? "0.0.0" }),
+	);
+
 	// corrections
 
 	route("PATCH", "/entries/:id", { permission: "time.edit_own", csrf: true }, context => {

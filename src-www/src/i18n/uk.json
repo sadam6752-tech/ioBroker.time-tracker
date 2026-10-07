@@ -474,5 +474,13 @@
 	"admin.trigger.mapValue": "Значення",
 	"admin.trigger.mapAdd": "Додати значення",
 	"admin.trigger.mapRemove": "Видалити значення",
-	"admin.trigger.unnamed": "(без назви)"
+	"admin.trigger.unnamed": "(без назви)",
+	"nav.info": "Інформація",
+	"info.title": "Інформація",
+	"info.app": "Застосунок",
+	"info.adapter": "Адаптер",
+	"info.same": "Застосунок і адаптер мають однакову версію.",
+	"info.mismatch": "Застосунок і адаптер мають різні версії. Імовірно, браузер ще показує застосунок із кешу — перезавантажте його.",
+	"info.reload": "Перезавантажити",
+	"info.source": "Вихідний код і документація"
 }

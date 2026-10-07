@@ -23,9 +23,11 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CloudOffIcon from "@mui/icons-material/CloudOff";
 import MenuIcon from "@mui/icons-material/Menu";
 import SyncIcon from "@mui/icons-material/Sync";
+import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
+import { api } from "../api/client";
 import { hasPermission, useSession } from "../state/session";
 import { useSync } from "../offline/useSync";
 import { useLiveEvents } from "../live/useLiveEvents";
@@ -66,6 +68,9 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 		"backup.run",
 	];
 	const mayAdminister = adminRights.some(right => hasPermission(permissions, right));
+	// the page "Info" and the version in the menu are for the administrator account only
+	const mayInspect = hasPermission(permissions, "settings.edit");
+	const systemInfo = useQuery({ queryKey: ["system", "info"], queryFn: () => api.systemInfo(), enabled: mayInspect });
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -153,6 +158,16 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 				>
 					{t("nav.profile")}
 				</MenuItem>
+				{mayInspect && (
+					<MenuItem
+						onClick={() => {
+							setMenuAnchor(null);
+							void navigate("/info");
+						}}
+					>
+						{t("nav.info")}
+					</MenuItem>
+				)}
 				<MenuItem
 					onClick={() => {
 						setMenuAnchor(null);
@@ -161,6 +176,17 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
 				>
 					{t("nav.logout")}
 				</MenuItem>
+				{mayInspect && (
+					<MenuItem
+						disabled
+						id="menu-version"
+						sx={{ opacity: "0.7 !important", minHeight: 0, py: 0.5 }}
+					>
+						<Typography variant="caption">
+							{`${t("info.app")} ${__APP_VERSION__}${systemInfo.data ? ` · ${t("info.adapter")} ${systemInfo.data.version}` : ""}`}
+						</Typography>
+					</MenuItem>
+				)}
 			</Menu>
 
 			<Container

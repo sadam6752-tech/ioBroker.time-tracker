@@ -106,7 +106,9 @@ $AllowedIdentical = @(
     'Badges (RFID/NFC)', 'Note', 'Date', 'Photo', 'Administration', 'Synchronisation',
     'Absence', 'Absences', 'Password', 'Roles', 'open', 'Port', 'General', 'Region (optional)',
     # Rollen heißen in mehreren Sprachen tatsächlich so
-    'Administrator', 'Manager'
+    'Administrator', 'Manager',
+    # Lehnwörter, die in mehreren Sprachen so geschrieben werden (Seite „Info“, Version von App und Adapter)
+    'Info', 'App', 'Adapter'
 )
 
 $issues = [System.Collections.Generic.List[string]]::new()

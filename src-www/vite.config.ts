@@ -6,14 +6,22 @@
  * is mounted below a sub path (for example as a web extension of a `web` instance).
  */
 
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 const API_PREFIX = "/api/";
 
+/** Version of the package this web app is built for: the adapter and the app are released together. */
+const APP_VERSION = (
+	JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }
+).version;
+
 export default defineConfig({
 	base: "./",
+	// the build knows its own version, so the page "Info" can tell an old app from a new adapter
+	define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
 	// `@mui/icons-material` 5.x ships every icon twice: as CommonJS (`Menu.js`) and as ES module (`esm/Menu.js`).
 	// The bundler resolves the CommonJS file for the deep path, and depending on the interop the default export
 	// arrives wrapped in a module object — React then reports "element type is invalid … got: object". Resolving

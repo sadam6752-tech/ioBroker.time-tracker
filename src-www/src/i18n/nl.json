@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Nodig wanneer de status een slotnummer of een code bevat die niet de id van een medewerker is (bijvoorbeeld lastMatch.id van de fingerprint-adapter: slot 3 is niet medewerker 3). Een waarde die niet in de lijst staat, doet niets. Leeg: de waarde zelf noemt de medewerker (id, login of getoonde naam).",
 	"admin.trigger.mapValue": "Waarde",
 	"admin.trigger.mapAdd": "Waarde toevoegen",
-	"admin.trigger.mapRemove": "Waarde verwijderen"
+	"admin.trigger.mapRemove": "Waarde verwijderen",
+	"admin.trigger.unnamed": "(zonder naam)"
 }

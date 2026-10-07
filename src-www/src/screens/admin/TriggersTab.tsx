@@ -5,7 +5,11 @@
 import { ActionRow } from "../../components/ActionRow";
 import AddIcon from "@mui/icons-material/Add";
 import { type AdminUser } from "../../api/types";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { type AutomationRule, type AutomationRun, type TriggerRule, api, formatDate } from "../../api/client";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -22,7 +26,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { hasPermission, useSession } from "../../state/session";
@@ -31,10 +34,20 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatStamp, toggleWeekday, weekdayOptions } from "./helpers";
 
+/** Columns of one line of the list: label, value, active, last fire (below a tablet width two columns). */
+const lineColumns = {
+	gridTemplateColumns: { xs: "auto minmax(0, 1fr)", md: "minmax(0, 1.5fr) minmax(0, 1.5fr) 44px minmax(0, 1.3fr)" },
+	columnGap: 2,
+	rowGap: 0.5,
+	alignItems: "center",
+};
+
 /**
  * Trigger rules: a state of another adapter punches or sets the presence.
  *
- * The table is edited and saved as a whole, like the break rules of the company. The adapter itself subscribes to
+ * Every rule is one line – label, value, active box and the time of its last fire – and a click on the line opens the
+ * card with all fields, so a long list stays readable. The table is edited and saved as a whole, like the break rules
+ * of the company. The adapter itself subscribes to
  * the states named here, so a fingerprint reader, a button or a door contact needs no script — and a rule fires
  * only when the value of its state changes.
  *
@@ -51,6 +64,8 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 	const people = useQuery({ queryKey: ["admin", "users"], queryFn: () => api.users() });
 	// `null` shows what the server has; the first change keeps a local copy until it is saved
 	const [draft, setDraft] = useState<TriggerRule[] | null>(null);
+	// the rule whose card is open: the list shows one line per rule, a click on the line opens the card
+	const [open, setOpen] = useState<number | null>(null);
 	const shown = draft ?? rules.data ?? [];
 
 	const save = useMutation({
@@ -76,10 +91,41 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 	 * @param rule - rule to describe
 	 * @returns text for the row
 	 */
-	const lastFired = (rule: TriggerRule): string =>
-		rule.lastFiredAt
-			? `${t("admin.trigger.lastFired")}: ${formatStamp(rule.lastFiredAt, language)}`
-			: t("common.none");
+	const firedAt = (rule: TriggerRule): string =>
+		rule.lastFiredAt ? formatStamp(rule.lastFiredAt, language) : t("common.none");
+
+	/**
+	 * What the rule reacts to, short, for the line of the list.
+	 *
+	 * @param rule - rule to describe
+	 * @returns the value (mode condition) or the way the employee is found (mode user)
+	 */
+	const valueText = (rule: TriggerRule): string => {
+		if ((rule.mode ?? "condition") === "user") {
+			const mapped = rule.valueMap?.length ?? 0;
+			return `${t("admin.trigger.modeUser")}${mapped > 0 ? ` (${mapped})` : ""}`;
+		}
+		const person = (people.data ?? []).find(user => user.id === rule.userId)?.displayName ?? "";
+		return `= ${rule.condition ?? ""}${person ? ` → ${person}` : ""}`;
+	};
+
+	/** Adds an empty rule and opens its card. */
+	const addRule = (): void => {
+		setOpen(shown.length);
+		setDraft([
+			...shown,
+			{
+				sourceState: "",
+				mode: "condition",
+				condition: "true",
+				action: "punch",
+				isActive: true,
+				cooldownSec: 0,
+				fireOnRepeat: false,
+				valueMap: [],
+			},
+		]);
+	};
 
 	return (
 		<>
@@ -108,250 +154,347 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 					>
 						{t("admin.triggersHint")}
 					</Typography>
-					<Stack spacing={2}>
-						{shown.map((rule, index) => (
-							<Stack
-								key={rule.id ?? `new-${index}`}
-								spacing={1}
-								sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1 }}
-							>
-								<Stack
-									direction="row"
-									spacing={1}
-									useFlexGap
-									sx={{ alignItems: "center", flexWrap: "wrap" }}
+					<Stack spacing={1}>
+						{shown.length > 0 && (
+							<Box sx={{ ...lineColumns, display: { xs: "none", md: "grid" }, pl: 2, pr: 7 }}>
+								<Typography
+									variant="caption"
+									color="text.secondary"
 								>
-									<TextField
-										size="small"
-										label={t("admin.trigger.label")}
-										value={rule.label ?? ""}
-										onChange={event => change(index, { label: event.target.value })}
-										disabled={!mayEdit}
-										sx={{ minWidth: 160 }}
-									/>
-									<TextField
-										size="small"
-										label={t("admin.trigger.sourceState")}
-										value={rule.sourceState}
-										onChange={event => change(index, { sourceState: event.target.value })}
-										disabled={!mayEdit}
-										sx={{ minWidth: 260 }}
-									/>
-									<TextField
-										select
-										size="small"
-										label={t("admin.trigger.mode")}
-										value={rule.mode ?? "condition"}
-										onChange={event =>
-											change(index, {
-												mode: event.target.value as TriggerRule["mode"],
-												// a reader that names the employee reports the same name for every scan
-												fireOnRepeat: event.target.value === "user",
-											})
-										}
-										disabled={!mayEdit}
-										sx={{ minWidth: 200 }}
-									>
-										<MenuItem value="condition">{t("admin.trigger.modeCondition")}</MenuItem>
-										<MenuItem value="user">{t("admin.trigger.modeUser")}</MenuItem>
-									</TextField>
-									{(rule.mode ?? "condition") === "condition" && (
-										<>
+									{t("admin.trigger.label")}
+								</Typography>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+								>
+									{t("admin.trigger.condition")}
+								</Typography>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+								>
+									{t("admin.trigger.active")}
+								</Typography>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+								>
+									{t("admin.trigger.lastFired")}
+								</Typography>
+							</Box>
+						)}
+						{shown.map((rule, index) => (
+							<Accordion
+								key={rule.id ?? `new-${index}`}
+								expanded={open === index}
+								onChange={(_event, expanded) => setOpen(expanded ? index : null)}
+								disableGutters
+								variant="outlined"
+							>
+								<AccordionSummary expandIcon={<ExpandMoreIcon />}>
+									<Box sx={{ ...lineColumns, display: "grid", width: "100%", pr: 1 }}>
+										<Typography
+											sx={{
+												fontWeight: 500,
+												gridColumn: { xs: "1 / -1", md: "auto" },
+												wordBreak: "break-word",
+											}}
+										>
+											{rule.label?.trim() || t("admin.trigger.unnamed")}
+										</Typography>
+										<Box sx={{ gridColumn: { xs: "1 / -1", md: "auto" }, minWidth: 0 }}>
+											<Typography
+												variant="body2"
+												noWrap
+											>
+												{valueText(rule)}
+											</Typography>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+												noWrap
+												component="div"
+											>
+												{rule.sourceState}
+											</Typography>
+										</Box>
+										<Checkbox
+											size="small"
+											checked={rule.isActive !== false}
+											title={t("admin.trigger.active")}
+											inputProps={{ "aria-label": t("admin.trigger.active") }}
+											disabled={!mayEdit}
+											// the line opens the card, the box only switches the rule
+											onClick={event => event.stopPropagation()}
+											onFocus={event => event.stopPropagation()}
+											onChange={() => change(index, { isActive: rule.isActive === false })}
+											sx={{ justifySelf: "start", p: 0.5 }}
+										/>
+										<Typography
+											variant="body2"
+											color="text.secondary"
+											noWrap
+										>
+											<Box
+												component="span"
+												sx={{ display: { xs: "inline", md: "none" } }}
+											>
+												{t("admin.trigger.lastFired")}:{" "}
+											</Box>
+											{firedAt(rule)}
+										</Typography>
+									</Box>
+								</AccordionSummary>
+								<AccordionDetails>
+									<Stack spacing={1}>
+										<Stack
+											direction="row"
+											spacing={1}
+											useFlexGap
+											sx={{ alignItems: "center", flexWrap: "wrap" }}
+										>
 											<TextField
 												size="small"
-												label={t("admin.trigger.condition")}
-												helperText={t("admin.trigger.conditionHint")}
-												value={rule.condition ?? ""}
-												onChange={event => change(index, { condition: event.target.value })}
+												label={t("admin.trigger.label")}
+												value={rule.label ?? ""}
+												onChange={event => change(index, { label: event.target.value })}
 												disabled={!mayEdit}
-												sx={{ minWidth: 170 }}
+												sx={{ minWidth: 160 }}
+											/>
+											<TextField
+												size="small"
+												label={t("admin.trigger.sourceState")}
+												value={rule.sourceState}
+												onChange={event => change(index, { sourceState: event.target.value })}
+												disabled={!mayEdit}
+												sx={{ minWidth: 260 }}
 											/>
 											<TextField
 												select
 												size="small"
-												label={t("admin.trigger.user")}
-												value={
-													rule.userId === null || rule.userId === undefined
-														? ""
-														: String(rule.userId)
-												}
+												label={t("admin.trigger.mode")}
+												value={rule.mode ?? "condition"}
 												onChange={event =>
 													change(index, {
-														userId:
-															event.target.value === ""
-																? null
-																: Number(event.target.value),
+														mode: event.target.value as TriggerRule["mode"],
+														// a reader that names the employee reports the same name for every scan
+														fireOnRepeat: event.target.value === "user",
 													})
 												}
 												disabled={!mayEdit}
-												sx={{ minWidth: 190 }}
+												sx={{ minWidth: 200 }}
 											>
-												{(people.data ?? []).map(user => (
-													<MenuItem
-														key={user.id}
-														value={String(user.id)}
-													>
-														{user.displayName}
-													</MenuItem>
-												))}
+												<MenuItem value="condition">
+													{t("admin.trigger.modeCondition")}
+												</MenuItem>
+												<MenuItem value="user">{t("admin.trigger.modeUser")}</MenuItem>
 											</TextField>
-										</>
-									)}
-									<TextField
-										select
-										size="small"
-										label={t("admin.trigger.action")}
-										value={rule.action ?? "punch"}
-										onChange={event =>
-											change(index, { action: event.target.value as TriggerRule["action"] })
-										}
-										disabled={!mayEdit}
-										sx={{ minWidth: 230 }}
-									>
-										<MenuItem value="punch">{t("admin.trigger.actionPunch")}</MenuItem>
-										<MenuItem value="quickPunch">{t("admin.trigger.actionQuickPunch")}</MenuItem>
-										<MenuItem value="present">{t("admin.trigger.actionPresent")}</MenuItem>
-										<MenuItem value="absent">{t("admin.trigger.actionAbsent")}</MenuItem>
-									</TextField>
-									<TextField
-										size="small"
-										type="number"
-										label={t("admin.trigger.cooldown")}
-										value={String(rule.cooldownSec ?? 0)}
-										onChange={event => change(index, { cooldownSec: Number(event.target.value) })}
-										disabled={!mayEdit}
-										sx={{ maxWidth: 140 }}
-									/>
-									<Switch
-										checked={rule.isActive !== false}
-										title={t("admin.trigger.active")}
-										onChange={() => change(index, { isActive: rule.isActive === false })}
-										disabled={!mayEdit}
-									/>
-									<IconButton
-										size="small"
-										title={t("admin.tag.delete")}
-										disabled={!mayEdit}
-										onClick={() => setDraft(shown.filter((_, position) => position !== index))}
-									>
-										<DeleteIcon fontSize="small" />
-									</IconButton>
-								</Stack>
-								<FormControlLabel
-									control={
-										<Checkbox
-											size="small"
-											checked={rule.fireOnRepeat === true}
-											disabled={!mayEdit}
-											onChange={event => change(index, { fireOnRepeat: event.target.checked })}
+											{(rule.mode ?? "condition") === "condition" && (
+												<>
+													<TextField
+														size="small"
+														label={t("admin.trigger.condition")}
+														helperText={t("admin.trigger.conditionHint")}
+														value={rule.condition ?? ""}
+														onChange={event =>
+															change(index, { condition: event.target.value })
+														}
+														disabled={!mayEdit}
+														sx={{ minWidth: 170 }}
+													/>
+													<TextField
+														select
+														size="small"
+														label={t("admin.trigger.user")}
+														value={
+															rule.userId === null || rule.userId === undefined
+																? ""
+																: String(rule.userId)
+														}
+														onChange={event =>
+															change(index, {
+																userId:
+																	event.target.value === ""
+																		? null
+																		: Number(event.target.value),
+															})
+														}
+														disabled={!mayEdit}
+														sx={{ minWidth: 190 }}
+													>
+														{(people.data ?? []).map(user => (
+															<MenuItem
+																key={user.id}
+																value={String(user.id)}
+															>
+																{user.displayName}
+															</MenuItem>
+														))}
+													</TextField>
+												</>
+											)}
+											<TextField
+												select
+												size="small"
+												label={t("admin.trigger.action")}
+												value={rule.action ?? "punch"}
+												onChange={event =>
+													change(index, {
+														action: event.target.value as TriggerRule["action"],
+													})
+												}
+												disabled={!mayEdit}
+												sx={{ minWidth: 230 }}
+											>
+												<MenuItem value="punch">{t("admin.trigger.actionPunch")}</MenuItem>
+												<MenuItem value="quickPunch">
+													{t("admin.trigger.actionQuickPunch")}
+												</MenuItem>
+												<MenuItem value="present">{t("admin.trigger.actionPresent")}</MenuItem>
+												<MenuItem value="absent">{t("admin.trigger.actionAbsent")}</MenuItem>
+											</TextField>
+											<TextField
+												size="small"
+												type="number"
+												label={t("admin.trigger.cooldown")}
+												value={String(rule.cooldownSec ?? 0)}
+												onChange={event =>
+													change(index, { cooldownSec: Number(event.target.value) })
+												}
+												disabled={!mayEdit}
+												sx={{ maxWidth: 140 }}
+											/>
+											<IconButton
+												size="small"
+												title={t("admin.tag.delete")}
+												disabled={!mayEdit}
+												onClick={() => {
+													setDraft(shown.filter((_, position) => position !== index));
+													setOpen(null);
+												}}
+											>
+												<DeleteIcon fontSize="small" />
+											</IconButton>
+										</Stack>
+										<FormControlLabel
+											control={
+												<Checkbox
+													size="small"
+													checked={rule.fireOnRepeat === true}
+													disabled={!mayEdit}
+													onChange={event =>
+														change(index, { fireOnRepeat: event.target.checked })
+													}
+												/>
+											}
+											label={t("admin.trigger.fireOnRepeat")}
 										/>
-									}
-									label={t("admin.trigger.fireOnRepeat")}
-								/>
-								<Typography
-									variant="caption"
-									color="text.secondary"
-								>
-									{t("admin.trigger.fireOnRepeatHint")}
-								</Typography>
-								{(rule.mode ?? "condition") === "user" && (
-									<Stack spacing={1}>
-										<Typography variant="body2">{t("admin.trigger.valueMap")}</Typography>
 										<Typography
 											variant="caption"
 											color="text.secondary"
 										>
-											{t("admin.trigger.valueMapHint")}
+											{t("admin.trigger.fireOnRepeatHint")}
 										</Typography>
-										{(rule.valueMap ?? []).map((entry, position) => (
-											<Stack
-												key={position}
-												direction="row"
-												spacing={1}
-												useFlexGap
-												sx={{ alignItems: "center", flexWrap: "wrap" }}
-											>
-												<TextField
-													size="small"
-													label={t("admin.trigger.mapValue")}
-													value={entry.value}
-													onChange={event =>
-														change(index, {
-															valueMap: (rule.valueMap ?? []).map((item, at) =>
-																at === position
-																	? { ...item, value: event.target.value }
-																	: item,
-															),
-														})
-													}
-													disabled={!mayEdit}
-													sx={{ minWidth: 160 }}
-												/>
-												<TextField
-													select
-													size="small"
-													label={t("admin.trigger.user")}
-													value={entry.userId ? String(entry.userId) : ""}
-													onChange={event =>
-														change(index, {
-															valueMap: (rule.valueMap ?? []).map((item, at) =>
-																at === position
-																	? { ...item, userId: Number(event.target.value) }
-																	: item,
-															),
-														})
-													}
-													disabled={!mayEdit}
-													sx={{ minWidth: 190 }}
+										{(rule.mode ?? "condition") === "user" && (
+											<Stack spacing={1}>
+												<Typography variant="body2">{t("admin.trigger.valueMap")}</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
 												>
-													{(people.data ?? []).map(user => (
-														<MenuItem
-															key={user.id}
-															value={String(user.id)}
+													{t("admin.trigger.valueMapHint")}
+												</Typography>
+												{(rule.valueMap ?? []).map((entry, position) => (
+													<Stack
+														key={position}
+														direction="row"
+														spacing={1}
+														useFlexGap
+														sx={{ alignItems: "center", flexWrap: "wrap" }}
+													>
+														<TextField
+															size="small"
+															label={t("admin.trigger.mapValue")}
+															value={entry.value}
+															onChange={event =>
+																change(index, {
+																	valueMap: (rule.valueMap ?? []).map((item, at) =>
+																		at === position
+																			? { ...item, value: event.target.value }
+																			: item,
+																	),
+																})
+															}
+															disabled={!mayEdit}
+															sx={{ minWidth: 160 }}
+														/>
+														<TextField
+															select
+															size="small"
+															label={t("admin.trigger.user")}
+															value={entry.userId ? String(entry.userId) : ""}
+															onChange={event =>
+																change(index, {
+																	valueMap: (rule.valueMap ?? []).map((item, at) =>
+																		at === position
+																			? {
+																					...item,
+																					userId: Number(event.target.value),
+																				}
+																			: item,
+																	),
+																})
+															}
+															disabled={!mayEdit}
+															sx={{ minWidth: 190 }}
 														>
-															{user.displayName}
-														</MenuItem>
-													))}
-												</TextField>
-												<IconButton
-													size="small"
-													title={t("admin.trigger.mapRemove")}
-													disabled={!mayEdit}
-													onClick={() =>
-														change(index, {
-															valueMap: (rule.valueMap ?? []).filter(
-																(_, at) => at !== position,
-															),
-														})
-													}
-												>
-													<DeleteIcon fontSize="small" />
-												</IconButton>
+															{(people.data ?? []).map(user => (
+																<MenuItem
+																	key={user.id}
+																	value={String(user.id)}
+																>
+																	{user.displayName}
+																</MenuItem>
+															))}
+														</TextField>
+														<IconButton
+															size="small"
+															title={t("admin.trigger.mapRemove")}
+															disabled={!mayEdit}
+															onClick={() =>
+																change(index, {
+																	valueMap: (rule.valueMap ?? []).filter(
+																		(_, at) => at !== position,
+																	),
+																})
+															}
+														>
+															<DeleteIcon fontSize="small" />
+														</IconButton>
+													</Stack>
+												))}
+												<Box>
+													<Button
+														size="small"
+														startIcon={<AddIcon />}
+														disabled={!mayEdit}
+														onClick={() =>
+															change(index, {
+																valueMap: [
+																	...(rule.valueMap ?? []),
+																	{ value: "", userId: 0 },
+																],
+															})
+														}
+													>
+														{t("admin.trigger.mapAdd")}
+													</Button>
+												</Box>
 											</Stack>
-										))}
-										<Box>
-											<Button
-												size="small"
-												startIcon={<AddIcon />}
-												disabled={!mayEdit}
-												onClick={() =>
-													change(index, {
-														valueMap: [...(rule.valueMap ?? []), { value: "", userId: 0 }],
-													})
-												}
-											>
-												{t("admin.trigger.mapAdd")}
-											</Button>
-										</Box>
+										)}
 									</Stack>
-								)}
-								<Typography
-									variant="caption"
-									color="text.secondary"
-								>
-									{lastFired(rule)}
-								</Typography>
-							</Stack>
+								</AccordionDetails>
+							</Accordion>
 						))}
 						<Stack
 							direction="row"
@@ -363,21 +506,7 @@ export function TriggersTab({ language }: { language: string }): React.JSX.Eleme
 								size="small"
 								startIcon={<AddIcon />}
 								disabled={!mayEdit}
-								onClick={() =>
-									setDraft([
-										...shown,
-										{
-											sourceState: "",
-											mode: "condition",
-											condition: "true",
-											action: "punch",
-											isActive: true,
-											cooldownSec: 0,
-											fireOnRepeat: false,
-											valueMap: [],
-										},
-									])
-								}
+								onClick={addRule}
 							>
 								{t("admin.trigger.add")}
 							</Button>

@@ -512,6 +512,10 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
+- (Alex) change: **Administration → Actions** is a list now: one line per action – label, value, an _Active_ box
+  and the time of its last fire – and a click on the line opens the card with all fields (a click on the box only
+  switches the rule). A long list of actions stays readable; on a phone the line wraps to three short rows.
+
 ### 0.7.19 (2026-10-07)
 
 - (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the _value_ of its state changed, so the

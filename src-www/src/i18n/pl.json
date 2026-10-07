@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Potrzebne, gdy stan zawiera numer slotu lub kod, który nie jest id pracownika (na przykład lastMatch.id adaptera fingerprint: slot 3 to nie pracownik 3). Wartość spoza listy nic nie uruchamia. Puste: sama wartość wskazuje pracownika (id, login lub wyświetlana nazwa).",
 	"admin.trigger.mapValue": "Wartość",
 	"admin.trigger.mapAdd": "Dodaj wartość",
-	"admin.trigger.mapRemove": "Usuń wartość"
+	"admin.trigger.mapRemove": "Usuń wartość",
+	"admin.trigger.unnamed": "(bez nazwy)"
 }

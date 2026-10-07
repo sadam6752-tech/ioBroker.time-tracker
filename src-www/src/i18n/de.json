@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Nötig, wenn der Zustand eine Speichernummer oder einen Code trägt, der nicht die ID eines Mitarbeiters ist (zum Beispiel lastMatch.id des Fingerprint-Adapters: Speicherplatz 3 ist nicht Mitarbeiter 3). Ein Wert, der nicht in der Liste steht, löst nichts aus. Leer: Der Wert selbst nennt den Mitarbeiter (ID, Login oder angezeigter Name).",
 	"admin.trigger.mapValue": "Wert",
 	"admin.trigger.mapAdd": "Wert hinzufügen",
-	"admin.trigger.mapRemove": "Wert entfernen"
+	"admin.trigger.mapRemove": "Wert entfernen",
+	"admin.trigger.unnamed": "(ohne Bezeichnung)"
 }

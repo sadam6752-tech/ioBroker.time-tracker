@@ -162,3 +162,50 @@ test("a rule that reads the employee from the value fires on every write and kee
 	await page.getByRole("button", { name: "Speichern", exact: true }).click();
 	await expect.poll(async () => (await stored()).length, { timeout: 20_000 }).toBe(0);
 });
+
+test("the list shows one line per action, a click opens the card and the box only switches the rule", async ({
+	page,
+	request,
+}) => {
+	const session = await signInApi(request);
+	const headers = { "x-session-token": session.token, "x-csrf-token": session.csrfToken };
+	const saved = await request.put("/api/trigger-rules", {
+		headers,
+		data: {
+			triggerRules: [
+				{ label: "Eingang Finger", sourceState: "fingerprint.0.lastMatch.name", mode: "user" },
+				{ label: "Tuerkontakt", sourceState: "hm-rpc.0.ABC.1.STATE", condition: "toggle", userId: 2 },
+			],
+		},
+	});
+	expect(saved.status()).toBe(200);
+
+	// the closed cards stay in the page but are hidden: only a visible field means an open card
+	const openCards = page.getByLabel("Datenpunkt").locator("visible=true");
+
+	await page.goto("/");
+	await signIn(page);
+	await page.goto("/admin");
+	await page.getByRole("tab", { name: "Aktionen (ioBroker)" }).click();
+
+	// one line each with the label and the watched state, the cards are closed
+	await expect(page.getByText("Eingang Finger")).toBeVisible();
+	await expect(page.getByText("hm-rpc.0.ABC.1.STATE")).toBeVisible();
+	await expect(openCards).toHaveCount(0);
+
+	// the box on the line switches the rule on or off and leaves the card closed
+	const boxes = page.getByRole("checkbox", { name: "Aktiv" });
+	await expect(boxes.first()).toBeChecked();
+	await boxes.first().click();
+	await expect(boxes.first()).not.toBeChecked();
+	await expect(openCards).toHaveCount(0);
+
+	// a click on the line opens the card of exactly that rule, the next click closes it
+	await page.getByText("Tuerkontakt").click();
+	await expect(openCards).toHaveValue("hm-rpc.0.ABC.1.STATE");
+	await page.getByText("Tuerkontakt").click();
+	await expect(openCards).toHaveCount(0);
+
+	// clean up for the other specs
+	await request.put("/api/trigger-rules", { headers, data: { triggerRules: [] } });
+});

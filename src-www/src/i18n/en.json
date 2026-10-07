@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Needed when the state carries a slot number or a code that is not the id of an employee (for example lastMatch.id of the fingerprint adapter: slot 3 is not employee 3). A value that is not in the list does nothing. Empty: the value itself names the employee (id, login or shown name).",
 	"admin.trigger.mapValue": "Value",
 	"admin.trigger.mapAdd": "Add a value",
-	"admin.trigger.mapRemove": "Remove the value"
+	"admin.trigger.mapRemove": "Remove the value",
+	"admin.trigger.unnamed": "(no label)"
 }

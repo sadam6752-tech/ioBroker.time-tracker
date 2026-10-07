@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "当状态携带的是槽位编号或不是员工 id 的代码时需要（例如 fingerprint 适配器的 lastMatch.id：槽位 3 不是员工 3）。不在列表中的值不会触发任何操作。留空：由值本身指明员工（id、登录名或显示名）。",
 	"admin.trigger.mapValue": "值",
 	"admin.trigger.mapAdd": "添加值",
-	"admin.trigger.mapRemove": "删除值"
+	"admin.trigger.mapRemove": "删除值",
+	"admin.trigger.unnamed": "（无名称）"
 }

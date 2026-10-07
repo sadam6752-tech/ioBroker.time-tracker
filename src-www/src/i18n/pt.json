@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Necessário quando o estado traz um número de posição ou um código que não é o id de um funcionário (por exemplo lastMatch.id do adaptador fingerprint: a posição 3 não é o funcionário 3). Um valor que não está na lista não faz nada. Vazio: o próprio valor indica o funcionário (id, login ou nome mostrado).",
 	"admin.trigger.mapValue": "Valor",
 	"admin.trigger.mapAdd": "Adicionar valor",
-	"admin.trigger.mapRemove": "Remover valor"
+	"admin.trigger.mapRemove": "Remover valor",
+	"admin.trigger.unnamed": "(sem designação)"
 }

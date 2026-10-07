@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Necessario quando lo stato contiene un numero di slot o un codice che non è l'id di un dipendente (per esempio lastMatch.id dell'adattatore fingerprint: lo slot 3 non è il dipendente 3). Un valore non presente nell'elenco non fa nulla. Vuoto: il valore stesso indica il dipendente (id, login o nome mostrato).",
 	"admin.trigger.mapValue": "Valore",
 	"admin.trigger.mapAdd": "Aggiungi valore",
-	"admin.trigger.mapRemove": "Rimuovi valore"
+	"admin.trigger.mapRemove": "Rimuovi valore",
+	"admin.trigger.unnamed": "(senza nome)"
 }

@@ -473,5 +473,6 @@
 	"admin.trigger.valueMapHint": "Nécessaire quand l'état porte un numéro d'emplacement ou un code qui n'est pas l'id d'un employé (par exemple lastMatch.id de l'adaptateur fingerprint : l'emplacement 3 n'est pas l'employé 3). Une valeur absente de la liste ne déclenche rien. Vide : la valeur elle-même désigne l'employé (id, identifiant ou nom affiché).",
 	"admin.trigger.mapValue": "Valeur",
 	"admin.trigger.mapAdd": "Ajouter une valeur",
-	"admin.trigger.mapRemove": "Supprimer la valeur"
+	"admin.trigger.mapRemove": "Supprimer la valeur",
+	"admin.trigger.unnamed": "(sans nom)"
 }

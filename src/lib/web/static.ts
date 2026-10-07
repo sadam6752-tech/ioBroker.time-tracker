@@ -46,6 +46,37 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 /**
+ * Content security policy of the web app.
+ *
+ * The app loads its own scripts only (no inline script, no `eval`), talks to its own server (including the live
+ * stream) and shows pictures from its own server and from `data:`/`blob:` (a photo that is being uploaded). Styles
+ * may be inline, because the component library writes them at run time. Nobody may embed the app in a frame, so a
+ * foreign page cannot lay a transparent frame over the PIN keypad or the administration.
+ */
+export const CONTENT_SECURITY_POLICY = [
+	"default-src 'self'",
+	"script-src 'self'",
+	"style-src 'self' 'unsafe-inline'",
+	"img-src 'self' data: blob:",
+	"font-src 'self' data:",
+	"connect-src 'self' ws: wss:",
+	"worker-src 'self'",
+	"manifest-src 'self'",
+	"object-src 'none'",
+	"base-uri 'self'",
+	"form-action 'self'",
+	"frame-ancestors 'none'",
+].join("; ");
+
+/** Headers every file of the web app carries. */
+const SECURITY_HEADERS: Record<string, string> = {
+	"x-content-type-options": "nosniff",
+	"referrer-policy": "no-referrer",
+	"x-frame-options": "DENY",
+	"permissions-policy": "camera=(), microphone=(), geolocation=()",
+};
+
+/**
  * Creates a static file handler.
  *
  * @param options - root directory and index file
@@ -92,7 +123,11 @@ export function createStaticHandler(options: StaticFilesOptions): StaticHandler 
 			etag,
 			"last-modified": stats.mtime.toUTCString(),
 			"cache-control": file.endsWith(indexFile) ? "no-cache" : "public, max-age=3600",
-			"x-content-type-options": "nosniff",
+			...SECURITY_HEADERS,
+			// the policy belongs to the page that is shown, so the documents carry it
+			...(path.extname(file).toLowerCase() === ".html"
+				? { "content-security-policy": CONTENT_SECURITY_POLICY }
+				: {}),
 		};
 
 		if (isFresh(request, etag, stats.mtime)) {

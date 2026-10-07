@@ -603,3 +603,24 @@ werden gekürzt gespeichert; die Audit-Zeilen fehlgeschlagener und gesperrter An
 
 **Nachweis:** `src/lib/adapter/triggers.test.ts`, `src/lib/db/repositories/triggers.test.ts`, `src/lib/web/server.test.ts`,
 `src/lib/services/auth.test.ts`, Browser-Test `test/e2e/triggers.spec.ts`.
+
+### Nachtrag D18 (07.10.2026): A3, B3, B4, B5, C1 derselben Prüfung
+
+- **B3 — Origin des Live-Streams:** Ein Browser-Handshake mit Cookie wird abgewiesen (403 `origin_not_allowed`), wenn
+  der `Origin` nicht der `Host` der Anfrage ist (hinter einem vertrauenswürdigen Proxy zählt auch `x-forwarded-host`).
+  Ein Token in der URL und Clients ohne `Origin` (Integrationen) sind nicht betroffen. Grund: `SameSite=Lax` trennt
+  Seiten verschiedener *Sites*, nicht Dienste desselben Hosts auf anderem Port.
+- **B4 — Schutzköpfe der Web-App:** `Content-Security-Policy` (eigene Skripte, kein Inline-Skript, `frame-ancestors
+  'none'`, Styles inline erlaubt, weil die Komponentenbibliothek sie zur Laufzeit schreibt), `X-Frame-Options: DENY`,
+  `Referrer-Policy`, `Permissions-Policy`; mit eigenem TLS zusätzlich `Strict-Transport-Security` (180 Tage, ohne
+  `includeSubDomains`). Hinter einem Proxy sendet den HSTS-Kopf der Proxy.
+- **B5 — Anmeldesperre:** gezählt wird je **Name und Adresse** (Limit wie bisher) und je Name über **alle** Adressen
+  (das Fünffache). Wer den Namen des Administrators tippt, sperrt nur die eigene Adresse; wer von vielen Adressen
+  rät, sperrt das Konto. Ein unbekannter Name rechnet gegen einen Köder-Hash gleicher Kosten, damit die Antwortzeit ihn
+  nicht verrät. **Nicht geändert:** `scryptSync` blockiert den Prozess für ca. 50 ms je Versuch; die Begrenzung je
+  Adresse (20 Versuche pro Minute) hält das klein.
+- **A3 — Rückmeldung an das Gerät:** Der Adapter spricht nicht mit dem Leser; jeder Stempel einer Regel steht sofort in
+  `events.*` (`lastUser`, `lastDirection`, `lastSource`). Die README beschreibt das mit einem Beispielskript und nennt,
+  was bei einem Scan ohne Stempel im Log steht.
+- **C1 — README-Beispiel:** `fingerprint.0.lastMatch` gibt es nicht; die README nennt `lastMatch.name`, `lastMatch.id`
+  (mit Wertzuordnung) und den Grund, warum `lastMatch.matched` nicht passt.

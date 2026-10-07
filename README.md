@@ -349,6 +349,17 @@ of the finger (1–200), not the id of an employee: take it only together with a
 that is missing in a map fires nothing. `lastMatch.matched` stays `true` for every match, so it does not fit a rule
 that fires on a change — with _Fire on every write_ it would, but it does not say who it was.
 
+**Feedback to the reader.** The adapter does not talk to the device, but every punch of a rule appears at once in
+`time-tracker.0.events.*`: `lastUser` (who), `lastDirection` (`in` or `out`), `lastSource` (`trigger.<id>`) and
+`lastAt`. A small script can show it on the reader, a display or a speaker – for example
+`on({ id: 'time-tracker.0.events.lastAt', change: 'any' }, () => sendTo('telegram.0', getState('time-tracker.0.events.lastUser').val + ' ' + getState('time-tracker.0.events.lastDirection').val))`.
+A scan that did not punch (cooldown, duplicate protection of 30 seconds, an employee without a map entry) leaves a
+line in the log at level `debug` and nothing in `events.*`.
+
+The adapter remembers the last value of a watched state only in memory. After a restart the first write fires a rule
+that fires on a change, even if the value is the same as before the restart; a rule that fires on every write is not
+affected.
+
 ### Rules (automatic)
 
 The adapter can act on its own as well — that table lives in **Administration → Settings**:
@@ -453,6 +464,14 @@ The admin UI, the app and the reports ship in **11 languages** — `en` (base an
 `fr`, `it`, `es`, `pl`, `uk`, `zh-cn` — and every employee picks their own. Dates, numbers and units are formatted
 with `Intl`. Further translations are welcome: [`docs/i18n.md`](docs/i18n.md).
 
+## Security headers
+
+The web app is delivered with `Content-Security-Policy` (own scripts only, no inline script, no framing by other
+pages), `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` and a
+`Permissions-Policy` without camera, microphone and location. With **Use HTTPS** the adapter also sends
+`Strict-Transport-Security` (half a year, this host only); behind a reverse proxy that does the TLS, the proxy is the
+one to send it. The live stream of the app refuses a browser handshake from a page of another host (`Origin`).
+
 ## Privacy
 
 Everything runs on your own ioBroker host: no cloud service, no telemetry. Punches and personal data stay in the
@@ -493,11 +512,18 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 
 ### **WORK IN PROGRESS**
 
-- (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the *value* of its state changed, so the
+- (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the _value_ of its state changed, so the
   same person scanning twice in a row (in at 8:00, out at 17:00, nobody in between) was ignored the second time. A rule
-  has the option *Fire on every write* now – on by default for *Value is the employee* (existing rules of that mode
+  has the option _Fire on every write_ now – on by default for _Value is the employee_ (existing rules of that mode
   are switched on by the migration), off for a fixed value. The cooldown and the duplicate protection of 30 seconds stay
   in place.
+- (Alex) new: the web app is delivered with security headers (`Content-Security-Policy` without inline scripts and
+  without framing, `X-Frame-Options`, `Permissions-Policy`), and with **Use HTTPS** also with
+  `Strict-Transport-Security`. The live stream refuses a browser handshake whose `Origin` is a page of another host
+  (the session cookie is no longer enough for a page of another service on the same machine).
+- (Alex) fix: a stranger who types the name of the administrator locks his **own address** for 15 minutes, not the
+  account (the account locks when many addresses fail together); an unknown login costs as much time as a real one, so
+  the time of the answer does not tell whether the name exists.
 - (Alex) fix: a rule can carry a **value map** (value → employee). The slot number of a reader (`lastMatch.id` of the
   fingerprint adapter) was read as the id of an employee, so slot 3 punched employee 3 – with a map only the listed
   values fire, everything else does nothing.

@@ -46,6 +46,11 @@ export interface WebServerOptions {
 	maxBodyBytes?: number;
 	/** Certificate of the server; with it the server speaks HTTPS instead of HTTP */
 	tls?: TlsOptions;
+	/**
+	 * Tells the browsers to use HTTPS for this host from now on (`Strict-Transport-Security`). The server sets it
+	 * for itself when it speaks HTTPS; behind a proxy that does the TLS the proxy is the one to send it.
+	 */
+	hsts?: boolean;
 	/** Logger */
 	log?: ServerLogger;
 }
@@ -173,8 +178,14 @@ export async function startWebServer(options: WebServerOptions): Promise<WebServ
 	const bind = normalizeBindAddress(options.bind);
 	const apiPrefix = normalizePrefix(options.apiPrefix ?? "/api");
 
+	const hsts = options.hsts ?? options.tls !== undefined;
+
 	const handle = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {
 		try {
+			if (hsts) {
+				// half a year, for this host only: a wrong certificate must not lock the whole domain for ever
+				response.setHeader("strict-transport-security", "max-age=15552000");
+			}
 			const url = new URL(request.url ?? "/", "http://localhost");
 
 			// The limit is decided per route and BEFORE the body is read: a client that is not signed in is held to

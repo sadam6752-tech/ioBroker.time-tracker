@@ -155,6 +155,8 @@ export interface AuthDeps {
 	lockoutMinutes?: number;
 	/** Policy for new passwords */
 	policy?: PasswordPolicy;
+	/** Cost (`N`) of the hash that an unknown login is checked against; the default is the cost of a real password */
+	decoyCost?: number;
 }
 
 /** Authentication operations. */
@@ -190,6 +192,27 @@ export interface AuthService {
 		actorIp?: string | null;
 		now?: number;
 	}): void;
+}
+
+/** Failed attempts of one login name over all addresses that lock it, as a multiple of the limit of one address. */
+const LOGIN_LOCK_FACTOR = 5;
+
+/** Hashes of a password nobody knows, made once per cost: unknown logins are verified against them. */
+const decoys = new Map<number, string>();
+
+/**
+ * Hash that an unknown login is checked against, so it costs as much time as a real one.
+ *
+ * @param cost - cost (`N`) of the hash
+ * @returns a scrypt hash with that cost
+ */
+function decoyHash(cost: number): string {
+	let hash = decoys.get(cost);
+	if (hash === undefined) {
+		hash = hashPassword(randomBytes(16).toString("hex"), { cost });
+		decoys.set(cost, hash);
+	}
+	return hash;
 }
 
 /** Characters of a login name that are remembered and written to the audit trail. */
@@ -315,8 +338,13 @@ export function createAuthService(deps: AuthDeps): AuthService {
 	const lockoutSeconds = (deps.lockoutMinutes ?? 15) * 60;
 	const policy = deps.policy ?? {};
 
-	/** Failed attempts per login name (process-local, which is enough for one adapter instance). */
+	/**
+	 * Failed attempts per login name **and address** (process-local, which is enough for one adapter instance).
+	 * A stranger who types the name of the administrator locks his own address only, not the account.
+	 */
 	const failures = new Map<string, { count: number; blockedUntil: number; at: number }>();
+	/** Failed attempts per login name over all addresses: the net for guessing from many addresses. */
+	const loginFailures = new Map<string, { count: number; blockedUntil: number; at: number }>();
 
 	const selectSession = db.prepare(
 		`SELECT id, user_id AS userId, created_at AS createdAt, expires_at AS expiresAt,
@@ -358,14 +386,39 @@ export function createAuthService(deps: AuthDeps): AuthService {
 	 * @param now - instant of the attempt
 	 */
 	const pruneFailures = (now: number): void => {
-		if (failures.size < 200) {
-			return;
-		}
-		for (const [name, entry] of failures) {
-			if (entry.at + lockoutSeconds < now) {
-				failures.delete(name);
+		for (const map of [failures, loginFailures]) {
+			if (map.size < 200) {
+				continue;
+			}
+			for (const [name, entry] of map) {
+				if (entry.at + lockoutSeconds < now) {
+					map.delete(name);
+				}
 			}
 		}
+	};
+
+	/**
+	 * Counts one failed attempt in a table and locks the entry when the limit is reached.
+	 *
+	 * @param map - table of the attempts
+	 * @param name - key of the entry
+	 * @param limit - failed attempts that lock the entry
+	 * @param now - instant of the attempt
+	 * @returns attempts counted so far and the end of the lock (`0` = not locked)
+	 */
+	const countFailure = (
+		map: Map<string, { count: number; blockedUntil: number; at: number }>,
+		name: string,
+		limit: number,
+		now: number,
+	): { count: number; blockedUntil: number } => {
+		const previous = map.get(name);
+		const expiredLock = previous !== undefined && previous.blockedUntil > 0 && previous.blockedUntil <= now;
+		const count = previous === undefined || expiredLock ? 1 : previous.count + 1;
+		const blockedUntil = count >= limit ? now + lockoutSeconds : 0;
+		map.set(name, { count, blockedUntil, at: now });
+		return { count, blockedUntil };
 	};
 
 	/**
@@ -398,17 +451,21 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			const now = input.now ?? Math.floor(Date.now() / 1000);
 			// what an anonymous caller types is kept short wherever it is remembered or written down
 			const shownLogin = input.login.trim().slice(0, MAX_LOGIN_RECORDED);
-			const key = shownLogin.toLowerCase();
+			const loginKey = shownLogin.toLowerCase();
+			const key = `${loginKey}|${(input.ip ?? "").slice(0, 64)}`;
 			pruneFailures(now);
-			const previous = failures.get(key);
+			const lockedUntil = Math.max(
+				failures.get(key)?.blockedUntil ?? 0,
+				loginFailures.get(loginKey)?.blockedUntil ?? 0,
+			);
 
-			if (previous && previous.blockedUntil > now) {
+			if (lockedUntil > now) {
 				writeAuditLog(db, {
 					atUtc: now,
 					action: "auth.login_locked",
 					entity: "user",
 					entityId: null,
-					detail: { login: shownLogin, blockedUntil: previous.blockedUntil },
+					detail: { login: shownLogin, blockedUntil: lockedUntil },
 					ip: input.ip ?? null,
 				});
 				return { ok: false, error: "locked_out" };
@@ -422,10 +479,11 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			 * @returns the generic failure result
 			 */
 			const registerFailure = (reason: string, userId: number | null): LoginResult => {
-				const expiredLock = previous !== undefined && previous.blockedUntil > 0 && previous.blockedUntil <= now;
-				const count = previous === undefined || expiredLock ? 1 : previous.count + 1;
-				const blockedUntil = count >= maxFailed ? now + lockoutSeconds : 0;
-				failures.set(key, { count, blockedUntil, at: now });
+				const own = countFailure(failures, key, maxFailed, now);
+				// the net over all addresses is wider: one address cannot lock the account, many addresses can
+				const overall = countFailure(loginFailures, loginKey, maxFailed * LOGIN_LOCK_FACTOR, now);
+				const count = own.count;
+				const blockedUntil = Math.max(own.blockedUntil, overall.blockedUntil);
 
 				writeAuditLog(db, {
 					atUtc: now,
@@ -439,6 +497,10 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			};
 
 			const user = users.findByLogin(input.login);
+			if (!user || !user.isActive || !user.passwordHash) {
+				// the same work as for a real account: an answer that comes faster would tell that the name is unknown
+				verifyPassword(input.password, decoyHash(deps.decoyCost ?? DEFAULT_HASH.cost));
+			}
 			if (!user) {
 				return registerFailure("unknown_user", null);
 			}
@@ -453,6 +515,7 @@ export function createAuthService(deps: AuthDeps): AuthService {
 			}
 
 			failures.delete(key);
+			loginFailures.delete(loginKey);
 
 			const authenticated = user;
 

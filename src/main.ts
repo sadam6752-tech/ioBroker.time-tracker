@@ -588,6 +588,7 @@ class TimeTracker extends utils.Adapter {
 				stream: {
 					auth,
 					events: api.events,
+					trustProxy: this.config.trustProxy === true,
 					version: this.version,
 					timers: {
 						// the adapter's own timer functions: they are cleared with the adapter on unload

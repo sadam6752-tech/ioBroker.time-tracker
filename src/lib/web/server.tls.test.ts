@@ -192,6 +192,8 @@ describe("web server over HTTPS", () => {
 			const health = await request(`${server.url}/api/health`);
 			expect(health.status).to.equal(200);
 			expect(JSON.parse(health.body)).to.deep.include({ status: "ok" });
+			// the server speaks HTTPS itself, so it tells the browsers to keep doing so
+			expect(health.headers["strict-transport-security"]).to.equal("max-age=15552000");
 		} finally {
 			await server.close();
 		}

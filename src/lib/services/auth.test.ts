@@ -49,7 +49,15 @@ describe("auth service", () => {
 		seed(db, { holidayYears: [2026] });
 		users = createUsersRepository(db);
 		settings = createSettingsRepository(db);
-		service = createAuthService({ db, users, settings, secret: SECRET, maxFailedAttempts: 3, lockoutMinutes: 15 });
+		service = createAuthService({
+			db,
+			users,
+			settings,
+			secret: SECRET,
+			maxFailedAttempts: 3,
+			lockoutMinutes: 15,
+			decoyCost: 1024,
+		});
 
 		adminId = users.create({ login: "admin", displayName: "Admin", roleKeys: ["admin"] }).id;
 		annaId = users.create({ login: "anna", displayName: "Anna", roleKeys: ["employee"] }).id;
@@ -161,6 +169,33 @@ describe("auth service", () => {
 				error: "invalid_credentials",
 			});
 			expect(lastDetail("auth.login_failed").reason).to.equal("inactive_user");
+		});
+
+		it("locks the address that guesses, not the account of the employee", () => {
+			// a stranger types the name of Anna three times (the limit of this test): his address is locked …
+			for (let attempt = 0; attempt < 3; attempt++) {
+				service.login({ login: "anna", password: "falsch-1234", ip: "10.0.0.66", now: 4000 });
+			}
+			expect(service.login({ login: "anna", password, ip: "10.0.0.66", now: 4001 })).to.deep.equal({
+				ok: false,
+				error: "locked_out",
+			});
+
+			// … while Anna herself, from her own address, gets in
+			expect(service.login({ login: "anna", password, ip: "10.0.0.4", now: 4002 }).ok).to.equal(true);
+		});
+
+		it("locks the account when many addresses guess together", () => {
+			// 3 failures lock one address, 5 times as many over all addresses lock the login (limit 15 here)
+			for (let attempt = 0; attempt < 15; attempt++) {
+				service.login({ login: "anna", password: "falsch-1234", ip: `10.1.0.${attempt}`, now: 4000 });
+			}
+			expect(service.login({ login: "anna", password, ip: "10.0.0.4", now: 4001 })).to.deep.equal({
+				ok: false,
+				error: "locked_out",
+			});
+			// after the window the account is open again
+			expect(service.login({ login: "anna", password, ip: "10.0.0.4", now: 4000 + 16 * 60 }).ok).to.equal(true);
 		});
 
 		it("locks a login after repeated failures and releases it after the window", () => {

@@ -159,6 +159,8 @@ describe("web server", () => {
 		expect(response.status).to.equal(200);
 		expect(response.headers.get("content-type")).to.equal("application/json; charset=utf-8");
 		expect(response.headers.get("cache-control")).to.equal("no-store");
+		// plain HTTP: no HSTS, a browser would take it for a promise that HTTPS exists
+		expect(response.headers.get("strict-transport-security")).to.equal(null);
 		expect(await response.json()).to.deep.equal({ status: "ok", holidayCountry: "DE", time: 1000 });
 	});
 

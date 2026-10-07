@@ -336,6 +336,41 @@ describe("web event stream", () => {
 		expect(stoppedTimers).to.deep.equal([42]);
 	});
 
+	it("refuses a browser handshake from the page of another host and lets the own page in", async () => {
+		/**
+		 * Opens a handshake the way a browser does, with the session cookie and an Origin header.
+		 *
+		 * @param origin - the page that opens the connection
+		 * @param query - query of the URL
+		 * @returns "open" or the status code of the refusal
+		 */
+		const handshake = (origin: string | null, query = ""): Promise<string | number> =>
+			new Promise(resolve => {
+				const headers: Record<string, string> = { cookie: `${SESSION_COOKIE}=${annaToken}` };
+				if (origin !== null) {
+					headers.origin = origin;
+				}
+				const socket = new WebSocket(`ws://127.0.0.1:${server.port}/api/stream${query}`, { headers });
+				socket.on("open", () => {
+					socket.close();
+					resolve("open");
+				});
+				socket.on("unexpected-response", (_request, response) => resolve(response.statusCode ?? 0));
+				socket.on("error", () => undefined);
+			});
+
+		// the page of the same host (a browser sends the origin of the page it shows)
+		expect(await handshake(`http://127.0.0.1:${server.port}`)).to.equal("open");
+		// no Origin header at all: an integration client, not a browser
+		expect(await handshake(null)).to.equal("open");
+		// another service on the same machine, a foreign site and a sandboxed page
+		expect(await handshake("http://127.0.0.1:9999")).to.equal(403);
+		expect(await handshake("https://boese.example")).to.equal(403);
+		expect(await handshake("null")).to.equal(403);
+		// a token in the URL is something the caller knows: no foreign page can add it
+		expect(await handshake("https://boese.example", `?token=${encodeURIComponent(annaToken)}`)).to.equal("open");
+	});
+
 	it("accepts the session cookie of a browser instead of the query token", async () => {
 		// a browser cannot set headers on a handshake, but it does send its cookies — so the live stream works
 		// without a token in the URL (specification 4.10)

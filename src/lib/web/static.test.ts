@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { HttpRequest, HttpResponse } from "./router";
-import { createStaticHandler } from "./static";
+import { CONTENT_SECURITY_POLICY, createStaticHandler } from "./static";
 
 describe("static files", () => {
 	let root: string;
@@ -52,6 +52,24 @@ describe("static files", () => {
 		expect(chunk.headers["content-type"]).to.equal("text/javascript; charset=utf-8");
 		const unknown = handler(request("/logo.png")) as HttpResponse;
 		expect(unknown.headers["content-type"]).to.equal("image/png");
+	});
+
+	it("carries the security headers, and the policy only on the page", () => {
+		const page = handler(request("/")) as HttpResponse;
+		const policy = page.headers["content-security-policy"];
+		expect(policy).to.equal(CONTENT_SECURITY_POLICY);
+		// nobody may frame the app, no inline script runs, the live stream is allowed to connect
+		expect(policy).to.contain("frame-ancestors 'none'");
+		expect(policy).to.contain("script-src 'self';");
+		expect(policy).to.contain("connect-src 'self' ws: wss:");
+		expect(page.headers["x-frame-options"]).to.equal("DENY");
+		expect(page.headers["referrer-policy"]).to.equal("no-referrer");
+		expect(page.headers["x-content-type-options"]).to.equal("nosniff");
+		expect(page.headers["permissions-policy"]).to.contain("camera=()");
+
+		const style = handler(request("/main.css")) as HttpResponse;
+		expect(style.headers["content-security-policy"]).to.equal(undefined);
+		expect(style.headers["x-frame-options"]).to.equal("DENY");
 	});
 
 	it("serves the index for the root and for client side routes", () => {

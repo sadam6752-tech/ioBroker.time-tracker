@@ -462,7 +462,7 @@ export interface TriggerRule {
 	id?: number;
 	/** Free-form label */
 	label?: string | null;
-	/** State of another adapter that is watched, e.g. `fingerprint.0.lastMatch` */
+	/** State of another adapter that is watched, e.g. `fingerprint.0.lastMatch.name` */
 	sourceState: string;
 	/** How the employee is resolved, defaults to `condition` */
 	mode?: TriggerMode;

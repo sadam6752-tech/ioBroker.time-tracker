@@ -28,6 +28,11 @@ export interface EventStreamOptions {
 	events: EventBus;
 	/** Reported version in the greeting frame */
 	version?: string;
+	/**
+	 * A reverse proxy is in front: the host it forwards (`x-forwarded-host`) counts as the host of the page as well,
+	 * because such a proxy often hands the adapter its own address as `Host`.
+	 */
+	trustProxy?: boolean;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
 	/** Interval of the protocol pings in milliseconds (default 30 s) */
@@ -55,6 +60,35 @@ export interface EventStream {
 	close(): Promise<void>;
 	/** Number of connected clients */
 	clientCount(): number;
+}
+
+/**
+ * Tells whether a browser handshake comes from the page of this very server.
+ *
+ * The session cookie travels with every handshake to the host, also from a page of another service on the same
+ * machine (another port or a sub domain counts as the same site). The `Origin` header names the page that opened the
+ * connection, so it has to carry the host the request was sent to.
+ *
+ * @param origin - `Origin` header of the handshake
+ * @param headers - headers of the handshake
+ * @param trustProxy - true when a reverse proxy forwards the host
+ * @returns true when the page belongs to this server
+ */
+export function isSameOrigin(origin: string, headers: IncomingMessage["headers"], trustProxy: boolean): boolean {
+	let originHost: string;
+	try {
+		originHost = new URL(origin).host.toLowerCase();
+	} catch {
+		// `null` (a sandboxed page) or garbage
+		return false;
+	}
+	const first = (value: string | string[] | undefined): string =>
+		((Array.isArray(value) ? value[0] : value) ?? "").split(",")[0].trim().toLowerCase();
+	const hosts = [first(headers.host)];
+	if (trustProxy) {
+		hosts.push(first(headers["x-forwarded-host"]));
+	}
+	return hosts.some(host => host !== "" && host === originHost);
 }
 
 /**
@@ -140,7 +174,19 @@ export function attachEventStream(options: EventStreamOptions): EventStream {
 		// well and the live stream works without a token in the URL (specification 4.10). The query parameter stays
 		// for terminals and integration clients.
 		const cookieToken = parseCookies(request.headers.cookie)[SESSION_COOKIE] ?? "";
-		const token = url.searchParams.get("token") || cookieToken;
+		const queryToken = url.searchParams.get("token") ?? "";
+		// A cookie is attached by the browser on its own, so the page that asked for the connection has to be a page
+		// of this server. A token in the query is something the caller knows, a foreign page cannot add it.
+		const origin = request.headers.origin;
+		if (
+			!queryToken &&
+			origin !== undefined &&
+			!isSameOrigin(origin, request.headers, options.trustProxy === true)
+		) {
+			reject(socket, 403, "origin_not_allowed");
+			return;
+		}
+		const token = queryToken || cookieToken;
 		const result = options.auth.authenticate({ token, now: now() });
 		if (!result.ok) {
 			reject(socket, result.error === "permission_denied" ? 403 : 401, result.error);

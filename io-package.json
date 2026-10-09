@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.21",
+		"version": "0.7.22",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.22": {
+				"en": "docs: the documentation is English now (docs/en), the German originals moved to docs/de; CONTRIBUTING.md and the module READMEs are English",
+				"de": "docs: Die Dokumentation ist jetzt englisch (docs/en), die deutschen Originale liegen in docs/de; CONTRIBUTING.md und die Modul-READMEs sind englisch",
+				"ru": "docs: документация теперь на английском (docs/en), немецкие оригиналы перенесены в docs/de; CONTRIBUTING.md и README модулей — на английском",
+				"pt": "docs: a documentação é agora em inglês (docs/en), os originais em alemão passaram para docs/de; CONTRIBUTING.md e os README dos módulos estão em inglês",
+				"nl": "docs: de documentatie is nu Engels (docs/en), de Duitse originelen staan in docs/de; CONTRIBUTING.md en de module-README's zijn Engels",
+				"fr": "docs : la documentation est désormais en anglais (docs/en), les originaux allemands sont passés dans docs/de ; CONTRIBUTING.md et les README des modules sont en anglais",
+				"it": "docs: la documentazione è ora in inglese (docs/en), gli originali tedeschi sono passati in docs/de; CONTRIBUTING.md e i README dei moduli sono in inglese",
+				"es": "docs: la documentación está ahora en inglés (docs/en), los originales en alemán pasaron a docs/de; CONTRIBUTING.md y los README de los módulos están en inglés",
+				"pl": "docs: dokumentacja jest teraz po angielsku (docs/en), niemieckie oryginały przeniesiono do docs/de; CONTRIBUTING.md i pliki README modułów są po angielsku",
+				"uk": "docs: документація тепер англійською (docs/en), німецькі оригінали перенесено до docs/de; CONTRIBUTING.md і README модулів — англійською",
+				"zh-cn": "docs: 文档现为英文（docs/en），德文原文已移至 docs/de；CONTRIBUTING.md 和各模块 README 均为英文"
+			},
 			"0.7.21": {
 				"en": "new: the menu of the web app has the entry Info and ends with the version of the app and of the adapter, for the administrator account only; the page Info says when the browser still shows an old app and reloads it",
 				"de": "new: Das Menü der Web-App hat den Eintrag Info und endet mit der Version von App und Adapter, nur für das Administrator-Konto; die Seite Info sagt, wenn der Browser noch eine alte App zeigt, und lädt sie neu",
@@ -100,19 +113,6 @@
 				"pl": "new: HTTPS w samym adapterze — ustawienia instancji oferują «Używaj HTTPS» z certyfikatem z kolekcji certyfikatów ioBroker; gdy brakuje certyfikatu, interfejs WWW pozostaje wyłączony zamiast wracać do zwykłego HTTP. fix: zgłoszona luka w uuid pod exceljs jest zamknięta, npm audit jest czysty",
 				"uk": "new: HTTPS у самому адаптері — у налаштуваннях екземпляра з'явився пункт «Використовувати HTTPS» із сертифікатом зі сховища сертифікатів ioBroker; за відсутності сертифіката веб-інтерфейс лишається вимкненим, а не повертається до звичайного HTTP. fix: закрито вразливість uuid в exceljs, npm audit чистий",
 				"zh-cn": "new: 适配器自带 HTTPS — 实例设置提供“使用 HTTPS”，证书来自 ioBroker 的证书集合；缺少证书时网页界面保持关闭，而不会退回普通 HTTP。fix: 已修复 exceljs 下 uuid 的已报告漏洞，npm audit 无问题"
-			},
-			"0.7.15": {
-				"en": "new: the instance tile in the admin opens the time tracking app now - the adapter announces its web interface as common.localLinks, so the admin shows a symbol next to the instance and on the overview page. The address comes from the bind address and the port of the instance settings, nothing is hardcoded.",
-				"de": "new: Die Instanzkachel im Admin öffnet jetzt die Zeiterfassungs-App — der Adapter meldet seine Oberfläche als `common.localLinks` an, deshalb zeigt der Admin ein Symbol neben der Instanz und auf der Übersichtsseite. Die Adresse setzt sich aus der Bind-Adresse und dem Port der Instanzeinstellungen zusammen, fest verdrahtet ist nichts.",
-				"ru": "новое: плитка экземпляра в admin теперь открывает приложение учёта времени — адаптер объявляет свой веб-интерфейс как `common.localLinks`, поэтому admin показывает символ рядом с экземпляром и на странице обзора. Адрес складывается из адреса привязки и порта из настроек экземпляра, жёстко ничего не задано.",
-				"pt": "novidade: o mosaico da instância no admin abre agora a aplicação de controlo de tempo — o adaptador anuncia a sua interface web como `common.localLinks`, por isso o admin mostra um símbolo ao lado da instância e na página de resumo. O endereço resulta do endereço de escuta e da porta das definições da instância; nada está fixo no código.",
-				"nl": "nieuw: de tegel van de instantie in de admin opent nu de tijdregistratie-app — de adapter meldt zijn webinterface aan als `common.localLinks`, daarom toont de admin een symbool naast de instantie en op de overzichtspagina. Het adres komt uit het bindadres en de poort uit de instellingen van de instantie, niets is hard gecodeerd.",
-				"fr": "nouveauté : la tuile de l'instance dans l'admin ouvre désormais l'application de suivi du temps — l'adaptateur annonce son interface web sous `common.localLinks`, c'est pourquoi l'admin affiche un symbole à côté de l'instance et sur la page de vue d'ensemble. L'adresse provient de l'adresse d'écoute et du port des réglages de l'instance, rien n'est codé en dur.",
-				"it": "novità: il riquadro dell'istanza nell'admin apre ora l'app di monitoraggio del tempo — l'adattatore annuncia la propria interfaccia web come `common.localLinks`, perciò l'admin mostra un simbolo accanto all'istanza e nella pagina di panoramica. L'indirizzo deriva dall'indirizzo di bind e dalla porta delle impostazioni dell'istanza, nulla è codificato a mano.",
-				"es": "novedad: el mosaico de la instancia en el admin abre ahora la aplicación de seguimiento del tiempo — el adaptador anuncia su interfaz web como `common.localLinks`, por eso el admin muestra un símbolo junto a la instancia y en la página de resumen. La dirección resulta de la dirección de escucha y del puerto de los ajustes de la instancia, nada está fijado en el código.",
-				"pl": "nowość: kafelek instancji w adminie otwiera teraz aplikację śledzenia czasu — adapter zgłasza swój interfejs web jako `common.localLinks`, dlatego admin pokazuje symbol obok instancji i na stronie przeglądu. Adres składa się z adresu bindowania i portu z ustawień instancji, nic nie jest zapisane na stałe.",
-				"uk": "нове: плитка екземпляра в admin тепер відкриває застосунок обліку часу — адаптер оголошує свій веб-інтерфейс як `common.localLinks`, тому admin показує символ поруч із екземпляром і на сторінці огляду. Адреса складається з адреси прив'язки та порту з налаштувань екземпляра, жорстко нічого не прописано.",
-				"zh-cn": "新增：管理界面中的实例卡片现在可以打开时间追踪应用——适配器将其 Web 界面声明为 `common.localLinks`，因此管理界面会在实例旁和概览页显示一个图标。地址由绑定地址和实例设置中的端口组成，没有任何内容被写死。"
 			}
 		},
 		"titleLang": {

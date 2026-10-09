@@ -8,6 +8,15 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.17 (2026-10-02)
+
+- (Alex) docs: the README carries a **disclaimer** (English and German) – free of charge and without warranty, no
+  legal advice, no officially approved time recording system, responsibility for the correct times, for the rules that
+  apply (working time law, works council, GDPR) and for the backups. The web app shows the same notice in short on the
+  sign-in page and in the profile, in all 11 languages.
+- (Alex) change: the administration screen of the web app (`Admin.tsx`, 3,900 lines) is split into one file per tab
+  under `src-www/src/screens/admin/`. The code was moved, not rewritten – no change of behaviour.
+
 ### 0.7.16 (2026-10-01)
 
 - (Alex) new: **HTTPS in the adapter itself.** The instance settings offer _Use HTTPS_ with a choice of the public

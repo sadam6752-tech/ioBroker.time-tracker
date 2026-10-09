@@ -515,6 +515,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.7.22 (2026-10-09)
+
 - (Alex) docs: the documentation is English now, as the review of the repository asks for: every document of `docs/` is
   available in English in `docs/en/`, the German originals moved to `docs/de/`, `CONTRIBUTING.md` and the READMEs of
   `src-www/` and `src-shared/` are English. No change of behaviour.
@@ -564,15 +566,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 - (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to
   `docs/haftungsausschluss.md`, and a German name of a setting in the README is the English one now.
 - (Alex) chore: `@iobroker/testing` ^6.3.0 (checker warning W0037).
-
-### 0.7.17 (2026-10-02)
-
-- (Alex) docs: the README carries a **disclaimer** (English and German) – free of charge and without warranty, no
-  legal advice, no officially approved time recording system, responsibility for the correct times, for the rules that
-  apply (working time law, works council, GDPR) and for the backups. The web app shows the same notice in short on the
-  sign-in page and in the profile, in all 11 languages.
-- (Alex) change: the administration screen of the web app (`Admin.tsx`, 3,900 lines) is split into one file per tab
-  under `src-www/src/screens/admin/`. The code was moved, not rewritten – no change of behaviour.
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

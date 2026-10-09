@@ -115,7 +115,7 @@ $issues = [System.Collections.Generic.List[string]]::new()
 $notes  = [System.Collections.Generic.List[string]]::new()
 $checkedSomething = $false
 
-Write-Host 'i18n-Vollständigkeitsprüfung (11 Sprachen, siehe docs/i18n.md)'
+Write-Host 'i18n-Vollständigkeitsprüfung (11 Sprachen, siehe docs/en/i18n.md)'
 Write-Host "  Repository:      $root"
 Write-Host "  Sprachen:        $($Languages -join ', ')"
 
@@ -301,7 +301,7 @@ else {
 
 # --- Bericht ------------------------------------------------------------------
 $reportLines = [System.Collections.Generic.List[string]]::new()
-[void]$reportLines.Add('i18n-Bericht (11 Sprachen, siehe docs/i18n.md)')
+[void]$reportLines.Add('i18n-Bericht (11 Sprachen, siehe docs/en/i18n.md)')
 [void]$reportLines.Add('')
 [void]$reportLines.Add("Datum:        $(Get-Date -Format 'yyyy-MM-dd HH:mm')")
 [void]$reportLines.Add("Repository:   $root")

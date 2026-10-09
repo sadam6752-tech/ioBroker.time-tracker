@@ -1,49 +1,47 @@
-# src-www/ – Progressive Web App
+# src-www/ – progressive web app
 
-React 18 + MUI 5 + Vite + React Query, Service Worker über Workbox, installierbar auf Smartphone
-und Desktop, offlinefähiges Stempeln mit Sync-Warteschlange. Der Build wird nach `www/` geschrieben und vom
-Adapter auf dem konfigurierten Port ausgeliefert (siehe [`../src/lib/web/static.ts`](../src/lib/web/static.ts)).
+React 18 + MUI 5 + Vite + React Query, service worker through Workbox, installable on smartphone and desktop, punching
+that works offline with a sync queue. The build is written to `www/` and delivered by the adapter on the configured port
+(see [`../src/lib/web/static.ts`](../src/lib/web/static.ts)).
 
-**Schnittstelle zum Adapter**
+**Interface to the adapter**
 
-| Was               | Wo                                                                                                                               |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Statische Dateien | `www/` im Paketwurzelverzeichnis; der Adapter liefert sie ab Auslieferungswurzel `/` aus                                         |
-| API               | immer unter dem Präfix `/api` (z. B. `POST /api/auth/login`), Session im Header `x-session-token`, CSRF im Header `x-csrf-token` |
-| Client-Routing    | unbekannte Pfade liefern `index.html` (Fallback im Adapter), daher **kein** `HashRouter` nötig                                   |
-| Basis-URL         | relativ halten (`base: "./"`), damit die App auch als Web-Extension unter einem Unterpfad läuft                                  |
+| What            | Where                                                                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Static files    | `www/` in the package root; the adapter delivers them from the delivery root `/`                                                         |
+| API             | always below the prefix `/api` (e.g. `POST /api/auth/login`), session in the header `x-session-token`, CSRF in the header `x-csrf-token` |
+| Client routing  | unknown paths deliver `index.html` (fallback in the adapter), so **no** `HashRouter` is needed                                           |
+| Base URL        | keep it relative (`base: "./"`), so that the app also runs as a web extension below a sub path                                           |
 
-**Befehle** (im Adapter-Wurzelverzeichnis)
+**Commands** (in the adapter root)
 
 ```bash
-npm run install:pwa     # Abhängigkeiten der PWA (eigenes node_modules)
-npm run build:pwa       # Typprüfung + Vite-Build nach www/
-npm run dev:pwa         # Entwicklungsserver auf :5173, /api wird auf die Instanz (127.0.0.1:8092) geleitet
-npm run lint:pwa        # ESLint mit denselben Regeln wie der Adapter
+npm run install:pwa     # dependencies of the PWA (own node_modules)
+npm run build:pwa       # type check + Vite build into www/
+npm run dev:pwa         # development server on :5173, /api is forwarded to the instance (127.0.0.1:8092)
+npm run lint:pwa        # ESLint with the same rules as the adapter
 ```
 
-Ohne `www/` läuft der Adapter weiter und bietet nur die API an; die Tests der Auslieferung
-(`src/lib/web/pwa.test.ts`) werden dann übersprungen.
+Without `www/` the adapter keeps running and offers only the API; the tests of the delivery (`src/lib/web/pwa.test.ts`)
+are skipped then.
 
-**Aufbau**
+**Structure**
 
-| Pfad                      | Inhalt                                                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `src/api/client.ts`       | REST-Client: Session in `localStorage`, CSRF-Header, Problem-Dokumente als `ApiError` mit stabilem Code |
-| `src/api/types.ts`        | Antwortformen der API (Spiegel des JSON: Zeiten in UTC-Sekunden, Dauer in Minuten)                      |
-| `src/offline/queue.ts`    | Warteschlange im `localStorage`, jeder Stempel mit UUID als `idempotencyKey`                            |
-| `src/offline/useSync.tsx` | sendet die Warteschlange über `POST /api/entries/sync`, reagiert auf `online`/`offline`                 |
-| `src/state/session.tsx`   | Anmeldung, Berechtigungen (nur Anzeige – entschieden wird serverseitig), Sprache des Benutzers          |
-| `src/screens/`            | Login, Dashboard (Stempeln), Monat, Berichte, Abwesenheiten, Abgleich, Profil                           |
-| `src/i18n/`               | 11 Sprachdateien; **Basis ist `en.json`**, neue Texte nur dort ergänzen und danach `npm run translate`  |
+| Path                      | Content                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `src/api/client.ts`       | REST client: session in `localStorage`, CSRF header, problem documents as `ApiError` with a stable code    |
+| `src/api/types.ts`        | answer shapes of the API (mirror of the JSON: times in UTC seconds, durations in minutes)                  |
+| `src/offline/queue.ts`    | queue in `localStorage`, every punch with a UUID as `idempotencyKey`                                       |
+| `src/offline/useSync.tsx` | sends the queue through `POST /api/entries/sync`, reacts to `online`/`offline`                             |
+| `src/state/session.tsx`   | sign-in, permissions (display only – the server decides), language of the user                             |
+| `src/screens/`            | login, dashboard (punching), month, reports, absences, sync, profile, administration, info                 |
+| `src/i18n/`               | 11 language files; **the base is `en.json`**, add new texts only there and then run `npm run translate`   |
 
-**Offline-Verhalten:** Der Stempeldruck schreibt zuerst in die lokale Warteschlange und sendet sofort; ohne Netz
-bleibt der Eintrag liegen und wird beim nächsten `online`-Ereignis (oder über den Knopf im Abgleich-Bildschirm)
-gesendet. Der Server erkennt Wiederholungen am `idempotencyKey`, Konflikte landen in
-`GET /api/entries/conflicts` und werden dort entschieden.
+**Offline behaviour:** Pressing the punch button writes to the local queue first and sends at once; without a network the
+entry stays and is sent at the next `online` event (or through the button on the sync screen). The server recognises
+repetitions by the `idempotencyKey`, conflicts land in `GET /api/entries/conflicts` and are decided there.
 
-**Clean Room:** kein Code und keine Bezeichner aus anderen Projekten (siehe
-[`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
+**Clean room:** no code and no identifiers from other projects (see [`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
-Verbindliche Details (Endpunkte, Feldnamen, Fehlercodes) stehen in der internen Spezifikation, die
-außerhalb dieses Repositories liegt und nicht veröffentlicht wird.
+Binding details (endpoints, field names, error codes) are in the internal specification, which lives outside this
+repository and is not published.

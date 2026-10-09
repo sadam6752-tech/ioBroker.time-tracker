@@ -1,7 +1,7 @@
 # Entwicklung
 
-Repository, Skripte, Tests und Release. Die verbindlichen Regeln stehen in [`CONTRIBUTING.md`](../CONTRIBUTING.md);
-das [README](../README.md) beschreibt den Adapter für Anwender.
+Repository, Skripte, Tests und Release. Die verbindlichen Regeln stehen in [`CONTRIBUTING.md`](CONTRIBUTING.md);
+das [README](../../README.md) beschreibt den Adapter für Anwender.
 
 ## Aufbau
 
@@ -33,7 +33,7 @@ docs/         Bedienungs-, Technik- und Übersetzer-Dokumentation
 | `npm run coverage`         | Unit-Tests mit Coverage-Bericht                                              |
 | `npm run translate`        | die 11 Übersetzungsdateien abgleichen                                        |
 | `npm run check:i18n`       | prüfen, dass alle 11 Sprachen vollständig sind                               |
-| `npm run check:adapter`    | lokale Vorprüfung der ioBroker-Regeln (`docs/adapter-check.md`)              |
+| `npm run check:adapter`    | lokale Vorprüfung der ioBroker-Regeln (`docs/de/adapter-check.md`)              |
 | `npm run version:bump`     | Version anheben, Changelog und `common.news` pflegen                         |
 | `npm run version:check`    | Version, Changelog und die Längengrenzen der Listen prüfen                   |
 | `npm run push:approve`     | den aktuellen Commit für den Push freigeben (vorher den Auftraggeber fragen) |

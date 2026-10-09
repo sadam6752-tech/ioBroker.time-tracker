@@ -10,10 +10,10 @@ describe("disclaimer", () => {
 		const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 		expect(readme).to.contain("## Disclaimer");
 		expect(readme).to.contain("**Disclaimer.**");
-		// the checker (E6015) wants the README in English only, so the German text lives in docs/
+		// the checker (E6015) wants the README in English only, so the German text lives in docs/de/
 		expect(readme).to.not.contain("Haftungsausschluss.");
-		expect(readme).to.contain("docs/haftungsausschluss.md");
-		const german = fs.readFileSync(path.join(root, "docs", "haftungsausschluss.md"), "utf8");
+		expect(readme).to.contain("docs/de/haftungsausschluss.md");
+		const german = fs.readFileSync(path.join(root, "docs", "de", "haftungsausschluss.md"), "utf8");
 		expect(german).to.contain("**Haftungsausschluss.**");
 	});
 

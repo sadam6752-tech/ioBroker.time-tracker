@@ -1,6 +1,6 @@
 # Technik (Interna)
 
-Dieses Dokument sammelt die technischen Einzelheiten, die früher im [README](../README.md) standen: HTTP-Oberfläche,
+Dieses Dokument sammelt die technischen Einzelheiten, die früher im [README](../../README.md) standen: HTTP-Oberfläche,
 Sitzungen und Sicherheit, Live-Ereignisse, die Offline-Warteschlange der App und die Datenbank. Zum Benutzen des
 Adapters genügt das README; hier steht, wie es innen aussieht.
 

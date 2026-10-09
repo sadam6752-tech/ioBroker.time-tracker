@@ -18,4 +18,4 @@ Verwaltung). Zeiten ändert die Verwaltung: ein Mitarbeiter stempelt und hinterl
 Administrator-Konto gehört niemandem und stempelt nicht. Die Suiten laufen grün:
 581 Unit-, 60 Paket-, 9 Integrations- und 31 End-to-End-Tests. Die Veröffentlichung läuft über die CI (npm trusted
 publishing mit Herkunftsnachweis); offen ist nur noch der
-Eintrag im offiziellen Adapter-Repository (Antrag ioBroker/ioBroker.repositories#6702, wartet auf die Prüfung) — siehe [`docs/entwicklung.md`](entwicklung.md).
+Eintrag im offiziellen Adapter-Repository (Antrag ioBroker/ioBroker.repositories#6702, wartet auf die Prüfung) — siehe [`docs/de/entwicklung.md`](entwicklung.md).

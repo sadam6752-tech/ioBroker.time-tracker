@@ -1,5 +1,5 @@
 /**
- * Laststichprobe gegen eine laufende Instanz — Abnahmetest T17 aus `docs/testplan.md`.
+ * Laststichprobe gegen eine laufende Instanz — Abnahmetest T17 aus `docs/en/test-plan.md`.
  *
  * Meldet sich an, schickt die gewünschte Anzahl Stempel **parallel** über die API und prüft danach über
  * `GET /api/entries`, dass jeder davon angekommen ist. Die Antwortzeiten werden je Aufruf gemessen und als

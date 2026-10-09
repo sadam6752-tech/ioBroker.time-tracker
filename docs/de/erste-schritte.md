@@ -2,7 +2,7 @@
 
 Diese Anleitung führt einmal durch die Installation bis zum ersten Stempel. Sie ist bewusst knapp und nennt an
 jeder Stelle, woran man erkennt, dass der Schritt geklappt hat. Der vollständige Abnahmetest steht in
-`docs/testplan.md`.
+`docs/de/testplan.md`.
 
 ## 1. Voraussetzungen
 
@@ -173,5 +173,5 @@ werden in der Oberfläche angelegt:
 | Kiosk nimmt keine PIN | Zustand `info.lastError`, Kontosperre nach 5 Fehlversuchen (15 Minuten) |
 | Alles unklar | `npm run test:ts`, `npm run test:package`, `npm run test:integration` lokal ausführen |
 
-Die Abnahmekriterien und das Protokollblatt stehen in `docs/testplan.md` (T1–T28); Abweichungen und
-Entscheidungen in `docs/entscheidungen.md`.
+Die Abnahmekriterien und das Protokollblatt stehen in `docs/de/testplan.md` (T1–T28); Abweichungen und
+Entscheidungen in `docs/de/entscheidungen.md`.

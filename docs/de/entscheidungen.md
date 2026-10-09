@@ -1,7 +1,7 @@
 # Entscheidungen und Abweichungen
 
 Dieses Dokument hält Entscheidungen fest, die vom ursprünglichen Umfang abweichen, damit sie später nachvollziehbar
-bleiben. Wie `docs/adapter-check.md` und `docs/testplan.md` ist es bewusst **deutsch** — die `README.md` bleibt
+bleiben. Wie `docs/de/adapter-check.md` und `docs/de/testplan.md` ist es bewusst **deutsch** — die `README.md` bleibt
 englisch (Vorgabe des Adapter-Checkers).
 
 ## D1 — Kein Import der Altdaten des Vorgängersystems (16.09.2026)
@@ -29,11 +29,11 @@ keinen Probelauf und keine Import-Berichte.
   erschien um 16:32 auf npm — **keine** veröffentlichte Version enthielt den Importer.
 - `time_entries.source` und `EntrySource` kennen den Wert `import` weiterhin, er wird nur nicht mehr erzeugt.
 - Der Abnahmepunkt „Altdaten dry-run-fähig importierbar" der internen Spezifikation ist damit **bewusst offen**; der
-  Abnahmelauf in `docs/testplan.md` prüft nur noch das Verhalten des Adapters selbst.
+  Abnahmelauf in `docs/de/testplan.md` prüft nur noch das Verhalten des Adapters selbst.
 
 **Begründung:** Ein Importer hätte die Bedeutung jeder einzelnen Spalte der Bestandsdaten festlegen müssen; ohne
 eine echte Datenkopie der Referenzinstallation wäre diese Zuordnung nur geraten — und die Regeln in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md), Abschnitt 1, verbieten es, sie aus fremdem Programmcode oder dessen
+[`CONTRIBUTING.md`](CONTRIBUTING.md), Abschnitt 1, verbieten es, sie aus fremdem Programmcode oder dessen
 Oberfläche abzuleiten. Gebraucht wurde er nicht: der Adapter startet mit leeren Stammdaten, die Administration
 legt Benutzer, Arbeitsprofile und Abwesenheiten selbst an. Der Rückbau entfernte 65 Dateien und 3861 Zeilen; der
 frühere Stand bleibt über die Historie (`184414c`) erreichbar.
@@ -56,8 +56,8 @@ Bis zum 16.09.2026 lagen `docs/provenance.md` (Quelle und Datum des Referenzsyst
 `184414c` entfernt, weil mit dem Importer (D1) der einzige Teil wegfiel, der Formate und Bezeichner des
 Vorgängersystems berührte.
 
-**Was bleibt:** Der Abschnitt [„Provenance"](../README.md#provenance) der `README.md` nennt die Herkunft, und die
-Clean-Room-Regeln stehen verbindlich in [`CONTRIBUTING.md`](../CONTRIBUTING.md) (Abschnitt 1). Der Nachweis selbst
+**Was bleibt:** Der Abschnitt [„Provenance"](../../README.md#provenance) der `README.md` nennt die Herkunft, und die
+Clean-Room-Regeln stehen verbindlich in [`CONTRIBUTING.md`](CONTRIBUTING.md) (Abschnitt 1). Der Nachweis selbst
 wird **außerhalb** dieses Repositories geführt.
 
 **Wenn der automatische Abgleich zurückkommen soll:** Das Skript liegt in der Historie
@@ -74,7 +74,7 @@ Sicherung ist größer als diese Grenze.
 **Entscheidung:** `RouteDefinition` bekommt ein optionales `maxBodyBytes`. Nur `POST /backup/restore` setzt es
 (64 MiB), alle anderen Routen bleiben bei 2 MiB — die Tests halten beides fest (ein großer Body gegen eine andere
 Route endet weiterhin in `413 payload_too_large`). Der Web-Server liest mit derselben Schranke
-(`MAX_BACKUP_UPLOAD_BYTES`), weil der Transport einen Body zurückweist, bevor eine Route ihn überhaupt sieht.
+(`MAX_BACKUP_UPLOAD_BYTES`), weil der Transport einen Body zurückweist, bevor eine Route ihn überhaupt sieht. *(Geändert in D18: der Transport fragt den Router nach dem Limit der Route und gibt das erhöhte Limit nur einem angemeldeten Aufrufer, der wiederherstellen darf.)*
 
 Der Upload kommt als **roher Body** (`application/octet-stream`) an, nicht als Base64 in JSON: Der Browser schickt
 die gewählte Datei direkt (`body: file`), der Server hält sie für diesen Content-Type als **Bytes** statt als Text.
@@ -252,7 +252,7 @@ stellt den Namen des Mitarbeiters voran (`Anna Muster: Ferien (F)`), damit ein T
 
 **Nachweis:** `src/lib/services/calendar.test.ts` (DTEND exklusiv, Maskierung, JSON-Sicht),
 `src/lib/web/api.test.ts` (Firmen-Feed über den Instanz-Token, persönlicher Link bleibt persönlich, alter Token tot),
-`src/lib/adapter/states.test.ts` (States und Befehl) und die Abnahme **T21** in `docs/testplan.md`.
+`src/lib/adapter/states.test.ts` (States und Befehl) und die Abnahme **T21** in `docs/de/testplan.md`.
 
 ## D9 — Die Quellen der Web-App heißen `src-www/` (24.09.2026)
 
@@ -274,7 +274,7 @@ liefert unverändert `www/` aus, alle Skripte und Workflows zeigen nur auf den n
 
 **Nachweis:** `npm run check`, `npm run lint`, `npm run build`, `npm run build:pwa`, `npm run test:ts`,
 `npm run test:package`, `npm run check:adapter`, `npm run check:i18n` und `npm run version:check` sind grün;
-die Abnahme steht als **T22** in `docs/testplan.md`.
+die Abnahme steht als **T22** in `docs/de/testplan.md`.
 
 ## D10 — Eine Automatikregel darf ein Gültigkeitsfenster haben (24.09.2026)
 
@@ -305,10 +305,10 @@ und liegt der Regelzeitpunkt des ersten Tages vor „gültig ab", fällt dieser 
 **Nachweis:** `src/lib/adapter/automation.test.ts` (Tag davor, genau „ab", genau „bis", Tag danach, beide Enden leer),
 `src/lib/db/repositories/automations.test.ts` (Speichern und Lesen, „weglassen behält", „leer leert", 30.02. wird
 abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/api.test.ts` (die Daten reisen mit der Regel, 400 bei
-ungültigem Datum) und die Abnahme **T23** in `docs/testplan.md`. Die Liste unter der Tabelle ist inzwischen **entfallen**
+ungültigem Datum) und die Abnahme **T23** in `docs/de/testplan.md`. Die Liste unter der Tabelle ist inzwischen **entfallen**
 (sie war zuletzt auf fünf Einträge begrenzt): `GET /automation-rules/runs` liefert eine Zeile **je Regel** (die
 jüngste, per `latestRuns`) und die Regelzeile schreibt sie in eine eigene Zeile — siehe **D12** in
-`docs/entscheidungen.md` und **T25** in `docs/testplan.md`.
+`docs/de/entscheidungen.md` und **T25** in `docs/de/testplan.md`.
 
 ## D12 — Die Regelübersicht zeigt die letzte Ausführung je Regel (26.09.2026)
 
@@ -326,7 +326,7 @@ Hinweis, dass die Tabelle **als Ganzes** gespeichert wird — bis dahin ist eine
 keine Einschränkung ist — genau wie die Gültigkeit, die ebenfalls nur erscheint, wenn sie gesetzt ist.
 
 **Nachweis:** `src/lib/db/repositories/automations.test.ts` („reports one run per rule — the newest"),
-`src/lib/web/api.test.ts` (die Antwort trägt eine Zeile je Regel) und **T25** in `docs/testplan.md`.
+`src/lib/web/api.test.ts` (die Antwort trägt eine Zeile je Regel) und **T25** in `docs/de/testplan.md`.
 
 ## D13 — Ein Storno wird beantragt, nicht stillschweigend gebucht (26.09.2026)
 
@@ -351,7 +351,7 @@ Audit nicht mehr von einem Datenfehler zu unterscheiden.
 **Nachweis:** `src/lib/db/repositories/absences.test.ts` (Antrag zählt weiter, Zurückziehen und Ablehnen schreiben die
 Audit-Aktionen `absence.cancel_request`/`_withdraw`/`_decline`, nur genehmigte Abwesenheiten lassen sich stornieren,
 die Entscheidung räumt ein wartendes Storno ab), `src/lib/web/api.test.ts` (Antrag, Rechte, Zurückziehen, Ablehnen,
-400 für eine noch nicht genehmigte Abwesenheit) und die Abnahmen **T26** in `docs/testplan.md`.
+400 für eine noch nicht genehmigte Abwesenheit) und die Abnahmen **T26** in `docs/de/testplan.md`.
 
 ## D11 — Der Dateiserver ist kein Weg zum Kalender (25.09.2026)
 
@@ -377,7 +377,7 @@ Zwei Punkte bleiben offen und wurden bewusst nicht mit erledigt:
   möchte, kann die Datei in den Instanzordner (`<iobroker-data>/time-tracker.<n>/`) zurückholen — der `ical`-Adapter
   liest sie von dort genauso.
 
-**Nachweis:** **T24** in `docs/testplan.md` (der Link liefert die vollständige ICS-Datei, der `ical`-Adapter liest
+**Nachweis:** **T24** in `docs/de/testplan.md` (der Link liefert die vollständige ICS-Datei, der `ical`-Adapter liest
 `calendar.feedFile`, README und Doku nennen keinen Dateiserver-Link mehr) und der geänderte Abschnitt *Calendar for
 ioBroker* im README.
 
@@ -479,7 +479,7 @@ jetzt beide (`closeForm`).
 das Feld ist ein Datumsfeld, die Zeile trägt ihre Region, sie lässt sich entfernen, ein Tag des nächsten Jahres holt das
 Jahr nach), die erweiterte Prüfung in `src/lib/web/api.test.ts` (ein Tag ohne Region trägt das Land der Instanz),
 `src/lib/db/repositories/holidays.test.ts` („lists every region of a year when no region is asked for"), die
-Änder-Brücke in `test/e2e/absences-admin.spec.ts` und **T27** in `docs/testplan.md`.
+Änder-Brücke in `test/e2e/absences-admin.spec.ts` und **T27** in `docs/de/testplan.md`.
 
 ## D15 — Das Startpasswort wirkt auch nach dem ersten Start (01.10.2026)
 
@@ -510,7 +510,7 @@ diese Stille war der Fehler.
   unverändert, weil er nur greift, wenn es keinen **aktiven** Administrator gibt.
 - Die Übernahme schreibt einen Audit-Eintrag (`user.update`, `passwordChanged`, Begründung „start password from the
   instance settings") — sie ist damit nachvollziehbar.
-- `README.md` („First start"), `docs/erste-schritte.md` (Schritt 3.4) und `docs/testplan.md` (Testdaten und das
+- `README.md` („First start"), `docs/de/erste-schritte.md` (Schritt 3.4) und `docs/de/testplan.md` (Testdaten und das
   Log-Beispiel des Dev-Servers) nennen die vier Logzeilen.
 
 ## D16 — Die Instanzzeile führt in die App (`common.localLinks`) (01.10.2026)
@@ -536,7 +536,7 @@ die im npm-Paket mitgeliefert werden müsste, wäre eine zusätzliche Fehlerquel
   dann funktioniert derselbe Link von Handy und PC. Steht ein Reverse-Proxy davor, ersetzt eine Proxy-Regel für
   `time-tracker.0` den Link durch ihren Pfad (der Admin macht das selbst).
 - `/` ist die Anmeldung, solange keine Sitzung besteht: der Link öffnet genau die Anmeldeseite, nicht die Einstellungen.
-- `README.md` (Installationsschritt 2), `docs/erste-schritte.md` (Schritte 3 und 4) und `docs/technik.md`
+- `README.md` (Installationsschritt 2), `docs/de/erste-schritte.md` (Schritte 3 und 4) und `docs/de/technik.md`
   (HTTP-Oberfläche) nennen den Link.
 - `tools/check-i18n.ps1` prüft die Sprachschlüssel von `common.titleLang`, `common.desc`, `common.news` — **und
   jetzt auch** `common.localLinks.<key>.name`: der Name wird wörtlich angezeigt, ein fehlender Schlüssel fiele sonst
@@ -575,7 +575,7 @@ Routen, Rechte, CSRF und Limits sind unberührt.
 
 **Nachweis:** `src/lib/web/server.tls.test.ts` (echte HTTPS-Verbindung mit einem Testzertifikat, `Secure`-Cookie,
 Abweisung eines Clients ohne Vertrauen, kaputtes Zertifikat), Router- und Kalendertest; Abnahme auf einer echten
-Instanz: Testfall T29 in `docs/testplan.md`.
+Instanz: Testfall T29 in `docs/de/testplan.md`.
 
 ## D18 — Eine Regel darf bei jeder Meldung feuern, und eine Wertzuordnung benennt den Mitarbeiter (07.10.2026)
 
@@ -624,3 +624,13 @@ werden gekürzt gespeichert; die Audit-Zeilen fehlgeschlagener und gesperrter An
   was bei einem Scan ohne Stempel im Log steht.
 - **C1 — README-Beispiel:** `fingerprint.0.lastMatch` gibt es nicht; die README nennt `lastMatch.name`, `lastMatch.id`
   (mit Wertzuordnung) und den Grund, warum `lastMatch.matched` nicht passt.
+
+## D19 — Die Dokumentation ist englisch, die deutschen Originale liegen in `docs/de/` (09.10.2026)
+
+**Anlass:** Die Prüfung des Repositories (PR #6702 von `ioBroker.repositories`) verlangt die Dokumentation auf Englisch,
+weitere Sprachen sind willkommen: die Entwicklerdokumente unter `docs/` waren bisher nur deutsch.
+
+**Entscheidung:** Jedes Dokument von `docs/` gibt es auf Englisch in `docs/en/`; die deutschen Originale liegen in
+`docs/de/` (sie bleiben, wie sie sind, samt dem Protokoll der Abnahme, wie es geführt wurde). Die `CONTRIBUTING.md` im
+Wurzelordner ist englisch, ihr deutsches Original ist `docs/de/CONTRIBUTING.md`. Das README bleibt englisch und nennt
+beide Ordner in seiner Dokumentationstabelle. Werkzeuge und Tests, die ein Dokument nennen, zeigen auf die englische Datei.

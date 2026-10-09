@@ -1,6 +1,6 @@
 # Haftungsausschluss
 
-Deutsche Fassung des Kapitels „Disclaimer“ der [`README.md`](../README.md). Die README bleibt englisch (Vorgabe des
+Deutsche Fassung des Kapitels „Disclaimer“ der [`README.md`](../../README.md) (die Dokumentation steht auf Englisch in [`docs/en/`](../en/), die deutschen Originale in `docs/de/`). Die README bleibt englisch (Vorgabe des
 Adapter-Checkers, Regel E6015); maßgeblich ist inhaltlich dieselbe Aussage.
 
 **Haftungsausschluss.** Dieses Programm wird unentgeltlich und so bereitgestellt, wie es ist – ohne Gewähr und ohne Zusicherung einer bestimmten Beschaffenheit oder Eignung. Es ersetzt keine Rechts-, Steuer- oder arbeitsrechtliche Beratung und ist kein amtlich zugelassenes oder zertifiziertes Zeiterfassungssystem. Soweit gesetzlich zulässig, ist die Haftung ausgeschlossen; unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie für Schäden an Leben, Körper und Gesundheit und nach zwingendem Recht. Du bist selbst verantwortlich für:

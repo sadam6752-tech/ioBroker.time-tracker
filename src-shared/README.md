@@ -1,19 +1,21 @@
-# src-shared/ – gemeinsame Typen und Validierung
+# src-shared/ – shared types and validation
 
-Hier liegen die Artefakte, die Adapter und PWA gemeinsam nutzen:
+This folder is reserved for the artifacts that the adapter and the PWA share. At the moment it holds only this note; the
+API types live in the adapter (`src/lib/web/`) and in the web app (`src-www/src/api/types.ts`).
 
-- TypeScript-Typen für API-Nutzlasten (Stempel, Einträge, Abwesenheiten, Aggregate, Einstellungen)
-- zod-Schemata für Ein- und Ausgaben (eine Quelle für Servervalidierung und Client-Formulare)
-- Konstanten und Formatierungshilfen, z. B. Einheiten (Minuten), Datums-/Zeitformate (`tsUtc`,
-  `localDate`, `localTime`) und stabile API-Fehlercodes
-- Berechnungsbausteine, die in beiden Welten identisch sein müssen (z. B. Tages-/Monatssaldo-Anzeige)
+What belongs here:
 
-**Regeln**
+- TypeScript types for API payloads (punches, entries, absences, aggregates, settings)
+- schemas for inputs and outputs (one source for server validation and client forms)
+- constants and formatting helpers, e.g. units (minutes), date/time formats (`tsUtc`, `localDate`, `localTime`) and
+  stable API error codes
+- calculation building blocks that have to be identical in both worlds (e.g. the display of the day/month balance)
 
-- Keine Server-Abhängigkeiten (kein `@iobroker/*`, kein SQLite) und keine Browser-Abhängigkeiten.
-- Keine Geschäftslogik, die nur serverseitig entschieden werden darf (Rechte, Sitzungen, Salden-Wahrheit).
-- Clean Room: kein Code/keine Bezeichner aus anderen Projekten (siehe [`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
+**Rules**
 
-Verbindliche Feldnamen und Formate stehen in der internen Spezifikation, die außerhalb dieses
-Repositories liegt und nicht veröffentlicht wird.
+- No server dependencies (no `@iobroker/*`, no SQLite) and no browser dependencies.
+- No business logic that may only be decided on the server (permissions, sessions, the truth of the balances).
+- Clean room: no code or identifiers from other projects (see [`../CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
+Binding field names and formats are in the internal specification, which lives outside this repository and is not
+published.

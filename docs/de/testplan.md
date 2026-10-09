@@ -2,10 +2,10 @@
 
 Dieses Dokument ist die Arbeitsanleitung für die **ersten Tests auf einer echten ioBroker-Installation**.
 Es beschreibt Voraussetzungen, Testdaten, die Testfälle T1–T17 mit Erwartung und die Abnahmekriterien.
-Für die Installation bis zum ersten Stempel gibt es `docs/erste-schritte.md`; die Schritte dort entsprechen der
+Für die Installation bis zum ersten Stempel gibt es `docs/de/erste-schritte.md`; die Schritte dort entsprechen der
 Vorbereitung unten.
 Die öffentliche `README.md` bleibt englisch (Vorgabe des Adapter-Checkers) — dieses Betriebsdokument ist
-bewusst deutsch, wie `docs/adapter-check.md`.
+bewusst deutsch, wie `docs/de/adapter-check.md`.
 
 ## 1. Ziel
 
@@ -69,7 +69,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
    Startpasswort noch nicht gewechselt hat: Instanz neu starten, dann steht im Log `… exists already and still has
    its start password - it was set from the instance settings now` und der Login klappt mit dem eingetragenen Wert.
    Nach dem Wechsel in der App warnt der Adapter dagegen `the configured start password is not used` (D15 in
-   `docs/entscheidungen.md`).
+   `docs/de/entscheidungen.md`).
 2. In der Web-App unter **Verwaltung → Mitarbeiter** anlegen:
     - `anna` (Rolle _Mitarbeiter_), Passwort nach Policy (≥ 8 Zeichen, Groß-/Kleinbuchstaben, Ziffern)
     - `chef` (Rolle _Manager_, falls Abnahme fremder Monate geprüft werden soll)
@@ -179,7 +179,7 @@ Nachtrag in D11.
 
 ## 10. Ergebnis und nächste Schritte (nach dem Test)
 
-- Offene Abweichungen in `docs/entscheidungen.md` festhalten.
+- Offene Abweichungen in `docs/de/entscheidungen.md` festhalten.
 - Erst danach Version taggen (`npm run release -- patch|minor`) — der Deploy-Job veröffentlicht dann über
   npm (trusted publishing vorausgesetzt) und legt das GitHub-Release an.
 

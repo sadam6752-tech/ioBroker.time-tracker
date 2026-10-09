@@ -295,7 +295,7 @@ class TimeTracker extends utils.Adapter {
 	 *
 	 * The decision itself sits in `services/firstAdministrator.ts` (it is unit tested there); this method only
 	 * reports the result. Every start says what happened, so “I set a start password and nothing appears in the
-	 * log” cannot happen again — see `docs/entscheidungen.md`, D15.
+	 * log” cannot happen again — see `docs/en/decisions.md`, D15.
 	 *
 	 * @param db - open database handle
 	 */

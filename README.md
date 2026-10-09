@@ -296,14 +296,14 @@ is no mount point, and a write below it is refused (the background stands in D11
 start, so the folder shows up from the first start on, before the first calendar was written. The `ical` adapter points
 at the **path** from `calendar.feedFile`. The file manager of the admin UI (`Objects` → `files`) shows the folder
 `time-tracker.<n>` with `storage` inside and downloads the file — that is confirmed on a real installation (acceptance
-case **T28** in [`docs/testplan.md`](docs/testplan.md), passed with 0.7.12).
+case **T28** in [`docs/en/test-plan.md`](docs/en/test-plan.md), passed with 0.7.12).
 
 The file server of a `web` instance delivers that file as well — below the **mount point** the link works
 (`http://<host>:8081/files/time-tracker.0/storage/calendar.ics`, checked on a real installation: the download gives
 the `VCALENDAR` file). The former path without `storage` (`…/files/time-tracker/calendar.ics`) answers with an empty
 archive and therefore stays out of this file. So a browser, a calendar app or a script uses either `calendar.feedUrl`
 (the link with the instance token) or the file server link above — the background stands in D11 of
-[`docs/entscheidungen.md`](docs/entscheidungen.md).
+[`docs/en/decisions.md`](docs/en/decisions.md).
 
 The window is a year back and to the end of next year. The link of the **company** only exists after somebody asked
 for it: write `true` to `commands.rotateCalendarToken`. The first call creates the token, every further one replaces
@@ -318,7 +318,7 @@ setState("ical.0.iCalReadTrigger", "read " + getState("time-tracker.0.calendar.f
 ```
 
 `calendar.absences` is JSON, so any script can read it — the field list stands in the table above. T21 in
-[`docs/testplan.md`](docs/testplan.md) carries a small snippet that logs the running absences.
+[`docs/en/test-plan.md`](docs/en/test-plan.md) carries a small snippet that logs the running absences.
 
 ### Actions (trigger rules)
 
@@ -462,7 +462,7 @@ the adapter and switch **Trust the reverse proxy** on: the adapter then takes th
 
 The admin UI, the app and the reports ship in **11 languages** — `en` (base and fallback), `de`, `ru`, `pt`, `nl`,
 `fr`, `it`, `es`, `pl`, `uk`, `zh-cn` — and every employee picks their own. Dates, numbers and units are formatted
-with `Intl`. Further translations are welcome: [`docs/i18n.md`](docs/i18n.md).
+with `Intl`. Further translations are welcome: [`docs/en/i18n.md`](docs/en/i18n.md).
 
 ## Security headers
 
@@ -485,22 +485,25 @@ local SQLite file, access is role-based, and every correction is written to an a
 - compliance with the rules that apply to you (e.g. working time and labour law, the rights of a works council, employee information and consent, retention periods, GDPR),
 - regular backups – also outside the adapter – and testing that they can be restored.
 
-The German version of this notice is in [`docs/haftungsausschluss.md`](docs/haftungsausschluss.md).
+The German version of this notice is in [`docs/de/haftungsausschluss.md`](docs/de/haftungsausschluss.md).
 
 The same notice, short, is shown on the sign-in page and in the profile of the web app, in all 11 languages.
 
 ## Documentation
 
-| Document                                           | Content                                                  |
-| -------------------------------------------------- | -------------------------------------------------------- |
-| [`docs/erste-schritte.md`](docs/erste-schritte.md) | a walk through the first setup (German)                  |
-| [`docs/kurzfassung-de.md`](docs/kurzfassung-de.md) | the German summary of this README                        |
-| [`docs/testplan.md`](docs/testplan.md)             | acceptance tests and what is still open                  |
-| [`docs/entscheidungen.md`](docs/entscheidungen.md) | the decisions behind the design (German)                 |
-| [`docs/technik.md`](docs/technik.md)               | internals: HTTP surface, sessions, live events, database |
-| [`docs/entwicklung.md`](docs/entwicklung.md)       | build, tests, release                                    |
-| [`docs/i18n.md`](docs/i18n.md)                     | how the 11 languages are kept complete                   |
-| [`docs/adapter-check.md`](docs/adapter-check.md)   | the local pre-check of the ioBroker adapter rules        |
+The documentation is English ([`docs/en/`](docs/en/)); the German originals are in [`docs/de/`](docs/de/).
+
+| Document                                                   | Content                                                                                 |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`docs/en/getting-started.md`](docs/en/getting-started.md) | a walk through the first setup                                                          |
+| [`docs/en/test-plan.md`](docs/en/test-plan.md)             | acceptance tests and what is still open                                                 |
+| [`docs/en/decisions.md`](docs/en/decisions.md)             | the decisions behind the design                                                         |
+| [`docs/en/technical.md`](docs/en/technical.md)             | internals: HTTP surface, sessions, live events, database                                |
+| [`docs/en/development.md`](docs/en/development.md)         | build, tests, release                                                                   |
+| [`docs/en/i18n.md`](docs/en/i18n.md)                       | how the 11 languages are kept complete                                                  |
+| [`docs/en/adapter-check.md`](docs/en/adapter-check.md)     | the local pre-check of the ioBroker adapter rules                                       |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md)                       | contribution rules (clean room) and the release procedure                               |
+| [`docs/de/`](docs/de/)                                     | the German originals of the documents above, a German summary and the German disclaimer |
 
 ## Links
 
@@ -511,6 +514,10 @@ The same notice, short, is shown on the sign-in page and in the profile of the w
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) docs: the documentation is English now, as the review of the repository asks for: every document of `docs/` is
+  available in English in `docs/en/`, the German originals moved to `docs/de/`, `CONTRIBUTING.md` and the READMEs of
+  `src-www/` and `src-shared/` are English. No change of behaviour.
 
 ### 0.7.21 (2026-10-07)
 

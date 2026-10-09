@@ -5,7 +5,7 @@
 .DESCRIPTION
     Der offizielle Checker (`npx @iobroker/repochecker <repo> --local`) liest Projekt-Einstellungen
     grundsätzlich über die GitHub-API; ohne veröffentlichtes Repository bricht er mit E0000 ab
-    (siehe docs/adapter-check.md). Dieses Skript prüft deshalb die Regeln, die sich rein lokal
+    (siehe docs/en/adapter-check.md). Dieses Skript prüft deshalb die Regeln, die sich rein lokal
     auswerten lassen, und nennt die Kennung der jeweiligen Checker-Regel:
 
       W0066/S0067  @types/node passt nicht zur Mindest-Node-Version aus package.json/engines

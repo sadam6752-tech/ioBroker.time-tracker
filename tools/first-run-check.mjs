@@ -1,5 +1,5 @@
 /**
- * Erststart-Prüfung gegen eine laufende Instanz — die Schritte aus `docs/erste-schritte.md` als Skript.
+ * Erststart-Prüfung gegen eine laufende Instanz — die Schritte aus `docs/en/getting-started.md` als Skript.
  *
  * Geprüft werden Anmeldung, Pflicht-Passwortwechsel, Anlegen eines Mitarbeiters samt Badge-PIN, Stempeln,
  * Tages-/Monatsauswertung, der Monatsbericht als XLS und PDF sowie eine Sicherung. Nicht enthalten sind die

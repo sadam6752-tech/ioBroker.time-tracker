@@ -23,8 +23,8 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 	await expect(page.getByText("Abwesenheitsarten", { exact: true })).toBeVisible();
 
 	// the type that uses up the vacation is marked, the others are not
-	await expect(card.getByText("F – Ferien (Urlaub)")).toBeVisible();
-	const sickRow = card.locator("li").filter({ hasText: "K – Krankheit" }).first();
+	await expect(card.getByText("F – Vacation (Urlaub)")).toBeVisible();
+	const sickRow = card.locator("li").filter({ hasText: "K – Sickness" }).first();
 	await expect(sickRow).toBeVisible();
 	await expect(sickRow.getByText("(Urlaub)")).toHaveCount(0);
 
@@ -33,7 +33,7 @@ test("shows the absence types and adds one in a dialog", async ({ page }) => {
 
 	// the row says whether the employees may pick the type: the label stands at the type that is switched on and
 	// nowhere else (it used to be the other way round)
-	await expect(card.locator("li").filter({ hasText: "F – Ferien (Urlaub)" }).first()).toContainText(
+	await expect(card.locator("li").filter({ hasText: "F – Vacation (Urlaub)" }).first()).toContainText(
 		"Für alle sichtbar",
 	);
 	await expect(sickRow).not.toContainText("Für alle sichtbar");

@@ -198,7 +198,7 @@
 		"bind": "127.0.0.1",
 		"dbPath": "",
 		"timezone": "Europe/Berlin",
-		"defaultLanguage": "de",
+		"defaultLanguage": "en",
 		"holidayCountry": "DE",
 		"sessionSecret": "",
 		"hmacSecret": "",

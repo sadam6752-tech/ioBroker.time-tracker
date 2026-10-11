@@ -20,8 +20,59 @@ export const ICAL_CONTENT_TYPE = "text/calendar; charset=utf-8";
 /** How long a calendar app may cache a feed (a hint — Google caches longer anyway). */
 export const CALENDAR_TTL = "PT2H";
 
-/** Name of the calendar that carries every employee (the feed of the instance and the written file). */
-export const COMPANY_CALENDAR_NAME = "Abwesenheiten (Firma)";
+/** Names of the calendars per language: the company calendar and the start of the name of a personal one. */
+const CALENDAR_NAMES: Record<string, { company: string; personal: string }> = {
+	en: { company: "Absences (Company)", personal: "Absences" },
+	de: { company: "Abwesenheiten (Firma)", personal: "Abwesenheiten" },
+	ru: { company: "Отсутствия (компания)", personal: "Отсутствия" },
+	pt: { company: "Ausências (empresa)", personal: "Ausências" },
+	nl: { company: "Afwezigheden (bedrijf)", personal: "Afwezigheden" },
+	fr: { company: "Absences (entreprise)", personal: "Absences" },
+	it: { company: "Assenze (azienda)", personal: "Assenze" },
+	es: { company: "Ausencias (empresa)", personal: "Ausencias" },
+	pl: { company: "Nieobecności (firma)", personal: "Nieobecności" },
+	uk: { company: "Відсутності (компанія)", personal: "Відсутності" },
+	"zh-cn": { company: "缺勤（公司）", personal: "缺勤" },
+};
+
+/**
+ * Picks the language of a calendar name from a language code of the instance or of a user.
+ *
+ * @param value - code such as `de`, `de-DE`, `zh-CN`; empty or unknown falls back to English
+ * @returns a language the names exist in
+ */
+function calendarLanguage(value: string | null | undefined): string {
+	const lower = (value ?? "").trim().toLowerCase();
+	if (lower in CALENDAR_NAMES) {
+		return lower;
+	}
+	const base = lower.split("-")[0];
+	if (base === "zh") {
+		return "zh-cn";
+	}
+	return base in CALENDAR_NAMES ? base : "en";
+}
+
+/**
+ * Name of the calendar that carries every employee (the feed of the instance and the written file).
+ *
+ * @param language - language of the instance (setting `default_language`)
+ * @returns the name, shown by the calendar app (`X-WR-CALNAME`)
+ */
+export function companyCalendarName(language?: string | null): string {
+	return CALENDAR_NAMES[calendarLanguage(language)].company;
+}
+
+/**
+ * Name of the personal calendar of an employee.
+ *
+ * @param language - language of the employee (`locale` of the account)
+ * @param displayName - shown name of the employee
+ * @returns the name, shown by the calendar app (`X-WR-CALNAME`)
+ */
+export function personalCalendarName(language: string | null | undefined, displayName: string): string {
+	return `${CALENDAR_NAMES[calendarLanguage(language)].personal} ${displayName}`;
+}
 
 /** Path prefix the API is mounted on (the web server uses the same default). */
 export const API_PREFIX = "/api";

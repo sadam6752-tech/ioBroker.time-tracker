@@ -897,7 +897,7 @@ describe("web api", () => {
 			expect(document).to.contain("DTEND;VALUE=DATE:19700306");
 			// a request that waits for its decision stays tentative
 			expect(document).to.contain("STATUS:TENTATIVE");
-			expect(document).to.contain("SUMMARY:Ferien (F)");
+			expect(document).to.contain("SUMMARY:Vacation (F)");
 
 			// a token nobody owns opens nothing
 			expect((await send("GET", "/calendar.ics", { query: { token: "nope" } })).status).to.equal(401);
@@ -925,10 +925,10 @@ describe("web api", () => {
 			const feed = await send("GET", "/calendar.ics", { query: { token: "company-token" } });
 			expect(feed.status).to.equal(200);
 			const document = feed.body.toString();
-			expect(document).to.contain("X-WR-CALNAME:Abwesenheiten (Firma)");
+			expect(document).to.contain("X-WR-CALNAME:Absences (Company)");
 			// both employees are in one document and the company calendar says who is away
-			expect(document).to.contain("SUMMARY:Anna: Ferien (F)");
-			expect(document).to.contain("SUMMARY:Admin: Weiterbildung (W)");
+			expect(document).to.contain("SUMMARY:Anna: Vacation (F)");
+			expect(document).to.contain("SUMMARY:Admin: Further training (W)");
 			expect((document.match(/BEGIN:VEVENT/g) ?? []).length).to.equal(2);
 
 			// the personal link of an employee keeps showing only that employee
@@ -936,8 +936,13 @@ describe("web api", () => {
 				await send("POST", "/calendar/token", { body: {}, headers: headers(annaToken, annaCsrf) }),
 			).token;
 			const personal = (await send("GET", "/calendar.ics", { query: { token: own } })).body.toString();
-			expect(personal).to.contain("SUMMARY:Ferien (F)");
-			expect(personal).to.not.contain("Weiterbildung");
+			expect(personal).to.contain("SUMMARY:Vacation (F)");
+			expect(personal).to.not.contain("Further training");
+			// the calendars are named in the language of their owner: the employee (locale de-DE) and the instance
+			expect(personal).to.contain("X-WR-CALNAME:Abwesenheiten Anna");
+			settings.set("default_language", "fr", adminId);
+			const french = (await send("GET", "/calendar.ics", { query: { token: "company-token" } })).body.toString();
+			expect(french).to.contain("X-WR-CALNAME:Absences (entreprise)");
 
 			// a replaced token makes the old link useless at once
 			settings.set("calendar_token", "company-token-2", adminId);

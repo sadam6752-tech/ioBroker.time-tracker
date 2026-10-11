@@ -63,18 +63,18 @@ describe("absences repository", () => {
 			expect(types.find(type => type.code === "K")?.isActive).to.equal(false);
 			expect(types.find(type => type.code === "F")?.isActive).to.equal(true);
 			const vacation = types.find(type => type.code === "F");
-			expect(vacation?.name).to.equal("Ferien");
+			expect(vacation?.name).to.equal("Vacation");
 			expect(vacation?.paid).to.equal(true);
 			expect(vacation?.factor).to.equal(100);
 			expect(vacation?.reduceVacation).to.equal(true);
 			expect(vacation?.userId).to.equal(null);
-			// "Weiterbildung" is credited with 50 %
+			// "Further training" is credited with 50 %
 			expect(types.find(type => type.code === "W")?.factor).to.equal(50);
 		});
 
 		it("resolves types by code and id and prefers user specific rows", () => {
 			expect(repo.findType("F")?.code).to.equal("F");
-			expect(repo.findType("F", annaId)?.name).to.equal("Ferien");
+			expect(repo.findType("F", annaId)?.name).to.equal("Vacation");
 			expect(repo.findType(999)).to.equal(null);
 			expect(repo.findType("nope")).to.equal(null);
 
@@ -86,7 +86,7 @@ describe("absences repository", () => {
 				"INSERT INTO absence_types (user_id, code, name, paid, factor, reduce_vacation, is_active) VALUES (?, 'F', 'Urlaub', 1, 100, 1, 1)",
 			).run(annaId);
 			expect(repo.findType("F", annaId)?.name).to.equal("Urlaub");
-			expect(repo.findType("F")?.name).to.equal("Ferien");
+			expect(repo.findType("F")?.name).to.equal("Vacation");
 		});
 
 		it("hides inactive types unless asked for them", () => {
@@ -450,7 +450,7 @@ describe("absences repository", () => {
 
 			expect(absences).to.have.lengthOf(2);
 			const vacation = absences.find(absence => absence.typeCode === "F");
-			expect(vacation?.typeName).to.equal("Ferien");
+			expect(vacation?.typeName).to.equal("Vacation");
 			expect(vacation?.factor).to.equal(100);
 			expect(vacation?.reduceVacation).to.equal(true);
 			expect(vacation?.status).to.equal("taken");

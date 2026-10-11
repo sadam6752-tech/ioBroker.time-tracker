@@ -617,3 +617,27 @@ with further languages welcome: the developer documents under `docs/` had been G
 stay as they are, with the protocol of the acceptance as it was kept). `CONTRIBUTING.md` in the root is English, its German
 original is `docs/de/CONTRIBUTING.md`. The README stays English and names both folders in its table of documentation.
 Tools and tests that name a document point to the English file.
+
+## D20 — Everything a user sees is English or follows a language setting (11.10.2026)
+
+**Occasion:** The second review of PR #6702 (checklist V3.5) found four things: German texts that were still in the code,
+and four admin texts identical to English.
+
+**Decision:**
+
+1. **The seeded absence types are English** (`Vacation`, `Sickness`, `Accident`, `Military service`, `Internal`,
+   `Further training`, `External`). They are stored in the database and can be renamed in the administration; an existing
+   installation keeps the names it has (the seed never overwrites).
+2. **The calendar name** (`X-WR-CALNAME`) follows a language: the personal calendar the language of the employee (`locale` of
+   the account), the company calendar and the written file the language of the instance (`default_language`). The names exist
+   in all eleven languages (`src/lib/services/calendar.ts`), English is the fallback. The absence type names inside the
+   events come from the database, so they are as the administration named them.
+3. **The default language of a fresh instance is English** (`native.defaultLanguage`, setting `default_language`). An
+   existing instance keeps what it has configured.
+4. **`index.html` and the manifest are English** (`lang="en"`, title, description, app name); as soon as the app knows its
+   language, the tab title and the `lang` attribute follow it (`src-www/src/i18n/index.ts`).
+5. `Port` (de, fr, pl) and `General` (es) in `admin/i18n/` are translated, although they are valid words in those
+   languages: the checker compares values with the English text.
+
+**Proof:** `src/lib/services/calendar.test.ts` (names in all eleven languages, fallback, `zh`), the calendar feed tests in
+`src/lib/web/api.test.ts`, `src/lib/db/repositories/absences.test.ts` (seeded names), `test/e2e/absence-types.spec.ts`.

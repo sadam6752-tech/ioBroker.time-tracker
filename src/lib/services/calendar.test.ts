@@ -5,7 +5,9 @@ import {
 	absenceEvents,
 	absenceFeed,
 	calendarDocument,
+	companyCalendarName,
 	companyFeedUrl,
+	personalCalendarName,
 	dayAfter,
 	shiftDate,
 	type CalendarEmployee,
@@ -102,6 +104,29 @@ describe("calendar service", () => {
 		// a comma, a semicolon and a line break are escaped
 		expect(document).to.contain("DESCRIPTION:Zeile 1\\nZeile 2\\, mit Komma\\; und Semikolon");
 		expect(document).to.contain("DTSTAMP:20270115T080000Z");
+	});
+
+	it("names the calendars in the language of the instance or of the employee", () => {
+		// English is the base: an unknown or empty language falls back to it
+		expect(companyCalendarName()).to.equal("Absences (Company)");
+		expect(companyCalendarName("")).to.equal("Absences (Company)");
+		expect(companyCalendarName("xx")).to.equal("Absences (Company)");
+		expect(companyCalendarName("de")).to.equal("Abwesenheiten (Firma)");
+		// a locale of a user carries a region
+		expect(personalCalendarName("de-DE", "Anna")).to.equal("Abwesenheiten Anna");
+		expect(personalCalendarName("fr-CH", "Anna")).to.equal("Absences Anna");
+		expect(personalCalendarName(null, "Anna")).to.equal("Absences Anna");
+		// Chinese is shipped as `zh-cn`
+		expect(companyCalendarName("zh-CN")).to.equal("缺勤（公司）");
+		expect(companyCalendarName("zh")).to.equal("缺勤（公司）");
+		expect(personalCalendarName("zh-TW", "Anna")).to.equal("缺勤 Anna");
+	});
+
+	it("names every calendar in all eleven languages", () => {
+		for (const language of ["en", "de", "ru", "pt", "nl", "fr", "it", "es", "pl", "uk", "zh-cn"]) {
+			expect(companyCalendarName(language), language).to.have.length.greaterThan(3);
+			expect(personalCalendarName(language, "X"), language).to.have.length.greaterThan(3);
+		}
 	});
 
 	it("builds the subscription link of the company below the API prefix", () => {

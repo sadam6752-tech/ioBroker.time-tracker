@@ -19,7 +19,7 @@
 	"Login of the first administrator": "Login des ersten Administrators",
 	"Migration and backup": "Migration und Backup",
 	"only switch this on when a reverse proxy is in front of the adapter": "nur einschalten, wenn ein Reverse-Proxy vor dem Adapter steht",
-	"Port": "Port",
+	"Port": "Portnummer",
 	"Round quick punches to minutes (0 = off)": "Schnellstempel auf Minuten runden (0 = aus)",
 	"Security": "Sicherheit",
 	"Session lifetime in minutes": "Sitzungsdauer in Minuten",

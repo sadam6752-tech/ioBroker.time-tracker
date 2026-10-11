@@ -53,7 +53,8 @@ import type { BackupService } from "../services/backup";
 import {
 	absenceEvents,
 	calendarDocument,
-	COMPANY_CALENDAR_NAME,
+	companyCalendarName,
+	personalCalendarName,
 	ICAL_CONTENT_TYPE,
 	type CalendarEmployee,
 } from "../services/calendar";
@@ -1752,7 +1753,9 @@ export function createApi(deps: ApiDeps): Api {
 			const owners = user ? [user] : users.list();
 			const employees = new Map(owners.map(employee => [employee.id, calendarEmployee(employee)]));
 			const list = user ? absences.withTypesInRange(user.id, from, to) : absences.allInRange(from, to);
-			const name = user ? `Abwesenheiten ${user.displayName}` : COMPANY_CALENDAR_NAME;
+			const name = user
+				? personalCalendarName(user.locale, user.displayName)
+				: companyCalendarName(settings.get("default_language"));
 
 			return binary(
 				200,

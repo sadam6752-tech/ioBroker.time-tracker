@@ -93,4 +93,21 @@ void i18n.use(initReactI18next).init({
 	returnNull: false,
 });
 
+/**
+ * Keeps the language and the title of the page in step with the language of the app.
+ *
+ * `index.html` is English (the page is shown before the app runs); once a language is chosen, the tab title and the
+ * `lang` attribute follow it, so a browser or a screen reader does not take a German page for an English one.
+ */
+function syncDocument(): void {
+	if (typeof document === "undefined") {
+		return;
+	}
+	document.documentElement.lang = i18n.language;
+	document.title = i18n.t("app.title");
+}
+
+i18n.on("languageChanged", syncDocument);
+syncDocument();
+
 export default i18n;

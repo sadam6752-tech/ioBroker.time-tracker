@@ -52,7 +52,7 @@ import {
 	API_PREFIX,
 	calendarDocument,
 	companyFeedUrl,
-	COMPANY_CALENDAR_NAME,
+	companyCalendarName,
 } from "./lib/services/calendar";
 import { calendarFilePath, calendarMount, ensureCalendarFolder, writeCalendarFile } from "./lib/adapter/calendarFile";
 import {
@@ -800,7 +800,11 @@ class TimeTracker extends utils.Adapter {
 		// only that way is it a folder the file manager shows and a `web` instance hands out (D11) — a file written
 		// with `fs` stays a private file. The absolute path is what `calendar.feedFile` carries for the `ical` adapter.
 		const file = calendarFilePath(utils.getAbsoluteDefaultDataDir(), this.namespace);
-		const document = calendarDocument(COMPANY_CALENDAR_NAME, absenceEvents(list, employees, true), stamp);
+		const document = calendarDocument(
+			companyCalendarName(this.config.defaultLanguage),
+			absenceEvents(list, employees, true),
+			stamp,
+		);
 		await writeCalendarFile(this, this.namespace, document);
 
 		const token = services.settings.get("calendar_token");

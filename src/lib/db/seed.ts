@@ -71,7 +71,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
  *
  * “Visible for everybody” (`active`) says whether an employee may pick the type in the app. Sickness, accident and
  * military service start switched off: a company gets those notes on the same day and books them itself, while
- * vacation, further training and the like are requested by the employee.
+ * vacation, further training and the like are requested by the employee. The names are English: they are stored in
+ * the database and can be renamed in the administration; an existing installation keeps the names it has.
  */
 export const ABSENCE_TYPES: {
 	code: string;
@@ -81,13 +82,13 @@ export const ABSENCE_TYPES: {
 	active: boolean;
 	color: string;
 }[] = [
-	{ code: "F", name: "Ferien", factor: 100, reduceVacation: true, active: true, color: "#2e7d32" },
-	{ code: "K", name: "Krankheit", factor: 100, reduceVacation: false, active: false, color: "#c62828" },
-	{ code: "U", name: "Unfall", factor: 100, reduceVacation: false, active: false, color: "#ef6c00" },
-	{ code: "M", name: "Militär", factor: 100, reduceVacation: false, active: false, color: "#455a64" },
-	{ code: "I", name: "Intern", factor: 100, reduceVacation: false, active: true, color: "#1565c0" },
-	{ code: "W", name: "Weiterbildung", factor: 50, reduceVacation: false, active: true, color: "#6a1b9a" },
-	{ code: "E", name: "Extern", factor: 50, reduceVacation: false, active: true, color: "#795548" },
+	{ code: "F", name: "Vacation", factor: 100, reduceVacation: true, active: true, color: "#2e7d32" },
+	{ code: "K", name: "Sickness", factor: 100, reduceVacation: false, active: false, color: "#c62828" },
+	{ code: "U", name: "Accident", factor: 100, reduceVacation: false, active: false, color: "#ef6c00" },
+	{ code: "M", name: "Military service", factor: 100, reduceVacation: false, active: false, color: "#455a64" },
+	{ code: "I", name: "Internal", factor: 100, reduceVacation: false, active: true, color: "#1565c0" },
+	{ code: "W", name: "Further training", factor: 50, reduceVacation: false, active: true, color: "#6a1b9a" },
+	{ code: "E", name: "External", factor: 50, reduceVacation: false, active: true, color: "#795548" },
 ];
 
 /** Default instance settings (specification section 2.9.9); existing values are never overwritten. */
@@ -98,7 +99,7 @@ export const SETTING_DEFAULTS: Record<string, string> = {
 	absence_deduct_worktime: "0",
 	print_limit_days: "0",
 	holiday_country: "DE",
-	default_language: "de",
+	default_language: "en",
 	session_ttl_minutes: "720",
 	backup_retention_days: "30",
 	attendance_list_visible: "0",

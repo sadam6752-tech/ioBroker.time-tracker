@@ -12,7 +12,7 @@
 	"empty = the adapter generates one once and stores it next to the database, so sessions survive restarts": "vacío = el adaptador genera uno una vez y lo guarda junto a la base de datos, para que las sesiones sobrevivan a los reinicios",
 	"Enable kiosk terminal": "Habilitar terminal de quiosco",
 	"First start: the start password is in the ioBroker log": "Primer inicio: la contraseña inicial está en el registro de ioBroker",
-	"General": "General",
+	"General": "Generales",
 	"Holiday country": "País para los días festivos",
 	"Instance time zone": "Zona horaria de la instancia",
 	"Keep database backups for days": "Conservar las copias de seguridad de la base de datos durante días",

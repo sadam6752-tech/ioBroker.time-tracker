@@ -634,3 +634,17 @@ weitere Sprachen sind willkommen: die Entwicklerdokumente unter `docs/` waren bi
 `docs/de/` (sie bleiben, wie sie sind, samt dem Protokoll der Abnahme, wie es geführt wurde). Die `CONTRIBUTING.md` im
 Wurzelordner ist englisch, ihr deutsches Original ist `docs/de/CONTRIBUTING.md`. Das README bleibt englisch und nennt
 beide Ordner in seiner Dokumentationstabelle. Werkzeuge und Tests, die ein Dokument nennen, zeigen auf die englische Datei.
+
+## D20 — Alles, was ein Benutzer sieht, ist englisch oder folgt einer Spracheinstellung (11.10.2026)
+
+**Anlass:** Die zweite Prüfung des PR #6702 (Checkliste V3.5) fand vier Stellen mit deutschem Text im Code und vier Texte
+in `admin/i18n/`, die dem Englischen glichen.
+
+**Entscheidung:** (1) Die mitgelieferten **Abwesenheitsarten sind englisch** (`Vacation`, `Sickness`, `Accident`,
+`Military service`, `Internal`, `Further training`, `External`); sie stehen in der Datenbank und lassen sich in der
+Verwaltung umbenennen, eine bestehende Installation behält ihre Namen. (2) Der **Kalendername** (`X-WR-CALNAME`) folgt einer
+Sprache: der persönliche Kalender der Sprache des Mitarbeiters (`locale`), der Firmenkalender und die geschriebene Datei der
+Sprache der Instanz (`default_language`), in allen elf Sprachen, Englisch als Rückfall. (3) Die **Standardsprache einer
+frischen Instanz ist Englisch**; eine bestehende Instanz behält ihre Einstellung. (4) **`index.html` und das Manifest sind
+englisch**; sobald die App ihre Sprache kennt, folgen Tab-Titel und `lang`-Attribut. (5) `Port` (de, fr, pl) und `General`
+(es) in `admin/i18n/` sind übersetzt, weil der Checker die Werte mit dem Englischen vergleicht.

@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.18 (2026-10-02)
+
+- (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to
+  `docs/haftungsausschluss.md`, and a German name of a setting in the README is the English one now.
+- (Alex) chore: `@iobroker/testing` ^6.3.0 (checker warning W0037).
+
 ### 0.7.17 (2026-10-02)
 
 - (Alex) docs: the README carries a **disclaimer** (English and German) – free of charge and without warranty, no

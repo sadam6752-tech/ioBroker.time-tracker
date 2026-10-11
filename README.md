@@ -515,6 +515,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.7.23 (2026-10-11)
+
 - (Alex) fix: everything a user sees is English or follows a language setting (finding of the review): the seeded
   absence types are English (`Vacation`, `Sickness`, …; an existing installation keeps its names), the name of the
   calendar in the feed and in the written file follows the language of the employee or of the instance (all 11
@@ -567,12 +569,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
   user agent are shortened in the audit trail and in the session, the audit rows of failed and locked logins are
   deleted after 90 days (every other audit row stays), and the failed attempts that are older than a lock lasts are
   forgotten.
-
-### 0.7.18 (2026-10-02)
-
-- (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to
-  `docs/haftungsausschluss.md`, and a German name of a setting in the README is the English one now.
-- (Alex) chore: `@iobroker/testing` ^6.3.0 (checker warning W0037).
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

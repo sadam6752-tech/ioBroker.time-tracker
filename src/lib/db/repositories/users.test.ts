@@ -59,7 +59,8 @@ describe("users repository", () => {
 
 			expect(user.id).to.be.greaterThan(0);
 			expect(user.login).to.equal("anna");
-			expect(user.locale).to.equal("de-DE");
+			// a new account speaks English unless the caller names the language of the instance
+			expect(user.locale).to.equal("en");
 			expect(user.timezone).to.equal("Europe/Berlin");
 			expect(user.isActive).to.equal(true);
 			expect(user.mustChangePw).to.equal(false);

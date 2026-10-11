@@ -636,8 +636,15 @@ and four admin texts identical to English.
    existing instance keeps what it has configured.
 4. **`index.html` and the manifest are English** (`lang="en"`, title, description, app name); as soon as the app knows its
    language, the tab title and the `lang` attribute follow it (`src-www/src/i18n/index.ts`).
-5. `Port` (de, fr, pl) and `General` (es) in `admin/i18n/` are translated, although they are valid words in those
+5. **A new account speaks the language of the instance.** The account that the administration creates gets the setting
+   `default_language` as its `locale` (before, the database default `de-DE` applied, so a new administrator saw German
+   everywhere: UI, reports, calendar names); the first administrator gets `native.defaultLanguage`, and without any
+   language an account is English. Existing accounts keep their language.
+6. `Port` (de, fr, pl) and `General` (es) in `admin/i18n/` are translated, although they are valid words in those
    languages: the checker compares values with the English text.
 
 **Proof:** `src/lib/services/calendar.test.ts` (names in all eleven languages, fallback, `zh`), the calendar feed tests in
-`src/lib/web/api.test.ts`, `src/lib/db/repositories/absences.test.ts` (seeded names), `test/e2e/absence-types.spec.ts`.
+`src/lib/web/api.test.ts` (feeds, language of a new account), `src/lib/db/repositories/absences.test.ts` (seeded names),
+`src/lib/services/firstAdministrator.test.ts` (language of the first administrator), `test/e2e/absence-types.spec.ts`.
+Looked at without a finding: log lines, state names and roles (11 languages), report labels (11 languages, in the language
+of the employee), public holiday names (English with a key), all texts of the web app (only through `i18next`).

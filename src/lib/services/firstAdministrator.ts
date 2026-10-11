@@ -62,6 +62,7 @@ export type FirstAdministratorOutcome =
  * @param input.login - configured login of the first administrator (empty = {@link DEFAULT_ADMIN_LOGIN})
  * @param input.password - configured start password (empty = a random one is generated)
  * @param input.timezone - time zone of the new account (empty = {@link DEFAULT_TIMEZONE})
+ * @param input.locale - language of the new account (the language of the instance, empty = English)
  * @param input.now - instant of the change, defaults to now
  * @returns what happened, so the caller can log it
  */
@@ -70,6 +71,7 @@ export function ensureFirstAdministrator(input: {
 	login?: string | null;
 	password?: string | null;
 	timezone?: string | null;
+	locale?: string | null;
 	now?: number;
 }): FirstAdministratorOutcome {
 	const login = (input.login ?? "").trim() || DEFAULT_ADMIN_LOGIN;
@@ -111,6 +113,7 @@ export function ensureFirstAdministrator(input: {
 			passwordHash: hashPassword(password),
 			mustChangePw: true,
 			timezone: (input.timezone ?? "").trim() || DEFAULT_TIMEZONE,
+			locale: (input.locale ?? "").trim() || undefined,
 			roleKeys: [ADMIN_ROLE],
 			now: input.now,
 		});

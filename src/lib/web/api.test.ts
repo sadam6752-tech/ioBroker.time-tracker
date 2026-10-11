@@ -938,8 +938,12 @@ describe("web api", () => {
 			const personal = (await send("GET", "/calendar.ics", { query: { token: own } })).body.toString();
 			expect(personal).to.contain("SUMMARY:Vacation (F)");
 			expect(personal).to.not.contain("Further training");
-			// the calendars are named in the language of their owner: the employee (locale de-DE) and the instance
-			expect(personal).to.contain("X-WR-CALNAME:Abwesenheiten Anna");
+			// the calendars are named in the language of their owner: the employee (English until it is changed) and
+			// the instance
+			expect(personal).to.contain("X-WR-CALNAME:Absences Anna");
+			users.update({ id: annaId, patch: { locale: "de-DE" }, actorId: adminId });
+			const german = (await send("GET", "/calendar.ics", { query: { token: own } })).body.toString();
+			expect(german).to.contain("X-WR-CALNAME:Abwesenheiten Anna");
 			settings.set("default_language", "fr", adminId);
 			const french = (await send("GET", "/calendar.ics", { query: { token: "company-token" } })).body.toString();
 			expect(french).to.contain("X-WR-CALNAME:Absences (entreprise)");
@@ -1486,6 +1490,27 @@ describe("web api", () => {
 			).user;
 			expect(bob).to.deep.include({ login: "bob", roles: ["employee"], timezone: "Europe/Berlin" });
 			expect(created.headers.location).to.equal(`/users/${bob.id}`);
+
+			// a new account speaks the language of the instance (English here), unless the request names one
+			expect(users.findByLogin("bob")?.locale).to.equal("en");
+			settings.set("default_language", "pl", adminId);
+			await send("POST", "/users", {
+				body: { login: "carla", displayName: "Carla", password: "Zeit-2026-klar", roleKeys: ["employee"] },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(users.findByLogin("carla")?.locale).to.equal("pl");
+			await send("POST", "/users", {
+				body: {
+					login: "dora",
+					displayName: "Dora",
+					password: "Zeit-2026-klar",
+					locale: "it",
+					roleKeys: ["employee"],
+				},
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(users.findByLogin("dora")?.locale).to.equal("it");
+			settings.set("default_language", "en", adminId);
 
 			// the same login is a conflict, a weak password a client error
 			expect(
@@ -2741,6 +2766,8 @@ describe("web api", () => {
 				query: { userId: String(annaId) },
 			});
 
+			// the statement is written in the language of the employee
+			users.update({ id: annaId, patch: { locale: "de-DE" }, actorId: adminId });
 			const response = await send("GET", "/reports/xls", {
 				headers: headers(annaToken),
 				query: { year: "1970", month: "1" },
@@ -2759,7 +2786,7 @@ describe("web api", () => {
 			await workbook.xlsx.load(response.body as unknown as ExcelJS.Buffer);
 			const sheet = workbook.getWorksheet("1970-01");
 			expect(sheet, "worksheet 1970-01").to.be.an("object");
-			// the seeded instance language is German, so the statement is German
+			// the language of the employee is German, so the statement is German
 			const cellText = (address: string): string => {
 				const value = sheet?.getCell(address).value;
 				return typeof value === "string" ? value : typeof value === "number" ? String(value) : "";

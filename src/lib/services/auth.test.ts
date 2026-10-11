@@ -121,7 +121,7 @@ describe("auth service", () => {
 				id: annaId,
 				login: "anna",
 				displayName: "Anna",
-				locale: "de-DE",
+				locale: "en",
 				timezone: "Europe/Berlin",
 				mustChangePw: false,
 			});

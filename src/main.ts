@@ -305,6 +305,7 @@ class TimeTracker extends utils.Adapter {
 			login: this.config.adminLogin,
 			password: this.config.adminPassword,
 			timezone: this.config.timezone,
+			locale: this.config.defaultLanguage,
 		});
 
 		switch (outcome.action) {

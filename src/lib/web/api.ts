@@ -2478,7 +2478,7 @@ export function createApi(deps: ApiDeps): Api {
 			displayName: requireString(body, "displayName"),
 			passwordHash: hashPassword(password),
 			email: optionalString(body, "email"),
-			locale: optionalString(body, "locale") ?? undefined,
+			locale: optionalString(body, "locale") ?? settings.get("default_language") ?? undefined,
 			timezone: optionalString(body, "timezone") ?? undefined,
 			mustChangePw: optionalBoolean(body, "mustChangePw") ?? undefined,
 			roleKeys: readRoleKeys(body) ?? undefined,

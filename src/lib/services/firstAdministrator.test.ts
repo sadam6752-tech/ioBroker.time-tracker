@@ -48,6 +48,15 @@ describe("first administrator", () => {
 		db.close();
 	});
 
+	it("gives the administrator the language of the instance, English when there is none", () => {
+		ensureFirstAdministrator({ users, login: "chef", password: configured, locale: " de " });
+		expect(users.findByLogin("chef")?.locale).to.equal("de");
+
+		db.exec("DELETE FROM user_roles; DELETE FROM users;");
+		ensureFirstAdministrator({ users, login: "chef", password: configured });
+		expect(users.findByLogin("chef")?.locale).to.equal("en");
+	});
+
 	it("creates the administrator with the configured start password", () => {
 		const outcome = ensureFirstAdministrator({
 			users,

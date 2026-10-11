@@ -98,7 +98,7 @@ const COLUMNS: {
 	{ key: "target", align: "right", sample: "00:00", grow: 0 },
 	{ key: "balance", align: "right", sample: "-00:00", grow: 0 },
 	{ key: "absence", align: "left", sample: "F 50 %", grow: 0 },
-	{ key: "note", align: "left", sample: "Feiertag, offen", grow: 0.65 },
+	{ key: "note", align: "left", sample: "Holiday, open", grow: 0.65 },
 ];
 
 /** A column with the position and the width the renderer measured. */

@@ -519,8 +519,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
   absence types are English (`Vacation`, `Sickness`, …; an existing installation keeps its names), the name of the
   calendar in the feed and in the written file follows the language of the employee or of the instance (all 11
   languages), a fresh instance starts with English as default language, the page and the manifest of the web app are
-  English (the tab title follows the chosen language), and four admin texts that equalled the English wording are
-  translated.
+  English (the tab title follows the chosen language), a new account speaks the language of the instance (before, the
+  database default was German), and four admin texts that equalled the English wording are translated.
 
 ### 0.7.22 (2026-10-09)
 

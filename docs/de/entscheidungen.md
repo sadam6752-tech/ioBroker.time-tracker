@@ -646,5 +646,7 @@ Verwaltung umbenennen, eine bestehende Installation behält ihre Namen. (2) Der 
 Sprache: der persönliche Kalender der Sprache des Mitarbeiters (`locale`), der Firmenkalender und die geschriebene Datei der
 Sprache der Instanz (`default_language`), in allen elf Sprachen, Englisch als Rückfall. (3) Die **Standardsprache einer
 frischen Instanz ist Englisch**; eine bestehende Instanz behält ihre Einstellung. (4) **`index.html` und das Manifest sind
-englisch**; sobald die App ihre Sprache kennt, folgen Tab-Titel und `lang`-Attribut. (5) `Port` (de, fr, pl) und `General`
-(es) in `admin/i18n/` sind übersetzt, weil der Checker die Werte mit dem Englischen vergleicht.
+englisch**; sobald die App ihre Sprache kennt, folgen Tab-Titel und `lang`-Attribut. (5) Ein **neues Konto spricht die Sprache der Instanz**: ein von der Verwaltung angelegtes Konto bekommt die Einstellung
+`default_language` als `locale` (vorher galt der Datenbankwert `de-DE`, ein neuer Administrator sah also überall Deutsch),
+der erste Administrator `native.defaultLanguage`; bestehende Konten behalten ihre Sprache. (6) `Port` (de, fr, pl) und
+`General` (es) in `admin/i18n/` sind übersetzt, weil der Checker die Werte mit dem Englischen vergleicht.

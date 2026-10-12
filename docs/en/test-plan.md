@@ -38,11 +38,8 @@ npm run build          # creates build/ (adapter)
 npm run dev-server     # starts the adapter in a throw-away js-controller
 ```
 
-Alternatively into an existing installation (after the publication on npm):
-
-```bash
-iobroker url https://github.com/sadam6752-tech/ioBroker.time-tracker
-```
+Alternatively into an existing installation: install the published package `iobroker.time-tracker` from npm as
+described in [`getting-started.md`](getting-started.md).
 
 After the start: open the instance, check **port** and **bind address**, set `report_font_path` only if PDF reports in
 `ru`, `uk` or `zh-cn` are needed (otherwise the report answers with `422 report_font_missing` — that is expected

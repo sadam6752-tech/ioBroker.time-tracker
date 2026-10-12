@@ -39,11 +39,8 @@ npm run build          # erzeugt build/ (Adapter)
 npm run dev-server     # startet den Adapter in einem Wegwerf-js-controller
 ```
 
-Alternativ in eine vorhandene Installation (nach Veröffentlichung auf npm):
-
-```bash
-iobroker url https://github.com/sadam6752-tech/ioBroker.time-tracker
-```
+Alternativ in eine vorhandene Installation: das veröffentlichte Paket `iobroker.time-tracker` von npm installieren, wie
+in [`erste-schritte.md`](erste-schritte.md) beschrieben.
 
 Nach dem Start: Instanz öffnen, **Port** und **Bind-Adresse** prüfen, `report_font_path` nur setzen, wenn
 PDF-Berichte in `ru`, `uk` oder `zh-cn` gebraucht werden (sonst antwortet der Bericht mit `422

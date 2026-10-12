@@ -515,6 +515,11 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: three object names that equalled the
+  English wording are translated (German `Information`/`Name`, French `Absences (JSON)`), seven unused translation keys
+  are removed from the 11 language files of the web app, and the documentation no longer shows a command that installs
+  from GitHub or from a folder.
+
 ### 0.7.23 (2026-10-11)
 
 - (Alex) fix: everything a user sees is English or follows a language setting (finding of the review): the seeded

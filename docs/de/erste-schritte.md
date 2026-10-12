@@ -24,19 +24,17 @@ Instanz `time-tracker.0` wird dabei automatisch angelegt.**
 **Erfolgskontrolle:** im Log steht `web interface found at …/www`, `API listening on http://127.0.0.1:8092/api`
 und `API routes: …`; der Zustand `time-tracker.0.info.connection` ist `true`.
 
-> **Nur für Entwickler:** eine Installation **aus GitHub oder aus dem geklonten Ordner** funktioniert nicht ohne
-> Bauen: `build/` und `www/` sind **nicht** im Repository (die Web-App wird vorgebaut), ohne sie meldet ioBroker
-> `cannot find start file!`. Wer das braucht, baut einmal — sonst einfach npm nehmen:
+> **Nur für Entwickler:** `build/` und `www/` liegen **nicht** im Repository (die Web-App wird vorgebaut), ein Klon lässt
+> sich also so nicht von ioBroker starten (`cannot find start file!`). Einmal bauen und den **Dev-Server** des Projekts
+> nutzen:
 >
 > ```bash
 > npm ci
 > npm run install:pwa    # Abhängigkeiten der Web-App
 > npm run build:pwa      # Web-App → www/
 > npm run build          # Adapter   → build/
-> iobroker install .     # Ordner installieren (Instanz wird automatisch angelegt)
+> npm run dev-server     # lokales ioBroker mit dem Adapter
 > ```
->
-> Für die Entwicklung ist der **Dev-Server** des Projekts bequemer: `npm run dev-server`.
 
 ## 3. Instanz einstellen
 

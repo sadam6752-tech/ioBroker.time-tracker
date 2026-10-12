@@ -17,26 +17,24 @@ to tell that the step worked. The complete acceptance test is in [`test-plan.md`
 The adapter is on **npm** — the normal way is the installation from the ioBroker admin or from npm. **The instance
 `time-tracker.0` is created automatically.**
 
-- **Admin:** tab _Adapters_ → the symbol **“Install from custom URL”** → `iobroker.time-tracker` → _Install_.
+- **Admin:** tab _Adapters_ → search for _time-tracker_; as long as the adapter is not in the list, use the symbol
+  **“Install from custom URL”**, tab **npm**, and enter the package name `iobroker.time-tracker`.
 - **Command line:** `iobroker install iobroker.time-tracker` (creates the instance as well — to create it separately:
   `iobroker add time-tracker`).
 
 **Check:** the log says `web interface found at …/www`, `API listening on http://127.0.0.1:8092/api` and
 `API routes: …`; the state `time-tracker.0.info.connection` is `true`.
 
-> **For developers only:** an installation **from GitHub or from the cloned folder** does not work without building:
-> `build/` and `www/` are **not** in the repository (the web app is pre-built), and without them ioBroker reports
-> `cannot find start file!`. If you need that, build once — otherwise just use npm:
+> **For developers only:** the repository does **not** contain `build/` and `www/` (the web app is pre-built), so a clone
+> cannot be started by ioBroker as it is (`cannot find start file!`). Build once and use the **dev server** of the project:
 >
 > ```bash
 > npm ci
 > npm run install:pwa    # dependencies of the web app
 > npm run build:pwa      # web app → www/
 > npm run build          # adapter → build/
-> iobroker install .     # install the folder (the instance is created automatically)
+> npm run dev-server     # local ioBroker with the adapter
 > ```
->
-> For development the **dev server** of the project is more convenient: `npm run dev-server`.
 
 ## 3. Configure the instance
 

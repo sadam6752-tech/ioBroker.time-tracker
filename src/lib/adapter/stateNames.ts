@@ -79,7 +79,7 @@ export const STATE_NAMES = {
 	/** Channel with the figures of the instance */
 	infoChannel: {
 		en: "Information",
-		de: "Information",
+		de: "Informationen",
 		ru: "Информация",
 		pt: "Informação",
 		nl: "Informatie",
@@ -121,7 +121,7 @@ export const STATE_NAMES = {
 	/** Shown name of the employee */
 	displayName: {
 		en: "Name",
-		de: "Name",
+		de: "Anzeigename",
 		ru: "Имя",
 		pt: "Nome",
 		nl: "Naam",
@@ -601,7 +601,7 @@ export const STATE_NAMES = {
 		ru: "Отсутствия (JSON)",
 		pt: "Ausências (JSON)",
 		nl: "Afwezigheden (JSON)",
-		fr: "Absences (JSON)",
+		fr: "Absences (format JSON)",
 		it: "Assenze (JSON)",
 		es: "Ausencias (JSON)",
 		pl: "Nieobecności (JSON)",

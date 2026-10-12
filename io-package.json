@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.23",
+		"version": "0.7.24",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.24": {
+				"en": "fix: no translated text equals the English wording (web app, report labels, object names, admin), with a unit test that keeps it so; documentation without install-from-GitHub hints; unused translation keys removed",
+				"de": "fix: Kein übersetzter Text gleicht dem englischen Wortlaut (Web-App, Berichtslabels, Objektnamen, Admin), ein Unit-Test hält das fest; Dokumentation ohne Hinweise auf eine Installation von GitHub; ungenutzte Übersetzungsschlüssel entfernt",
+				"ru": "fix: ни один переведённый текст не совпадает с английским (веб-приложение, подписи отчётов, имена объектов, админка), это закреплено модульным тестом; в документации нет указаний по установке с GitHub; удалены неиспользуемые ключи перевода",
+				"pt": "fix: nenhum texto traduzido é igual ao texto em inglês (aplicação web, etiquetas dos relatórios, nomes de objetos, administração), com um teste unitário que o garante; documentação sem indicações de instalação a partir do GitHub; chaves de tradução não utilizadas removidas",
+				"nl": "fix: geen enkele vertaalde tekst is gelijk aan de Engelse tekst (webapp, rapportlabels, objectnamen, beheer), met een unittest die dat bewaakt; documentatie zonder aanwijzingen voor installatie vanaf GitHub; ongebruikte vertaalsleutels verwijderd",
+				"fr": "fix : aucun texte traduit n'est identique au texte anglais (application web, libellés des rapports, noms d'objets, administration), avec un test unitaire qui le garantit ; documentation sans indication d'installation depuis GitHub ; clés de traduction inutilisées supprimées",
+				"it": "fix: nessun testo tradotto è uguale al testo inglese (app web, etichette dei report, nomi degli oggetti, amministrazione), con un test unitario che lo garantisce; documentazione senza indicazioni di installazione da GitHub; chiavi di traduzione inutilizzate rimosse",
+				"es": "fix: ningún texto traducido es igual al texto en inglés (aplicación web, etiquetas de los informes, nombres de objetos, administración), con una prueba unitaria que lo garantiza; documentación sin indicaciones de instalación desde GitHub; claves de traducción sin uso eliminadas",
+				"pl": "fix: żaden przetłumaczony tekst nie jest taki sam jak angielski (aplikacja web, etykiety raportów, nazwy obiektów, administracja), co pilnuje test jednostkowy; dokumentacja bez wskazówek instalacji z GitHuba; usunięto nieużywane klucze tłumaczeń",
+				"uk": "fix: жоден перекладений текст не збігається з англійським (вебзастосунок, підписи звітів, імена об'єктів, адміністрування), що закріплено модульним тестом; у документації немає вказівок зі встановлення з GitHub; видалено невикористані ключі перекладу",
+				"zh-cn": "fix: 所有语言的译文均不再与英文相同（网页应用、报告标签、对象名称、管理界面），并有单元测试保证；文档中不再包含从 GitHub 安装的提示；已删除未使用的翻译键"
+			},
 			"0.7.23": {
 				"en": "fix: everything a user sees is English or follows a language setting: English default absence types, calendar names in the language of the employee or the instance, English page and manifest of the web app, a new account speaks the language of the instance",
 				"de": "fix: Alles, was ein Benutzer sieht, ist englisch oder folgt einer Spracheinstellung: englische Standard-Abwesenheitsarten, Kalendernamen in der Sprache des Mitarbeiters oder der Instanz, englische Seite und englisches Manifest der Web-App, ein neues Konto spricht die Sprache der Instanz",
@@ -100,19 +113,6 @@
 				"pl": "fix: README jest znowu tylko po angielsku (niemieckie wyłączenie odpowiedzialności przeniesiono do docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
 				"uk": "fix: README знову лише англійською (німецьку відмову від відповідальності перенесено до docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
 				"zh-cn": "fix: README 再次仅使用英文（德文免责声明已移至 docs/haftungsausschluss.md）；chore: @iobroker/testing 6.3.0"
-			},
-			"0.7.17": {
-				"en": "docs: the README carries a disclaimer (English and German) and the web app shows it in short on the sign-in page and in the profile. change: the administration screen of the web app is split into one file per tab (no change of behaviour)",
-				"de": "docs: Die README enthält einen Haftungsausschluss (Englisch und Deutsch), die Web-App zeigt ihn in Kurzform auf der Anmeldeseite und im Profil. change: Die Verwaltungsseite der Web-App ist in eine Datei je Reiter aufgeteilt (keine Verhaltensänderung)",
-				"ru": "docs: в README добавлен отказ от ответственности (английский и немецкий), веб-приложение показывает его кратко на странице входа и в профиле. change: страница администрирования веб-приложения разделена на один файл на вкладку (поведение не изменилось)",
-				"pt": "docs: o README inclui um aviso legal (inglês e alemão) e a aplicação web mostra-o resumido na página de início de sessão e no perfil. change: o ecrã de administração da aplicação web foi dividido num ficheiro por separador (sem alteração de comportamento)",
-				"nl": "docs: de README bevat een disclaimer (Engels en Duits) en de webapp toont die in het kort op de aanmeldpagina en in het profiel. change: het beheerscherm van de webapp is opgesplitst in één bestand per tabblad (geen gedragswijziging)",
-				"fr": "docs : le README contient un avis de non-responsabilité (anglais et allemand) et l'application web l'affiche en version courte sur la page de connexion et dans le profil. change : l'écran d'administration de l'application web est divisé en un fichier par onglet (aucun changement de comportement)",
-				"it": "docs: il README contiene un'esclusione di responsabilità (inglese e tedesco) e l'app web la mostra in forma breve nella pagina di accesso e nel profilo. change: la schermata di amministrazione dell'app web è divisa in un file per scheda (nessuna modifica del comportamento)",
-				"es": "docs: el README incluye un aviso legal (inglés y alemán) y la aplicación web lo muestra en versión breve en la página de inicio de sesión y en el perfil. change: la pantalla de administración de la aplicación web se divide en un archivo por pestaña (sin cambios de comportamiento)",
-				"pl": "docs: README zawiera wyłączenie odpowiedzialności (angielski i niemiecki), a aplikacja web pokazuje je w skrócie na stronie logowania i w profilu. change: ekran administracji aplikacji web został podzielony na jeden plik na kartę (bez zmiany zachowania)",
-				"uk": "docs: README містить відмову від відповідальності (англійською та німецькою), а вебзастосунок показує її коротко на сторінці входу та в профілі. change: екран адміністрування вебзастосунку розділено на один файл на вкладку (поведінка не змінилась)",
-				"zh-cn": "docs: README 增加了免责声明（英文和德文），网页应用在登录页和个人资料中以简短形式显示。change: 网页应用的管理界面已拆分为每个标签页一个文件（行为无变化）"
 			}
 		},
 		"titleLang": {

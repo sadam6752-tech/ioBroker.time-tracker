@@ -8,6 +8,32 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.19 (2026-10-07)
+
+- (Alex) fix: **a fingerprint reader punches again.** A rule fired only when the _value_ of its state changed, so the
+  same person scanning twice in a row (in at 8:00, out at 17:00, nobody in between) was ignored the second time. A rule
+  has the option _Fire on every write_ now – on by default for _Value is the employee_ (existing rules of that mode
+  are switched on by the migration), off for a fixed value. The cooldown and the duplicate protection of 30 seconds stay
+  in place.
+- (Alex) new: the web app is delivered with security headers (`Content-Security-Policy` without inline scripts and
+  without framing, `X-Frame-Options`, `Permissions-Policy`), and with **Use HTTPS** also with
+  `Strict-Transport-Security`. The live stream refuses a browser handshake whose `Origin` is a page of another host
+  (the session cookie is no longer enough for a page of another service on the same machine).
+- (Alex) fix: a stranger who types the name of the administrator locks his **own address** for 15 minutes, not the
+  account (the account locks when many addresses fail together); an unknown login costs as much time as a real one, so
+  the time of the answer does not tell whether the name exists.
+- (Alex) fix: a rule can carry a **value map** (value → employee). The slot number of a reader (`lastMatch.id` of the
+  fingerprint adapter) was read as the id of an employee, so slot 3 punched employee 3 – with a map only the listed
+  values fire, everything else does nothing.
+- (Alex) fix: the transport no longer reads up to 64 MiB of body for every request before the sign-in is checked. The
+  general limit is 2 MiB again; the backup upload gets its bigger limit only for a signed-in caller who may restore, and
+  a body that announces more than the limit is refused without reading it.
+- (Alex) fix: what an anonymous caller can make the adapter keep is limited: login (128), password (1024), device
+  token, badge, PIN and scan token (512) and the note of a terminal punch (500) have a length limit, the login and the
+  user agent are shortened in the audit trail and in the session, the audit rows of failed and locked logins are
+  deleted after 90 days (every other audit row stays), and the failed attempts that are older than a lock lasts are
+  forgotten.
+
 ### 0.7.18 (2026-10-02)
 
 - (Alex) fix: the README is English only again (checker rule E6015): the German version of the disclaimer moved to

@@ -34,7 +34,7 @@ test("adds a public holiday and removes it again", async ({ page }) => {
 	await dateField.fill(`${year}-06-01`);
 	await expect(addButton).toBeDisabled();
 	await page.getByLabel("Bezeichnung").fill("Kindertag");
-	await page.getByLabel("Region (optional)").fill("BE");
+	await page.getByLabel("Region (freiwillig)").fill("BE");
 	await expect(addButton).toBeEnabled();
 	await addButton.click();
 

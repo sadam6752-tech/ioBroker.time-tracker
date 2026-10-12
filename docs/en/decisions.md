@@ -640,7 +640,11 @@ and four admin texts identical to English.
    `default_language` as its `locale` (before, the database default `de-DE` applied, so a new administrator saw German
    everywhere: UI, reports, calendar names); the first administrator gets `native.defaultLanguage`, and without any
    language an account is English. Existing accounts keep their language.
-6. `Port` (de, fr, pl) and `General` (es) in `admin/i18n/` are translated, although they are valid words in those
+6. **No translated text equals the English wording**, also not where the word is valid in the language (`Terminal`,
+   `Menu`, `PDF`, `Date`, …): the review checklist V3.5 reports every such value as untranslated. The web app, the report
+   labels, the object names and the admin texts were rewritten accordingly, and `src/lib/translations.test.ts` fails when a
+   language has a text that equals the English one (the allow list of `tools/check-i18n.ps1` is empty).
+7. `Port` (de, fr, pl) and `General` (es) in `admin/i18n/` are translated, although they are valid words in those
    languages: the checker compares values with the English text.
 
 **Proof:** `src/lib/services/calendar.test.ts` (names in all eleven languages, fallback, `zh`), the calendar feed tests in

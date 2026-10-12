@@ -114,7 +114,7 @@ describe("calendar service", () => {
 		expect(companyCalendarName("de")).to.equal("Abwesenheiten (Firma)");
 		// a locale of a user carries a region
 		expect(personalCalendarName("de-DE", "Anna")).to.equal("Abwesenheiten Anna");
-		expect(personalCalendarName("fr-CH", "Anna")).to.equal("Absences Anna");
+		expect(personalCalendarName("fr-CH", "Anna")).to.equal("Absences de Anna");
 		expect(personalCalendarName(null, "Anna")).to.equal("Absences Anna");
 		// Chinese is shipped as `zh-cn`
 		expect(companyCalendarName("zh-CN")).to.equal("缺勤（公司）");

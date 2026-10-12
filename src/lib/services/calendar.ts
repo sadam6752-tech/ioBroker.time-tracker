@@ -27,7 +27,7 @@ const CALENDAR_NAMES: Record<string, { company: string; personal: string }> = {
 	ru: { company: "Отсутствия (компания)", personal: "Отсутствия" },
 	pt: { company: "Ausências (empresa)", personal: "Ausências" },
 	nl: { company: "Afwezigheden (bedrijf)", personal: "Afwezigheden" },
-	fr: { company: "Absences (entreprise)", personal: "Absences" },
+	fr: { company: "Absences (entreprise)", personal: "Absences de" },
 	it: { company: "Assenze (azienda)", personal: "Assenze" },
 	es: { company: "Ausencias (empresa)", personal: "Ausencias" },
 	pl: { company: "Nieobecności (firma)", personal: "Nieobecności" },

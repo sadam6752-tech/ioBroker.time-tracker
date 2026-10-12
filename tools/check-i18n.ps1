@@ -97,19 +97,10 @@ $root = (Resolve-Path -LiteralPath $RepoPath).Path
 
 $baseLanguage = 'en'
 
-<# Texte, die in jeder Sprache gleich lauten dürfen: Marken, Abkürzungen, Symbole, Formatvorlagen und
-   Begriffe, die in der jeweiligen Sprache tatsächlich so heißen. Alles andere, was wie das englische
-   Original lautet, gilt als nicht übersetzt und wird als Befund gemeldet. #>
-$AllowedIdentical = @(
-    'Excel', 'PDF', 'PIN', '–', '{{date}} · {{time}}',
-    'Terminal', 'Terminals', 'Menu', 'Status', 'Login', 'Name', 'Label', 'Type', 'Badge',
-    'Badges (RFID/NFC)', 'Note', 'Date', 'Photo', 'Administration', 'Synchronisation',
-    'Absence', 'Absences', 'Password', 'Roles', 'open', 'Port', 'General', 'Region (optional)',
-    # Rollen heißen in mehreren Sprachen tatsächlich so
-    'Administrator', 'Manager',
-    # Lehnwörter, die in mehreren Sprachen so geschrieben werden (Seite „Info“, Version von App und Adapter)
-    'Info', 'App', 'Adapter'
-)
+<# Texte, die in jeder Sprache gleich lauten dürfen: keine. Die Prüfliste des ioBroker-Prüfers (V3.5) meldet jeden Wert,
+   der dem englischen Text gleicht, als nicht übersetzt — auch ein Wort, das in der Sprache gültig ist ("Port", "Menu").
+   Solche Texte werden anders geschrieben; `src/lib/translations.test.ts` prüft dasselbe in den Unit-Tests. #>
+$AllowedIdentical = @()
 
 $issues = [System.Collections.Generic.List[string]]::new()
 $notes  = [System.Collections.Generic.List[string]]::new()

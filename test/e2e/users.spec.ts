@@ -47,7 +47,7 @@ test("creates an employee with the chosen role", async ({ page, request }) => {
 
 	await page.getByRole("button", { name: "Mitarbeiter anlegen" }).click();
 	await page.getByLabel("Benutzername").fill("testkraft");
-	await page.getByLabel("Name", { exact: true }).fill("Testkraft Muster");
+	await page.getByLabel("Anzeigename", { exact: true }).fill("Testkraft Muster");
 	await page.getByLabel("Passwort").fill("Zeit-2026-klar");
 
 	// The click on a role has to be taken over into the field. The preset role is skipped on purpose — only a
@@ -104,7 +104,7 @@ test("warns before the own account loses its administration", async ({ page }) =
 	await ownRow.getByRole("button", { name: "Rollen" }).click();
 	const roles = page.getByRole("dialog");
 	await expect(roles.getByTestId("roles-warning")).toBeHidden();
-	await roles.getByRole("checkbox", { name: "Administrator" }).click();
+	await roles.getByRole("checkbox", { name: "Systemverwaltung" }).click();
 	await expect(roles.getByTestId("roles-warning")).toBeVisible();
 	await expect(roles.getByRole("button", { name: "Speichern", exact: true })).toBeDisabled();
 	await roles.getByRole("button", { name: "Abbrechen" }).click();
@@ -114,11 +114,11 @@ test("warns before the own account loses its administration", async ({ page }) =
 test("creates a terminal for a group of employees", async ({ page }) => {
 	await signIn(page);
 	await page.goto("/admin");
-	await page.getByRole("tab", { name: "Terminals" }).click();
+	await page.getByRole("tab", { name: "Stempelterminals" }).click();
 
 	// the dialog offers the employees of the installation: pick the first one
 	await page.getByRole("button", { name: "Terminal anlegen" }).click();
-	await page.getByRole("dialog").getByLabel("Name").fill("Werkstatt");
+	await page.getByRole("dialog").getByLabel("Name des Terminals").fill("Werkstatt");
 	await page.getByRole("dialog").getByLabel("Anna Muster").click();
 	await page.getByRole("dialog").getByRole("button", { name: "Terminal anlegen" }).click();
 

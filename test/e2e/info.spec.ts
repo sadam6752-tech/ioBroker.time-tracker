@@ -28,10 +28,10 @@ test("shows the versions of the app and of the adapter to the administrator", as
 
 	await page.getByTitle("Menü").click();
 	// the version stands at the end of the menu, small, next to the entry that opens the page
-	await expect(page.locator("#menu-version")).toContainText("Adapter 0.0.1-e2e");
-	await page.getByRole("menuitem", { name: "Info" }).click();
+	await expect(page.locator("#menu-version")).toContainText("Adapter (Server) 0.0.1-e2e");
+	await page.getByRole("menuitem", { name: "Informationen" }).click();
 
-	await expect(page.getByRole("heading", { name: "Info" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Informationen" })).toBeVisible();
 	await expect(page.locator("#info-adapter-version")).toHaveText("0.0.1-e2e");
 	// the app comes from the package of the build, so it differs from the server of the test: the page says so
 	await expect(page.locator("#info-app-version")).toHaveText(/^\d+\.\d+\.\d+/);
@@ -45,7 +45,7 @@ test("does not show the version or the page to an employee", async ({ page, requ
 
 	await page.getByTitle("Menü").click();
 	await expect(page.getByRole("menuitem", { name: "Profil" })).toBeVisible();
-	await expect(page.getByRole("menuitem", { name: "Info" })).toHaveCount(0);
+	await expect(page.getByRole("menuitem", { name: "Informationen" })).toHaveCount(0);
 	await expect(page.locator("#menu-version")).toHaveCount(0);
 
 	// the page itself refuses as well, and the server answers 403 to the account of an employee

@@ -515,10 +515,11 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
-- (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: three object names that equalled the
-  English wording are translated (German `Information`/`Name`, French `Absences (JSON)`), seven unused translation keys
-  are removed from the 11 language files of the web app, and the documentation no longer shows a command that installs
-  from GitHub or from a folder.
+- (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: **no text of any language equals the
+  English wording any more** (web app, report labels, object names, admin; also words that are valid in the language,
+  such as `Port`, `Menu`, `Terminal` – a unit test keeps it that way), seven unused translation keys are removed from the
+  11 language files of the web app, and the documentation no longer shows a command that installs from GitHub or from a
+  folder.
 
 ### 0.7.23 (2026-10-11)
 

@@ -540,6 +540,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.7.26 (2026-10-13)
+
 - (Alex) fix: the instance receives `sendTo` messages (`common.messagebox` was missing): **Test connection**
   of the external backup answers, and the messages for scripts (`punch`, …) reach the adapter.
 - (Alex) docs: the help of the field _Server fingerprint_ says what to do: copy the fingerprint from the answer of
@@ -573,14 +575,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 - (Alex) docs: the documentation is English now, as the review of the repository asks for: every document of `docs/` is
   available in English in `docs/en/`, the German originals moved to `docs/de/`, `CONTRIBUTING.md` and the READMEs of
   `src-www/` and `src-shared/` are English. No change of behaviour.
-
-### 0.7.21 (2026-10-07)
-
-- (Alex) new: the **menu of the web app** has an entry _Info_ for the administrator account, and the menu ends with the
-  version of the app and of the adapter in small letters. The page _Info_ names both versions and says when they
-  differ – the browser then still shows the app from its cache after an update – with a button that loads the app
-  anew (it removes the service worker and its caches). Only a signed-in account with the right to change the settings
-  sees the entry; the new route `GET /api/system/info` answers 403 to everybody else (`GET /api/version` stays open).
 
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).

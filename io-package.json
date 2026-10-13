@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.25",
+		"version": "0.7.26",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.26": {
+				"en": "fix: the instance receives messages (common.messagebox was missing), so Test connection of the external backup answers and the sendTo messages for scripts work; the help of the server fingerprint field says where to copy it from",
+				"de": "fix: Die Instanz empfängt Nachrichten (common.messagebox fehlte), dadurch antwortet Verbindung testen des externen Backups und die sendTo-Nachrichten für Skripte funktionieren; die Hilfe am Feld Fingerabdruck des Servers sagt, woher er kopiert wird",
+				"ru": "fix: экземпляр получает сообщения (не хватало common.messagebox), поэтому проверка соединения внешнего резервного копирования отвечает, а сообщения sendTo для скриптов работают; подсказка поля отпечатка сервера объясняет, откуда его скопировать",
+				"pt": "fix: a instância recebe mensagens (faltava common.messagebox), por isso o teste da ligação da cópia externa responde e as mensagens sendTo para scripts funcionam; a ajuda do campo da impressão digital do servidor indica de onde copiá-la",
+				"nl": "fix: de instantie ontvangt berichten (common.messagebox ontbrak), zodat Verbinding testen van de externe back-up antwoordt en de sendTo-berichten voor scripts werken; de hulp bij het veld vingerafdruk van de server zegt waar die vandaan te kopiëren",
+				"fr": "fix : l'instance reçoit les messages (common.messagebox manquait), le test de connexion de la sauvegarde externe répond et les messages sendTo pour les scripts fonctionnent ; l'aide du champ empreinte du serveur indique où la copier",
+				"it": "fix: l'istanza riceve i messaggi (mancava common.messagebox), quindi la verifica della connessione del backup esterno risponde e i messaggi sendTo per gli script funzionano; l'aiuto del campo impronta del server indica da dove copiarla",
+				"es": "fix: la instancia recibe mensajes (faltaba common.messagebox), así la prueba de conexión de la copia externa responde y los mensajes sendTo para scripts funcionan; la ayuda del campo huella del servidor indica de dónde copiarla",
+				"pl": "fix: instancja odbiera wiadomości (brakowało common.messagebox), więc test połączenia zewnętrznej kopii odpowiada, a wiadomości sendTo dla skryptów działają; pomoc pola odcisku serwera mówi, skąd go skopiować",
+				"uk": "fix: екземпляр отримує повідомлення (бракувало common.messagebox), тому перевірка з'єднання зовнішньої копії відповідає, а повідомлення sendTo для скриптів працюють; підказка поля відбитка сервера пояснює, звідки його скопіювати",
+				"zh-cn": "fix: 实例现在可以接收消息（缺少 common.messagebox），因此外部备份的“测试连接”会给出答复，脚本的 sendTo 消息也能工作；服务器指纹字段的帮助说明了从哪里复制指纹"
+			},
 			"0.7.25": {
 				"en": "new: every backup can be copied to an external server over SFTP (tab Migration and backup): encrypted password, fingerprint pinning, upload with size check, retention only for the adapter's own backup files, Test connection button, states info.lastRemoteBackup and info.remoteBackupError",
 				"de": "neu: Jedes Backup kann per SFTP auf einen externen Server kopiert werden (Reiter Migration und Backup): verschlüsseltes Passwort, Fingerabdruck-Prüfung, Upload mit Größenprüfung, Aufbewahrung nur für die eigenen Backup-Dateien des Adapters, Knopf Verbindung testen, Zustände info.lastRemoteBackup und info.remoteBackupError",
@@ -100,19 +113,6 @@
 				"pl": "change: akcje w administracji są listą z jednym wierszem na akcję (nazwa, wartość, pole aktywności, ostatnie uruchomienie); kliknięcie wiersza otwiera kartę",
 				"uk": "change: дії в адмініструванні тепер список з одним рядком на дію (назва, значення, прапорець «активно», останнє спрацьовування); клік по рядку відкриває картку",
 				"zh-cn": "change: 管理中的操作改为列表，每个操作一行（名称、值、启用复选框、最近触发）；点击该行即可展开卡片"
-			},
-			"0.7.19": {
-				"en": "fix: a fingerprint reader punches again (a rule that reads the employee from the value fires on every scan, a value map keeps a slot number from being taken for an employee id); security: body limit per route, length limits for input without a session, security headers, origin check of the live stream, login lock per address",
-				"de": "fix: Ein Fingerabdruck-Leser stempelt wieder (eine Regel, die den Mitarbeiter aus dem Wert liest, löst bei jedem Scan aus; eine Wertzuordnung verhindert, dass eine Speichernummer für eine Mitarbeiter-ID gehalten wird); Sicherheit: Body-Limit je Route, Längengrenzen für Eingaben ohne Sitzung, Schutzköpfe, Origin-Prüfung des Live-Streams, Anmeldesperre je Adresse",
-				"ru": "fix: считыватель отпечатков снова штемпелюет (правило, читающее сотрудника из значения, срабатывает при каждом сканировании; таблица значений не даёт принять номер ячейки за id сотрудника); безопасность: лимит тела запроса по маршруту, ограничения длины для ввода без сессии, защитные заголовки, проверка Origin у живого потока, блокировка входа по адресу",
-				"pt": "fix: um leitor de impressões digitais volta a picar (uma regra que lê o funcionário a partir do valor dispara em cada leitura; uma tabela de valores impede que um número de posição seja tomado por um id de funcionário); segurança: limite do corpo por rota, limites de tamanho para entradas sem sessão, cabeçalhos de segurança, verificação de origem do fluxo em direto, bloqueio de início de sessão por endereço",
-				"nl": "fix: een vingerafdruklezer stempelt weer (een regel die de medewerker uit de waarde leest, wordt bij elke scan uitgevoerd; een waardetabel voorkomt dat een slotnummer voor een medewerker-id wordt aangezien); beveiliging: body-limiet per route, lengtegrenzen voor invoer zonder sessie, beveiligingsheaders, Origin-controle van de live-stream, aanmeldblokkade per adres",
-				"fr": "fix : un lecteur d'empreintes pointe de nouveau (une règle qui lit l'employé dans la valeur se déclenche à chaque scan ; une table de valeurs évite qu'un numéro d'emplacement soit pris pour l'id d'un employé) ; sécurité : limite du corps par route, limites de longueur pour les entrées sans session, en-têtes de sécurité, contrôle de l'origine du flux en direct, blocage de connexion par adresse",
-				"it": "fix: un lettore di impronte timbra di nuovo (una regola che legge il dipendente dal valore scatta a ogni scansione; una tabella dei valori impedisce di scambiare un numero di slot per l'id di un dipendente); sicurezza: limite del corpo per route, limiti di lunghezza per input senza sessione, intestazioni di sicurezza, controllo dell'origine del flusso live, blocco dell'accesso per indirizzo",
-				"es": "fix: un lector de huellas vuelve a fichar (una regla que lee el empleado del valor se activa en cada escaneo; una tabla de valores evita que un número de posición se tome por el id de un empleado); seguridad: límite del cuerpo por ruta, límites de longitud para entradas sin sesión, cabeceras de seguridad, comprobación del origen del flujo en vivo, bloqueo de inicio de sesión por dirección",
-				"pl": "fix: czytnik linii papilarnych znowu odbija (reguła czytająca pracownika z wartości uruchamia się przy każdym skanie; tabela wartości zapobiega pomyleniu numeru slotu z id pracownika); bezpieczeństwo: limit treści żądania na trasę, limity długości dla danych bez sesji, nagłówki bezpieczeństwa, kontrola Origin strumienia na żywo, blokada logowania według adresu",
-				"uk": "fix: зчитувач відбитків знову штампує (правило, що читає співробітника зі значення, спрацьовує при кожному скануванні; таблиця значень не дає прийняти номер комірки за id співробітника); безпека: ліміт тіла запиту за маршрутом, обмеження довжини для вводу без сесії, захисні заголовки, перевірка Origin живого потоку, блокування входу за адресою",
-				"zh-cn": "fix: 指纹读取器再次可以打卡（从值中读取员工的规则在每次扫描时都会触发；值对照表可避免把槽位编号误当作员工 id）；安全：按路由限制请求体、对无会话输入限制长度、安全响应头、实时流的 Origin 检查、按地址锁定登录"
 			}
 		},
 		"titleLang": {

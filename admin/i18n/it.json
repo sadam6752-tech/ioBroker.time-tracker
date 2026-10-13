@@ -46,7 +46,7 @@
 	"Password of the user": "Password dell'utente",
 	"Directory on the server": "Cartella sul server",
 	"Server fingerprint (optional)": "Impronta del server (facoltativa)",
-	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… come la mostra il server. Vuoto: il server non viene verificato, il registro mostra la sua impronta.",
+	"Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.": "Consigliato: dopo “Verifica la connessione” o il primo backup, copiare l'impronta (SHA256:…) dalla risposta o dal log in questo campo. Così ci si fida solo di questo server. Vuoto: il server non viene verificato.",
 	"Copies to keep on the server": "Copie da conservare sul server",
 	"Test connection": "Verifica la connessione",
 	"e.g. /backups/time-tracker, created when it is missing": "ad es. /backups/time-tracker, creata se manca",

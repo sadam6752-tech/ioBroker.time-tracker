@@ -46,7 +46,7 @@
 	"Password of the user": "该用户的密码",
 	"Directory on the server": "服务器上的目录",
 	"Server fingerprint (optional)": "服务器指纹（可选）",
-	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… 与服务器显示的一致。留空：不验证服务器，日志会显示其指纹。",
+	"Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.": "建议：在“测试连接”或第一次备份之后，将回复或日志中的指纹（SHA256:…）复制到此字段。这样只信任该服务器。留空：不验证服务器。",
 	"Copies to keep on the server": "在服务器上保留的副本数",
 	"Test connection": "测试连接",
 	"e.g. /backups/time-tracker, created when it is missing": "例如 /backups/time-tracker，不存在时会创建",

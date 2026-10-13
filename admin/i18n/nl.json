@@ -46,7 +46,7 @@
 	"Password of the user": "Wachtwoord van de gebruiker",
 	"Directory on the server": "Map op de server",
 	"Server fingerprint (optional)": "Vingerafdruk van de server (optioneel)",
-	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… zoals de server die toont. Leeg: de server wordt niet gecontroleerd, het logboek toont de vingerafdruk.",
+	"Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.": "Aanbevolen: kopieer na “Verbinding testen” of de eerste back-up de vingerafdruk (SHA256:…) uit het antwoord of uit het logboek naar dit veld. Dan wordt alleen deze server vertrouwd. Leeg: de server wordt niet gecontroleerd.",
 	"Copies to keep on the server": "Kopieën bewaren op de server",
 	"Test connection": "Verbinding testen",
 	"e.g. /backups/time-tracker, created when it is missing": "bijv. /backups/time-tracker, wordt aangemaakt als die ontbreekt",

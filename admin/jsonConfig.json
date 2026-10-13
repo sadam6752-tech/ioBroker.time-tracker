@@ -398,7 +398,7 @@
 				"remoteHostKey": {
 					"type": "text",
 					"label": "Server fingerprint (optional)",
-					"help": "SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.",
+					"help": "Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.",
 					"disabled": "!data.remoteEnabled",
 					"xs": 12,
 					"sm": 12,

@@ -442,7 +442,7 @@ settings can therefore copy **every** backup to another computer (for example a 
 | Server address / SSH port    | the server, port 22 by default                                                                       |
 | User name / password         | the account on the server (the password is stored encrypted); use a user that may only write into the target directory |
 | Directory on the server      | created when missing, e.g. `/backups/time-tracker`                                                   |
-| Server fingerprint           | `SHA256:…` of the host key; empty = the server is not verified (the log and **Test connection** show its fingerprint) |
+| Server fingerprint           | `SHA256:…` of the host key — recommended: copy it from the answer of **Test connection** or from the log after the first backup; empty = the server is not verified |
 | Copies to keep on the server | the oldest copies beyond this number are deleted, `0` = keep all                                     |
 
 The copy runs after every backup, however it was made (app, `commands.backup`, `sendTo`, the daily schedule). The file is
@@ -542,6 +542,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 - (Alex) fix: the instance receives `sendTo` messages (`common.messagebox` was missing): **Test connection**
   of the external backup answers, and the messages for scripts (`punch`, …) reach the adapter.
+- (Alex) docs: the help of the field _Server fingerprint_ says what to do: copy the fingerprint from the answer of
+  **Test connection** or from the log after the first backup.
 
 ### 0.7.25 (2026-10-13)
 

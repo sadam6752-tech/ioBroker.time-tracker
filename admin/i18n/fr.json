@@ -46,7 +46,7 @@
 	"Password of the user": "Mot de passe de l'utilisateur",
 	"Directory on the server": "Dossier sur le serveur",
 	"Server fingerprint (optional)": "Empreinte du serveur (facultatif)",
-	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… telle que le serveur l'affiche. Vide : le serveur n'est pas vérifié, le journal montre son empreinte.",
+	"Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.": "Recommandé : après « Tester la connexion » ou la première sauvegarde, copiez l'empreinte (SHA256:…) de la réponse ou du journal dans ce champ. Seul ce serveur est alors approuvé. Vide : le serveur n'est pas vérifié.",
 	"Copies to keep on the server": "Copies à conserver sur le serveur",
 	"Test connection": "Tester la connexion",
 	"e.g. /backups/time-tracker, created when it is missing": "p. ex. /backups/time-tracker, créé s'il manque",

@@ -46,7 +46,7 @@
 	"Password of the user": "Пароль пользователя",
 	"Directory on the server": "Каталог на сервере",
 	"Server fingerprint (optional)": "Отпечаток сервера (необязательно)",
-	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… так, как его показывает сервер. Пусто: сервер не проверяется, отпечаток виден в журнале.",
+	"Recommended: after “Test connection” or the first backup, copy the fingerprint (SHA256:…) from the answer or from the log into this field. Then only this server is trusted. Empty: the server is not verified.": "Рекомендуется: после «Проверить соединение» или первого резервного копирования скопируйте отпечаток (SHA256:…) из ответа или из журнала в это поле. Тогда доверие будет только этому серверу. Пусто: сервер не проверяется.",
 	"Copies to keep on the server": "Копий хранить на сервере",
 	"Test connection": "Проверить соединение",
 	"e.g. /backups/time-tracker, created when it is missing": "например, /backups/time-tracker, создаётся при отсутствии",

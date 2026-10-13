@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.24",
+		"version": "0.7.25",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.25": {
+				"en": "new: every backup can be copied to an external server over SFTP (tab Migration and backup): encrypted password, fingerprint pinning, upload with size check, retention only for the adapter's own backup files, Test connection button, states info.lastRemoteBackup and info.remoteBackupError",
+				"de": "neu: Jedes Backup kann per SFTP auf einen externen Server kopiert werden (Reiter Migration und Backup): verschlüsseltes Passwort, Fingerabdruck-Prüfung, Upload mit Größenprüfung, Aufbewahrung nur für die eigenen Backup-Dateien des Adapters, Knopf Verbindung testen, Zustände info.lastRemoteBackup und info.remoteBackupError",
+				"ru": "new: каждую резервную копию можно копировать на внешний сервер по SFTP (вкладка «Миграция и резервное копирование»): зашифрованный пароль, проверка отпечатка, загрузка с проверкой размера, хранение только собственных файлов копий адаптера, кнопка проверки соединения, состояния info.lastRemoteBackup и info.remoteBackupError",
+				"pt": "new: cada cópia de segurança pode ser copiada para um servidor externo por SFTP (separador Migração e cópia de segurança): palavra-passe cifrada, verificação da impressão digital, envio com verificação do tamanho, retenção apenas dos ficheiros de cópia do próprio adaptador, botão de teste da ligação, estados info.lastRemoteBackup e info.remoteBackupError",
+				"nl": "new: elke back-up kan via SFTP naar een externe server worden gekopieerd (tabblad Migratie en back-up): versleuteld wachtwoord, controle van de vingerafdruk, upload met groottecontrole, bewaring alleen voor de eigen back-upbestanden van de adapter, knop Verbinding testen, statussen info.lastRemoteBackup en info.remoteBackupError",
+				"fr": "new : chaque sauvegarde peut être copiée vers un serveur externe via SFTP (onglet Migration et sauvegarde) : mot de passe chiffré, vérification de l'empreinte, envoi avec contrôle de la taille, conservation limitée aux fichiers de sauvegarde de l'adaptateur, bouton de test de la connexion, états info.lastRemoteBackup et info.remoteBackupError",
+				"it": "new: ogni backup può essere copiato su un server esterno tramite SFTP (scheda Migrazione e backup): password cifrata, verifica dell'impronta, caricamento con controllo delle dimensioni, conservazione solo dei file di backup dell'adattatore, pulsante di test della connessione, stati info.lastRemoteBackup e info.remoteBackupError",
+				"es": "new: cada copia de seguridad se puede copiar a un servidor externo por SFTP (pestaña Migración y copia de seguridad): contraseña cifrada, comprobación de la huella, subida con comprobación del tamaño, retención solo de los archivos de copia del propio adaptador, botón de prueba de la conexión, estados info.lastRemoteBackup e info.remoteBackupError",
+				"pl": "new: każdą kopię zapasową można skopiować na serwer zewnętrzny przez SFTP (karta Migracja i kopia zapasowa): zaszyfrowane hasło, sprawdzanie odcisku, wysyłanie z kontrolą rozmiaru, usuwanie tylko własnych plików kopii adaptera, przycisk testu połączenia, stany info.lastRemoteBackup i info.remoteBackupError",
+				"uk": "new: кожну резервну копію можна копіювати на зовнішній сервер через SFTP (вкладка «Міграція та резервне копіювання»): зашифрований пароль, перевірка відбитка, завантаження з перевіркою розміру, зберігання лише власних файлів копій адаптера, кнопка перевірки з'єднання, стани info.lastRemoteBackup та info.remoteBackupError",
+				"zh-cn": "new: 每个备份都可以通过 SFTP 复制到外部服务器（“迁移和备份”选项卡）：加密密码、指纹校验、带大小检查的上传、仅清理适配器自身的备份文件、测试连接按钮、状态 info.lastRemoteBackup 和 info.remoteBackupError"
+			},
 			"0.7.24": {
 				"en": "fix: no translated text equals the English wording (web app, report labels, object names, admin), with a unit test that keeps it so; documentation without install-from-GitHub hints; unused translation keys removed",
 				"de": "fix: Kein übersetzter Text gleicht dem englischen Wortlaut (Web-App, Berichtslabels, Objektnamen, Admin), ein Unit-Test hält das fest; Dokumentation ohne Hinweise auf eine Installation von GitHub; ungenutzte Übersetzungsschlüssel entfernt",
@@ -100,19 +113,6 @@
 				"pl": "fix: czytnik linii papilarnych znowu odbija (reguła czytająca pracownika z wartości uruchamia się przy każdym skanie; tabela wartości zapobiega pomyleniu numeru slotu z id pracownika); bezpieczeństwo: limit treści żądania na trasę, limity długości dla danych bez sesji, nagłówki bezpieczeństwa, kontrola Origin strumienia na żywo, blokada logowania według adresu",
 				"uk": "fix: зчитувач відбитків знову штампує (правило, що читає співробітника зі значення, спрацьовує при кожному скануванні; таблиця значень не дає прийняти номер комірки за id співробітника); безпека: ліміт тіла запиту за маршрутом, обмеження довжини для вводу без сесії, захисні заголовки, перевірка Origin живого потоку, блокування входу за адресою",
 				"zh-cn": "fix: 指纹读取器再次可以打卡（从值中读取员工的规则在每次扫描时都会触发；值对照表可避免把槽位编号误当作员工 id）；安全：按路由限制请求体、对无会话输入限制长度、安全响应头、实时流的 Origin 检查、按地址锁定登录"
-			},
-			"0.7.18": {
-				"en": "fix: the README is English only again (the German disclaimer moved to docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"de": "fix: Die README ist wieder rein englisch (der deutsche Haftungsausschluss steht jetzt in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"ru": "fix: README снова только на английском (немецкий отказ от ответственности перенесён в docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"pt": "fix: o README volta a estar só em inglês (o aviso legal em alemão passou para docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"nl": "fix: de README is weer alleen Engels (de Duitse disclaimer staat nu in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"fr": "fix : le README est de nouveau uniquement en anglais (l'avis de non-responsabilité allemand est passé dans docs/haftungsausschluss.md) ; chore : @iobroker/testing 6.3.0",
-				"it": "fix: il README è di nuovo solo in inglese (l'esclusione di responsabilità in tedesco è ora in docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"es": "fix: el README vuelve a estar solo en inglés (el aviso legal en alemán pasó a docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"pl": "fix: README jest znowu tylko po angielsku (niemieckie wyłączenie odpowiedzialności przeniesiono do docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"uk": "fix: README знову лише англійською (німецьку відмову від відповідальності перенесено до docs/haftungsausschluss.md); chore: @iobroker/testing 6.3.0",
-				"zh-cn": "fix: README 再次仅使用英文（德文免责声明已移至 docs/haftungsausschluss.md）；chore: @iobroker/testing 6.3.0"
 			}
 		},
 		"titleLang": {

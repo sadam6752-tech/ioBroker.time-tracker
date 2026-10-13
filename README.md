@@ -540,6 +540,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.7.25 (2026-10-13)
+
 - (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
   encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
   adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
@@ -575,11 +577,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
   anew (it removes the service worker and its caches). Only a signed-in account with the right to change the settings
   sees the entry; the new route `GET /api/system/info` answers 403 to everybody else (`GET /api/version` stays open).
 
-### 0.7.20 (2026-10-07)
-
-- (Alex) change: **Administration → Actions** is a list now: one line per action – label, value, an _Active_ box
-  and the time of its last fire – and a click on the line opens the card with all fields (a click on the box only
-  switches the rule). A long list of actions stays readable; on a phone the line wraps to three short rows.
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 

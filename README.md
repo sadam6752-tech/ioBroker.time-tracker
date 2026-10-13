@@ -540,6 +540,9 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) fix: the instance receives `sendTo` messages (`common.messagebox` was missing): **Test connection**
+  of the external backup answers, and the messages for scripts (`punch`, …) reach the adapter.
+
 ### 0.7.25 (2026-10-13)
 
 - (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored

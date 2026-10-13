@@ -168,6 +168,7 @@
 		"type": "storage",
 		"connectionType": "local",
 		"dataSource": "push",
+		"messagebox": true,
 		"compact": false,
 		"adminUI": {
 			"config": "json"

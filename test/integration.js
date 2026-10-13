@@ -169,6 +169,20 @@ tests.integration(path.join(__dirname, ".."), {
 				expect(Number(lastBackup.val)).to.be.greaterThan(0);
 			});
 
+			it("receives messages: the connection test of the admin page answers", async function () {
+				this.timeout(testTimeout);
+				// without `common.messagebox` the controller delivers no message at all and the button never answers
+				await harness.enableSendTo();
+				const answer = await new Promise((resolve, reject) => {
+					const timer = setTimeout(() => reject(new Error("no answer to the message")), reactionTimeout);
+					harness.sendTo("time-tracker.0", "testRemoteBackup", { remoteHost: "" }, response => {
+						clearTimeout(timer);
+						resolve(response);
+					});
+				});
+				expect(answer).to.have.property("error").that.is.a("string").and.not.empty;
+			});
+
 			it("starts the HTTP API on the configured port", async function () {
 				this.timeout(testTimeout);
 				expect(harness.hasLog(/API listening on http:\/\/127\.0\.0\.1:\d+/)).to.equal(true);

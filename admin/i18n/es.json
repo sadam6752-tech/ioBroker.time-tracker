@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "la aplicación responde por HTTPS con un certificado de la colección de certificados de ioBroker; sin un certificado válido la aplicación no está disponible",
 	"Public certificate": "Certificado público",
 	"Private key": "Clave privada",
-	"Certificate chain (optional)": "Cadena de certificados (opcional)"
+	"Certificate chain (optional)": "Cadena de certificados (opcional)",
+	"External backup": "Copia externa",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Cada copia de seguridad se copia además por SFTP a otro ordenador (por ejemplo, un NAS Synology) para sobrevivir a la pérdida de este equipo. Use un usuario que solo pueda escribir en la carpeta de destino, no un administrador. La copia no necesita ni montaje ni sudo.",
+	"Copy backups to an external server (SFTP)": "Copiar las copias de seguridad a un servidor externo (SFTP)",
+	"Server address": "Dirección del servidor",
+	"IP address or host name of the server": "Dirección IP o nombre de host del servidor",
+	"SSH port": "Puerto SSH",
+	"User name": "Nombre de usuario",
+	"Password of the user": "Contraseña del usuario",
+	"Directory on the server": "Carpeta en el servidor",
+	"Server fingerprint (optional)": "Huella del servidor (opcional)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… tal como la muestra el servidor. Vacío: el servidor no se verifica, el registro muestra su huella.",
+	"Copies to keep on the server": "Copias que conservar en el servidor",
+	"Test connection": "Probar la conexión",
+	"e.g. /backups/time-tracker, created when it is missing": "p. ej. /backups/time-tracker, se crea si falta",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Solo se eliminan los archivos con el nombre de una copia de seguridad de este adaptador, los más antiguos primero; 0 = conservar todas. Los demás archivos nunca se eliminan."
 }

@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "应用通过 HTTPS 响应，使用 ioBroker 证书集合中的证书；没有可用证书时应用将无法访问",
 	"Public certificate": "公共证书",
 	"Private key": "私钥",
-	"Certificate chain (optional)": "证书链（可选）"
+	"Certificate chain (optional)": "证书链（可选）",
+	"External backup": "外部备份",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "每份备份还会通过 SFTP 复制到另一台计算机（例如群晖 NAS），这样即使本主机丢失也能保留。请使用只能写入目标目录的用户，而不是管理员。复制既不需要挂载，也不需要 sudo。",
+	"Copy backups to an external server (SFTP)": "将备份复制到外部服务器（SFTP）",
+	"Server address": "服务器地址",
+	"IP address or host name of the server": "服务器的 IP 地址或主机名",
+	"SSH port": "SSH 端口",
+	"User name": "用户名",
+	"Password of the user": "该用户的密码",
+	"Directory on the server": "服务器上的目录",
+	"Server fingerprint (optional)": "服务器指纹（可选）",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… 与服务器显示的一致。留空：不验证服务器，日志会显示其指纹。",
+	"Copies to keep on the server": "在服务器上保留的副本数",
+	"Test connection": "测试连接",
+	"e.g. /backups/time-tracker, created when it is missing": "例如 /backups/time-tracker，不存在时会创建",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "只删除命名方式与本适配器备份相同的文件，最旧的优先；0 = 全部保留。其他文件绝不会被删除。"
 }

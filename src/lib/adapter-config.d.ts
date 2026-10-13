@@ -32,6 +32,22 @@ declare global {
 			absenceDeductWorktime: boolean;
 			/** Retention of database backups in days */
 			backupRetentionDays: number;
+			/** Copy every backup to an external SFTP server */
+			remoteEnabled?: boolean;
+			/** SFTP server: host name or IP address */
+			remoteHost?: string;
+			/** SFTP server: SSH port, 22 when empty */
+			remotePort?: number;
+			/** SFTP server: user name */
+			remoteUser?: string;
+			/** SFTP server: password (encrypted at rest) */
+			remotePassword?: string;
+			/** Directory on the server */
+			remoteDirectory?: string;
+			/** Fingerprint of the host key of the server (`SHA256:...`), empty = not verified */
+			remoteHostKey?: string;
+			/** Copies kept on the server, 0 = keep all */
+			remoteKeep?: number;
 			/** Login of the first administrator (created when the instance has none) */
 			adminLogin: string;
 			/** Start password of the first administrator (encrypted at rest, empty = generated) */

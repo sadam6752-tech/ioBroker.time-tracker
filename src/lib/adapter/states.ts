@@ -412,6 +412,8 @@ export async function createInfoStates(port: StatePort): Promise<void> {
 	);
 	await ensureObject(port, "info.lastError", stateObject(STATE_NAMES.lastError, "string", "text"));
 	await ensureObject(port, "info.lastBackup", stateObject(STATE_NAMES.lastBackup, "number", "value.time"));
+	await ensureObject(port, "info.lastRemoteBackup", stateObject(STATE_NAMES.lastRemoteBackup, "string", "text"));
+	await ensureObject(port, "info.remoteBackupError", stateObject(STATE_NAMES.remoteBackupError, "string", "text"));
 }
 
 /**

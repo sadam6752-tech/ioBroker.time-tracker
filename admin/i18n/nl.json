@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "de app antwoordt via HTTPS met een certificaat uit de certificaatverzameling van ioBroker; zonder werkend certificaat blijft de app onbereikbaar",
 	"Public certificate": "Openbaar certificaat",
 	"Private key": "Privésleutel",
-	"Certificate chain (optional)": "Certificaatketen (optioneel)"
+	"Certificate chain (optional)": "Certificaatketen (optioneel)",
+	"External backup": "Externe back-up",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Elke back-up wordt ook via SFTP naar een andere computer gekopieerd (bijvoorbeeld een Synology NAS), zodat hij het verlies van deze host overleeft. Gebruik een gebruiker die alleen in de doelmap mag schrijven, geen beheerder. Voor de kopie zijn geen mount en geen sudo nodig.",
+	"Copy backups to an external server (SFTP)": "Back-ups naar een externe server kopiëren (SFTP)",
+	"Server address": "Serveradres",
+	"IP address or host name of the server": "IP-adres of hostnaam van de server",
+	"SSH port": "SSH-poort",
+	"User name": "Gebruikersnaam",
+	"Password of the user": "Wachtwoord van de gebruiker",
+	"Directory on the server": "Map op de server",
+	"Server fingerprint (optional)": "Vingerafdruk van de server (optioneel)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… zoals de server die toont. Leeg: de server wordt niet gecontroleerd, het logboek toont de vingerafdruk.",
+	"Copies to keep on the server": "Kopieën bewaren op de server",
+	"Test connection": "Verbinding testen",
+	"e.g. /backups/time-tracker, created when it is missing": "bijv. /backups/time-tracker, wordt aangemaakt als die ontbreekt",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Alleen bestanden met de naam van een back-up van deze adapter worden verwijderd, de oudste eerst; 0 = alles bewaren. Andere bestanden worden nooit verwijderd."
 }

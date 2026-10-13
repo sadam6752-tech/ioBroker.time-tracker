@@ -147,6 +147,11 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
   Badge, ioBroker-Objekt).
 - Offline-Probe: WLAN trennen, stempeln, wieder verbinden — der Stempel wird nachgereicht (`Sync`-Ansicht).
 - Verwaltung → **Backups**: „create now" drücken; der Zustand `time-tracker.0.info.lastBackup` springt an.
+- Optional, empfohlen: die Backups auf einen anderen Rechner kopieren. In den Instanz-Einstellungen, Reiter _Migration und
+  Backup_, Abschnitt _Externes Backup_: **Backups auf einen externen Server kopieren (SFTP)** einschalten, Server, Benutzer,
+  Passwort und Verzeichnis eintragen, **Verbindung testen** drücken (zeigt den einzutragenden Fingerabdruck) und speichern.
+  Nach dem nächsten Backup nennt `time-tracker.0.info.lastRemoteBackup` die Kopie auf dem Server und
+  `info.remoteBackupError` ist leer.
 - Sicherung und Rücksicherung einmal durchspielen: Instanz stoppen, Sicherungsdatei **außerhalb** des
   Adapterverzeichnisses kopieren, Instanz starten.
 

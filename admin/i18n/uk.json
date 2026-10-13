@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "застосунок відповідає по HTTPS із сертифікатом зі сховища сертифікатів ioBroker; без робочого сертифіката застосунок залишається недоступним",
 	"Public certificate": "Публічний сертифікат",
 	"Private key": "Закритий ключ",
-	"Certificate chain (optional)": "Ланцюжок сертифікатів (необов'язково)"
+	"Certificate chain (optional)": "Ланцюжок сертифікатів (необов'язково)",
+	"External backup": "Зовнішня копія",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Кожна резервна копія додатково копіюється через SFTP на інший комп'ютер (наприклад, NAS Synology), щоб пережити втрату цього вузла. Використовуйте користувача, якому дозволено писати лише в цільову теку, а не адміністратора. Для копіювання не потрібні ні монтування, ні sudo.",
+	"Copy backups to an external server (SFTP)": "Копіювати резервні копії на зовнішній сервер (SFTP)",
+	"Server address": "Адреса сервера",
+	"IP address or host name of the server": "IP-адреса або ім'я хоста сервера",
+	"SSH port": "Порт SSH",
+	"User name": "Ім'я користувача",
+	"Password of the user": "Пароль користувача",
+	"Directory on the server": "Тека на сервері",
+	"Server fingerprint (optional)": "Відбиток сервера (необов'язково)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… так, як його показує сервер. Порожньо: сервер не перевіряється, відбиток видно в журналі.",
+	"Copies to keep on the server": "Копій зберігати на сервері",
+	"Test connection": "Перевірити з'єднання",
+	"e.g. /backups/time-tracker, created when it is missing": "наприклад, /backups/time-tracker, створюється за потреби",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Видаляються лише файли з іменем резервної копії цього адаптера, спочатку найстаріші; 0 = зберігати все. Інші файли ніколи не видаляються."
 }

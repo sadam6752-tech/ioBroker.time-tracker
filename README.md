@@ -212,6 +212,8 @@ Punches stay in the database; the adapter publishes aggregates and controls:
 | --------------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------- |
 | `time-tracker.0.info.connection`                                                              | boolean | adapter/service ready                                     |
 | `time-tracker.0.info.lastBackup`                                                              | number  | instant of the newest database backup                     |
+| `time-tracker.0.info.lastRemoteBackup`                                                        | string  | file of the last copy on the external server              |
+| `time-tracker.0.info.remoteBackupError`                                                       | string  | error of the last copy to the external server (empty = ok) |
 | `time-tracker.0.info.version` / `info.schemaVersion` / `info.dbSizeBytes` / `info.lastError`  | —       | instance information                                      |
 | `time-tracker.0.users.<id>.displayName`                                                       | string  | name of the employee                                      |
 | `time-tracker.0.users.<id>.hasOpenEntry`                                                      | boolean | employee is clocked in                                    |
@@ -428,6 +430,29 @@ A restore needs a closed database, so it is applied **while the adapter starts**
 database is kept next to it as `<database>.before-restore-<time>`. Backups older than the retention of the instance
 settings are removed automatically; the newest one always stays.
 
+### Copy to an external server (SFTP)
+
+A backup that lies next to the database is lost together with the host. The tab **Migration and backup** of the instance
+settings can therefore copy **every** backup to another computer (for example a Synology NAS) over SFTP — no mount and no
+`sudo` needed:
+
+| Setting                      | Meaning                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Copy backups to an external server (SFTP) | switches the copy on                                                                    |
+| Server address / SSH port    | the server, port 22 by default                                                                       |
+| User name / password         | the account on the server (the password is stored encrypted); use a user that may only write into the target directory |
+| Directory on the server      | created when missing, e.g. `/backups/time-tracker`                                                   |
+| Server fingerprint           | `SHA256:…` of the host key; empty = the server is not verified (the log and **Test connection** show its fingerprint) |
+| Copies to keep on the server | the oldest copies beyond this number are deleted, `0` = keep all                                     |
+
+The copy runs after every backup, however it was made (app, `commands.backup`, `sendTo`, the daily schedule). The file is
+uploaded under a temporary name, its size is checked and only then renamed, so a half file never looks like a backup.
+Only files named like a backup of this adapter (`time-tracker-<time>.sqlite`) are ever deleted on the server, and the
+leftovers of an interrupted upload (`….sqlite.part`); everything else in the directory stays. A failed copy never
+affects the local backup: it is logged, entered in the audit log and shown in `info.remoteBackupError`; the last good
+copy is in `info.lastRemoteBackup`. **Test connection** tries the values of the form without saving them (an empty password
+field uses the saved password, but only for the same server, user and port) and shows the fingerprint to enter.
+
 ## HTTPS and reverse proxy
 
 The app on a phone needs **HTTPS** — a service worker only runs on a secure origin. There are two ways.
@@ -514,6 +539,10 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 ## Changelog
 
 ### **WORK IN PROGRESS**
+
+- (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
+  encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
+  adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
 
 ### 0.7.24 (2026-10-12)
 

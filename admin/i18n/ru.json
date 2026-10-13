@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "приложение отвечает по HTTPS с сертификатом из хранилища сертификатов ioBroker; без работающего сертификата приложение остаётся недоступным",
 	"Public certificate": "Публичный сертификат",
 	"Private key": "Закрытый ключ",
-	"Certificate chain (optional)": "Цепочка сертификатов (необязательно)"
+	"Certificate chain (optional)": "Цепочка сертификатов (необязательно)",
+	"External backup": "Внешняя копия",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Каждая резервная копия дополнительно копируется по SFTP на другой компьютер (например, на NAS Synology), чтобы пережить потерю этого узла. Используйте пользователя, которому разрешено писать только в целевой каталог, а не администратора. Для копирования не нужны ни монтирование, ни sudo.",
+	"Copy backups to an external server (SFTP)": "Копировать резервные копии на внешний сервер (SFTP)",
+	"Server address": "Адрес сервера",
+	"IP address or host name of the server": "IP-адрес или имя хоста сервера",
+	"SSH port": "Порт SSH",
+	"User name": "Имя пользователя",
+	"Password of the user": "Пароль пользователя",
+	"Directory on the server": "Каталог на сервере",
+	"Server fingerprint (optional)": "Отпечаток сервера (необязательно)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… так, как его показывает сервер. Пусто: сервер не проверяется, отпечаток виден в журнале.",
+	"Copies to keep on the server": "Копий хранить на сервере",
+	"Test connection": "Проверить соединение",
+	"e.g. /backups/time-tracker, created when it is missing": "например, /backups/time-tracker, создаётся при отсутствии",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Удаляются только файлы с именем резервной копии этого адаптера, сначала самые старые; 0 = хранить все. Другие файлы никогда не удаляются."
 }

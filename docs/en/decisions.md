@@ -652,3 +652,31 @@ and four admin texts identical to English.
 `src/lib/services/firstAdministrator.test.ts` (language of the first administrator), `test/e2e/absence-types.spec.ts`.
 Looked at without a finding: log lines, state names and roles (11 languages), report labels (11 languages, in the language
 of the employee), public holiday names (English with a key), all texts of the web app (only through `i18next`).
+
+## D21 — Every backup is copied to an external server over SFTP (13.10.2026)
+
+**Occasion:** A backup next to the database is lost with the host. The tab _Migration and backup_ of the instance settings
+had no way to get a copy off the machine. The sister adapter `e-invoices` solved this the day before; the same design is
+used here.
+
+**Decision:**
+
+1. **SFTP with `ssh2`** (pure JavaScript, no system tool, no mount, no `sudo`). The file is uploaded as `<name>.part`, its
+   size is compared and only then renamed, so a half file never looks like a backup (`src/lib/services/remoteBackup.ts`,
+   the real connection in `sftpSsh2.ts`).
+2. **One hook for every way to a backup.** `BackupDeps.onCreated` runs after each backup (app, `commands.backup`, `sendTo`,
+   daily schedule); a failing hook never turns a good local backup into an error. The adapter copies from there.
+3. **The host key can be pinned** (`SHA256:…`): a different fingerprint is refused before the password is sent. Empty means
+   not verified; the log and the test button show the fingerprint to enter.
+4. **Deleting on the server is narrow.** Only files named `time-tracker-<time>.sqlite` (the oldest beyond _Copies to keep_,
+   `0` = all) and `….sqlite.part` leftovers are deleted. Other names (also `time-tracker-prerestore-…`) are never touched.
+5. **A failed copy is visible and harmless**: it is logged, written to the audit log (`backup.remote_copy`,
+   `backup.remote_copy_failed`) and shown in `info.remoteBackupError`; `info.lastRemoteBackup` holds the last good file. The
+   copies run one after the other and have a time limit.
+6. **The password is `encryptedNative` and `protectedNative`.** The connection test uses the values of the unsaved form and
+   falls back to the saved password only for the same server, user and port, so the button cannot be used to send the saved
+   password to another server.
+
+**Proof:** `src/lib/services/remoteBackup.test.ts` (copy, size check, retention, leftovers, time limit, settings of the
+test), `src/lib/services/sftpSsh2.test.ts` (against a real SFTP server in the process, fingerprint), the hook test in
+`src/lib/services/backup.test.ts`.

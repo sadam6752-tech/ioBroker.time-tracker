@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "aplikacja odpowiada przez HTTPS z certyfikatem z kolekcji certyfikatów ioBroker; bez działającego certyfikatu aplikacja pozostaje niedostępna",
 	"Public certificate": "Certyfikat publiczny",
 	"Private key": "Klucz prywatny",
-	"Certificate chain (optional)": "Łańcuch certyfikatów (opcjonalnie)"
+	"Certificate chain (optional)": "Łańcuch certyfikatów (opcjonalnie)",
+	"External backup": "Zewnętrzna kopia",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Każda kopia zapasowa jest dodatkowo kopiowana przez SFTP na inny komputer (na przykład NAS Synology), aby przetrwała utratę tego hosta. Użyj użytkownika, który może zapisywać tylko w folderze docelowym, a nie administratora. Kopiowanie nie wymaga ani montowania, ani sudo.",
+	"Copy backups to an external server (SFTP)": "Kopiuj kopie zapasowe na serwer zewnętrzny (SFTP)",
+	"Server address": "Adres serwera",
+	"IP address or host name of the server": "Adres IP lub nazwa hosta serwera",
+	"SSH port": "Port SSH",
+	"User name": "Nazwa użytkownika",
+	"Password of the user": "Hasło użytkownika",
+	"Directory on the server": "Folder na serwerze",
+	"Server fingerprint (optional)": "Odcisk palca serwera (opcjonalnie)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… tak, jak pokazuje go serwer. Puste: serwer nie jest weryfikowany, dziennik pokazuje jego odcisk.",
+	"Copies to keep on the server": "Kopie do zachowania na serwerze",
+	"Test connection": "Testuj połączenie",
+	"e.g. /backups/time-tracker, created when it is missing": "np. /backups/time-tracker, tworzony w razie braku",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Usuwane są tylko pliki o nazwie kopii zapasowej tego adaptera, od najstarszych; 0 = zachowaj wszystkie. Inne pliki nigdy nie są usuwane."
 }

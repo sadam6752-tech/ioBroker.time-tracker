@@ -144,6 +144,10 @@ at once — the PWA shows a screen of its own for it. After that:
   badge, ioBroker object).
 - Offline sample: disconnect the Wi-Fi, punch, reconnect — the punch is delivered later (view _Sync_).
 - Administration → **Backups**: press “create now”; the state `time-tracker.0.info.lastBackup` jumps.
+- Optional, recommended: copy the backups to another computer. In the instance settings, tab _Migration and backup_,
+  section _External backup_: switch **Copy backups to an external server (SFTP)** on, enter server, user, password and
+  directory, press **Test connection** (it shows the fingerprint to enter) and save. After the next backup
+  `time-tracker.0.info.lastRemoteBackup` names the copy on the server and `info.remoteBackupError` is empty.
 - Play through backup and restore once: stop the instance, copy the backup file **outside** the adapter directory, start
   the instance.
 

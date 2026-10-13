@@ -186,12 +186,14 @@
 	"protectedNative": [
 		"sessionSecret",
 		"hmacSecret",
-		"adminPassword"
+		"adminPassword",
+		"remotePassword"
 	],
 	"encryptedNative": [
 		"sessionSecret",
 		"hmacSecret",
-		"adminPassword"
+		"adminPassword",
+		"remotePassword"
 	],
 	"native": {
 		"port": 8092,
@@ -208,6 +210,14 @@
 		"absenceCalcUntilToday": true,
 		"absenceDeductWorktime": false,
 		"backupRetentionDays": 30,
+		"remoteEnabled": false,
+		"remoteHost": "",
+		"remotePort": 22,
+		"remoteUser": "",
+		"remotePassword": "",
+		"remoteDirectory": "/backups/time-tracker",
+		"remoteHostKey": "",
+		"remoteKeep": 0,
 		"adminLogin": "admin",
 		"adminPassword": "",
 		"kioskEnabled": false,

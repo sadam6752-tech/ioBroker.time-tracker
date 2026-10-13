@@ -412,6 +412,34 @@ export const STATE_NAMES = {
 		uk: "Остання резервна копія",
 		"zh-cn": "最后的备份",
 	},
+	/** Path of the last copy on the external server */
+	lastRemoteBackup: {
+		en: "Last copy on the external server",
+		de: "Letzte Kopie auf dem externen Server",
+		ru: "Последняя копия на внешнем сервере",
+		pt: "Última cópia no servidor externo",
+		nl: "Laatste kopie op de externe server",
+		fr: "Dernière copie sur le serveur externe",
+		it: "Ultima copia sul server esterno",
+		es: "Última copia en el servidor externo",
+		pl: "Ostatnia kopia na serwerze zewnętrznym",
+		uk: "Остання копія на зовнішньому сервері",
+		"zh-cn": "外部服务器上的最后一份副本",
+	},
+	/** Error of the last copy to the external server, empty when it worked */
+	remoteBackupError: {
+		en: "Error of the last copy to the external server (empty = fine)",
+		de: "Fehler der letzten Kopie auf den externen Server (leer = in Ordnung)",
+		ru: "Ошибка последнего копирования на внешний сервер (пусто = всё в порядке)",
+		pt: "Erro da última cópia para o servidor externo (vazio = tudo certo)",
+		nl: "Fout van de laatste kopie naar de externe server (leeg = in orde)",
+		fr: "Erreur de la dernière copie vers le serveur externe (vide = tout va bien)",
+		it: "Errore dell'ultima copia sul server esterno (vuoto = tutto a posto)",
+		es: "Error de la última copia al servidor externo (vacío = correcto)",
+		pl: "Błąd ostatniej kopii na serwer zewnętrzny (puste = w porządku)",
+		uk: "Помилка останнього копіювання на зовнішній сервер (порожньо = усе гаразд)",
+		"zh-cn": "上次复制到外部服务器的错误（空 = 正常）",
+	},
 	/** Number of employees that are present */
 	companyPresentCount: {
 		en: "Present employees",

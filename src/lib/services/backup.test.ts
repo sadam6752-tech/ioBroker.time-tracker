@@ -88,6 +88,23 @@ describe("backup service", () => {
 		expect(actions).to.include("backup.create");
 	});
 
+	it("tells the hook about every backup and survives a hook that throws", () => {
+		const seen: string[] = [];
+		const hooked = createBackupService({
+			db,
+			dir: backupDir,
+			now: () => clock,
+			onCreated: info => {
+				seen.push(info.name);
+				throw new Error("hook failed");
+			},
+		});
+		const created = hooked.create({ reason: "test" });
+		expect(seen).to.deep.equal([created.backup.name]);
+		// the local backup exists although the hook failed
+		expect(fs.existsSync(created.backup.file)).to.equal(true);
+	});
+
 	it("keeps the newest backup and removes the expired ones", () => {
 		const older = service.create().backup;
 		clock += 10 * 86_400;

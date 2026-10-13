@@ -303,6 +303,138 @@
 					"md": 4,
 					"lg": 2,
 					"xl": 2
+				},
+				"_remoteHeader": {
+					"type": "header",
+					"text": "External backup",
+					"size": 4,
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
+				"_remoteHint": {
+					"type": "staticText",
+					"text": "Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
+				"remoteEnabled": {
+					"type": "checkbox",
+					"label": "Copy backups to an external server (SFTP)",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 12,
+					"lg": 12,
+					"xl": 12
+				},
+				"remoteHost": {
+					"type": "text",
+					"label": "Server address",
+					"help": "IP address or host name of the server",
+					"disabled": "!data.remoteEnabled",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"remotePort": {
+					"type": "number",
+					"label": "SSH port",
+					"min": 1,
+					"max": 65535,
+					"default": 22,
+					"disabled": "!data.remoteEnabled",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"remoteUser": {
+					"type": "text",
+					"label": "User name",
+					"disabled": "!data.remoteEnabled",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"remotePassword": {
+					"type": "password",
+					"label": "Password of the user",
+					"repeat": false,
+					"visible": true,
+					"disabled": "!data.remoteEnabled",
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"remoteDirectory": {
+					"type": "text",
+					"label": "Directory on the server",
+					"help": "e.g. /backups/time-tracker, created when it is missing",
+					"disabled": "!data.remoteEnabled",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"remoteHostKey": {
+					"type": "text",
+					"label": "Server fingerprint (optional)",
+					"help": "SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.",
+					"disabled": "!data.remoteEnabled",
+					"xs": 12,
+					"sm": 12,
+					"md": 8,
+					"lg": 8,
+					"xl": 8
+				},
+				"remoteKeep": {
+					"type": "number",
+					"label": "Copies to keep on the server",
+					"help": "Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.",
+					"min": 0,
+					"max": 1000,
+					"default": 0,
+					"disabled": "!data.remoteEnabled",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
+				},
+				"_remoteTest": {
+					"type": "sendTo",
+					"command": "testRemoteBackup",
+					"label": "Test connection",
+					"variant": "outlined",
+					"useNative": true,
+					"showProcess": true,
+					"disabled": "!data.remoteEnabled",
+					"newLine": true,
+					"xs": 12,
+					"sm": 12,
+					"md": 4,
+					"lg": 4,
+					"xl": 4
 				}
 			}
 		}

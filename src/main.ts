@@ -47,6 +47,16 @@ import {
 } from "./lib/services/backup";
 import { createSyncService, type SyncService } from "./lib/services/sync";
 import {
+	copyBackupToRemote,
+	settingsForConnectionTest,
+	testRemoteConnection,
+	type RemoteBackupSettings,
+	type RemoteCopyResult,
+	type Timers,
+} from "./lib/services/remoteBackup";
+import { connectSsh2 } from "./lib/services/sftpSsh2";
+import { writeAuditLog } from "./lib/db/repositories/audit";
+import {
 	absenceEvents,
 	absenceFeed,
 	API_PREFIX,
@@ -137,6 +147,15 @@ class TimeTracker extends utils.Adapter {
 
 	/** A backup run that is still running; the hourly check must not start a second one. */
 	private backupRunning = false;
+
+	/** Copies to the external server run one after the other, so two backups never write at the same time. */
+	private remoteQueue: Promise<unknown> = Promise.resolve();
+
+	/** The adapter's own timers, handed to the copy so a pending timeout ends with the adapter. */
+	private readonly remoteTimers: Timers = {
+		start: (callback, ms) => this.setTimeout(callback, ms),
+		stop: handle => this.clearTimeout(handle as ioBroker.Timeout | undefined),
+	};
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -496,6 +515,10 @@ class TimeTracker extends utils.Adapter {
 			db,
 			dir: path.join(path.dirname(this.databaseFile()), "backups"),
 			retentionDays: Math.max(0, Number(this.config.backupRetentionDays ?? 30) || 0),
+			// every way to a backup (app, command, message, schedule) ends here, so the copy needs no other hook
+			onCreated: info => {
+				void this.copyToRemote(info);
+			},
 		});
 		const api = createApi({
 			db,
@@ -634,6 +657,10 @@ class TimeTracker extends utils.Adapter {
 		try {
 			await createCommandStates(this);
 			await createInfoStates(this);
+			if (this.config.remoteEnabled !== true) {
+				// the copy was switched off: an old error must not stay as if it were current
+				await this.setState("info.remoteBackupError", "", true);
+			}
 			await createCompanyStates(this);
 			await createEventStates(this);
 			await createCalendarStates(this);
@@ -673,6 +700,103 @@ class TimeTracker extends utils.Adapter {
 		} catch (error) {
 			this.log.warn(`backup failed: ${(error as Error).message}`);
 		}
+	}
+
+	/**
+	 * The instance settings of the copy to the external server.
+	 *
+	 * @returns the settings as the copy expects them
+	 */
+	private remoteSettings(): RemoteBackupSettings {
+		return {
+			enabled: this.config.remoteEnabled === true,
+			host: this.config.remoteHost,
+			port: Number(this.config.remotePort) || undefined,
+			username: this.config.remoteUser,
+			password: this.config.remotePassword,
+			directory: this.config.remoteDirectory,
+			hostKey: this.config.remoteHostKey,
+			keep: Number(this.config.remoteKeep ?? 0),
+		};
+	}
+
+	/**
+	 * Copies a backup to the external server, when that is switched on.
+	 *
+	 * The local backup is already safe at this point: a failed copy is logged and shown in
+	 * `info.remoteBackupError`, nothing is thrown.
+	 *
+	 * @param backup - the backup that was just written
+	 * @param backup.name - file name of the backup
+	 * @param backup.file - absolute path of the backup
+	 * @returns the result, or `null` when the copy is switched off
+	 */
+	private async copyToRemote(backup: { name: string; file: string }): Promise<RemoteCopyResult | null> {
+		const settings = this.remoteSettings();
+		if (!settings.enabled) {
+			return null;
+		}
+		const run = async (): Promise<RemoteCopyResult> => {
+			let result: RemoteCopyResult;
+			try {
+				const data = await fs.promises.readFile(backup.file);
+				result = await copyBackupToRemote(
+					connectSsh2,
+					settings,
+					{ name: backup.name, data },
+					this.log,
+					this.remoteTimers,
+				);
+			} catch (error) {
+				result = {
+					ok: false,
+					message: `cannot read the backup: ${(error as Error).message}`,
+					deleted: [],
+					partialsRemoved: [],
+				};
+			}
+			// the copy never throws, and its states must not either
+			const publish = async (id: string, value: string): Promise<void> => {
+				try {
+					await this.setState(id, value, true);
+				} catch (error) {
+					this.log.debug(`cannot set ${id}: ${(error as Error).message}`);
+				}
+			};
+			if (result.ok) {
+				this.log.info(`backup copied to the external server: ${result.remoteFile}`);
+				for (const old of result.deleted) {
+					this.log.info(`old copy deleted on the external server: ${old}`);
+				}
+				for (const stale of result.partialsRemoved) {
+					this.log.info(`interrupted upload removed on the external server: ${stale}`);
+				}
+				await publish("info.lastRemoteBackup", result.remoteFile ?? backup.name);
+				await publish("info.remoteBackupError", "");
+			} else {
+				this.log.error(`copy to the external server failed: ${result.message}`);
+				await publish("info.remoteBackupError", result.message);
+			}
+			try {
+				if (this.db?.open) {
+					writeAuditLog(this.db, {
+						actorId: null,
+						action: result.ok ? "backup.remote_copy" : "backup.remote_copy_failed",
+						entity: "backup",
+						entityId: backup.name,
+						detail: result.ok
+							? { remoteFile: result.remoteFile, deleted: result.deleted.length }
+							: { message: result.message },
+					});
+				}
+			} catch (error) {
+				this.log.debug(`cannot write the audit entry of the copy: ${(error as Error).message}`);
+			}
+			return result;
+		};
+		const next = this.remoteQueue.then(run, run);
+		this.remoteQueue = next.catch(() => undefined);
+		return next;
 	}
 
 	/**
@@ -1289,6 +1413,10 @@ class TimeTracker extends utils.Adapter {
 	 * @param obj - message object of the adapter framework
 	 */
 	private onMessage(obj: ioBroker.Message): void {
+		if (typeof obj === "object" && obj.command === "testRemoteBackup") {
+			this.testRemoteBackup(obj);
+			return;
+		}
 		void (async (): Promise<void> => {
 			const services = this.services;
 			if (!services) {
@@ -1333,6 +1461,34 @@ class TimeTracker extends utils.Adapter {
 				}
 			}
 		})();
+	}
+
+	/**
+	 * Message of the admin page: tries the SFTP settings of the form (also unsaved ones) and answers with a text for
+	 * the dialog. An empty password field means the saved password, but only for the saved server.
+	 *
+	 * @param obj - the message
+	 */
+	private testRemoteBackup(obj: ioBroker.Message): void {
+		const settings = settingsForConnectionTest(
+			(obj.message ?? {}) as Record<string, unknown>,
+			this.remoteSettings(),
+		);
+		void testRemoteConnection(connectSsh2, settings, this.remoteTimers).then(result => {
+			if (!obj.callback) {
+				return;
+			}
+			const hint =
+				result.ok && !settings.hostKey?.trim() && result.fingerprint
+					? ` Fingerprint of the server (enter it to trust only this server): ${result.fingerprint}`
+					: "";
+			this.sendTo(
+				obj.from,
+				obj.command,
+				result.ok ? { result: `OK: ${result.message}.${hint}` } : { error: result.message },
+				obj.callback,
+			);
+		});
 	}
 
 	/**

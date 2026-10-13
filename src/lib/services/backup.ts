@@ -35,6 +35,11 @@ export interface BackupDeps {
 	retentionDays?: number;
 	/** Instant source, defaults to the system clock */
 	now?: () => number;
+	/**
+	 * Called after every backup that was taken, for whatever reason (API, command, message, schedule). It must not
+	 * throw: a failing hook never turns a good local backup into an error.
+	 */
+	onCreated?: (backup: BackupInfo) => void;
 }
 
 /** One backup file. */
@@ -460,6 +465,12 @@ export function createBackupService(deps: BackupDeps): BackupService {
 				detail: { removed },
 				atUtc: timestamp,
 			});
+		}
+
+		try {
+			deps.onCreated?.(backup);
+		} catch {
+			// the local backup is done; whatever the hook does with it is not this service's concern
 		}
 
 		return { backup, removed };

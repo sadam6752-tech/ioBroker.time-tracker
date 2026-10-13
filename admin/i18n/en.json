@@ -35,5 +35,20 @@
 	"the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable": "the app answers over HTTPS with a certificate of the ioBroker certificate collection; without a working certificate the app stays unavailable",
 	"Public certificate": "Public certificate",
 	"Private key": "Private key",
-	"Certificate chain (optional)": "Certificate chain (optional)"
+	"Certificate chain (optional)": "Certificate chain (optional)",
+	"External backup": "External backup",
+	"Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.": "Every backup is also copied to another computer over SFTP (for example a Synology NAS), so it survives the loss of this host. Use a user that may only write into the target directory, not an administrator. The copy needs no mount and no sudo.",
+	"Copy backups to an external server (SFTP)": "Copy backups to an external server (SFTP)",
+	"Server address": "Server address",
+	"IP address or host name of the server": "IP address or host name of the server",
+	"SSH port": "SSH port",
+	"User name": "User name",
+	"Password of the user": "Password of the user",
+	"Directory on the server": "Directory on the server",
+	"Server fingerprint (optional)": "Server fingerprint (optional)",
+	"SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.": "SHA256:… as the server shows it. Empty: the server is not verified, the log shows its fingerprint.",
+	"Copies to keep on the server": "Copies to keep on the server",
+	"Test connection": "Test connection",
+	"e.g. /backups/time-tracker, created when it is missing": "e.g. /backups/time-tracker, created when it is missing",
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted."
 }

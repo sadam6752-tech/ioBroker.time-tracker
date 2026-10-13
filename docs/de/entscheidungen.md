@@ -650,3 +650,20 @@ englisch**; sobald die App ihre Sprache kennt, folgen Tab-Titel und `lang`-Attri
 `default_language` als `locale` (vorher galt der Datenbankwert `de-DE`, ein neuer Administrator sah also überall Deutsch),
 der erste Administrator `native.defaultLanguage`; bestehende Konten behalten ihre Sprache. (6) `Port` (de, fr, pl) und
 `General` (es) in `admin/i18n/` sind übersetzt, weil der Checker die Werte mit dem Englischen vergleicht.
+
+## D21 — Jedes Backup wird per SFTP auf einen externen Server kopiert (13.10.2026)
+
+**Anlass:** Ein Backup neben der Datenbank geht mit dem Rechner verloren. Der Reiter _Migration und Backup_ der
+Instanz-Einstellungen hatte keinen Weg, eine Kopie vom Rechner zu bekommen. Der Schwester-Adapter `e-invoices` hat das am
+Vortag gelöst; hier gilt derselbe Entwurf.
+
+**Entscheidung:** (1) **SFTP mit `ssh2`** (reines JavaScript, kein Systemwerkzeug, kein Mount, kein `sudo`): Die Datei wird als
+`<name>.part` hochgeladen, die Größe verglichen und erst dann umbenannt. (2) **Ein Haken für jeden Weg zu einem Backup**:
+`BackupDeps.onCreated` läuft nach jedem Backup (App, `commands.backup`, `sendTo`, Tagesplan); ein Fehler darin macht aus einem
+guten lokalen Backup keinen Fehler. (3) **Der Host-Schlüssel kann festgelegt werden** (`SHA256:…`): ein anderer Fingerabdruck
+wird abgelehnt, bevor das Passwort gesendet wird; leer heißt nicht geprüft, das Log und der Testknopf zeigen den Fingerabdruck.
+(4) **Löschen auf dem Server ist eng gefasst**: nur `time-tracker-<Zeit>.sqlite` (die ältesten über _Kopien behalten_ hinaus,
+`0` = alle) und Reste `….sqlite.part`; alles andere bleibt. (5) **Eine fehlgeschlagene Kopie ist sichtbar und harmlos**: Log,
+Audit-Log (`backup.remote_copy`, `backup.remote_copy_failed`) und `info.remoteBackupError`; `info.lastRemoteBackup` hält die
+letzte gute Datei. (6) **Das Passwort ist `encryptedNative` und `protectedNative`**; der Verbindungstest nimmt die Werte des
+ungespeicherten Formulars und greift nur für denselben Server, Benutzer und Port auf das gespeicherte Passwort zurück.

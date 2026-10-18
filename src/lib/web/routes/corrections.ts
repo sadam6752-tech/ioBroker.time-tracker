@@ -8,7 +8,25 @@ import { problem } from "../problem";
 import { json, noContent } from "../router";
 
 import type { ApiContext } from "./context";
-import { optionalString, optionalNumber, optionalBoolean, numberParam } from "./shared";
+import { numberParam } from "./shared";
+import { bodySchema, optionalFlag, optionalNumber, optionalText, parseBody, requiredNumber } from "./validate";
+
+/** Body of a change of a punch: the revision the caller saw, and what changes. */
+const ENTRY_PATCH_BODY = bodySchema({
+	revision: requiredNumber(),
+	tsUtc: optionalNumber(),
+	note: optionalText(),
+	reason: optionalText(),
+});
+
+/** Body that only carries a reason (deleting a punch). */
+const REASON_BODY = bodySchema({ reason: optionalText() });
+
+/** Body of a day note; an empty text takes the note back. */
+const DAY_NOTE_BODY = bodySchema({ note: optionalText() });
+
+/** Body of the handled mark of a day note; missing means handled. */
+const HANDLED_BODY = bodySchema({ handled: optionalFlag() });
 
 /**
  * Registers the routes of this area.
@@ -33,14 +51,9 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
 		}
 
-		const body = context.jsonBody();
-		const revision = optionalNumber(body, "revision");
-		if (revision === null) {
-			throw new ValidationError("revision is required");
-		}
+		const body = parseBody(ENTRY_PATCH_BODY, context.jsonBody());
 		// an employee only comments his own punch: the times of a day belong to the administration
-		const wantedTs = optionalNumber(body, "tsUtc");
-		if (wantedTs !== null && !context.auth.permissions.includes("time.edit_other")) {
+		if (body.tsUtc !== null && !context.auth.permissions.includes("time.edit_other")) {
 			throw problem(403, "permission_denied", "request rejected (permission_denied: time.edit_other)");
 		}
 		const target = users.findById(existing.userId);
@@ -50,12 +63,12 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 
 		const updated = entries.update({
 			id: entryId,
-			expectedRevision: revision,
+			expectedRevision: body.revision,
 			patch: {
-				tsUtc: optionalNumber(body, "tsUtc") ?? undefined,
-				note: optionalString(body, "note"),
+				tsUtc: body.tsUtc ?? undefined,
+				note: body.note,
 			},
-			reason: optionalString(body, "reason"),
+			reason: body.reason,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			timeZone: target.timezone,
@@ -84,7 +97,7 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 		entries.remove({
 			id: entryId,
 			actorId: context.auth.user.id,
-			reason: optionalString(context.optionalJsonBody(), "reason"),
+			reason: parseBody(REASON_BODY, context.optionalJsonBody()).reason,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		});
@@ -113,7 +126,7 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
+		const body = parseBody(DAY_NOTE_BODY, context.jsonBody());
 		const userId = dayNoteTarget(context, context.auth.user.id);
 		const localDate = context.query("date");
 		if (!localDate) {
@@ -123,7 +136,7 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 			userId,
 			localDate,
 			// an empty text is how a note is taken back
-			note: optionalString(body, "note") ?? "",
+			note: body.note ?? "",
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -141,7 +154,7 @@ export function registerCorrectionRoutes(ctx: ApiContext): void {
 		if (!localDate) {
 			throw new ValidationError("date is required");
 		}
-		const handled = optionalBoolean(context.jsonBody(), "handled") ?? true;
+		const handled = parseBody(HANDLED_BODY, context.jsonBody()).handled ?? true;
 		const note = deps.dayNotes.setHandled({
 			userId,
 			localDate,

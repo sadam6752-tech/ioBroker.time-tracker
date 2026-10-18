@@ -145,3 +145,41 @@ export function optionalFlag(): FieldRule<z.ZodType<boolean | null>> {
 			.nullish()
 			.transform(value => value ?? null);
 }
+
+/**
+ * A required finite number.
+ *
+ * @returns the field rule
+ */
+export function requiredNumber(): FieldRule<z.ZodType<number>> {
+	return field =>
+		z.number({
+			error: issue =>
+				issue.input === undefined || issue.input === null
+					? `${field} is required`
+					: `${field} must be a number`,
+		});
+}
+
+/**
+ * The direction of a punch: `in`, `out` or `auto`; missing or blank means `auto`.
+ *
+ * @returns the field rule
+ */
+export function punchDirection(): FieldRule<z.ZodType<"in" | "out" | "auto">> {
+	return field =>
+		z
+			.string({ error: `${field} must be a string` })
+			.trim()
+			.nullish()
+			.transform((value, context) => {
+				if (!value) {
+					return "auto" as const;
+				}
+				if (value !== "in" && value !== "out" && value !== "auto") {
+					context.addIssue({ code: "custom", message: `${field} must be in, out or auto (got ${value})` });
+					return z.NEVER;
+				}
+				return value;
+			});
+}

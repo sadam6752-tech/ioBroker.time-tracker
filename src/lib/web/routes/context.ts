@@ -11,7 +11,17 @@ import { createPinGuard, type PinGuard } from "../pin-guard";
 import { problem } from "../problem";
 import { createRouter, json, type HttpMethod, type RouteContext, type RouteResponse, type Router } from "../router";
 
-import { type ApiDeps, type ApiRoute, optionalString, optionalNumber, optionalDirection, resolveScope } from "./shared";
+import { type ApiDeps, type ApiRoute, resolveScope } from "./shared";
+import { bodySchema, optionalNumber, optionalText, parseBody, punchDirection } from "./validate";
+
+/** Body of a punch from the web app. */
+const PUNCH_BODY = bodySchema({
+	tsUtc: optionalNumber(),
+	clientTsUtc: optionalNumber(),
+	direction: punchDirection(),
+	idempotencyKey: optionalText(),
+	note: optionalText(),
+});
 
 /**
  * Builds the context the route modules register their endpoints with.
@@ -256,26 +266,26 @@ export function createApiContext(deps: ApiDeps): ApiContext {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
+		const body = parseBody(PUNCH_BODY, context.jsonBody());
 		const timestamp = now();
 		const user = users.findById(context.auth.user.id);
 		if (!user) {
 			throw new NotFoundError(`user ${context.auth.user.id} not found`);
 		}
 
-		const requestedTs = optionalNumber(body, "tsUtc") ?? timestamp;
+		const requestedTs = body.tsUtc ?? timestamp;
 		const quickRoundMinutes = options.quick ? settings.getNumber("quick_round_minutes", 0) : 0;
 		const tsUtc = quickRoundMinutes > 0 ? roundToStep(requestedTs, quickRoundMinutes, user.timezone) : requestedTs;
 
 		const stored = entries.insert({
 			userId: user.id,
 			tsUtc,
-			clientTsUtc: optionalNumber(body, "clientTsUtc"),
+			clientTsUtc: body.clientTsUtc,
 			timeZone: user.timezone,
 			source: "web",
-			direction: optionalDirection(body),
-			idempotencyKey: optionalString(body, "idempotencyKey"),
-			note: optionalString(body, "note"),
+			direction: body.direction,
+			idempotencyKey: body.idempotencyKey,
+			note: body.note,
 			actorId: user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: timestamp,

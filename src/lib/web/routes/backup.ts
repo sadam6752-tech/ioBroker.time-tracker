@@ -9,7 +9,11 @@ import { problem } from "../problem";
 import { json, noContent, binary } from "../router";
 
 import type { ApiContext } from "./context";
+import { bodySchema, optionalText, parseBody } from "./validate";
 import { MAX_BACKUP_UPLOAD_BYTES } from "./shared";
+
+/** Body of a restore of a listed backup. */
+const RESTORE_BODY = bodySchema({ name: optionalText(), reason: optionalText() });
 
 /**
  * Registers the routes of this area.
@@ -112,14 +116,13 @@ export function registerBackupRoutes(ctx: ApiContext): void {
 						return json(201, { pending });
 					}
 
-					const body = context.jsonBody();
-					const name = typeof body.name === "string" ? body.name.trim() : "";
-					if (name === "") {
+					const { name, reason } = parseBody(RESTORE_BODY, context.jsonBody());
+					if (!name) {
 						throw problem(400, "backup_invalid", "the request needs `name` with one of the listed backups");
 					}
 					const pending = backup.queueExistingBackup(name, {
 						actorId: context.auth?.user.id ?? null,
-						reason: typeof body.reason === "string" ? body.reason : undefined,
+						reason: reason ?? undefined,
 					});
 					return json(201, { pending });
 				} catch (error) {

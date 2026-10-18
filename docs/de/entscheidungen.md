@@ -174,7 +174,7 @@ deshalb entfernt (samt Problem `edit_window_closed`). Die Einstellung bleibt und
 `too_old` gespeichert und zählt erst, wenn die Verwaltung ihn annimmt. `GET /entries/conflicts` nimmt dafür `?userId=`
 entgegen, damit die Verwaltung die Warteschlange eines Mitarbeiters sieht.
 
-**Nachweis:** `src/lib/db/repositories/dayNotes.test.ts`, die Rechte in `src/lib/web/api.test.ts` (Mitarbeiter: 403
+**Nachweis:** `src/lib/db/repositories/dayNotes.test.ts`, die Rechte in `src/lib/web/routes/corrections.test.ts` (Mitarbeiter: 403
 für Zeiten, 200 für die eigene Notiz), `too_old` in `src/lib/services/sync.test.ts` und der Ablauf in
 `test/e2e/day-notes.spec.ts` (Notiz des Mitarbeiters, Korrektur und „erledigt" der Verwaltung).
 
@@ -209,7 +209,7 @@ aktiven Administrator, dass die Rolle nicht entzogen werden kann, und sperrt „
 jedem anderen eigenen Konto warnt er nur, dass sofort alle Verwaltungsrechte wegfallen. Die Meldung des Servers
 erscheint als `error.last_administrator` in allen elf Sprachen.
 
-**Nachweis:** `src/lib/web/api.test.ts` („keeps the last active administrator in place": zweiter Administrator,
+**Nachweis:** `src/lib/web/routes/users.test.ts` („keeps the last active administrator in place": zweiter Administrator,
 Ablehnung für den letzten, Erfolg sobald ein anderer die Rolle trägt), `test/e2e/users.spec.ts` (Warnung am eigenen
 Konto, gesperrtes Speichern, unveränderter Zustand).
 
@@ -251,7 +251,7 @@ stellt den Namen des Mitarbeiters voran (`Anna Muster: Ferien (F)`), damit ein T
 `UID` bleibt `absence-<id>@time-tracker`, damit eine Kalender-App ein Ereignis **aktualisiert** statt es zu verdoppeln.
 
 **Nachweis:** `src/lib/services/calendar.test.ts` (DTEND exklusiv, Maskierung, JSON-Sicht),
-`src/lib/web/api.test.ts` (Firmen-Feed über den Instanz-Token, persönlicher Link bleibt persönlich, alter Token tot),
+`src/lib/web/routes/absences.test.ts` (Firmen-Feed über den Instanz-Token, persönlicher Link bleibt persönlich, alter Token tot),
 `src/lib/adapter/states.test.ts` (States und Befehl) und die Abnahme **T21** in `docs/de/testplan.md`.
 
 ## D9 — Die Quellen der Web-App heißen `src-www/` (24.09.2026)
@@ -304,7 +304,7 @@ und liegt der Regelzeitpunkt des ersten Tages vor „gültig ab", fällt dieser 
 
 **Nachweis:** `src/lib/adapter/automation.test.ts` (Tag davor, genau „ab", genau „bis", Tag danach, beide Enden leer),
 `src/lib/db/repositories/automations.test.ts` (Speichern und Lesen, „weglassen behält", „leer leert", 30.02. wird
-abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/api.test.ts` (die Daten reisen mit der Regel, 400 bei
+abgelehnt, „bis vor von" wird abgelehnt), `src/lib/web/routes/settings.test.ts` (die Daten reisen mit der Regel, 400 bei
 ungültigem Datum) und die Abnahme **T23** in `docs/de/testplan.md`. Die Liste unter der Tabelle ist inzwischen **entfallen**
 (sie war zuletzt auf fünf Einträge begrenzt): `GET /automation-rules/runs` liefert eine Zeile **je Regel** (die
 jüngste, per `latestRuns`) und die Regelzeile schreibt sie in eine eigene Zeile — siehe **D12** in
@@ -326,7 +326,7 @@ Hinweis, dass die Tabelle **als Ganzes** gespeichert wird — bis dahin ist eine
 keine Einschränkung ist — genau wie die Gültigkeit, die ebenfalls nur erscheint, wenn sie gesetzt ist.
 
 **Nachweis:** `src/lib/db/repositories/automations.test.ts` („reports one run per rule — the newest"),
-`src/lib/web/api.test.ts` (die Antwort trägt eine Zeile je Regel) und **T25** in `docs/de/testplan.md`.
+`src/lib/web/routes/settings.test.ts` (die Antwort trägt eine Zeile je Regel) und **T25** in `docs/de/testplan.md`.
 
 ## D13 — Ein Storno wird beantragt, nicht stillschweigend gebucht (26.09.2026)
 
@@ -350,7 +350,7 @@ Audit nicht mehr von einem Datenfehler zu unterscheiden.
 
 **Nachweis:** `src/lib/db/repositories/absences.test.ts` (Antrag zählt weiter, Zurückziehen und Ablehnen schreiben die
 Audit-Aktionen `absence.cancel_request`/`_withdraw`/`_decline`, nur genehmigte Abwesenheiten lassen sich stornieren,
-die Entscheidung räumt ein wartendes Storno ab), `src/lib/web/api.test.ts` (Antrag, Rechte, Zurückziehen, Ablehnen,
+die Entscheidung räumt ein wartendes Storno ab), `src/lib/web/routes/absences.test.ts` (Antrag, Rechte, Zurückziehen, Ablehnen,
 400 für eine noch nicht genehmigte Abwesenheit) und die Abnahmen **T26** in `docs/de/testplan.md`.
 
 ## D11 — Der Dateiserver ist kein Weg zum Kalender (25.09.2026)
@@ -477,7 +477,7 @@ jetzt beide (`closeForm`).
 
 **Nachweis:** `test/e2e/holidays.spec.ts` (neue Datei: die Schaltfläche ist erst mit Datum **und** Bezeichnung aktiv,
 das Feld ist ein Datumsfeld, die Zeile trägt ihre Region, sie lässt sich entfernen, ein Tag des nächsten Jahres holt das
-Jahr nach), die erweiterte Prüfung in `src/lib/web/api.test.ts` (ein Tag ohne Region trägt das Land der Instanz),
+Jahr nach), die erweiterte Prüfung in `src/lib/web/routes/settings.test.ts` (ein Tag ohne Region trägt das Land der Instanz),
 `src/lib/db/repositories/holidays.test.ts` („lists every region of a year when no region is asked for"), die
 Änder-Brücke in `test/e2e/absences-admin.spec.ts` und **T27** in `docs/de/testplan.md`.
 

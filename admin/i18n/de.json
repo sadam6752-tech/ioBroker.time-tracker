@@ -50,5 +50,8 @@
 	"Copies to keep on the server": "Kopien auf dem Server behalten",
 	"Test connection": "Verbindung testen",
 	"e.g. /backups/time-tracker, created when it is missing": "z. B. /backups/time-tracker, wird bei Bedarf angelegt",
-	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Es werden nur Dateien gelöscht, die wie ein Backup dieses Adapters heißen, die ältesten zuerst; 0 = alle behalten. Andere Dateien werden nie gelöscht."
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Es werden nur Dateien gelöscht, die wie ein Backup dieses Adapters heißen, die ältesten zuerst; 0 = alle behalten. Andere Dateien werden nie gelöscht.",
+	"Switzerland": "Schweiz",
+	"Germany": "Deutschland",
+	"Austria": "Österreich"
 }

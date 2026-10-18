@@ -50,5 +50,8 @@
 	"Copies to keep on the server": "Копій зберігати на сервері",
 	"Test connection": "Перевірити з'єднання",
 	"e.g. /backups/time-tracker, created when it is missing": "наприклад, /backups/time-tracker, створюється за потреби",
-	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Видаляються лише файли з іменем резервної копії цього адаптера, спочатку найстаріші; 0 = зберігати все. Інші файли ніколи не видаляються."
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Видаляються лише файли з іменем резервної копії цього адаптера, спочатку найстаріші; 0 = зберігати все. Інші файли ніколи не видаляються.",
+	"Switzerland": "Швейцарія",
+	"Germany": "Німеччина",
+	"Austria": "Австрія"
 }

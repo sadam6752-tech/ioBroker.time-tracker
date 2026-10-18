@@ -50,5 +50,8 @@
 	"Copies to keep on the server": "在服务器上保留的副本数",
 	"Test connection": "测试连接",
 	"e.g. /backups/time-tracker, created when it is missing": "例如 /backups/time-tracker，不存在时会创建",
-	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "只删除命名方式与本适配器备份相同的文件，最旧的优先；0 = 全部保留。其他文件绝不会被删除。"
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "只删除命名方式与本适配器备份相同的文件，最旧的优先；0 = 全部保留。其他文件绝不会被删除。",
+	"Switzerland": "瑞士",
+	"Germany": "德国",
+	"Austria": "奥地利"
 }

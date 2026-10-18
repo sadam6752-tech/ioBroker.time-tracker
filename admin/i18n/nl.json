@@ -50,5 +50,8 @@
 	"Copies to keep on the server": "Kopieën bewaren op de server",
 	"Test connection": "Verbinding testen",
 	"e.g. /backups/time-tracker, created when it is missing": "bijv. /backups/time-tracker, wordt aangemaakt als die ontbreekt",
-	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Alleen bestanden met de naam van een back-up van deze adapter worden verwijderd, de oudste eerst; 0 = alles bewaren. Andere bestanden worden nooit verwijderd."
+	"Only files named like a backup of this adapter are deleted, the oldest first; 0 = keep all. Other files are never deleted.": "Alleen bestanden met de naam van een back-up van deze adapter worden verwijderd, de oudste eerst; 0 = alles bewaren. Andere bestanden worden nooit verwijderd.",
+	"Switzerland": "Zwitserland",
+	"Germany": "Duitsland",
+	"Austria": "Oostenrijk"
 }

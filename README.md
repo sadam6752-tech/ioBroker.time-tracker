@@ -540,6 +540,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) fix: the names of the holiday countries in the instance settings are translated (note of the review).
+
 ### 0.7.26 (2026-10-13)
 
 - (Alex) fix: the instance receives `sendTo` messages (`common.messagebox` was missing): **Test connection**

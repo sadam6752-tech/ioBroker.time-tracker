@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.22 (2026-10-09)
+
+- (Alex) docs: the documentation is English now, as the review of the repository asks for: every document of `docs/` is
+  available in English in `docs/en/`, the German originals moved to `docs/de/`, `CONTRIBUTING.md` and the READMEs of
+  `src-www/` and `src-shared/` are English. No change of behaviour.
+
 ### 0.7.21 (2026-10-07)
 
 - (Alex) new: the **menu of the web app** has an entry _Info_ for the administrator account, and the menu ends with the

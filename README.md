@@ -540,6 +540,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.7.27 (2026-10-18)
+
 - (Alex) fix: the names of the holiday countries in the instance settings are translated (note of the review).
 - (Alex) chore: the REST API and its tests are split into one module per area (`src/lib/web/routes/`); the routes,
   their order and their behaviour are unchanged.
@@ -573,12 +575,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
   languages), a fresh instance starts with English as default language, the page and the manifest of the web app are
   English (the tab title follows the chosen language), a new account speaks the language of the instance (before, the
   database default was German), and four admin texts that equalled the English wording are translated.
-
-### 0.7.22 (2026-10-09)
-
-- (Alex) docs: the documentation is English now, as the review of the repository asks for: every document of `docs/` is
-  available in English in `docs/en/`, the German originals moved to `docs/de/`, `CONTRIBUTING.md` and the READMEs of
-  `src-www/` and `src-shared/` are English. No change of behaviour.
 
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).

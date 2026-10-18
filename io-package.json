@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.26",
+		"version": "0.7.27",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.7.27": {
+				"en": "fix: the names of the holiday countries in the instance settings are translated; chore: the REST API and its tests are split into one module per area, without a change of behaviour",
+				"de": "fix: Die Namen der Feiertagsländer in den Instanz-Einstellungen sind übersetzt; chore: Die REST-API und ihre Tests sind in ein Modul pro Bereich aufgeteilt, ohne Änderung des Verhaltens",
+				"ru": "fix: названия стран для праздников в настройках экземпляра переведены; chore: REST API и его тесты разделены на модули по областям, поведение не изменилось",
+				"pt": "fix: os nomes dos países dos feriados nas definições da instância estão traduzidos; chore: a API REST e os seus testes estão divididos num módulo por área, sem alteração do comportamento",
+				"nl": "fix: de namen van de feestdaglanden in de instantie-instellingen zijn vertaald; chore: de REST-API en de tests zijn opgesplitst in één module per gebied, zonder gedragswijziging",
+				"fr": "fix : les noms des pays des jours fériés dans les paramètres de l'instance sont traduits ; chore : l'API REST et ses tests sont répartis en un module par domaine, sans changement de comportement",
+				"it": "fix: i nomi dei paesi delle festività nelle impostazioni dell'istanza sono tradotti; chore: l'API REST e i suoi test sono suddivisi in un modulo per area, senza modifiche al comportamento",
+				"es": "fix: los nombres de los países de los festivos en la configuración de la instancia están traducidos; chore: la API REST y sus pruebas están divididas en un módulo por área, sin cambios de comportamiento",
+				"pl": "fix: nazwy krajów świąt w ustawieniach instancji są przetłumaczone; chore: REST API i jego testy podzielono na moduły według obszarów, bez zmiany działania",
+				"uk": "fix: назви країн для свят у налаштуваннях екземпляра перекладено; chore: REST API та його тести розділено на модулі за напрямами, поведінка не змінилася",
+				"zh-cn": "fix: 实例设置中节假日国家的名称已翻译；chore: REST API 及其测试按领域拆分为模块，行为不变"
+			},
 			"0.7.26": {
 				"en": "fix: the instance receives messages (common.messagebox was missing), so Test connection of the external backup answers and the sendTo messages for scripts work; the help of the server fingerprint field says where to copy it from",
 				"de": "fix: Die Instanz empfängt Nachrichten (common.messagebox fehlte), dadurch antwortet Verbindung testen des externen Backups und die sendTo-Nachrichten für Skripte funktionieren; die Hilfe am Feld Fingerabdruck des Servers sagt, woher er kopiert wird",
@@ -100,19 +113,6 @@
 				"pl": "new: menu aplikacji web ma pozycję Informacje i kończy się wersją aplikacji i adaptera, tylko dla konta administratora; strona Informacje informuje, gdy przeglądarka nadal pokazuje starą aplikację, i ładuje ją ponownie",
 				"uk": "new: у меню вебзастосунку з'явився пункт «Інформація», а внизу меню — версії застосунку та адаптера, лише для облікового запису адміністратора; сторінка повідомляє, коли браузер ще показує старий застосунок, і перезавантажує його",
 				"zh-cn": "new: 网页应用的菜单新增“信息”条目，菜单末尾显示应用和适配器的版本，仅限管理员账户；当浏览器仍显示旧版应用时，“信息”页会提示并重新加载"
-			},
-			"0.7.20": {
-				"en": "change: the actions of the administration are a list with one line per action (label, value, active box, last fire); a click on the line opens the card",
-				"de": "change: Die Aktionen der Verwaltung sind eine Liste mit einer Zeile je Aktion (Bezeichnung, Wert, Aktiv-Feld, letzte Auslösung); ein Klick auf die Zeile öffnet die Karte",
-				"ru": "change: действия в администрировании теперь список с одной строкой на действие (название, значение, флажок «активно», последнее срабатывание); клик по строке открывает карточку",
-				"pt": "change: as ações da administração são uma lista com uma linha por ação (designação, valor, caixa de ativo, último disparo); um clique na linha abre o cartão",
-				"nl": "change: de acties van het beheer zijn een lijst met één regel per actie (naam, waarde, actief-vak, laatste uitvoering); een klik op de regel opent de kaart",
-				"fr": "change : les actions de l'administration forment une liste avec une ligne par action (nom, valeur, case active, dernier déclenchement) ; un clic sur la ligne ouvre la fiche",
-				"it": "change: le azioni dell'amministrazione sono un elenco con una riga per azione (nome, valore, casella attiva, ultimo avvio); un clic sulla riga apre la scheda",
-				"es": "change: las acciones de la administración son una lista con una línea por acción (nombre, valor, casilla de activo, último disparo); un clic en la línea abre la ficha",
-				"pl": "change: akcje w administracji są listą z jednym wierszem na akcję (nazwa, wartość, pole aktywności, ostatnie uruchomienie); kliknięcie wiersza otwiera kartę",
-				"uk": "change: дії в адмініструванні тепер список з одним рядком на дію (назва, значення, прапорець «активно», останнє спрацьовування); клік по рядку відкриває картку",
-				"zh-cn": "change: 管理中的操作改为列表，每个操作一行（名称、值、启用复选框、最近触发）；点击该行即可展开卡片"
 			}
 		},
 		"titleLang": {

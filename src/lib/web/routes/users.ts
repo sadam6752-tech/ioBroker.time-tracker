@@ -11,18 +11,76 @@ import { problem } from "../problem";
 import { json, noContent, binary } from "../router";
 
 import type { ApiContext } from "./context";
+import { z } from "zod";
 import {
-	requireString,
-	optionalString,
+	bodySchema,
+	check,
+	itemOf,
+	keepMissing,
+	listOf,
+	optionalFlag,
 	optionalNumber,
-	requireBoolean,
-	optionalNumberQuery,
-	readRoleKeys,
-	readProfilePatch,
-	publicUser,
-	optionalBoolean,
-	numberParam,
-} from "./shared";
+	optionalText,
+	optionalTextList,
+	parseBody,
+	requiredFlag,
+	requiredText,
+} from "./validate";
+import { optionalNumberQuery, readProfilePatch, publicUser, numberParam } from "./shared";
+
+/** Body of a new account. */
+const USER_BODY = bodySchema({
+	password: requiredText(),
+	login: requiredText(),
+	displayName: requiredText(),
+	email: optionalText(),
+	locale: optionalText(),
+	timezone: optionalText(),
+	mustChangePw: optionalFlag(),
+	roleKeys: optionalTextList(),
+});
+
+/** Body of a change of an account; a field that is not sent keeps its value. */
+const USER_PATCH_BODY = bodySchema({
+	roleKeys: optionalTextList(),
+	password: optionalText(),
+	displayName: keepMissing(requiredText()),
+	email: keepMissing(optionalText()),
+	locale: keepMissing(requiredText()),
+	timezone: keepMissing(
+		check(requiredText(), isValidTimeZone, (field, value) => `${field} is not a valid IANA name (got ${value})`),
+	),
+	rfidCard: keepMissing(optionalText()),
+	mustChangePw: keepMissing(requiredFlag()),
+	isActive: optionalFlag(),
+	// `null` removes the picture, leaving the field out keeps it
+	avatar: keepMissing(
+		check(
+			optionalText(),
+			value => value === null || Boolean(parseAvatarDataUrl(value)),
+			field => `${field} must be a data URL of a png, jpeg, webp or gif of up to ${MAX_AVATAR_BYTES} bytes`,
+		),
+	),
+	reason: optionalText(),
+});
+
+/** Body that only carries a reason (deactivating an account). */
+const REASON_BODY = bodySchema({ reason: optionalText() });
+
+/** Body of the shift rules of an employee: the list replaces the stored rules. */
+const SHIFT_RULES_BODY = bodySchema({
+	shiftRules: listOf(
+		itemOf({
+			id: optionalNumber(),
+			// the repository checks the surcharge; a missing one arrives as `NaN` and is refused there
+			surcharge: () => z.unknown().transform(value => Number(value)),
+			dayOfWeek: optionalNumber(),
+			fromMin: optionalNumber(),
+			toMin: optionalNumber(),
+			isActive: optionalFlag(),
+		}),
+	),
+});
 
 /**
  * Registers the routes of this area.
@@ -74,22 +132,21 @@ export function registerUserRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const password = requireString(body, "password");
-		const policyIssue = checkPasswordPolicy(password);
+		const body = parseBody(USER_BODY, context.jsonBody());
+		const policyIssue = checkPasswordPolicy(body.password);
 		if (policyIssue) {
 			throw new ValidationError(policyIssue);
 		}
 
 		const created = users.create({
-			login: requireString(body, "login"),
-			displayName: requireString(body, "displayName"),
-			passwordHash: hashPassword(password),
-			email: optionalString(body, "email"),
-			locale: optionalString(body, "locale") ?? settings.get("default_language") ?? undefined,
-			timezone: optionalString(body, "timezone") ?? undefined,
-			mustChangePw: optionalBoolean(body, "mustChangePw") ?? undefined,
-			roleKeys: readRoleKeys(body) ?? undefined,
+			login: body.login,
+			displayName: body.displayName,
+			passwordHash: hashPassword(body.password),
+			email: body.email,
+			locale: body.locale ?? settings.get("default_language") ?? undefined,
+			timezone: body.timezone ?? undefined,
+			mustChangePw: body.mustChangePw ?? undefined,
+			roleKeys: body.roleKeys ?? undefined,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -139,14 +196,13 @@ export function registerUserRoutes(ctx: ApiContext): void {
 			throw new NotFoundError(`user ${id} not found`);
 		}
 
-		const body = context.jsonBody();
-		const roleKeys = readRoleKeys(body);
+		const body = parseBody(USER_PATCH_BODY, context.jsonBody());
+		const { roleKeys, password } = body;
 		// assigning roles is a right of its own
 		if (roleKeys !== null && !context.auth.permissions.includes("user.manage_roles")) {
 			throw problem(403, "permission_denied", "request rejected (permission_denied: user.manage_roles)");
 		}
 
-		const password = optionalString(body, "password");
 		if (password !== null) {
 			const policyIssue = checkPasswordPolicy(password);
 			if (policyIssue) {
@@ -172,29 +228,25 @@ export function registerUserRoutes(ctx: ApiContext): void {
 			/** Already hashed password (the caller hashes it) */
 			passwordHash?: string;
 		} = {};
-		if (Object.prototype.hasOwnProperty.call(body, "displayName")) {
-			patch.displayName = requireString(body, "displayName");
+		if (body.displayName !== undefined) {
+			patch.displayName = body.displayName;
 		}
-		if (Object.prototype.hasOwnProperty.call(body, "email")) {
-			patch.email = optionalString(body, "email");
+		if (body.email !== undefined) {
+			patch.email = body.email;
 		}
-		if (Object.prototype.hasOwnProperty.call(body, "locale")) {
-			patch.locale = requireString(body, "locale");
+		if (body.locale !== undefined) {
+			patch.locale = body.locale;
 		}
-		if (Object.prototype.hasOwnProperty.call(body, "timezone")) {
-			const timezone = requireString(body, "timezone");
-			if (!isValidTimeZone(timezone)) {
-				throw new ValidationError(`timezone is not a valid IANA name (got ${timezone})`);
-			}
-			patch.timezone = timezone;
+		if (body.timezone !== undefined) {
+			patch.timezone = body.timezone;
 		}
-		if (Object.prototype.hasOwnProperty.call(body, "rfidCard")) {
-			patch.rfidCard = optionalString(body, "rfidCard");
+		if (body.rfidCard !== undefined) {
+			patch.rfidCard = body.rfidCard;
 		}
-		if (Object.prototype.hasOwnProperty.call(body, "mustChangePw")) {
-			patch.mustChangePw = requireBoolean(body, "mustChangePw");
+		if (body.mustChangePw !== undefined) {
+			patch.mustChangePw = body.mustChangePw;
 		}
-		const isActive = optionalBoolean(body, "isActive");
+		const isActive = body.isActive;
 		if (isActive !== null) {
 			if (isActive === false && id === context.auth.user.id) {
 				throw new ValidationError("an account cannot deactivate itself");
@@ -207,13 +259,8 @@ export function registerUserRoutes(ctx: ApiContext): void {
 
 		// The picture is not part of the audited patch — `setAvatar` stores it on its own (and keeps the image out
 		// of the audit trail). Sending `avatar: null` removes it, leaving the field out keeps it.
-		if (Object.prototype.hasOwnProperty.call(body, "avatar")) {
-			const avatar = optionalString(body, "avatar");
-			if (avatar !== null && !parseAvatarDataUrl(avatar)) {
-				throw new ValidationError(
-					`avatar must be a data URL of a png, jpeg, webp or gif of up to ${MAX_AVATAR_BYTES} bytes`,
-				);
-			}
+		if (body.avatar !== undefined) {
+			const avatar = body.avatar;
 			users.setAvatar({
 				userId: id,
 				avatar,
@@ -235,7 +282,7 @@ export function registerUserRoutes(ctx: ApiContext): void {
 		const updated = users.update({
 			id,
 			patch,
-			reason: optionalString(body, "reason"),
+			reason: body.reason,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -276,7 +323,7 @@ export function registerUserRoutes(ctx: ApiContext): void {
 		users.update({
 			id,
 			patch: { isActive: false },
-			reason: optionalString(context.optionalJsonBody(), "reason"),
+			reason: parseBody(REASON_BODY, context.optionalJsonBody()).reason,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -329,26 +376,17 @@ export function registerUserRoutes(ctx: ApiContext): void {
 			throw new NotFoundError(`user ${id} not found`);
 		}
 
-		const body = context.jsonBody();
-		if (!Array.isArray(body.shiftRules)) {
-			throw new ValidationError("shiftRules must be an array");
-		}
+		const body = parseBody(SHIFT_RULES_BODY, context.jsonBody());
 		const actor = {
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		};
-		const wanted = (body.shiftRules as unknown[]).map(raw => {
-			const rule = (raw ?? {}) as Record<string, unknown>;
-			return {
-				id: optionalNumber(rule, "id") ?? undefined,
-				surcharge: Number(rule.surcharge),
-				dayOfWeek: optionalNumber(rule, "dayOfWeek"),
-				fromMin: optionalNumber(rule, "fromMin"),
-				toMin: optionalNumber(rule, "toMin"),
-				isActive: optionalBoolean(rule, "isActive") ?? undefined,
-			};
-		});
+		const wanted = body.shiftRules.map(rule => ({
+			...rule,
+			id: rule.id ?? undefined,
+			isActive: rule.isActive ?? undefined,
+		}));
 
 		// the payload replaces the rules of the employee: missing rules are removed, the rest is saved
 		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));

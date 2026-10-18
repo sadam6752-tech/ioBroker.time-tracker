@@ -389,3 +389,18 @@ export function optionalIdList(): FieldRule<z.ZodType<number[] | null>> {
 			.transform(value => (value ? [...new Set(value)] : null));
 	};
 }
+
+/**
+ * An optional list of texts, trimmed, without empty entries; missing or `null` becomes `null`.
+ *
+ * @returns the field rule
+ */
+export function optionalTextList(): FieldRule<z.ZodType<string[] | null>> {
+	return field => {
+		const message = `${field} must be an array of strings`;
+		return z
+			.array(z.string({ error: message }), { error: message })
+			.nullish()
+			.transform(value => (value ? value.map(entry => entry.trim()).filter(entry => entry.length > 0) : null));
+	};
+}

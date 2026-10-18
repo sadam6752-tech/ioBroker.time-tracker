@@ -19,7 +19,9 @@ import type { AggregationService } from "../../services/aggregation";
 import type { AuthService } from "../../services/auth";
 import type { SyncService } from "../../services/sync";
 import type { BackupService } from "../../services/backup";
+import { z } from "zod";
 import { ValidationError, type FieldIssue } from "../../errors";
+import { parseBody } from "./validate";
 import { SETTING_DEFAULTS } from "../../db/seed";
 import { utcToWallTime } from "../../util/time";
 import { type EventBus } from "../events";
@@ -431,101 +433,120 @@ export const PROFILE_FIELDS: (keyof Omit<WorkProfileRecord, "userId">)[] = [
 ];
 
 /**
+ * A field of a work profile: a value that is not sent stays out of the patch, everything else is read with `Number`
+ * (a number in a text counts, as before) and checked.
+ *
+ * @param test - true when the number is fine
+ * @param message - message for a value that fails the test
+ * @returns the schema of the field
+ */
+function profileNumber(test: (value: number) => boolean, message: string): z.ZodType<number | undefined> {
+	return z
+		.unknown()
+		.transform((value, context) => {
+			if (value === undefined) {
+				return undefined;
+			}
+			const number = Number(value);
+			if (!test(number)) {
+				context.addIssue({ code: "custom", message });
+				return z.NEVER;
+			}
+			return number;
+		})
+		.optional();
+}
+
+/** Schema of a work profile patch (unknown fields are refused by `readProfilePatch`, one issue per field). */
+const PROFILE_PATCH = z.object({
+	// the reason travels with the patch into the audit trail and is not part of the profile
+	reason: z.unknown().optional(),
+	percent: profileNumber(
+		value => Number.isInteger(value) && value >= 0 && value <= 100,
+		"must be a whole number between 0 and 100",
+	),
+	weeklyHours: profileNumber(
+		value => Number.isFinite(value) && value >= 0 && value <= 168,
+		"must be between 0 and 168",
+	),
+	workdays: z
+		.string({ error: "must be a string of weekdays" })
+		.trim()
+		.refine(value => /^\d(;\d)*$/.test(value) && !value.split(";").some(day => Number(day) > 6), {
+			error: 'must be weekdays separated by ";" (0 = Sunday … 6 = Saturday)',
+		})
+		.optional(),
+	startDate: profileInstant(),
+	endDate: profileInstant(),
+	overtimeCarryover: profileNumber(Number.isInteger, "must be a whole number of minutes"),
+	vorholzeitPerYear: profileNumber(Number.isInteger, "must be a whole number of minutes"),
+	vacationCarryover: profileNumber(Number.isInteger, "must be a whole number of minutes"),
+	vacationPerYear: profileNumber(Number.isInteger, "must be a whole number of minutes"),
+	overtimeModel: z
+		.enum(["cumulative", "yearly", "monthly"], { error: "must be cumulative, yearly or monthly" })
+		.optional(),
+	holidayFlags: z.string({ error: "must be a JSON string or null" }).nullable().optional(),
+	// minutes of the break per day that are paid; a whole number, at most a full day
+	pausePaidMinutes: profileNumber(
+		value => Number.isInteger(value) && value >= 0 && value <= 1440,
+		"must be a whole number of minutes between 0 and 1440",
+	),
+	// whether the presence card shows the worked time of the day for this employee
+	showWorkedTime: z.boolean({ error: "must be true or false" }).optional(),
+});
+
+/**
+ * The start or end of a work profile: an instant in seconds or `null`; a value that is not sent stays out.
+ *
+ * @returns the schema of the field
+ */
+function profileInstant(): z.ZodType<number | null | undefined> {
+	return z
+		.unknown()
+		.transform((value, context) => {
+			if (value === undefined || value === null) {
+				return value;
+			}
+			const number = Number(value);
+			if (!Number.isInteger(number) || number < 0) {
+				context.addIssue({ code: "custom", message: "must be an instant in seconds or null" });
+				return z.NEVER;
+			}
+			return number;
+		})
+		.optional();
+}
+
+/**
  * Reads a work profile patch and checks its values.
  *
  * The repository merges the given fields into the stored profile, so every value has to be validated here —
- * a broken profile would silently spoil the target time of every later calculation.
+ * a broken profile would silently spoil the target time of every later calculation. Every invalid field is
+ * reported (RFC 9457 `errors[]`), so the client sees all problems at once.
  *
  * @param body - parsed request body
- * @returns the patch
+ * @returns the patch, only with the fields that were sent
  */
 export function readProfilePatch(body: Record<string, unknown>): Partial<Omit<WorkProfileRecord, "userId">> {
-	const patch: Partial<Omit<WorkProfileRecord, "userId">> = {};
-	// every invalid field is collected instead of failing on the first one, so the client sees all problems at
-	// once (RFC 9457 `errors[]`)
-	const issues: FieldIssue[] = [];
-
-	for (const [key, value] of Object.entries(body)) {
-		if (key === "reason") {
-			continue;
+	// every invalid field is collected instead of failing on the first one, so the client sees all problems at once
+	const issues: FieldIssue[] = Object.keys(body)
+		.filter(key => !Object.prototype.hasOwnProperty.call(PROFILE_PATCH.shape, key))
+		.map(path => ({ path, message: "unknown field of a work profile" }));
+	let parsed: z.output<typeof PROFILE_PATCH> | null = null;
+	try {
+		parsed = parseBody(PROFILE_PATCH, body);
+	} catch (error) {
+		if (!(error instanceof ValidationError)) {
+			throw error;
 		}
-		if (!(PROFILE_FIELDS as string[]).includes(key)) {
-			issues.push({ path: key, message: "unknown field of a work profile" });
-			continue;
-		}
-
-		if (key === "percent") {
-			const percent = Number(value);
-			if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
-				issues.push({ path: key, message: "must be a whole number between 0 and 100" });
-				continue;
-			}
-			patch.percent = percent;
-		} else if (key === "weeklyHours") {
-			const hours = Number(value);
-			if (!Number.isFinite(hours) || hours < 0 || hours > 168) {
-				issues.push({ path: key, message: "must be between 0 and 168" });
-				continue;
-			}
-			patch.weeklyHours = hours;
-		} else if (key === "workdays") {
-			if (typeof value !== "string") {
-				issues.push({ path: key, message: "must be a string of weekdays" });
-				continue;
-			}
-			const workdays = value.trim();
-			if (!/^\d(;\d)*$/.test(workdays) || workdays.split(";").some(day => Number(day) > 6)) {
-				issues.push({ path: key, message: 'must be weekdays separated by ";" (0 = Sunday … 6 = Saturday)' });
-				continue;
-			}
-			patch.workdays = workdays;
-		} else if (key === "overtimeModel") {
-			if (value !== "cumulative" && value !== "yearly" && value !== "monthly") {
-				issues.push({ path: key, message: "must be cumulative, yearly or monthly" });
-				continue;
-			}
-			patch.overtimeModel = value;
-		} else if (key === "startDate" || key === "endDate") {
-			if (value !== null && (!Number.isInteger(Number(value)) || Number(value) < 0)) {
-				issues.push({ path: key, message: "must be an instant in seconds or null" });
-				continue;
-			}
-			patch[key] = value === null ? null : Number(value);
-		} else if (key === "holidayFlags") {
-			if (value !== null && typeof value !== "string") {
-				issues.push({ path: key, message: "must be a JSON string or null" });
-				continue;
-			}
-			patch.holidayFlags = value;
-		} else if (key === "pausePaidMinutes") {
-			// minutes of the break per day that are paid; a whole number, at most a full day
-			const minutes = Number(value);
-			if (!Number.isInteger(minutes) || minutes < 0 || minutes > 1440) {
-				issues.push({ path: key, message: "must be a whole number of minutes between 0 and 1440" });
-				continue;
-			}
-			patch.pausePaidMinutes = minutes;
-		} else if (key === "showWorkedTime") {
-			// whether the presence card shows the worked time of the day for this employee
-			if (typeof value !== "boolean") {
-				issues.push({ path: key, message: "must be true or false" });
-				continue;
-			}
-			patch.showWorkedTime = value;
-		} else {
-			const number = Number(value);
-			if (!Number.isInteger(number)) {
-				issues.push({ path: key, message: "must be a whole number of minutes" });
-				continue;
-			}
-			patch[key as "overtimeCarryover" | "vorholzeitPerYear" | "vacationCarryover" | "vacationPerYear"] = number;
-		}
+		issues.push(...error.fields);
 	}
-
-	if (issues.length > 0) {
+	if (issues.length > 0 || parsed === null) {
 		throw new ValidationError(`${issues.length} field(s) of the work profile are not valid`, issues);
 	}
-	return patch;
+	const { reason: _reason, ...patch } = parsed;
+	// a field that was not sent must not reach the merge as `undefined`
+	return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
 }
 
 /** A user as it is handed out over the API (without the password hashes). */

@@ -7,7 +7,63 @@ import { problem, toProblem } from "../problem";
 import { json, noContent } from "../router";
 
 import type { ApiContext } from "./context";
-import { optionalString, optionalNumber, readPeriod, numberParam, optionalDirection } from "./shared";
+import { z } from "zod";
+import {
+	bodySchema,
+	check,
+	employeeRef,
+	keepMissing,
+	listOf,
+	optionalMonth,
+	optionalNumber,
+	optionalText,
+	parseBody,
+	punchDirection,
+	requiredNumber,
+	year,
+} from "./validate";
+import { readPeriod, numberParam } from "./shared";
+
+/** Message of a payout without a usable number of minutes. */
+const MINUTES_MESSAGE = "minutes must be a non-zero whole number";
+
+/** Body of a payout of overtime. */
+const PAYOUT_BODY = bodySchema({
+	userId: employeeRef({ nullIsMissing: true }),
+	year: year(),
+	month: optionalMonth(),
+	minutes: check(
+		requiredNumber(MINUTES_MESSAGE),
+		value => Number.isInteger(value) && value !== 0,
+		() => MINUTES_MESSAGE,
+	),
+	amount: optionalNumber(),
+	note: optionalText(),
+});
+
+/** Body of a change of a payout; a field that is not sent keeps its value. */
+const PAYOUT_PATCH_BODY = bodySchema({
+	minutes: check(
+		optionalNumber(),
+		value => value === null || (Number.isInteger(value) && value !== 0),
+		() => MINUTES_MESSAGE,
+	),
+	amount: keepMissing(optionalNumber()),
+	note: keepMissing(optionalText()),
+});
+
+/** Body of a bulk import: the rows are checked one by one (`BULK_ITEM`). */
+const BULK_BODY = bodySchema({ entries: listOf(z.unknown()) });
+
+/** One row of a bulk import. */
+const BULK_ITEM = bodySchema({
+	userId: employeeRef({ nullIsMissing: true, message: "userId must be a whole number" }),
+	tsUtc: requiredNumber(),
+	clientTsUtc: optionalNumber(),
+	direction: punchDirection(),
+	idempotencyKey: optionalText(),
+	note: optionalText(),
+});
 
 /**
  * Registers the routes of this area.
@@ -42,23 +98,19 @@ export function registerPayoutRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const target = Number(body.userId ?? context.auth.user.id);
-		if (!Number.isInteger(target) || !users.findById(target)) {
+		const body = parseBody(PAYOUT_BODY, context.jsonBody());
+		const target = body.userId ?? context.auth.user.id;
+		if (!users.findById(target)) {
 			throw new ValidationError("userId must reference an existing employee");
-		}
-		const period = readPeriod(body.year, body.month);
-		const minutes = optionalNumber(body, "minutes");
-		if (minutes === null || !Number.isInteger(minutes) || minutes === 0) {
-			throw new ValidationError("minutes must be a non-zero whole number");
 		}
 
 		const created = payouts.create({
 			userId: target,
-			...period,
-			minutes,
-			amount: optionalNumber(body, "amount"),
-			note: optionalString(body, "note"),
+			year: body.year,
+			month: body.month,
+			minutes: body.minutes,
+			amount: body.amount,
+			note: body.note,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -74,20 +126,14 @@ export function registerPayoutRoutes(ctx: ApiContext): void {
 		if (!payouts.findById(id)) {
 			throw new NotFoundError(`payout ${id} not found`);
 		}
-		const body = context.jsonBody();
-		const minutes = optionalNumber(body, "minutes");
-		if (minutes !== null && (!Number.isInteger(minutes) || minutes === 0)) {
-			throw new ValidationError("minutes must be a non-zero whole number");
-		}
+		const body = parseBody(PAYOUT_PATCH_BODY, context.jsonBody());
 
 		const updated = payouts.update({
 			id,
 			patch: {
-				...(minutes !== null ? { minutes } : {}),
-				...(Object.prototype.hasOwnProperty.call(body, "amount")
-					? { amount: optionalNumber(body, "amount") }
-					: {}),
-				...(Object.prototype.hasOwnProperty.call(body, "note") ? { note: optionalString(body, "note") } : {}),
+				...(body.minutes !== null ? { minutes: body.minutes } : {}),
+				...(body.amount !== undefined ? { amount: body.amount } : {}),
+				...(body.note !== undefined ? { note: body.note } : {}),
 			},
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
@@ -122,10 +168,7 @@ export function registerPayoutRoutes(ctx: ApiContext): void {
 			if (!context.auth) {
 				throw problem(401, "no_session", "request rejected (no_session)");
 			}
-			const body = context.jsonBody();
-			if (!Array.isArray(body.entries)) {
-				throw new ValidationError("entries must be an array");
-			}
+			const body = parseBody(BULK_BODY, context.jsonBody());
 
 			const actor = context.auth;
 			const timestamp = now();
@@ -139,13 +182,11 @@ export function registerPayoutRoutes(ctx: ApiContext): void {
 				error?: string;
 			}[] = [];
 
-			(body.entries as unknown[]).forEach((raw, index) => {
+			body.entries.forEach((raw, index) => {
 				try {
-					const item = (raw ?? {}) as Record<string, unknown>;
-					const target = Number(item.userId ?? actor.user.id);
-					if (!Number.isInteger(target)) {
-						throw new ValidationError("userId must be a whole number");
-					}
+					// every row is checked on its own: a faulty row is reported, the others are imported
+					const item = parseBody(BULK_ITEM, raw ?? {});
+					const target = item.userId ?? actor.user.id;
 					// writing punches for somebody else needs the matching permission
 					if (target !== actor.user.id && !actor.permissions.includes("time.edit_other")) {
 						throw problem(
@@ -158,20 +199,15 @@ export function registerPayoutRoutes(ctx: ApiContext): void {
 					if (!user) {
 						throw new NotFoundError(`user ${target} not found`);
 					}
-					const tsUtc = optionalNumber(item, "tsUtc");
-					if (tsUtc === null) {
-						throw new ValidationError("tsUtc is required");
-					}
-
 					const stored = entries.insert({
 						userId: target,
-						tsUtc,
-						clientTsUtc: optionalNumber(item, "clientTsUtc"),
+						tsUtc: item.tsUtc,
+						clientTsUtc: item.clientTsUtc,
 						timeZone: user.timezone,
 						source: "import",
-						direction: optionalDirection(item),
-						idempotencyKey: optionalString(item, "idempotencyKey"),
-						note: optionalString(item, "note"),
+						direction: item.direction,
+						idempotencyKey: item.idempotencyKey,
+						note: item.note,
 						actorId: actor.user.id,
 						actorIp: context.request.remoteAddress ?? null,
 						now: timestamp,

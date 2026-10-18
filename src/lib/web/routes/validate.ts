@@ -242,3 +242,150 @@ export function itemOf<R extends Record<string, FieldRule>>(rules: R): z.ZodType
 export function lenientText(): FieldRule<z.ZodType<string>> {
 	return () => z.unknown().transform(value => (typeof value === "string" ? value : ""));
 }
+
+/**
+ * Adds a check to a rule, e.g. a number that has to be a positive whole number.
+ *
+ * @param rule - the rule that reads the value
+ * @param test - true when the value is fine
+ * @param message - message for a value that fails the test
+ * @returns the field rule
+ */
+export function check<T>(
+	rule: FieldRule<z.ZodType<T>>,
+	test: (value: T) => boolean,
+	message: (field: string, value: T) => string,
+): FieldRule<z.ZodType<T>> {
+	return field =>
+		rule(field).transform((value, context) => {
+			if (!test(value)) {
+				context.addIssue({ code: "custom", message: message(field, value) });
+				return z.NEVER;
+			}
+			return value;
+		});
+}
+
+/**
+ * Keeps a field that was not sent apart from one that was sent empty: a missing field stays `undefined` (the record
+ * keeps its value), everything else goes through the rule.
+ *
+ * @param rule - the rule for a field that was sent
+ * @returns the field rule
+ */
+export function keepMissing<T>(rule: FieldRule<z.ZodType<T>>): FieldRule<z.ZodType<T | undefined>> {
+	return field => {
+		const inner = rule(field);
+		return (
+			z
+				.unknown()
+				.transform((value, context) => {
+					if (value === undefined) {
+						return undefined;
+					}
+					const result = inner.safeParse(value);
+					if (!result.success) {
+						for (const issue of result.error.issues) {
+							context.addIssue({ code: "custom", message: issue.message, path: [...issue.path] });
+						}
+						return z.NEVER;
+					}
+					return result.data;
+				})
+				// a field that is not sent is allowed and stays `undefined`
+				.optional()
+		);
+	};
+}
+
+/**
+ * The id of an employee as a whole number; a number in a text is taken as well. Whether the employee exists is
+ * checked by the route.
+ *
+ * @param options - how a missing value is treated and what an invalid one is told
+ * @param options.nullIsMissing - `null` counts as not sent (the route then takes its default)
+ * @param options.message - message for a value that is no whole number, default `<field> must reference an
+ *   existing employee`
+ * @returns the field rule; `undefined` when the field was not sent
+ */
+export function employeeRef(
+	options: { nullIsMissing?: boolean; message?: string } = {},
+): FieldRule<z.ZodType<number | undefined>> {
+	return field =>
+		z
+			.unknown()
+			.transform((value, context) => {
+				if (value === undefined || (options.nullIsMissing === true && value === null)) {
+					return undefined;
+				}
+				const id = Number(value);
+				if (!Number.isInteger(id)) {
+					context.addIssue({
+						code: "custom",
+						message: options.message ?? `${field} must reference an existing employee`,
+					});
+					return z.NEVER;
+				}
+				return id;
+			})
+			// a field that is not sent is allowed and stays `undefined`
+			.optional();
+}
+
+/**
+ * A year between 2000 and 2100; a number in a text is taken as well.
+ *
+ * @returns the field rule
+ */
+export function year(): FieldRule<z.ZodType<number>> {
+	return field =>
+		z.unknown().transform((value, context) => {
+			const parsed = Number(value);
+			if (!Number.isInteger(parsed) || parsed < 2000 || parsed > 2100) {
+				context.addIssue({
+					code: "custom",
+					message: `${field} must be a four digit year between 2000 and 2100 (got ${JSON.stringify(value)})`,
+				});
+				return z.NEVER;
+			}
+			return parsed;
+		});
+}
+
+/**
+ * An optional month 1–12; missing, `null` or blank means the whole year.
+ *
+ * @returns the field rule
+ */
+export function optionalMonth(): FieldRule<z.ZodType<number | null>> {
+	return field =>
+		z.unknown().transform((value, context) => {
+			if (value === undefined || value === null || value === "") {
+				return null;
+			}
+			const parsed = Number(value);
+			if (!Number.isInteger(parsed) || parsed < 1 || parsed > 12) {
+				context.addIssue({
+					code: "custom",
+					message: `${field} must be between 1 and 12 (got ${JSON.stringify(value)})`,
+				});
+				return z.NEVER;
+			}
+			return parsed;
+		});
+}
+
+/**
+ * An optional list of ids (whole numbers), without duplicates; missing or `null` becomes `null`.
+ *
+ * @returns the field rule
+ */
+export function optionalIdList(): FieldRule<z.ZodType<number[] | null>> {
+	return field => {
+		const message = `${field} must be an array of whole numbers`;
+		return z
+			.array(z.number({ error: message }).int({ error: message }), { error: message })
+			.nullish()
+			.transform(value => (value ? [...new Set(value)] : null));
+	};
+}

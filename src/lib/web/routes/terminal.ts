@@ -11,18 +11,57 @@ import { json, noContent, type RouteContext } from "../router";
 
 import type { ApiContext } from "./context";
 import {
-	requireString,
-	optionalString,
+	bodySchema,
+	check,
+	optionalFlag,
+	optionalIdList,
+	optionalNumber,
+	optionalText,
+	parseBody,
+	punchDirection,
+	requiredText,
+} from "./validate";
+import {
 	MAX_CODE_LENGTH,
 	MAX_PUBLIC_NOTE_LENGTH,
-	optionalNumber,
 	TERMINAL_SESSION_MINUTES_DEFAULT,
 	publicTerminal,
-	readUserIds,
-	optionalBoolean,
 	numberParam,
-	optionalDirection,
 } from "./shared";
+
+/** Body that opens a session of a kiosk device. */
+const SESSION_BODY = bodySchema({ deviceToken: requiredText(MAX_CODE_LENGTH) });
+
+/** Body of a punch at the kiosk: a badge, or an employee with (or without) the PIN. */
+const TERMINAL_PUNCH_BODY = bodySchema({
+	badge: optionalText(MAX_CODE_LENGTH),
+	pin: optionalText(MAX_CODE_LENGTH),
+	userId: optionalNumber(),
+	tsUtc: optionalNumber(),
+	direction: punchDirection(),
+	note: optionalText(MAX_PUBLIC_NOTE_LENGTH),
+});
+
+/** Body of a new terminal. */
+const TERMINAL_BODY = bodySchema({
+	name: requiredText(),
+	location: optionalText(),
+	pinRequired: optionalFlag(),
+	userIds: optionalIdList(),
+	ttlDays: optionalNumber(),
+});
+
+/** Body of the employees of a terminal. */
+const TERMINAL_USERS_BODY = bodySchema({ userIds: optionalIdList() });
+
+/** Body of a PIN: 4 to 8 digits, missing or empty removes the PIN. */
+const PIN_BODY = bodySchema({
+	pin: check(
+		optionalText(),
+		value => value === null || /^\d{4,8}$/.test(value),
+		() => "pin must be 4 to 8 digits",
+	),
+});
 
 /**
  * Registers the routes of this area.
@@ -84,8 +123,7 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 		{ public: true, csrf: false, rateLimit: { name: "terminal-session", limit: 30, windowSeconds: 60 } },
 		context => {
 			requireKiosk();
-			const body = context.jsonBody();
-			const deviceToken = requireString(body, "deviceToken", MAX_CODE_LENGTH);
+			const { deviceToken } = parseBody(SESSION_BODY, context.jsonBody());
 			const terminal = terminals.findByToken(deviceToken, now());
 			if (!terminal) {
 				throw problem(401, "invalid_credentials", "the device token is not valid any more");
@@ -177,10 +215,9 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 		{ public: true, csrf: false, rateLimit: { name: "terminal-punch", limit: 60, windowSeconds: 60 } },
 		context => {
 			const terminal = requireTerminal(context);
-			const body = context.jsonBody();
-			const badge = optionalString(body, "badge", MAX_CODE_LENGTH);
-			const pin = optionalString(body, "pin", MAX_CODE_LENGTH);
-			const targetId = optionalNumber(body, "userId");
+			const body = parseBody(TERMINAL_PUNCH_BODY, context.jsonBody());
+			const { badge, pin } = body;
+			const targetId = body.userId;
 
 			if (badge === null && targetId === null) {
 				throw new ValidationError("a badge or a userId is required");
@@ -216,11 +253,11 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 			const timestamp = now();
 			const stored = entries.insert({
 				userId: user.id,
-				tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+				tsUtc: body.tsUtc ?? timestamp,
 				timeZone: user.timezone,
 				source: "terminal",
-				direction: optionalDirection(body),
-				note: optionalString(body, "note", MAX_PUBLIC_NOTE_LENGTH),
+				direction: body.direction,
+				note: body.note,
 				actorId: user.id,
 				actorIp: context.request.remoteAddress ?? null,
 				now: timestamp,
@@ -269,13 +306,13 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
+		const body = parseBody(TERMINAL_BODY, context.jsonBody());
 		const created = terminals.create({
-			name: requireString(body, "name"),
-			location: optionalString(body, "location"),
-			pinRequired: optionalBoolean(body, "pinRequired") ?? undefined,
-			userIds: readUserIds(body) ?? undefined,
-			ttlDays: optionalNumber(body, "ttlDays"),
+			name: body.name,
+			location: body.location,
+			pinRequired: body.pinRequired ?? undefined,
+			userIds: body.userIds ?? undefined,
+			ttlDays: body.ttlDays,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -294,9 +331,8 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
 		const id = numberParam(context, "id");
-		const body = context.jsonBody();
 		// an empty list means “all employees”, which is also how a terminal starts its life
-		const userIds = readUserIds(body) ?? [];
+		const userIds = parseBody(TERMINAL_USERS_BODY, context.jsonBody()).userIds ?? [];
 		for (const userId of userIds) {
 			if (!users.findById(userId)) {
 				throw new ValidationError(`user ${userId} does not exist`);
@@ -337,12 +373,7 @@ export function registerTerminalRoutes(ctx: ApiContext): void {
 		if (!users.findById(id)) {
 			throw new NotFoundError(`user ${id} not found`);
 		}
-		const body = context.jsonBody();
-		const pin = optionalString(body, "pin");
-
-		if (pin !== null && !/^\d{4,8}$/.test(pin)) {
-			throw new ValidationError("pin must be 4 to 8 digits");
-		}
+		const { pin } = parseBody(PIN_BODY, context.jsonBody());
 		users.setPin({
 			userId: id,
 			// a PIN is a secret of the same weight as a password, so it is hashed the same way

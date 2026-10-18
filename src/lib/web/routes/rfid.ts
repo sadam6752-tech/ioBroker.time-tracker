@@ -16,14 +16,46 @@ import { json, noContent, type RouteContext } from "../router";
 
 import type { ApiContext } from "./context";
 import {
-	requireString,
-	optionalString,
-	MAX_CODE_LENGTH,
-	MAX_PUBLIC_NOTE_LENGTH,
+	bodySchema,
+	check,
+	employeeRef,
+	keepMissing,
 	optionalNumber,
-	numberParam,
-	optionalDirection,
-} from "./shared";
+	optionalText,
+	parseBody,
+	punchDirection,
+	requiredText,
+} from "./validate";
+import { MAX_CODE_LENGTH, MAX_PUBLIC_NOTE_LENGTH, numberParam } from "./shared";
+
+/** Validity of a link in days: a positive whole number; missing means the default. */
+const TTL_DAYS = check(
+	optionalNumber(),
+	value => value === null || (Number.isInteger(value) && value > 0),
+	(field, value) => `${field} must be a positive whole number (got ${value})`,
+);
+
+/** Body of a new badge. */
+const TAG_BODY = bodySchema({
+	userId: employeeRef({ nullIsMissing: true }),
+	ttlDays: TTL_DAYS,
+	uid: optionalText(),
+	label: optionalText(),
+});
+
+/** Body of a change of a badge; a field that is not sent keeps its value. */
+const TAG_PATCH_BODY = bodySchema({ userId: employeeRef(), ttlDays: TTL_DAYS, label: keepMissing(optionalText()) });
+
+/** Body of a new link for a badge. */
+const TTL_BODY = bodySchema({ ttlDays: TTL_DAYS });
+
+/** Body of a scan: the signed token of the badge and the punch it carries. */
+const SCAN_BODY = bodySchema({
+	token: requiredText(MAX_CODE_LENGTH),
+	tsUtc: optionalNumber(),
+	direction: punchDirection(),
+	note: optionalText(MAX_PUBLIC_NOTE_LENGTH),
+});
 
 /**
  * Registers the routes of this area.
@@ -117,25 +149,22 @@ export function registerRfidRoutes(ctx: ApiContext): void {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
 		const secret = requireHmacSecret();
-		const body = context.jsonBody();
-		const target = Number(body.userId ?? context.auth.user.id);
-		if (!Number.isInteger(target) || !users.findById(target)) {
+		const body = parseBody(TAG_BODY, context.jsonBody());
+		const target = body.userId ?? context.auth.user.id;
+		if (!users.findById(target)) {
 			throw new ValidationError("userId must reference an existing employee");
 		}
-		const ttlDays = optionalNumber(body, "ttlDays") ?? 365;
-		if (!Number.isInteger(ttlDays) || ttlDays <= 0) {
-			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
-		}
+		const ttlDays = body.ttlDays ?? 365;
 
 		const timestamp = now();
 		const expiresAt = timestamp + ttlDays * 86400;
-		const uid = optionalString(body, "uid") ?? newTagUid();
+		const uid = body.uid ?? newTagUid();
 		const signature = signTag(secret, uid, target, expiresAt);
 		const tag = rfid.create({
 			uid,
 			userId: target,
 			signature,
-			label: optionalString(body, "label"),
+			label: body.label,
 			expiresAt,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
@@ -187,20 +216,17 @@ export function registerRfidRoutes(ctx: ApiContext): void {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
 		const id = numberParam(context, "id");
-		const body = context.jsonBody();
+		const body = parseBody(TAG_PATCH_BODY, context.jsonBody());
 		const current = rfid.findById(id);
 		if (!current) {
 			throw new NotFoundError(`tag ${context.params.id} not found`);
 		}
-		const userId = body.userId === undefined ? current.userId : Number(body.userId);
-		if (userId === null || !Number.isInteger(userId) || !users.findById(userId)) {
+		const userId = body.userId === undefined ? current.userId : body.userId;
+		if (userId === null || !users.findById(userId)) {
 			throw new ValidationError("userId must reference an existing employee");
 		}
-		const ttlDays = optionalNumber(body, "ttlDays") ?? undefined;
-		if (ttlDays !== undefined && (!Number.isInteger(ttlDays) || ttlDays <= 0)) {
-			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
-		}
-		const label = body.label === undefined ? undefined : optionalString(body, "label");
+		const ttlDays = body.ttlDays ?? undefined;
+		const label = body.label;
 
 		if (userId !== current.userId || ttlDays !== undefined) {
 			// the link has to be signed again: it carries the owner in its payload
@@ -233,10 +259,7 @@ export function registerRfidRoutes(ctx: ApiContext): void {
 		if (!tag) {
 			throw new NotFoundError(`tag ${context.params.id} not found`);
 		}
-		const ttlDays = optionalNumber(context.jsonBody(), "ttlDays") ?? 365;
-		if (!Number.isInteger(ttlDays) || ttlDays <= 0) {
-			throw new ValidationError(`ttlDays must be a positive whole number (got ${ttlDays})`);
-		}
+		const ttlDays = parseBody(TTL_BODY, context.jsonBody()).ttlDays ?? 365;
 		const signed = reissueLink(context, tag, ttlDays);
 		return json(200, { tag: signed.tag, token: signed.token, url: tagLink(context, signed.token) });
 	});
@@ -247,8 +270,8 @@ export function registerRfidRoutes(ctx: ApiContext): void {
 		{ public: true, csrf: false, rateLimit: { name: "rfid-scan", limit: 30, windowSeconds: 60 } },
 		context => {
 			const secret = requireHmacSecret();
-			const body = context.jsonBody();
-			const parsed = parseTagToken(requireString(body, "token", MAX_CODE_LENGTH));
+			const body = parseBody(SCAN_BODY, context.jsonBody());
+			const parsed = parseTagToken(body.token);
 			if (!parsed) {
 				throw new ValidationError("token is not valid");
 			}
@@ -279,11 +302,11 @@ export function registerRfidRoutes(ctx: ApiContext): void {
 			const timestamp = now();
 			const stored = entries.insert({
 				userId: user.id,
-				tsUtc: optionalNumber(body, "tsUtc") ?? timestamp,
+				tsUtc: body.tsUtc ?? timestamp,
 				timeZone: user.timezone,
 				source: "nfc",
-				direction: optionalDirection(body),
-				note: optionalString(body, "note", MAX_PUBLIC_NOTE_LENGTH),
+				direction: body.direction,
+				note: body.note,
 				actorId: user.id,
 				actorIp: context.request.remoteAddress ?? null,
 				now: timestamp,

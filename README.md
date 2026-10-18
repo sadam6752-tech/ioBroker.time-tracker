@@ -540,6 +540,9 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) chore: the request bodies of the REST API are checked with zod (D22); the messages are worded as before, and
+  every invalid field of a request is now listed in `errors[]`.
+
 ### 0.7.27 (2026-10-18)
 
 - (Alex) fix: the names of the holiday countries in the instance settings are translated (note of the review).

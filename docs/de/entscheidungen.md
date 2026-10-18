@@ -667,3 +667,19 @@ wird abgelehnt, bevor das Passwort gesendet wird; leer heißt nicht geprüft, da
 Audit-Log (`backup.remote_copy`, `backup.remote_copy_failed`) und `info.remoteBackupError`; `info.lastRemoteBackup` hält die
 letzte gute Datei. (6) **Das Passwort ist `encryptedNative` und `protectedNative`**; der Verbindungstest nimmt die Werte des
 ungespeicherten Formulars und greift nur für denselben Server, Benutzer und Port auf das gespeicherte Passwort zurück.
+
+## D22 — Anfragekörper werden mit zod geprüft (18.10.2026)
+
+**Anlass:** Jede Route las ihren Körper mit kleinen handgeschriebenen Lesern (`requireString`, `optionalNumber`, …) und
+prüfte den Rest von Hand. Das funktionierte, aber eine Route zeigte nicht auf einen Blick, was sie annimmt, und sie hielt
+beim ersten ungültigen Feld an.
+
+**Entscheidung:** (1) **zod 4** prüft den Körper jeder Route an der Grenze; eine Route beschreibt ihn als Objekt aus
+Feldregeln (`bodySchema(…)` in `src/lib/web/routes/validate.ts`) und liest die typisierten Werte mit `parseBody`.
+(2) **Die Meldungen bleiben wortgleich**, ein Test hält das fest. (3) **Jedes ungültige Feld** steht in `errors[]`, die
+Meldung des Problems ist die des ersten Felds. (4) **Was ein fehlendes Feld bedeutet, bleibt ausdrücklich:** optional wird
+`null`, ein nicht geschicktes Feld einer Änderung bleibt `undefined` (der Datensatz behält seinen Wert), eine Zahl in einem
+Text wird weiter genommen, wo das vorher galt; jede Regel ist mit fehlendem Feld getestet. (5) **Prüfungen, die die
+Datenbank brauchen, bleiben in der Route**; `PUT /settings` (freier Schlüssel-Wert-Speicher) und die Terminal-Sitzung
+lesen bewusst weiter selbst. (6) zod ist auf eine Version festgelegt, die beim Einbau älter als die Dependabot-Wartezeit
+(7 Tage) war.

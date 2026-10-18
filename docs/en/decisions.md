@@ -680,3 +680,28 @@ used here.
 **Proof:** `src/lib/services/remoteBackup.test.ts` (copy, size check, retention, leftovers, time limit, settings of the
 test), `src/lib/services/sftpSsh2.test.ts` (against a real SFTP server in the process, fingerprint), the hook test in
 `src/lib/services/backup.test.ts`.
+
+## D22 — Request bodies are checked with zod (18.10.2026)
+
+**Occasion:** Every route read its body with small hand-written readers (`requireString`, `optionalNumber`, …) and
+checked the rest by hand. That worked, but a route did not show at one glance what it accepts, and it stopped at the
+first invalid field.
+
+**Decision:**
+
+1. **zod 4** checks the body of every route at the boundary. A route declares its body as an object of field rules
+   (`bodySchema({ login: requiredText(128), … })` in `src/lib/web/routes/validate.ts`) and reads the typed values with
+   `parseBody`.
+2. **The messages stay as they were.** Every rule words its message like the reader it replaced (`login is required`,
+   `direction must be in, out or auto (got x)`, …), so the web app and clients see no change. A test pins the wording.
+3. **Every invalid field is reported** in `errors[]` (RFC 9457); the message of the problem is the one of the first field.
+4. **What a missing field means stays explicit:** an optional field becomes `null`, a field of a change that is not sent
+   stays `undefined` (`keepMissing`, the record keeps its value), a number in a text is still taken where it was before
+   (`employeeRef`, `year`). zod refuses a missing key for some kinds of schema; every rule is tested with a missing field.
+5. **Checks that need the database stay in the route** (does the employee exist, may the caller do it). Two places keep
+   their own reading on purpose: `PUT /settings` is a free key/value store with a rule per key, and the terminal session
+   is taken from the body or the query.
+6. zod is pinned to a version that is older than the Dependabot cooldown (7 days) when it is added.
+
+**Proof:** `src/lib/web/routes/validate.test.ts` (messages, all invalid fields, missing fields, nested paths) and the
+API tests in `src/lib/web/routes/*.test.ts`, which run unchanged.

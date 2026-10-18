@@ -19,7 +19,71 @@ import { problem } from "../problem";
 import { json, noContent, binary, type RouteContext } from "../router";
 
 import type { ApiContext } from "./context";
-import { requireString, optionalString, optionalNumber, optionalBoolean, numberParam, resolveScope } from "./shared";
+import {
+	bodySchema,
+	keepMissing,
+	optionalChoice,
+	optionalFlag,
+	optionalNumber,
+	optionalText,
+	parseBody,
+	requiredChoice,
+	requiredText,
+} from "./validate";
+import { numberParam, resolveScope } from "./shared";
+
+/** Body of a new absence. */
+const ABSENCE_BODY = bodySchema({
+	userId: optionalNumber(),
+	status: optionalChoice(["taken", "planned"]),
+	typeCode: optionalText(),
+	typeId: optionalNumber(),
+	dateFrom: requiredText(),
+	dateTo: optionalText(),
+	dayPortion: optionalNumber(),
+	hours: optionalNumber(),
+	note: optionalText(),
+});
+
+/** Body of a change of an absence; hours and note keep their value when they are not sent. */
+const ABSENCE_PATCH_BODY = bodySchema({
+	status: optionalChoice(["taken", "planned"]),
+	typeId: optionalNumber(),
+	typeCode: optionalText(),
+	dateFrom: optionalText(),
+	dateTo: optionalText(),
+	dayPortion: optionalNumber(),
+	hours: keepMissing(optionalNumber()),
+	note: keepMissing(optionalText()),
+	reason: optionalText(),
+});
+
+/** Body of the state of an absence. */
+const STATUS_BODY = bodySchema({ status: requiredChoice(["taken", "planned"]) });
+
+/** Body of the decision about a request. */
+const APPROVAL_BODY = bodySchema({
+	approval: requiredChoice(["requested", "approved", "rejected"]),
+	note: optionalText(),
+});
+
+/** Body that only carries a note (cancellation and its decline). */
+const NOTE_BODY = bodySchema({ note: optionalText() });
+
+/** Body of the subscription link of a calendar. */
+const CALENDAR_TOKEN_BODY = bodySchema({ userId: optionalNumber(), rotate: optionalFlag() });
+
+/** Body of an absence type. */
+const ABSENCE_TYPE_BODY = bodySchema({
+	userId: optionalNumber(),
+	code: requiredText(),
+	name: requiredText(),
+	paid: optionalFlag(),
+	factor: optionalNumber(),
+	reduceVacation: optionalFlag(),
+	isActive: optionalFlag(),
+	color: optionalText(),
+});
 
 /**
  * Registers the routes of this area.
@@ -90,13 +154,9 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const userId = resolveScope(context, optionalNumber(body, "userId"), "absence.request", "absence.edit_other");
-
-		const status = optionalString(body, "status");
-		if (status !== null && status !== "taken" && status !== "planned") {
-			throw new ValidationError(`status must be taken or planned (got ${status})`);
-		}
+		const body = parseBody(ABSENCE_BODY, context.jsonBody());
+		const userId = resolveScope(context, body.userId, "absence.request", "absence.edit_other");
+		const { status } = body;
 		// The administration books dates straight away, an employee only requests them: who may change an absence
 		// of somebody else decides about it, everybody else waits for that decision.
 		const mayDecide = context.auth.permissions.includes("absence.edit_other");
@@ -105,10 +165,7 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		// An employee may only pick a type the administration released for everybody: a sickness note, an accident or
 		// military service are things the company books itself, nobody requests them.
 		if (!mayDecide) {
-			const wanted = absences.findType(
-				optionalNumber(body, "typeId") ?? optionalString(body, "typeCode") ?? "",
-				userId,
-			);
+			const wanted = absences.findType(body.typeId ?? body.typeCode ?? "", userId);
 			if (!wanted) {
 				throw new ValidationError("unknown absence type");
 			}
@@ -123,15 +180,15 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 
 		const created = absences.create({
 			userId,
-			typeCode: optionalString(body, "typeCode") ?? undefined,
-			typeId: optionalNumber(body, "typeId") ?? undefined,
-			dateFrom: requireString(body, "dateFrom"),
-			dateTo: optionalString(body, "dateTo") ?? undefined,
-			dayPortion: optionalNumber(body, "dayPortion") ?? undefined,
-			hours: optionalNumber(body, "hours"),
+			typeCode: body.typeCode ?? undefined,
+			typeId: body.typeId ?? undefined,
+			dateFrom: body.dateFrom,
+			dateTo: body.dateTo ?? undefined,
+			dayPortion: body.dayPortion ?? undefined,
+			hours: body.hours,
 			status: status ?? undefined,
 			approval,
-			note: optionalString(body, "note"),
+			note: body.note,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -144,10 +201,7 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const status = requireString(context.jsonBody(), "status");
-		if (status !== "taken" && status !== "planned") {
-			throw new ValidationError(`status must be taken or planned (got ${status})`);
-		}
+		const { status } = parseBody(STATUS_BODY, context.jsonBody());
 
 		const updated = absences.setStatus({
 			id: numberParam(context, "id"),
@@ -166,16 +220,12 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const approval = requireString(body, "approval");
-		if (approval !== "requested" && approval !== "approved" && approval !== "rejected") {
-			throw new ValidationError(`approval must be requested, approved or rejected (got ${approval})`);
-		}
+		const { approval, note } = parseBody(APPROVAL_BODY, context.jsonBody());
 
 		const updated = absences.setApproval({
 			id: numberParam(context, "id"),
 			approval,
-			note: optionalString(body, "note"),
+			note,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -206,25 +256,21 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 
 	route("PATCH", "/absences/:id", { permission: "absence.request", csrf: true }, context => {
 		const absence = changeableAbsence(context);
-		const body = context.jsonBody();
-		const status = optionalString(body, "status");
-
-		if (status !== null && status !== "taken" && status !== "planned") {
-			throw new ValidationError(`status must be taken or planned (got ${status})`);
-		}
+		const body = parseBody(ABSENCE_PATCH_BODY, context.jsonBody());
+		const { status } = body;
 		// changing the state of an absence is an approval, even for the own one
 		if (status !== null && !context.auth?.permissions.includes("absence.approve")) {
 			throw problem(403, "permission_denied", "request rejected (permission_denied: absence.approve)");
 		}
 
 		const patch = {
-			typeId: optionalNumber(body, "typeId") ?? undefined,
-			typeCode: optionalString(body, "typeCode") ?? undefined,
-			dateFrom: optionalString(body, "dateFrom") ?? undefined,
-			dateTo: optionalString(body, "dateTo") ?? undefined,
-			dayPortion: optionalNumber(body, "dayPortion") ?? undefined,
-			...(Object.prototype.hasOwnProperty.call(body, "hours") ? { hours: optionalNumber(body, "hours") } : {}),
-			...(Object.prototype.hasOwnProperty.call(body, "note") ? { note: optionalString(body, "note") } : {}),
+			typeId: body.typeId ?? undefined,
+			typeCode: body.typeCode ?? undefined,
+			dateFrom: body.dateFrom ?? undefined,
+			dateTo: body.dateTo ?? undefined,
+			dayPortion: body.dayPortion ?? undefined,
+			...(body.hours !== undefined ? { hours: body.hours } : {}),
+			...(body.note !== undefined ? { note: body.note } : {}),
 		};
 		const hasFields = Object.values(patch).some(value => value !== undefined);
 
@@ -261,7 +307,7 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 			? absences.update({
 					id: absence.id,
 					patch,
-					reason: optionalString(body, "reason"),
+					reason: body.reason,
 					actorId: context.auth?.user.id ?? 0,
 					actorIp: context.request.remoteAddress ?? null,
 					now: now(),
@@ -307,10 +353,10 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 	// `absence.edit_other` (`changeableAbsence`).
 	route("POST", "/absences/:id/cancellation", { permission: "absence.request", csrf: true }, context => {
 		const absence = changeableAbsence(context);
-		const body = context.optionalJsonBody();
+		const body = parseBody(NOTE_BODY, context.optionalJsonBody());
 		const updated = absences.requestCancel({
 			id: absence.id,
-			note: optionalString(body, "note"),
+			note: body.note,
 			actorId: context.auth?.user.id ?? 0,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -347,11 +393,11 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!absence) {
 			throw new NotFoundError(`absence ${id} not found`);
 		}
-		const body = context.optionalJsonBody();
+		const body = parseBody(NOTE_BODY, context.optionalJsonBody());
 		const updated = absences.clearCancel({
 			id,
 			declined: true,
-			note: optionalString(body, "note"),
+			note: body.note,
 			actorId: context.auth?.user.id ?? 0,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -419,14 +465,14 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const userId = resolveScope(context, optionalNumber(body, "userId"), "report.view_own", "absence.edit_other");
+		const body = parseBody(CALENDAR_TOKEN_BODY, context.jsonBody());
+		const userId = resolveScope(context, body.userId, "report.view_own", "absence.edit_other");
 		const current = users.findById(userId);
 		if (!current) {
 			throw new NotFoundError(`user ${userId} not found`);
 		}
 
-		const rotate = optionalBoolean(body, "rotate") ?? false;
+		const rotate = body.rotate ?? false;
 		const token =
 			rotate || current.calendarToken === null ? randomBytes(32).toString("base64url") : current.calendarToken;
 		const updated = users.setCalendarToken({
@@ -451,16 +497,16 @@ export function registerAbsenceRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
+		const body = parseBody(ABSENCE_TYPE_BODY, context.jsonBody());
 		const result = absences.upsertType({
-			userId: optionalNumber(body, "userId"),
-			code: requireString(body, "code"),
-			name: requireString(body, "name"),
-			paid: optionalBoolean(body, "paid") ?? undefined,
-			factor: optionalNumber(body, "factor") ?? undefined,
-			reduceVacation: optionalBoolean(body, "reduceVacation") ?? undefined,
-			isActive: optionalBoolean(body, "isActive") ?? undefined,
-			color: optionalString(body, "color"),
+			userId: body.userId,
+			code: body.code,
+			name: body.name,
+			paid: body.paid ?? undefined,
+			factor: body.factor ?? undefined,
+			reduceVacation: body.reduceVacation ?? undefined,
+			isActive: body.isActive ?? undefined,
+			color: body.color,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),

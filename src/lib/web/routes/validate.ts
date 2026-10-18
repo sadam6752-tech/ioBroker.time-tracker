@@ -404,3 +404,25 @@ export function optionalTextList(): FieldRule<z.ZodType<string[] | null>> {
 			.transform(value => (value ? value.map(entry => entry.trim()).filter(entry => entry.length > 0) : null));
 	};
 }
+
+/**
+ * An optional text that must be one of the given values; missing, `null` or blank becomes `null`.
+ *
+ * @param values - allowed values
+ * @returns the field rule
+ */
+export function optionalChoice<const V extends readonly [string, ...string[]]>(
+	values: V,
+): FieldRule<z.ZodType<V[number] | null>> {
+	return field =>
+		optionalText()(field).transform((value, context) => {
+			if (value === null) {
+				return null;
+			}
+			if (!(values as readonly string[]).includes(value)) {
+				context.addIssue({ code: "custom", message: `${field} must be ${choices(values)} (got ${value})` });
+				return z.NEVER;
+			}
+			return value;
+		});
+}

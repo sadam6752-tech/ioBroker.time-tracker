@@ -18,6 +18,22 @@ describe("web api", () => {
 	useApiFixture();
 
 	describe("payouts, bulk import and statistics", () => {
+		it("takes optional fields that are left out completely", async () => {
+			// a payout for the whole year carries no month, a queued punch may come without an idempotency key
+			const yearly = await send("POST", "/payouts", {
+				body: { userId: annaId, year: 2026, minutes: 60 },
+				headers: headers(adminToken, adminCsrf),
+			});
+			expect(yearly.status).to.equal(201);
+			expect(bodyOf<{ payout: { month: number | null } }>(yearly).payout.month).to.equal(null);
+
+			const synced = await send("POST", "/entries/sync", {
+				body: { punches: [{ tsUtc: 1000 }] },
+				headers: headers(annaToken, annaCsrf),
+			});
+			expect(synced.status).to.equal(200);
+		});
+
 		it("records, changes and deletes payouts", async () => {
 			// `payout.view`/`payout.create` are administrative rights
 			expect(

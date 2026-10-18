@@ -53,6 +53,16 @@ function issuePath(path: readonly PropertyKey[]): string {
 }
 
 /**
+ * Any value, also a field that was not sent. zod refuses a missing key unless the schema accepts a missing input;
+ * this one does, and the transform behind it decides what a missing value means (its result is kept).
+ *
+ * @returns the schema of the raw value
+ */
+function anyInput(): z.ZodOptional<z.ZodUnknown> {
+	return z.unknown().optional();
+}
+
+/**
  * Checks a request body against a schema.
  *
  * @param schema - schema of the body (usually from `bodySchema`)
@@ -240,7 +250,7 @@ export function itemOf<R extends Record<string, FieldRule>>(rules: R): z.ZodType
  * @returns the field rule
  */
 export function lenientText(): FieldRule<z.ZodType<string>> {
-	return () => z.unknown().transform(value => (typeof value === "string" ? value : ""));
+	return () => anyInput().transform(value => (typeof value === "string" ? value : ""));
 }
 
 /**
@@ -339,7 +349,7 @@ export function employeeRef(
  */
 export function year(): FieldRule<z.ZodType<number>> {
 	return field =>
-		z.unknown().transform((value, context) => {
+		anyInput().transform((value, context) => {
 			const parsed = Number(value);
 			if (!Number.isInteger(parsed) || parsed < 2000 || parsed > 2100) {
 				context.addIssue({
@@ -359,7 +369,7 @@ export function year(): FieldRule<z.ZodType<number>> {
  */
 export function optionalMonth(): FieldRule<z.ZodType<number | null>> {
 	return field =>
-		z.unknown().transform((value, context) => {
+		anyInput().transform((value, context) => {
 			if (value === undefined || value === null || value === "") {
 				return null;
 			}
@@ -425,4 +435,26 @@ export function optionalChoice<const V extends readonly [string, ...string[]]>(
 			}
 			return value;
 		});
+}
+
+/**
+ * A value read with `Number` and handed on as it is: the repository checks it (a missing value arrives as `NaN`).
+ *
+ * @returns the field rule
+ */
+export function numberish(): FieldRule<z.ZodType<number>> {
+	return () => anyInput().transform(value => Number(value));
+}
+
+/**
+ * A list read with `Number` per entry, `undefined` when the field is no list; the repository checks the values.
+ *
+ * @returns the field rule
+ */
+export function numberishList(): FieldRule<z.ZodType<number[] | undefined>> {
+	return () =>
+		z
+			.unknown()
+			.transform(value => (Array.isArray(value) ? value.map(Number) : undefined))
+			.optional();
 }

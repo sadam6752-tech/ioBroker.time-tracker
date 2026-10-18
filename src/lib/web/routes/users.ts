@@ -11,13 +11,13 @@ import { problem } from "../problem";
 import { json, noContent, binary } from "../router";
 
 import type { ApiContext } from "./context";
-import { z } from "zod";
 import {
 	bodySchema,
 	check,
 	itemOf,
 	keepMissing,
 	listOf,
+	numberish,
 	optionalFlag,
 	optionalNumber,
 	optionalText,
@@ -73,7 +73,7 @@ const SHIFT_RULES_BODY = bodySchema({
 		itemOf({
 			id: optionalNumber(),
 			// the repository checks the surcharge; a missing one arrives as `NaN` and is refused there
-			surcharge: () => z.unknown().transform(value => Number(value)),
+			surcharge: numberish(),
 			dayOfWeek: optionalNumber(),
 			fromMin: optionalNumber(),
 			toMin: optionalNumber(),

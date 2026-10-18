@@ -14,17 +14,81 @@ import { problem } from "../problem";
 import { json, noContent, binary, type RouteContext } from "../router";
 
 import type { ApiContext } from "./context";
+import { z } from "zod";
 import {
-	requireString,
-	optionalString,
+	bodySchema,
+	itemOf,
+	lenientText,
+	listOf,
+	numberish,
+	numberishList,
+	optionalFlag,
 	optionalNumber,
-	JSON_SETTINGS,
-	editableSettings,
-	readableSettings,
-	isSettingValue,
-	optionalBoolean,
-	numberParam,
-} from "./shared";
+	optionalText,
+	parseBody,
+	requiredText,
+} from "./validate";
+import { JSON_SETTINGS, editableSettings, readableSettings, isSettingValue, numberParam } from "./shared";
+
+/** Body of a holiday of the administration. */
+const HOLIDAY_BODY = bodySchema({ date: requiredText(), name: requiredText(), region: optionalText() });
+
+/** Body of the break rules: the list replaces the stored rules; the repository checks the values. */
+const PAUSE_RULES_BODY = bodySchema({
+	pauseRules: listOf(
+		itemOf({
+			id: optionalNumber(),
+			fromMin: numberish(),
+			toMin: optionalNumber(),
+			pauseMin: numberish(),
+			isActive: optionalFlag(),
+		}),
+	),
+});
+
+/** Body of the trigger rules: the list replaces the stored rules. */
+const TRIGGER_RULES_BODY = bodySchema({
+	triggerRules: listOf(
+		itemOf({
+			mode: optionalText(),
+			userId: optionalNumber(),
+			// the value map: which employee a value of the state belongs to (mode `user`)
+			valueMap: field =>
+				z
+					.array(itemOf({ value: lenientText(), userId: optionalNumber() }), {
+						error: `${field} must be a list`,
+					})
+					.nullish(),
+			id: optionalNumber(),
+			label: optionalText(),
+			sourceState: optionalText(),
+			condition: optionalText(),
+			action: optionalText(),
+			isActive: optionalFlag(),
+			cooldownSec: optionalNumber(),
+			fireOnRepeat: optionalFlag(),
+		}),
+	),
+});
+
+/** Body of the automation rules: the list replaces the stored rules; the repository checks kind and repeat. */
+const AUTOMATION_RULES_BODY = bodySchema({
+	automationRules: listOf(
+		itemOf({
+			userId: optionalNumber(),
+			id: optionalNumber(),
+			label: optionalText(),
+			kind: optionalText(),
+			atMinute: optionalNumber(),
+			afterMinutes: optionalNumber(),
+			weekdays: numberishList(),
+			repeat: optionalText(),
+			isActive: optionalFlag(),
+			activeFrom: optionalText(),
+			activeUntil: optionalText(),
+		}),
+	),
+});
 
 /**
  * Registers the routes of this area.
@@ -44,13 +108,13 @@ export function registerSettingsRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
+		const body = parseBody(HOLIDAY_BODY, context.jsonBody());
 		const created = holidays.add({
-			date: requireString(body, "date"),
-			name: requireString(body, "name"),
+			date: body.date,
+			name: body.name,
 			// without a region the day belongs to the country of the instance: the calculation looks only there, so a
 			// day filed under a foreign region would never count
-			region: optionalString(body, "region") ?? settings.get("holiday_country") ?? undefined,
+			region: body.region ?? settings.get("holiday_country") ?? undefined,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -143,25 +207,17 @@ export function registerSettingsRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		if (!Array.isArray(body.pauseRules)) {
-			throw new ValidationError("pauseRules must be an array");
-		}
+		const body = parseBody(PAUSE_RULES_BODY, context.jsonBody());
 		const actor = {
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		};
-		const wanted = (body.pauseRules as unknown[]).map(raw => {
-			const rule = (raw ?? {}) as Record<string, unknown>;
-			return {
-				id: optionalNumber(rule, "id") ?? undefined,
-				fromMin: Number(rule.fromMin),
-				toMin: optionalNumber(rule, "toMin"),
-				pauseMin: Number(rule.pauseMin),
-				isActive: optionalBoolean(rule, "isActive") ?? undefined,
-			};
-		});
+		const wanted = body.pauseRules.map(rule => ({
+			...rule,
+			id: rule.id ?? undefined,
+			isActive: rule.isActive ?? undefined,
+		}));
 
 		const keep = new Set(wanted.map(rule => rule.id).filter((value): value is number => value !== undefined));
 		for (const existing of rules.listPauseRules({ userId, includeInactive: true })) {
@@ -226,19 +282,15 @@ export function registerSettingsRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		if (!Array.isArray(body.triggerRules)) {
-			throw new ValidationError("triggerRules must be an array");
-		}
+		const body = parseBody(TRIGGER_RULES_BODY, context.jsonBody());
 		const actor = {
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		};
-		const wanted = (body.triggerRules as unknown[]).map(raw => {
-			const rule = (raw ?? {}) as Record<string, unknown>;
-			const mode = optionalString(rule, "mode") ?? "condition";
-			const target = optionalNumber(rule, "userId");
+		const wanted = body.triggerRules.map(rule => {
+			const mode = rule.mode ?? "condition";
+			const target = rule.userId;
 			if (mode === "condition" && target !== null && !users.findById(target)) {
 				throw new ValidationError(`userId must reference an existing employee (got ${target})`);
 			}
@@ -246,29 +298,23 @@ export function registerSettingsRoutes(ctx: ApiContext): void {
 				throw new ValidationError("mode user reads the employee from the state, userId has to stay empty");
 			}
 			// the value map: which employee a value of the state belongs to (mode `user`)
-			const rawMap = rule.valueMap;
-			if (rawMap !== undefined && rawMap !== null && !Array.isArray(rawMap)) {
-				throw new ValidationError("valueMap must be a list");
-			}
-			const valueMap = ((rawMap as unknown[] | undefined | null) ?? []).map(entry => {
-				const item = (entry ?? {}) as Record<string, unknown>;
-				const userId = optionalNumber(item, "userId");
-				if (userId === null || !users.findById(userId)) {
-					throw new ValidationError(`valueMap must reference existing employees (got ${userId})`);
+			const valueMap = (rule.valueMap ?? []).map(item => {
+				if (item.userId === null || !users.findById(item.userId)) {
+					throw new ValidationError(`valueMap must reference existing employees (got ${item.userId})`);
 				}
-				return { value: typeof item.value === "string" ? item.value : "", userId };
+				return { value: item.value, userId: item.userId };
 			});
 			return {
-				id: optionalNumber(rule, "id") ?? undefined,
-				label: optionalString(rule, "label"),
-				sourceState: optionalString(rule, "sourceState") ?? "",
+				id: rule.id ?? undefined,
+				label: rule.label,
+				sourceState: rule.sourceState ?? "",
 				mode,
-				condition: optionalString(rule, "condition"),
+				condition: rule.condition,
 				userId: target,
-				action: optionalString(rule, "action") ?? "punch",
-				isActive: optionalBoolean(rule, "isActive") ?? true,
-				cooldownSec: optionalNumber(rule, "cooldownSec") ?? 0,
-				fireOnRepeat: optionalBoolean(rule, "fireOnRepeat") ?? mode === "user",
+				action: rule.action ?? "punch",
+				isActive: rule.isActive ?? true,
+				cooldownSec: rule.cooldownSec ?? 0,
+				fireOnRepeat: rule.fireOnRepeat ?? mode === "user",
 				valueMap,
 			};
 		});
@@ -325,34 +371,30 @@ export function registerSettingsRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		if (!Array.isArray(body.automationRules)) {
-			throw new ValidationError("automationRules must be an array");
-		}
+		const body = parseBody(AUTOMATION_RULES_BODY, context.jsonBody());
 		const actor = {
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
 		};
-		const wanted = (body.automationRules as unknown[]).map(raw => {
-			const rule = (raw ?? {}) as Record<string, unknown>;
-			const target = optionalNumber(rule, "userId");
+		const wanted = body.automationRules.map(rule => {
+			const target = rule.userId;
 			if (target !== null && !users.findById(target)) {
 				throw new ValidationError(`userId must reference an existing employee (got ${target})`);
 			}
 			return {
-				id: optionalNumber(rule, "id") ?? undefined,
-				label: optionalString(rule, "label"),
-				kind: optionalString(rule, "kind") ?? "clockOut",
+				id: rule.id ?? undefined,
+				label: rule.label,
+				kind: rule.kind ?? "clockOut",
 				userId: target,
-				atMinute: optionalNumber(rule, "atMinute"),
-				afterMinutes: optionalNumber(rule, "afterMinutes"),
+				atMinute: rule.atMinute,
+				afterMinutes: rule.afterMinutes,
 				// the repository validates the selection and the repeat: a wrong entry comes back as a 400
-				weekdays: Array.isArray(rule.weekdays) ? rule.weekdays.map(Number) : undefined,
-				repeat: optionalString(rule, "repeat") as AutomationRepeat | undefined,
-				isActive: optionalBoolean(rule, "isActive") ?? true,
-				activeFrom: optionalString(rule, "activeFrom"),
-				activeUntil: optionalString(rule, "activeUntil"),
+				weekdays: rule.weekdays,
+				repeat: rule.repeat as AutomationRepeat | undefined,
+				isActive: rule.isActive ?? true,
+				activeFrom: rule.activeFrom,
+				activeUntil: rule.activeUntil,
 			};
 		});
 

@@ -6,7 +6,7 @@ import type { Db } from "../../db/database";
 import type { AbsencesRepository } from "../../db/repositories/absences";
 import type { AutomationsRepository } from "../../db/repositories/automations";
 import type { DayNotesRepository } from "../../db/repositories/dayNotes";
-import type { EntriesRepository, EntryDirection, EntryRecord } from "../../db/repositories/entries";
+import type { EntriesRepository, EntryRecord } from "../../db/repositories/entries";
 import type { HolidaysRepository } from "../../db/repositories/holidays";
 import type { PayoutsRepository } from "../../db/repositories/payouts";
 import { type RfidRepository } from "../../db/repositories/rfid";
@@ -130,80 +130,11 @@ export interface Api {
 	events: EventBus;
 }
 
-/**
- * Reads a required string field.
- *
- * @param body - parsed request body
- * @param field - field name
- * @param maxLength - longest allowed value in characters (the routes that anybody may call set a small one)
- * @returns the trimmed value
- */
-export function requireString(body: Record<string, unknown>, field: string, maxLength?: number): string {
-	const value = body[field];
-	if (typeof value !== "string" || !value.trim()) {
-		throw new ValidationError(`${field} is required`);
-	}
-	return limitLength(value.trim(), field, maxLength);
-}
-
-/**
- * Refuses a value that is longer than the route allows.
- *
- * @param value - trimmed value
- * @param field - field name for the message
- * @param maxLength - longest allowed value, `undefined` = no limit of its own
- * @returns the value
- */
-export function limitLength(value: string, field: string, maxLength: number | undefined): string {
-	if (maxLength !== undefined && value.length > maxLength) {
-		throw new ValidationError(`${field} is too long (at most ${maxLength} characters)`);
-	}
-	return value;
-}
-
-/**
- * Reads an optional string field.
- *
- * @param body - parsed request body
- * @param field - field name
- * @param maxLength - longest allowed value in characters (the routes that anybody may call set a small one)
- * @returns the trimmed value or `null`
- */
-export function optionalString(body: Record<string, unknown>, field: string, maxLength?: number): string | null {
-	const value = body[field];
-	if (value === undefined || value === null) {
-		return null;
-	}
-	if (typeof value !== "string") {
-		throw new ValidationError(`${field} must be a string`);
-	}
-	const trimmed = value.trim();
-	return trimmed ? limitLength(trimmed, field, maxLength) : null;
-}
-
 /** Longest login, password, device token, badge, PIN, scan token and note a caller may send without a session. */
 export const MAX_LOGIN_LENGTH = 128;
 export const MAX_PASSWORD_LENGTH = 1024;
 export const MAX_CODE_LENGTH = 512;
 export const MAX_PUBLIC_NOTE_LENGTH = 500;
-
-/**
- * Reads an optional number field.
- *
- * @param body - parsed request body
- * @param field - field name
- * @returns the value or `null`
- */
-export function optionalNumber(body: Record<string, unknown>, field: string): number | null {
-	const value = body[field];
-	if (value === undefined || value === null) {
-		return null;
-	}
-	if (typeof value !== "number" || !Number.isFinite(value)) {
-		throw new ValidationError(`${field} must be a number`);
-	}
-	return value;
-}
 
 /**
  * Settings an administrator must not see through the API, even when they are compatible with the stored form.
@@ -322,21 +253,6 @@ export function isSettingValue(value: unknown, allowStructured: boolean): boolea
 }
 
 /**
- * Reads a required boolean field.
- *
- * @param body - parsed request body
- * @param field - field name
- * @returns the value
- */
-export function requireBoolean(body: Record<string, unknown>, field: string): boolean {
-	const value = optionalBoolean(body, field);
-	if (value === null) {
-		throw new ValidationError(`${field} is required`);
-	}
-	return value;
-}
-
-/**
  * Reads a year and an optional month from a body or the query.
  *
  * The range matches the validation of the payout repository, so a wrong year is refused by the API before it
@@ -379,40 +295,6 @@ export function optionalNumberQuery(context: RouteContext, name: string, fallbac
 		throw new ValidationError(`${name} must be a non-negative whole number (got ${raw})`);
 	}
 	return value;
-}
-
-/**
- * Reads a list of role keys.
- *
- * @param body - parsed request body
- * @returns the role keys or `null` when the field is absent
- */
-export function readRoleKeys(body: Record<string, unknown>): string[] | null {
-	const value = body.roleKeys;
-	if (value === undefined || value === null) {
-		return null;
-	}
-	if (!Array.isArray(value) || value.some(entry => typeof entry !== "string")) {
-		throw new ValidationError("roleKeys must be an array of strings");
-	}
-	return (value as string[]).map(entry => entry.trim()).filter(entry => entry.length > 0);
-}
-
-/**
- * Reads an optional list of user ids (the employees of a terminal).
- *
- * @param body - request body
- * @returns the ids without duplicates, `null` when the field is missing
- */
-export function readUserIds(body: Record<string, unknown>): number[] | null {
-	const value = body.userIds;
-	if (value === undefined || value === null) {
-		return null;
-	}
-	if (!Array.isArray(value) || value.some(entry => !Number.isInteger(entry))) {
-		throw new ValidationError("userIds must be an array of whole numbers");
-	}
-	return [...new Set(value as number[])];
 }
 
 /** Fields of a work profile a client may change. */
@@ -611,24 +493,6 @@ export function publicUser(user: UserRecord): PublicUserPayload {
 }
 
 /**
- * Reads an optional boolean field.
- *
- * @param body - parsed request body
- * @param field - field name
- * @returns the value or `null`
- */
-export function optionalBoolean(body: Record<string, unknown>, field: string): boolean | null {
-	const value = body[field];
-	if (value === undefined || value === null) {
-		return null;
-	}
-	if (typeof value !== "boolean") {
-		throw new ValidationError(`${field} must be a boolean`);
-	}
-	return value;
-}
-
-/**
  * Reads a numeric path parameter.
  *
  * @param context - route context
@@ -640,23 +504,6 @@ export function numberParam(context: RouteContext, name: string): number {
 	const value = Number(raw);
 	if (!Number.isInteger(value)) {
 		throw new ValidationError(`${name} must be a whole number (got ${raw})`);
-	}
-	return value;
-}
-
-/**
- * Reads the day direction of a punch.
- *
- * @param body - parsed request body
- * @returns the direction
- */
-export function optionalDirection(body: Record<string, unknown>): EntryDirection {
-	const value = optionalString(body, "direction");
-	if (value === null) {
-		return "auto";
-	}
-	if (value !== "in" && value !== "out" && value !== "auto") {
-		throw new ValidationError(`direction must be in, out or auto (got ${value})`);
 	}
 	return value;
 }

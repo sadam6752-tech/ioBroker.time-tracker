@@ -38,7 +38,8 @@
 		"luxon": "^3.7.2",
 		"pdfkit": "^0.20.2",
 		"ssh2": "^1.17.0",
-		"ws": "^8.21.3"
+		"ws": "^8.21.3",
+		"zod": "^4.6.5"
 	},
 	"devDependencies": {
 		"@alcalzone/release-script": "^5.2.1",

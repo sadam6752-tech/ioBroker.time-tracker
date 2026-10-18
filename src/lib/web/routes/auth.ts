@@ -6,7 +6,14 @@ import { problem } from "../problem";
 import { json, noContent } from "../router";
 
 import type { ApiContext } from "./context";
-import { requireString, MAX_LOGIN_LENGTH, MAX_PASSWORD_LENGTH } from "./shared";
+import { MAX_LOGIN_LENGTH, MAX_PASSWORD_LENGTH } from "./shared";
+import { bodySchema, parseBody, requiredText } from "./validate";
+
+/** Body of a sign in. */
+const LOGIN_BODY = bodySchema({ login: requiredText(MAX_LOGIN_LENGTH), password: requiredText(MAX_PASSWORD_LENGTH) });
+
+/** Body of a password change. */
+const PASSWORD_BODY = bodySchema({ password: requiredText() });
 
 /**
  * Registers the routes of this area.
@@ -27,10 +34,10 @@ export function registerAuthRoutes(ctx: ApiContext): void {
 			rateLimit: { name: "login", limit: deps.loginRateLimit ?? 20, windowSeconds: 60 },
 		},
 		context => {
-			const body = context.jsonBody();
+			const { login, password } = parseBody(LOGIN_BODY, context.jsonBody());
 			const result = auth.login({
-				login: requireString(body, "login", MAX_LOGIN_LENGTH),
-				password: requireString(body, "password", MAX_PASSWORD_LENGTH),
+				login,
+				password,
 				userAgent: context.header("user-agent"),
 				ip: context.request.remoteAddress ?? null,
 				now: now(),
@@ -85,7 +92,7 @@ export function registerAuthRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const password = requireString(context.jsonBody(), "password");
+		const { password } = parseBody(PASSWORD_BODY, context.jsonBody());
 
 		auth.setPassword({ userId: context.auth.user.id, password, actorId: context.auth.user.id, now: now() });
 		// a password change ends all running sessions, including this one

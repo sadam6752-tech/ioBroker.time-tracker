@@ -149,14 +149,15 @@ export function optionalFlag(): FieldRule<z.ZodType<boolean | null>> {
 /**
  * A required finite number.
  *
+ * @param missing - message for a missing value, default `<field> is required`
  * @returns the field rule
  */
-export function requiredNumber(): FieldRule<z.ZodType<number>> {
+export function requiredNumber(missing?: string): FieldRule<z.ZodType<number>> {
 	return field =>
 		z.number({
 			error: issue =>
 				issue.input === undefined || issue.input === null
-					? `${field} is required`
+					? (missing ?? `${field} is required`)
 					: `${field} must be a number`,
 		});
 }
@@ -182,4 +183,62 @@ export function punchDirection(): FieldRule<z.ZodType<"in" | "out" | "auto">> {
 				}
 				return value;
 			});
+}
+
+/**
+ * Writes a list of allowed values the way the messages name them: `accept or dismiss`, `in, out or auto`.
+ *
+ * @param values - allowed values
+ * @returns the readable list
+ */
+function choices(values: readonly string[]): string {
+	return values.length < 2 ? values.join("") : `${values.slice(0, -1).join(", ")} or ${values[values.length - 1]}`;
+}
+
+/**
+ * A required text that must be one of the given values.
+ *
+ * @param values - allowed values
+ * @returns the field rule
+ */
+export function requiredChoice<const V extends readonly [string, ...string[]]>(
+	values: V,
+): FieldRule<z.ZodType<V[number]>> {
+	return field =>
+		requiredText()(field).transform((value, context) => {
+			if (!(values as readonly string[]).includes(value)) {
+				context.addIssue({ code: "custom", message: `${field} must be ${choices(values)} (got ${value})` });
+				return z.NEVER;
+			}
+			return value;
+		});
+}
+
+/**
+ * A list whose items follow the given schema.
+ *
+ * @param item - schema of one item
+ * @returns the field rule
+ */
+export function listOf<T extends z.ZodType>(item: T): FieldRule<z.ZodArray<T>> {
+	return field => z.array(item, { error: `${field} must be an array` });
+}
+
+/**
+ * An object inside a list; a missing item (`null`) counts as an empty object, so its fields report what is missing.
+ *
+ * @param rules - one rule per field
+ * @returns the schema of one item
+ */
+export function itemOf<R extends Record<string, FieldRule>>(rules: R): z.ZodType<z.output<z.ZodObject<ShapeOf<R>>>> {
+	return z.preprocess(value => value ?? {}, bodySchema(rules));
+}
+
+/**
+ * A text that is taken when it is one and replaced by an empty text otherwise (an identifier a client may leave out).
+ *
+ * @returns the field rule
+ */
+export function lenientText(): FieldRule<z.ZodType<string>> {
+	return () => z.unknown().transform(value => (typeof value === "string" ? value : ""));
 }

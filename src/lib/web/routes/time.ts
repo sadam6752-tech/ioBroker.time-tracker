@@ -8,7 +8,49 @@ import { problem } from "../problem";
 import { json } from "../router";
 
 import type { ApiContext } from "./context";
-import { requireString, optionalString, optionalNumber, numberParam, optionalDirection } from "./shared";
+import { numberParam } from "./shared";
+import {
+	bodySchema,
+	itemOf,
+	lenientText,
+	listOf,
+	optionalNumber,
+	optionalText,
+	parseBody,
+	punchDirection,
+	requiredChoice,
+	requiredNumber,
+} from "./validate";
+
+/** Body of the offline queue: the punches the device collected while it had no connection. */
+const SYNC_BODY = bodySchema({
+	punches: listOf(
+		itemOf({
+			idempotencyKey: lenientText(),
+			tsUtc: requiredNumber("tsUtc is required for every queued punch"),
+			clientTsUtc: optionalNumber(),
+			direction: punchDirection(),
+			note: optionalText(),
+		}),
+	),
+});
+
+/** Body of the decision about a conflict. */
+const RESOLVE_BODY = bodySchema({
+	action: requiredChoice(["accept", "dismiss"]),
+	tsUtc: optionalNumber(),
+	reason: optionalText(),
+});
+
+/** Body of a punch the administration writes for an employee. */
+const ENTRY_BODY = bodySchema({
+	tsUtc: requiredNumber(),
+	clientTsUtc: optionalNumber(),
+	direction: punchDirection(),
+	idempotencyKey: optionalText(),
+	note: optionalText(),
+	reason: optionalText(),
+});
 
 /**
  * Registers the routes of this area.
@@ -64,14 +106,11 @@ export function registerTimeRoutes(ctx: ApiContext): void {
 			if (!context.auth) {
 				throw problem(401, "no_session", "request rejected (no_session)");
 			}
-			const body = context.jsonBody();
 			const user = users.findById(context.auth.user.id);
 			if (!user) {
 				throw new NotFoundError(`user ${context.auth.user.id} not found`);
 			}
-			if (!Array.isArray(body.punches)) {
-				throw new ValidationError("punches must be an array");
-			}
+			const body = parseBody(SYNC_BODY, context.jsonBody());
 
 			const result = sync.sync({
 				userId: user.id,
@@ -79,20 +118,7 @@ export function registerTimeRoutes(ctx: ApiContext): void {
 				// the offline queue is the only way an employee still writes a punch of his own, so the window of the
 				// instance applies to it as well (`0` switches the bound off)
 				maxPastSeconds: Math.max(0, settings.getNumber("edit_window_days", 0)) * 86_400,
-				punches: (body.punches as unknown[]).map(raw => {
-					const punch = (raw ?? {}) as Record<string, unknown>;
-					const tsUtc = optionalNumber(punch, "tsUtc");
-					if (tsUtc === null) {
-						throw new ValidationError("tsUtc is required for every queued punch");
-					}
-					return {
-						idempotencyKey: typeof punch.idempotencyKey === "string" ? punch.idempotencyKey : "",
-						tsUtc,
-						clientTsUtc: optionalNumber(punch, "clientTsUtc"),
-						direction: optionalDirection(punch),
-						note: optionalString(punch, "note"),
-					};
-				}),
+				punches: body.punches,
 				actorId: user.id,
 				actorIp: context.request.remoteAddress ?? null,
 				now: now(),
@@ -125,17 +151,13 @@ export function registerTimeRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
-		const action = requireString(body, "action");
-		if (action !== "accept" && action !== "dismiss") {
-			throw new ValidationError(`action must be accept or dismiss (got ${action})`);
-		}
+		const { action, tsUtc, reason } = parseBody(RESOLVE_BODY, context.jsonBody());
 
 		const result = sync.resolve({
 			entryId: numberParam(context, "id"),
 			action,
-			tsUtc: optionalNumber(body, "tsUtc") ?? undefined,
-			reason: optionalString(body, "reason"),
+			tsUtc: tsUtc ?? undefined,
+			reason,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: now(),
@@ -217,7 +239,6 @@ export function registerTimeRoutes(ctx: ApiContext): void {
 		if (!context.auth) {
 			throw problem(401, "no_session", "request rejected (no_session)");
 		}
-		const body = context.jsonBody();
 		const target = Number(context.query("userId") ?? context.auth.user.id);
 		if (!Number.isInteger(target)) {
 			throw new ValidationError("userId must be a whole number");
@@ -227,23 +248,20 @@ export function registerTimeRoutes(ctx: ApiContext): void {
 		if (!user) {
 			throw new NotFoundError(`user ${target} not found`);
 		}
-		const tsUtc = optionalNumber(body, "tsUtc");
-		if (tsUtc === null) {
-			throw new ValidationError("tsUtc is required");
-		}
+		const body = parseBody(ENTRY_BODY, context.jsonBody());
 
 		const timestamp = now();
 		const stored = entries.insert({
 			userId: target,
-			tsUtc,
-			clientTsUtc: optionalNumber(body, "clientTsUtc"),
+			tsUtc: body.tsUtc,
+			clientTsUtc: body.clientTsUtc,
 			timeZone: user.timezone,
 			// a hand-written punch is always a correction; the normal punch comes through `POST /punch` (`web`)
 			source: "admin",
-			direction: optionalDirection(body),
-			idempotencyKey: optionalString(body, "idempotencyKey"),
-			note: optionalString(body, "note"),
-			reason: optionalString(body, "reason"),
+			direction: body.direction,
+			idempotencyKey: body.idempotencyKey,
+			note: body.note,
+			reason: body.reason,
 			actorId: context.auth.user.id,
 			actorIp: context.request.remoteAddress ?? null,
 			now: timestamp,

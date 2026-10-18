@@ -540,6 +540,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.8.0 (2026-10-18)
+
 - (Alex) chore: the request bodies of the REST API are checked with zod (D22); the messages are worded as before, and
   every invalid field of a request is now listed in `errors[]`.
 
@@ -569,15 +571,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
   such as `Port`, `Menu`, `Terminal` – a unit test keeps it that way), seven unused translation keys are removed from the
   11 language files of the web app, and the documentation no longer shows a command that installs from GitHub or from a
   folder.
-
-### 0.7.23 (2026-10-11)
-
-- (Alex) fix: everything a user sees is English or follows a language setting (finding of the review): the seeded
-  absence types are English (`Vacation`, `Sickness`, …; an existing installation keeps its names), the name of the
-  calendar in the feed and in the written file follows the language of the employee or of the instance (all 11
-  languages), a fresh instance starts with English as default language, the page and the manifest of the web app are
-  English (the tab title follows the chosen language), a new account speaks the language of the instance (before, the
-  database default was German), and four admin texts that equalled the English wording are translated.
 
 
 Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).

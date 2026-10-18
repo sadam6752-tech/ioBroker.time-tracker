@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.7.27",
+		"version": "0.8.0",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.8.0": {
+				"en": "change: every request body of the REST API is checked with zod; the messages stay as they were, and every invalid field of a request is listed in errors[]",
+				"de": "Änderung: Jeder Anfragekörper der REST-API wird mit zod geprüft; die Meldungen bleiben wie bisher, und jedes ungültige Feld einer Anfrage steht in errors[]",
+				"ru": "изменение: каждое тело запроса REST API проверяется с помощью zod; сообщения остались прежними, а каждое неверное поле запроса указывается в errors[]",
+				"pt": "alteração: cada corpo de pedido da API REST é verificado com zod; as mensagens mantêm-se, e cada campo inválido de um pedido é indicado em errors[]",
+				"nl": "wijziging: elke request body van de REST-API wordt met zod gecontroleerd; de meldingen blijven gelijk en elk ongeldig veld van een verzoek staat in errors[]",
+				"fr": "modification : chaque corps de requête de l'API REST est vérifié avec zod ; les messages restent les mêmes et chaque champ invalide d'une requête figure dans errors[]",
+				"it": "modifica: ogni corpo di richiesta dell'API REST viene verificato con zod; i messaggi restano invariati e ogni campo non valido di una richiesta è elencato in errors[]",
+				"es": "cambio: cada cuerpo de solicitud de la API REST se comprueba con zod; los mensajes siguen igual y cada campo no válido de una solicitud aparece en errors[]",
+				"pl": "zmiana: każda treść żądania REST API jest sprawdzana przez zod; komunikaty pozostają bez zmian, a każde nieprawidłowe pole żądania jest wymienione w errors[]",
+				"uk": "зміна: кожне тіло запиту REST API перевіряється за допомогою zod; повідомлення залишилися такими ж, а кожне неправильне поле запиту вказується в errors[]",
+				"zh-cn": "变更：REST API 的每个请求正文都使用 zod 校验；提示信息保持不变，请求中每个无效字段都会列在 errors[] 中"
+			},
 			"0.7.27": {
 				"en": "fix: the names of the holiday countries in the instance settings are translated; chore: the REST API and its tests are split into one module per area, without a change of behaviour",
 				"de": "fix: Die Namen der Feiertagsländer in den Instanz-Einstellungen sind übersetzt; chore: Die REST-API und ihre Tests sind in ein Modul pro Bereich aufgeteilt, ohne Änderung des Verhaltens",
@@ -100,19 +113,6 @@
 				"pl": "docs: dokumentacja jest teraz po angielsku (docs/en), niemieckie oryginały przeniesiono do docs/de; CONTRIBUTING.md i pliki README modułów są po angielsku",
 				"uk": "docs: документація тепер англійською (docs/en), німецькі оригінали перенесено до docs/de; CONTRIBUTING.md і README модулів — англійською",
 				"zh-cn": "docs: 文档现为英文（docs/en），德文原文已移至 docs/de；CONTRIBUTING.md 和各模块 README 均为英文"
-			},
-			"0.7.21": {
-				"en": "new: the menu of the web app has the entry Info and ends with the version of the app and of the adapter, for the administrator account only; the page Info says when the browser still shows an old app and reloads it",
-				"de": "new: Das Menü der Web-App hat den Eintrag Info und endet mit der Version von App und Adapter, nur für das Administrator-Konto; die Seite Info sagt, wenn der Browser noch eine alte App zeigt, und lädt sie neu",
-				"ru": "new: в меню веб-приложения появился пункт «Информация», а внизу меню — версии приложения и адаптера, только для учётной записи администратора; страница сообщает, если браузер ещё показывает старое приложение, и перезагружает его",
-				"pt": "new: o menu da aplicação web tem a entrada Info e termina com a versão da aplicação e do adaptador, só para a conta de administrador; a página Info avisa quando o navegador ainda mostra uma aplicação antiga e volta a carregá-la",
-				"nl": "new: het menu van de webapp heeft het onderdeel Info en eindigt met de versie van app en adapter, alleen voor het beheerdersaccount; de pagina Info meldt wanneer de browser nog een oude app toont en laadt die opnieuw",
-				"fr": "new : le menu de l'application web a l'entrée Infos et se termine par la version de l'application et de l'adaptateur, pour le compte administrateur seulement ; la page Infos signale quand le navigateur montre encore une ancienne application et la recharge",
-				"it": "new: il menu dell'app web ha la voce Info e termina con la versione dell'app e dell'adattatore, solo per l'account amministratore; la pagina Info segnala quando il browser mostra ancora una vecchia app e la ricarica",
-				"es": "new: el menú de la aplicación web tiene la entrada Info y termina con la versión de la aplicación y del adaptador, solo para la cuenta de administrador; la página Info avisa cuando el navegador aún muestra una aplicación antigua y la vuelve a cargar",
-				"pl": "new: menu aplikacji web ma pozycję Informacje i kończy się wersją aplikacji i adaptera, tylko dla konta administratora; strona Informacje informuje, gdy przeglądarka nadal pokazuje starą aplikację, i ładuje ją ponownie",
-				"uk": "new: у меню вебзастосунку з'явився пункт «Інформація», а внизу меню — версії застосунку та адаптера, лише для облікового запису адміністратора; сторінка повідомляє, коли браузер ще показує старий застосунок, і перезавантажує його",
-				"zh-cn": "new: 网页应用的菜单新增“信息”条目，菜单末尾显示应用和适配器的版本，仅限管理员账户；当浏览器仍显示旧版应用时，“信息”页会提示并重新加载"
 			}
 		},
 		"titleLang": {

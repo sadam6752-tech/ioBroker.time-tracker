@@ -541,6 +541,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 ### **WORK IN PROGRESS**
 
 - (Alex) fix: the names of the holiday countries in the instance settings are translated (note of the review).
+- (Alex) chore: the REST API is split into one module per area (`src/lib/web/routes/`); the routes, their order and
+  their behaviour are unchanged.
 
 ### 0.7.26 (2026-10-13)
 

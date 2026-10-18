@@ -169,7 +169,7 @@ setting stays and works in exactly one place: on the **offline queue** — a pun
 `edit_window_days` is stored as a conflict `too_old` and counts only when the administration accepts it.
 `GET /entries/conflicts` takes `?userId=` for that, so that the administration sees the queue of an employee.
 
-**Proof:** `src/lib/db/repositories/dayNotes.test.ts`, the permissions in `src/lib/web/api.test.ts` (employee: 403 for
+**Proof:** `src/lib/db/repositories/dayNotes.test.ts`, the permissions in `src/lib/web/routes/corrections.test.ts` (employee: 403 for
 times, 200 for the own note), `too_old` in `src/lib/services/sync.test.ts` and the flow in `test/e2e/day-notes.spec.ts`
 (note of the employee, correction and “done” of the administration).
 
@@ -204,7 +204,7 @@ that the role cannot be withdrawn and disables “Save” as long as the tick is
 that all administration rights disappear at once. The message of the server appears as `error.last_administrator` in all
 eleven languages.
 
-**Proof:** `src/lib/web/api.test.ts` (“keeps the last active administrator in place”: second administrator, refusal for the
+**Proof:** `src/lib/web/routes/users.test.ts` (“keeps the last active administrator in place”: second administrator, refusal for the
 last one, success as soon as another one carries the role), `test/e2e/users.spec.ts` (warning at the own account, disabled
 saving, unchanged state).
 
@@ -244,7 +244,7 @@ route **and** the adapter use — two versions of the same format would be the n
 of the employee first (`Anna Muster: Vacation (F)`), so that a day stays readable in the company calendar; the `UID` stays
 `absence-<id>@time-tracker`, so that a calendar app **updates** an event instead of doubling it.
 
-**Proof:** `src/lib/services/calendar.test.ts` (DTEND exclusive, escaping, JSON view), `src/lib/web/api.test.ts` (company
+**Proof:** `src/lib/services/calendar.test.ts` (DTEND exclusive, escaping, JSON view), `src/lib/web/routes/absences.test.ts` (company
 feed through the instance token, personal link stays personal, old token dead), `src/lib/adapter/states.test.ts` (states and
 command) and the acceptance **T21** in [`test-plan.md`](test-plan.md).
 
@@ -296,7 +296,7 @@ that day is skipped and not made up for.
 
 **Proof:** `src/lib/adapter/automation.test.ts` (day before, exactly “from”, exactly “until”, day after, both ends empty),
 `src/lib/db/repositories/automations.test.ts` (save and read, “omit keeps”, “empty clears”, 30.02. is refused, “until before
-from” is refused), `src/lib/web/api.test.ts` (the dates travel with the rule, 400 for an invalid date) and the acceptance
+from” is refused), `src/lib/web/routes/settings.test.ts` (the dates travel with the rule, 400 for an invalid date) and the acceptance
 **T23** in [`test-plan.md`](test-plan.md). The list below the table has since been **dropped** (it was limited to five
 entries last): `GET /automation-rules/runs` delivers one row **per rule** (the newest, through `latestRuns`) and the rule row
 writes it in a line of its own — see **D12** in this document and **T25** in [`test-plan.md`](test-plan.md).
@@ -317,7 +317,7 @@ and from the repetition). The weekday statement now stays empty when it is no re
 also appears only when it is set.
 
 **Proof:** `src/lib/db/repositories/automations.test.ts` (“reports one run per rule — the newest”),
-`src/lib/web/api.test.ts` (the answer carries one row per rule) and **T25** in [`test-plan.md`](test-plan.md).
+`src/lib/web/routes/settings.test.ts` (the answer carries one row per rule) and **T25** in [`test-plan.md`](test-plan.md).
 
 ## D13 — A cancellation is requested, not booked silently (26.09.2026)
 
@@ -341,7 +341,7 @@ error in the audit.
 
 **Proof:** `src/lib/db/repositories/absences.test.ts` (the request keeps counting, withdrawing and declining write the audit
 actions `absence.cancel_request`/`_withdraw`/`_decline`, only approved absences can be cancelled, the decision clears a
-waiting cancellation), `src/lib/web/api.test.ts` (request, permissions, withdrawing, declining, 400 for an absence that is
+waiting cancellation), `src/lib/web/routes/absences.test.ts` (request, permissions, withdrawing, declining, 400 for an absence that is
 not approved yet) and the acceptance **T26** in [`test-plan.md`](test-plan.md).
 
 ## D11 — The file server is no way to the calendar (25.09.2026)
@@ -464,7 +464,7 @@ entered **or** an existing one is changed, and the button cleared only the first
 
 **Proof:** `test/e2e/holidays.spec.ts` (new file: the button is active only with a date **and** a name, the field is a date
 field, the row carries its region, it can be removed, a day of the next year follows the year), the extended check in
-`src/lib/web/api.test.ts` (a day without a region carries the country of the instance),
+`src/lib/web/routes/settings.test.ts` (a day without a region carries the country of the instance),
 `src/lib/db/repositories/holidays.test.ts` (“lists every region of a year when no region is asked for”), the change bridge
 in `test/e2e/absences-admin.spec.ts` and **T27** in [`test-plan.md`](test-plan.md).
 
@@ -648,7 +648,7 @@ and four admin texts identical to English.
    languages: the checker compares values with the English text.
 
 **Proof:** `src/lib/services/calendar.test.ts` (names in all eleven languages, fallback, `zh`), the calendar feed tests in
-`src/lib/web/api.test.ts` (feeds, language of a new account), `src/lib/db/repositories/absences.test.ts` (seeded names),
+`src/lib/web/routes/absences.test.ts` (feeds), `src/lib/web/routes/users.test.ts` (language of a new account), `src/lib/db/repositories/absences.test.ts` (seeded names),
 `src/lib/services/firstAdministrator.test.ts` (language of the first administrator), `test/e2e/absence-types.spec.ts`.
 Looked at without a finding: log lines, state names and roles (11 languages), report labels (11 languages, in the language
 of the employee), public holiday names (English with a key), all texts of the web app (only through `i18next`).

@@ -27,6 +27,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmployeePicker } from "./EmployeePicker";
 import { formatStamp } from "./helpers";
+import { kioskAddress } from "../kiosk-token";
 
 /**
  * Dialog that creates a kiosk terminal and hands the device token back once.
@@ -220,13 +221,9 @@ export function TerminalsTab({ language }: { language: string }): React.JSX.Elem
 	});
 
 	// the address the kiosk is opened with — it carries the token for the first start
-	const deviceUrl = issued
-		? `${window.location.origin}/terminal?token=${encodeURIComponent(issued.deviceToken)}`
-		: "";
+	const deviceUrl = issued ? kioskAddress(window.location.origin, "terminal", issued.deviceToken) : "";
 	// the same device token opens the simplified presence screen (who is at the workplace right now)
-	const presenceUrl = issued
-		? `${window.location.origin}/presence?token=${encodeURIComponent(issued.deviceToken)}`
-		: "";
+	const presenceUrl = issued ? kioskAddress(window.location.origin, "presence", issued.deviceToken) : "";
 
 	const stale = `${t("common.none")}`;
 	const detailsOf = (terminal: AdminTerminal): string => {

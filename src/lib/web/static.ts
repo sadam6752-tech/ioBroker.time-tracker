@@ -68,6 +68,52 @@ export const CONTENT_SECURITY_POLICY = [
 	"frame-ancestors 'none'",
 ].join("; ");
 
+/**
+ * Address of a kiosk screen with the device token in its path: `/terminal/<token>/…`, `/presence/<token>/…`.
+ *
+ * iOS saves a page to the home screen with the start URL of its manifest and drops the query, so the older link
+ * `/terminal?token=…` started from the home screen without its token. Below the path of the token the whole app is
+ * served (its files, its manifest with `start_url: "./"`, its service worker), so the installed app starts with it.
+ */
+const KIOSK_PATH = /^\/(terminal|presence)\/([A-Za-z0-9_-]{1,200})(\/.*)?$/;
+
+/** Address of a kiosk screen in the older form, the token in the query: `/terminal?token=…`. */
+const KIOSK_QUERY_PATH = /^\/(terminal|presence)\/?$/;
+
+/** A device token as the server issues it (base64url). */
+const TOKEN = /^[A-Za-z0-9_-]{1,200}$/;
+
+/**
+ * Tells where a kiosk address has to go: the older form with the token in the query goes to the path of the token,
+ * and the path of the token without its closing slash gets it (the files of the app are addressed relative to it).
+ *
+ * @param requestPath - path of the request
+ * @param query - query of the request
+ * @returns the address to redirect to, or `null` when the request stays
+ */
+export function kioskRedirectOf(requestPath: string, query: HttpRequest["query"] = {}): string | null {
+	const inPath = KIOSK_PATH.exec(requestPath);
+	if (inPath) {
+		return inPath[3] === undefined ? `/${inPath[1]}/${inPath[2]}/` : null;
+	}
+	const older = KIOSK_QUERY_PATH.exec(requestPath);
+	const raw = query?.token;
+	const token = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
+	return older && TOKEN.test(token) ? `/${older[1]}/${token}/` : null;
+}
+
+/**
+ * Maps the path of a request below a kiosk address to the file of the app: `/terminal/<token>/assets/a.js` →
+ * `/assets/a.js`, `/terminal/<token>/` → `/` (the page).
+ *
+ * @param requestPath - path of the request
+ * @returns the path inside the web app
+ */
+export function kioskFileOf(requestPath: string): string {
+	const inPath = KIOSK_PATH.exec(requestPath);
+	return inPath && inPath[3] !== undefined ? inPath[3] : requestPath;
+}
+
 /** Headers every file of the web app carries. */
 const SECURITY_HEADERS: Record<string, string> = {
 	"x-content-type-options": "nosniff",
@@ -92,9 +138,18 @@ export function createStaticHandler(options: StaticFilesOptions): StaticHandler 
 			return null;
 		}
 
+		const where = kioskRedirectOf(request.path ?? "/", request.query);
+		if (where !== null) {
+			return {
+				status: 302,
+				headers: { location: where, "cache-control": "no-store", ...SECURITY_HEADERS },
+				body: "",
+			};
+		}
+
 		let target: string;
 		try {
-			target = resolveTarget(root, request.path ?? "/");
+			target = resolveTarget(root, kioskFileOf(request.path ?? "/"));
 		} catch {
 			// traversal attempt: the caller must not learn anything about the file system
 			return {

@@ -8,6 +8,17 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.24 (2026-10-12)
+
+- (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: **no text of any language equals the
+  English wording any more** (web app, report labels, object names, admin; also words that are valid in the language,
+  such as `Port`, `Menu`, `Terminal` – a unit test keeps it that way), seven unused translation keys are removed from the
+  11 language files of the web app, and the documentation no longer shows a command that installs from GitHub or from a
+  folder.
+
+
+Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
+
 ### 0.7.23 (2026-10-11)
 
 - (Alex) fix: everything a user sees is English or follows a language setting (finding of the review): the seeded

@@ -31,6 +31,7 @@ import {
 import { renewTerminalSession, withFreshSession } from "../api/terminal-session";
 import { ErrorAlert } from "../components/feedback";
 import { useBranding } from "../state/branding";
+import { dropTokenFromAddress, readDeviceToken } from "./kiosk-token";
 import { Keypad } from "../components/Keypad";
 
 /** Where the device token of this kiosk is remembered. */
@@ -43,35 +44,13 @@ const RESULT_MILLISECONDS = 8000;
 const HEARTBEAT_MILLISECONDS = 5 * 60 * 1000;
 
 /**
- * Reads the device token of this device: the URL wins, otherwise the remembered one.
- *
- * @returns the token or `null` when this device was never set up
- */
-function readToken(): string | null {
-	const fromUrl = new URLSearchParams(window.location.search).get("token");
-	if (fromUrl?.trim()) {
-		try {
-			window.localStorage.setItem(STORAGE_KEY, fromUrl.trim());
-		} catch {
-			// a kiosk may forbid storage; the URL still carries the token for this session
-		}
-		return fromUrl.trim();
-	}
-	try {
-		return window.localStorage.getItem(STORAGE_KEY);
-	} catch {
-		return null;
-	}
-}
-
-/**
  * Renders the kiosk terminal.
  *
  * @returns the terminal screen
  */
 export function Terminal(): React.JSX.Element {
 	const { t, i18n } = useTranslation();
-	const [token, setToken] = useState<string | null>(() => readToken());
+	const [token, setToken] = useState<string | null>(() => readDeviceToken("terminal", STORAGE_KEY));
 	const [tokenInput, setTokenInput] = useState("");
 	const [session, setSession] = useState<TerminalSessionResult | null>(null);
 	const [users, setUsers] = useState<TerminalUser[]>([]);
@@ -93,6 +72,7 @@ export function Terminal(): React.JSX.Element {
 		} catch {
 			// nothing to clean up
 		}
+		dropTokenFromAddress("terminal");
 		setToken(null);
 	}, []);
 

@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.8.0",
+		"version": "0.8.1",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.8.1": {
+				"en": "fix: the address of the kiosk terminal and of the presence board carries the device token in its path (/terminal/<token>/), so a tablet keeps it when the page is added to the iOS home screen; older links with ?token= still work",
+				"de": "Fehlerbehebung: Die Adresse des Kiosk-Terminals und der Anwesenheitstafel trägt den Gerätetoken im Pfad (/terminal/<Token>/), damit ein Tablet ihn behält, wenn die Seite zum iOS-Home-Bildschirm hinzugefügt wird; ältere Links mit ?token= funktionieren weiter",
+				"ru": "исправление: адрес киоск-терминала и табло присутствия содержит токен устройства в пути (/terminal/<токен>/), поэтому планшет не теряет его при добавлении страницы на домашний экран iOS; старые ссылки с ?token= продолжают работать",
+				"pt": "correção: o endereço do terminal quiosque e do quadro de presenças leva o token do dispositivo no caminho (/terminal/<token>/), para que um tablet o mantenha quando a página é adicionada ao ecrã principal do iOS; as ligações antigas com ?token= continuam a funcionar",
+				"nl": "oplossing: het adres van de kioskterminal en van het aanwezigheidsbord bevat het apparaattoken in het pad (/terminal/<token>/), zodat een tablet het behoudt wanneer de pagina aan het iOS-beginscherm wordt toegevoegd; oudere links met ?token= blijven werken",
+				"fr": "correctif : l'adresse du terminal kiosque et du tableau de présence porte le jeton de l'appareil dans son chemin (/terminal/<jeton>/), afin qu'une tablette le conserve lorsque la page est ajoutée à l'écran d'accueil d'iOS ; les anciens liens avec ?token= fonctionnent toujours",
+				"it": "correzione: l'indirizzo del terminale chiosco e del tabellone presenze contiene il token del dispositivo nel percorso (/terminal/<token>/), così un tablet lo conserva quando la pagina viene aggiunta alla schermata Home di iOS; i vecchi link con ?token= funzionano ancora",
+				"es": "corrección: la dirección del terminal quiosco y del panel de presencia lleva el token del dispositivo en su ruta (/terminal/<token>/), para que una tableta lo conserve al añadir la página a la pantalla de inicio de iOS; los enlaces antiguos con ?token= siguen funcionando",
+				"pl": "poprawka: adres terminala kioskowego i tablicy obecności zawiera token urządzenia w ścieżce (/terminal/<token>/), dzięki czemu tablet zachowuje go po dodaniu strony do ekranu początkowego iOS; starsze linki z ?token= nadal działają",
+				"uk": "виправлення: адреса кіоск-термінала й табло присутності містить токен пристрою в шляху (/terminal/<токен>/), тому планшет не втрачає його під час додавання сторінки на початковий екран iOS; старі посилання з ?token= і далі працюють",
+				"zh-cn": "修复：自助终端和在岗看板的地址在路径中携带设备令牌（/terminal/<令牌>/），因此将页面添加到 iOS 主屏幕时平板电脑不会丢失令牌；带 ?token= 的旧链接仍然有效"
+			},
 			"0.8.0": {
 				"en": "change: every request body of the REST API is checked with zod; the messages stay as they were, and every invalid field of a request is listed in errors[]",
 				"de": "Änderung: Jeder Anfragekörper der REST-API wird mit zod geprüft; die Meldungen bleiben wie bisher, und jedes ungültige Feld einer Anfrage steht in errors[]",
@@ -100,19 +113,6 @@
 				"pl": "fix: wszystko, co widzi użytkownik, jest po angielsku lub zależy od ustawienia języka: domyślne typy nieobecności po angielsku, nazwy kalendarzy w języku pracownika lub instancji, angielska strona i manifest aplikacji web, nowe konto używa języka instancji",
 				"uk": "fix: усе, що бачить користувач, англійською або залежить від налаштування мови: типи відсутності за замовчуванням англійською, назви календарів мовою співробітника або екземпляра, англійські сторінка й маніфест вебзастосунку, новий обліковий запис використовує мову екземпляра",
 				"zh-cn": "fix: 用户看到的所有内容要么是英文，要么遵循语言设置：默认缺勤类型为英文，日历名称使用员工或实例的语言，网页应用的页面和清单为英文，新账户使用实例的语言"
-			},
-			"0.7.22": {
-				"en": "docs: the documentation is English now (docs/en), the German originals moved to docs/de; CONTRIBUTING.md and the module READMEs are English",
-				"de": "docs: Die Dokumentation ist jetzt englisch (docs/en), die deutschen Originale liegen in docs/de; CONTRIBUTING.md und die Modul-READMEs sind englisch",
-				"ru": "docs: документация теперь на английском (docs/en), немецкие оригиналы перенесены в docs/de; CONTRIBUTING.md и README модулей — на английском",
-				"pt": "docs: a documentação é agora em inglês (docs/en), os originais em alemão passaram para docs/de; CONTRIBUTING.md e os README dos módulos estão em inglês",
-				"nl": "docs: de documentatie is nu Engels (docs/en), de Duitse originelen staan in docs/de; CONTRIBUTING.md en de module-README's zijn Engels",
-				"fr": "docs : la documentation est désormais en anglais (docs/en), les originaux allemands sont passés dans docs/de ; CONTRIBUTING.md et les README des modules sont en anglais",
-				"it": "docs: la documentazione è ora in inglese (docs/en), gli originali tedeschi sono passati in docs/de; CONTRIBUTING.md e i README dei moduli sono in inglese",
-				"es": "docs: la documentación está ahora en inglés (docs/en), los originales en alemán pasaron a docs/de; CONTRIBUTING.md y los README de los módulos están en inglés",
-				"pl": "docs: dokumentacja jest teraz po angielsku (docs/en), niemieckie oryginały przeniesiono do docs/de; CONTRIBUTING.md i pliki README modułów są po angielsku",
-				"uk": "docs: документація тепер англійською (docs/en), німецькі оригінали перенесено до docs/de; CONTRIBUTING.md і README модулів — англійською",
-				"zh-cn": "docs: 文档现为英文（docs/en），德文原文已移至 docs/de；CONTRIBUTING.md 和各模块 README 均为英文"
 			}
 		},
 		"titleLang": {

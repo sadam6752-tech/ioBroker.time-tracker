@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { HttpRequest, HttpResponse } from "./router";
-import { CONTENT_SECURITY_POLICY, createStaticHandler } from "./static";
+import { CONTENT_SECURITY_POLICY, createStaticHandler, kioskFileOf, kioskRedirectOf } from "./static";
 
 describe("static files", () => {
 	let root: string;
@@ -144,5 +144,41 @@ describe("static files", () => {
 		// without an index file a client side route cannot be answered
 		fs.rmSync(path.join(root, "index.html"));
 		expect(handler(request("/profile", { headers: { accept: "text/html" } }))).to.equal(null);
+	});
+
+	describe("kiosk address with the token in the path", () => {
+		const token = "kUQh_dAT58nk7ZDiJiCXHgexkY5z6_iUznW9d6fcvwY";
+
+		it("serves the app and its files below the path of the token", () => {
+			const page = handler(request(`/terminal/${token}/`, { headers: { accept: "text/html" } }));
+			expect(page?.status).to.equal(200);
+			expect(String(page?.body)).to.contain("Zeiterfassung");
+			const chunk = handler(request(`/presence/${token}/assets/chunk.js`));
+			expect(chunk?.status).to.equal(200);
+			expect(String(chunk?.body)).to.equal("export const x = 1;");
+		});
+
+		it("sends links of the older form and paths without the closing slash to the path of the token", () => {
+			const older = handler(request("/terminal", { query: { token } }));
+			expect(older?.status).to.equal(302);
+			expect(older?.headers.location).to.equal(`/terminal/${token}/`);
+			expect(older?.headers["cache-control"]).to.equal("no-store");
+			expect(handler(request(`/presence/${token}`))?.headers.location).to.equal(`/presence/${token}/`);
+		});
+
+		it("leaves other addresses alone", () => {
+			expect(kioskRedirectOf("/terminal")).to.equal(null);
+			expect(kioskRedirectOf("/terminal", { token: "no spaces allowed" })).to.equal(null);
+			expect(kioskRedirectOf("/", { token })).to.equal(null);
+			expect(kioskRedirectOf(`/terminal/${token}/`)).to.equal(null);
+			expect(kioskFileOf("/terminal")).to.equal("/terminal");
+			expect(kioskFileOf("/assets/chunk.js")).to.equal("/assets/chunk.js");
+			expect(kioskFileOf(`/terminal/${token}/sw.js`)).to.equal("/sw.js");
+		});
+
+		it("keeps the traversal check below the path of the token", () => {
+			const answer = handler(request(`/terminal/${token}/..%2Fsecret.txt`));
+			expect(answer?.status).to.equal(404);
+		});
 	});
 });

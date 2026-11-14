@@ -78,7 +78,7 @@ gar nicht gesetzte Einstellung — der Bericht wird also nie mit leeren Kästche
 4. Ein **Terminal** anlegen — in der Web-App unter **Verwaltung → Terminals** (oder per `POST /api/terminals`),
    PIN-Pflicht eingeschaltet lassen.
    Danach die Kiosk-Ansicht auf dem Gerät öffnen: die Verwaltung zeigt dafür die fertige Adresse
-   `http://<Adapter-Host>:<Port>/terminal?token=<Gerätetoken>` an (den Token zeigt sie **einmalig**; das Gerät
+   `http://<Adapter-Host>:<Port>/terminal/<Gerätetoken>/` an (den Token zeigt sie **einmalig**; das Gerät
    merkt ihn sich für den nächsten Start).
 5. Feiertage für das Testjahr erzeugen (Einstellung _Feiertagsland_), Abwesenheitsart _Ferien_ prüfen.
 

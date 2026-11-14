@@ -155,8 +155,17 @@ function Root(): React.JSX.Element {
 				path="/terminal"
 				element={<Terminal />}
 			/>
+			{/* the kiosk address carries the device token in its path (see screens/kiosk-token.ts) */}
+			<Route
+				path="/terminal/:token/*"
+				element={<Terminal />}
+			/>
 			<Route
 				path="/presence"
+				element={<Presence />}
+			/>
+			<Route
+				path="/presence/:token/*"
 				element={<Presence />}
 			/>
 			<Route

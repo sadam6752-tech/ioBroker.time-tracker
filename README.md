@@ -180,8 +180,8 @@ Everything is served on the port of the instance settings:
 | `/` (and all other paths) | the web app from `www/` — punch screen, month, year report, absences, profile |
 | `/api/...`                | the REST API (JSON; errors as `application/problem+json`)                     |
 | `/api/stream`             | live events, so the app updates itself without a reload                       |
-| `/terminal?token=…`       | the kiosk screen (badge and PIN)                                              |
-| `/presence?token=…`       | the board “who is at work right now”                                          |
+| `/terminal/<token>/`      | the kiosk screen (badge and PIN)                                              |
+| `/presence/<token>/`      | the board “who is at work right now”                                          |
 
 The board shows every employee with the state of the day. The **worked time of today** appears next to it
 (`1:23`, `0:00` before the first punch of the day) once the **work profile** of that employee allows it
@@ -195,8 +195,12 @@ token — it is shown **exactly once**, because only its hash is stored. The rea
 next to it:
 
 ```
-http://<ioBroker host>:<port>/terminal?token=<device token>
+http://<ioBroker host>:<port>/terminal/<device token>/
 ```
+
+The token sits in the path, so a tablet keeps it when the page is added to the home screen (iOS saves the start
+address of an installed app without its query). Older links of the form `/terminal?token=…` and `/presence?token=…`
+still work: the adapter sends them to the new address.
 
 The screen offers the badge field (scan or type, Enter punches), the employee list for the name plus PIN punch, the
 clock and — after every punch — name, direction and the figures of that day for a few seconds. A device can be
@@ -540,6 +544,13 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.8.1 (2026-11-14)
+
+- (Alex) fix: the address of the kiosk terminal and of the presence board carries the device token in its path
+  (`/terminal/<token>/`, `/presence/<token>/`). iOS saves a page to the home screen without its query, so a tablet
+  started from the home screen came up without its token; the app with its manifest now lives below the path of the
+  token. Older links with `?token=` are sent to the new address.
+
 ### 0.8.0 (2026-10-18)
 
 - (Alex) chore: the request bodies of the REST API are checked with zod (D22); the messages are worded as before, and
@@ -563,17 +574,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 - (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
   encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
   adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
-
-### 0.7.24 (2026-10-12)
-
-- (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: **no text of any language equals the
-  English wording any more** (web app, report labels, object names, admin; also words that are valid in the language,
-  such as `Port`, `Menu`, `Terminal` – a unit test keeps it that way), seven unused translation keys are removed from the
-  11 language files of the web app, and the documentation no longer shows a command that installs from GitHub or from a
-  folder.
-
-
-Older entries are kept in [`CHANGELOG_OLD.md`](CHANGELOG_OLD.md).
 
 ## Provenance
 

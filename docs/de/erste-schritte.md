@@ -78,7 +78,7 @@ sofort einen **Passwortwechsel** — die PWA zeigt dafür einen eigenen Bildschi
    Arbeitszeit auf seiner Kachel frei (`1:23`, ohne Stempel `0:00`). Die Karte ist schon **vor** der PIN-Eingabe für
    alle sichtbar, deshalb entscheidet die Verwaltung das je Mitarbeiter — Standard ist **aus**.
 2. **Verwaltung → Terminals**: Terminal anlegen (PIN-Pflicht an), **Geräte-Token kopieren** und die angezeigte
-   Adresse `…/terminal?token=…` am Tablet öffnen — das war der Kiosk-Schritt aus T4. Ohne **PIN-Pflicht** stempelt
+   Adresse `…/terminal/<token>/` am Tablet öffnen — das war der Kiosk-Schritt aus T4. Ohne **PIN-Pflicht** stempelt
    das Gerät ohne PIN: Ausweis scannen oder den Namen auswählen genügt. Eine falsche PIN wird trotzdem abgelehnt.
 3. **Verwaltung → Einstellungen**: `report_font_path` auf eine Unicode-`.ttf`/`.otf` setzen, wenn Ausweise in
    **ru**, **uk** oder **zh-cn** gedruckt werden sollen (sonst lehnt der Export mit `report_font_missing` ab).

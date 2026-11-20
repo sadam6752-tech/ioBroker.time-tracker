@@ -544,6 +544,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) chore: `@iobroker/testing` 6.3.2, the changelog links to `CHANGELOG_OLD.md` (repository checker).
+
 ### 0.8.1 (2026-11-14)
 
 - (Alex) fix: the address of the kiosk terminal and of the presence board carries the device token in its path
@@ -574,6 +576,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 - (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
   encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
   adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
+
+Older changes are listed in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
 ## Provenance
 

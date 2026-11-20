@@ -80,9 +80,8 @@ Der Repochecker liest die Quellen nach importierten Paketen ab und überspringt 
 — Pakete, die der Web-App gehören (`src-www/package.json`) und die keine Adapter-Installation mitbringen soll.
 Mit `src-www/` steht der Ordner auf der Liste und die Meldungen sind weg; nur `dependencies` zählen, `@types/*` und
 `@iobroker/types` sind davon die Ausnahme. `W5049` (`process.env`
-in `test/e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlägt den
-Compact-Mode vor — der Adapter bringt einen eigenen HTTP-Port und eine SQLite-Datei mit und läuft bewusst **nicht** im
-Compact-Mode (`common.compact: false`).
+in `test/e2e/server.mjs`) betrifft den **Testserver** der Browsertests, nicht den Adapter. `S1039` schlug den
+Compact-Mode vor — seit 20.11.2026 unterstützt der Adapter ihn (`common.compact: true`, Entscheidung D2).
 
 **Lizenzangaben:** `common.licenseInformation` (`{ type: "free", license: "MIT" }`) ist gesetzt — und daneben darf
 **kein** `common.license` stehen: der ioBroker-Pakettest (`npm run test:package`) lehnt beides zusammen ab

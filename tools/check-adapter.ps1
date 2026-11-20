@@ -11,7 +11,7 @@
       W0066/S0067  @types/node passt nicht zur Mindest-Node-Version aus package.json/engines
       (neu)        @tsconfig/nodeNN passt nicht zur Mindest-Node-Version
       W5052/W5053  Passwortfeld in admin/jsonConfig.json fehlt in protectedNative/encryptedNative
-      E5049/E5050  process.env/process.exit im Quellcode ohne common.compact = true
+      E5049/E5050  process.env/process.exit im Quellcode (verboten, auch im Compact-Mode)
       W8918        ioBroker-Workflow-Action ohne Versions-Tag (@main/@master)
       W6021        "## License" ist nicht der letzte Abschnitt in README.md
       W510/E510    common.news der neuesten Version ohne alle Sprachschlüssel
@@ -173,7 +173,7 @@ if ($compact -eq $true) {
     Write-Host '  common.compact: true'
 }
 elseif ($compact -eq $false) {
-    Add-Issue info 'W5049' 'common.compact ist bewusst false (eigener HTTP-Port und SQLite-Datei, kein Compact-Mode)'
+    Add-Issue info 'W5049' 'common.compact ist false (seit 20.11.2026 sollte es true sein, Entscheidung D2)'
 }
 else {
     Add-Issue warn 'W5049' 'common.compact fehlt – der Checker empfiehlt eine ausdrückliche Angabe'
@@ -187,8 +187,9 @@ foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -
         [void]$processHits.Add($relative)
     }
 }
-if ($processHits.Count -gt 0 -and $compact -ne $true) {
-    Add-Issue error 'E5049/E5050' "process.env/process.exit in: $($processHits -join ', ') – ohne common.compact = true nicht zulässig"
+if ($processHits.Count -gt 0) {
+    # im Compact-Mode teilt der Adapter den Prozess: ein Beenden träfe auch die anderen Adapter der Gruppe
+    Add-Issue error 'E5049/E5050' "process.env/process.exit in: $($processHits -join ', ') – nicht zulässig (Compact-Mode, Konfiguration nur aus adapter.config)"
 }
 elseif ($processHits.Count -eq 0) {
     Write-Host '  Quellcode: kein process.env/process.exit'

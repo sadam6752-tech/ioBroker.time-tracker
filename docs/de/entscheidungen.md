@@ -43,11 +43,25 @@ frühere Stand bleibt über die Historie (`184414c`) erreichbar.
 echten Installation, **nicht** aus fremdem Programmcode abgeleitet), die vier Datenbankspalten über eine neue
 Migration, Admin-Reiter, Adapter-Befehl und REST-Routen.
 
-## D2 — `common.compact: false`
+## D2 — `common.compact: true` (geändert 20.11.2026, vorher `false`)
 
-Der Adapter bindet einen eigenen HTTP-Port und hält eine SQLite-Datei im WAL-Modus über die gesamte Laufzeit, läuft
-also bewusst als eigener Prozess. Begründung, Umgang mit dem Hinweis `W5049` und die daraus folgende Regel „kein
-`process.env`/`process.exit` im Quellcode" stehen in [`adapter-check.md`](adapter-check.md).
+**Bis 0.8.1** lief der Adapter als eigener Prozess (`common.compact: false`), weil er einen eigenen HTTP-Port bindet und
+eine SQLite-Datei im WAL-Modus über die gesamte Laufzeit offen hält.
+
+**Seit 20.11.2026** unterstützt er den Compact-Mode (Vorschlag `S1039` des Repository-Checkers). Eine Prüfung des Codes
+fand nichts, was einen eigenen Prozess braucht: Jeder Timer gehört dem Adapter (`this.setTimeout`/`this.setInterval`,
+auch der WebSocket-Ping und das SFTP-Zeitlimit), `onUnload` schließt den HTTP-Server samt allen Verbindungen und danach
+die Datenbank, es gibt kein `process.env`/`process.exit`/`process.on`, und der einzige Zustand auf Modulebene ist ein
+Cache von Schein-Passworthashes, den zwei Instanzen teilen dürfen. Auch `web` und `admin` binden im Compact-Mode Ports.
+
+**Was der gemeinsame Prozess kostet:** better-sqlite3 und das Passwort-Hashing (`scryptSync`) arbeiten synchron. Während
+ein Backup (`VACUUM INTO`), eine Neuberechnung, ein PDF-/Excel-Bericht oder eine Anmeldung läuft, warten die anderen
+Adapter der Compact-Gruppe; ein Absturz des nativen Moduls beendet die ganze Gruppe. `compact: true` bietet nur die Wahl
+an: die **Compact-Gruppe** der Instanz entscheidet — Gruppe `0` lässt den Adapter wie bisher in einem eigenen Prozess.
+Das README empfiehlt Gruppe `0` für einen schwachen Rechner oder eine stark genutzte Installation.
+
+Die Regel „kein `process.env`/`process.exit` im Quellcode" bleibt (in einem gemeinsamen Prozess würde ein Beenden auch die
+anderen Adapter beenden); siehe [`adapter-check.md`](adapter-check.md).
 
 ## D3 — Herkunftsnachweis außerhalb des Repositories (16.09.2026)
 

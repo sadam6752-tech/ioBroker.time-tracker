@@ -18,7 +18,7 @@ lassen, und nennt jeweils die Kennung der Regel:
 | (tsconfig) | `@tsconfig/nodeNN` passt zur Mindest-Node-Version |
 | (generate-adapter) | `.create-adapter.json` → `nodeVersion` passt zu `engines.node` |
 | W5052/W5053 | jedes `"type": "password"` in `admin/jsonConfig.json` steht in `protectedNative` **und** `encryptedNative` |
-| E5049/E5050 | kein `process.env`/`process.exit` im Quellcode, solange `common.compact` nicht `true` ist |
+| E5049/E5050 | kein `process.env`/`process.exit` im Quellcode (der Adapter kann im Compact-Mode einen Prozess teilen) |
 | W8918 | keine ioBroker-Workflow-Action ohne Versions-Tag (`@main`/`@master`) |
 | W6021 | `## License` ist der **letzte** Abschnitt von `README.md` |
 | E510 | `common.news` der neuesten Version enthält alle 11 Sprachen |
@@ -53,9 +53,8 @@ die Repository-Metadaten kommen weiterhin von GitHub. Für höhere GitHub-Rate-L
 
 ## Bewusste Abweichungen
 
-* `common.compact: false` — der Adapter bindet einen eigenen HTTP-Port und hält eine SQLite-Datei
-  (`WAL`) über die gesamte Laufzeit; er läuft deshalb bewusst als eigener Prozess. Der lokale Check
-  meldet das als **Hinweis**, der offizielle Checker als Warnung (`W5049`).
+* `common.compact: true` seit 20.11.2026 (vorher `false`, siehe Entscheidung D2): die Compact-Gruppe
+  der Instanz entscheidet, ob der Adapter einen Prozess teilt; Gruppe `0` lässt ihn in einem eigenen.
 * Kein `process.env`/`process.exit` im Quellcode: Konfiguration kommt ausschließlich aus
-  `adapter.config`, das Beenden übernimmt der Adapter-Lifecycle. Damit ist die Anforderung erfüllt,
-  die der Checker sonst an den Compact-Mode stellt.
+  `adapter.config`, das Beenden übernimmt der Adapter-Lifecycle. In einem gemeinsamen Prozess würde
+  ein Beenden auch die anderen Adapter beenden.

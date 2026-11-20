@@ -33,6 +33,9 @@ PIN. All data stays on your own ioBroker host: no cloud, no subscription.
 
 - ioBroker with js-controller >= 6.0.11 and **Node.js >= 22** (required by the bundled SQLite driver)
 - HTTPS for the app on a phone (the service worker needs it) — a reverse proxy with Let's Encrypt is recommended
+- **Compact mode** is supported: the instance may share a process with other adapters (compact group `1` or higher). The
+  database work is synchronous, so on a weak host (e.g. a Raspberry Pi) or with many employees choose compact group `0`
+  in the instance settings — the adapter then runs in a process of its own, as before.
 
 ## Installation
 
@@ -544,6 +547,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+- (Alex) change: the adapter supports the **compact mode** (`common.compact: true`, decision D2); compact group `0`
+  keeps it in a process of its own.
 - (Alex) chore: `@iobroker/testing` 6.3.2, the changelog links to `CHANGELOG_OLD.md` (repository checker).
 
 ### 0.8.1 (2026-11-14)

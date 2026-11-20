@@ -1,7 +1,7 @@
 {
 	"common": {
 		"name": "time-tracker",
-		"version": "0.8.1",
+		"version": "0.8.2",
 		"nogit": true,
 		"localLinks": {
 			"_default": {
@@ -23,6 +23,19 @@
 			}
 		},
 		"news": {
+			"0.8.2": {
+				"en": "change: the adapter supports the compact mode (compact group 0 keeps it in a process of its own); chore: @iobroker/testing 6.3.2 and a link to the older changelog (repository checker)",
+				"de": "Änderung: Der Adapter unterstützt den Compact-Mode (Compact-Gruppe 0 lässt ihn in einem eigenen Prozess); chore: @iobroker/testing 6.3.2 und ein Verweis auf das ältere Changelog (Repository-Checker)",
+				"ru": "изменение: адаптер поддерживает компактный режим (компактная группа 0 оставляет его в отдельном процессе); chore: @iobroker/testing 6.3.2 и ссылка на старый журнал изменений (проверка репозитория)",
+				"pt": "alteração: o adaptador suporta o modo compacto (o grupo compacto 0 mantém-no num processo próprio); chore: @iobroker/testing 6.3.2 e uma ligação ao registo de alterações antigo (verificador do repositório)",
+				"nl": "wijziging: de adapter ondersteunt de compacte modus (compacte groep 0 houdt hem in een eigen proces); chore: @iobroker/testing 6.3.2 en een link naar het oudere wijzigingslogboek (repository-checker)",
+				"fr": "modification : l'adaptateur prend en charge le mode compact (le groupe compact 0 le garde dans son propre processus) ; chore : @iobroker/testing 6.3.2 et un lien vers l'ancien journal des modifications (vérificateur du dépôt)",
+				"it": "modifica: l'adattatore supporta la modalità compatta (il gruppo compatto 0 lo mantiene in un processo proprio); chore: @iobroker/testing 6.3.2 e un collegamento al registro delle modifiche precedente (verifica del repository)",
+				"es": "cambio: el adaptador admite el modo compacto (el grupo compacto 0 lo mantiene en un proceso propio); chore: @iobroker/testing 6.3.2 y un enlace al registro de cambios anterior (comprobador del repositorio)",
+				"pl": "zmiana: adapter obsługuje tryb kompaktowy (grupa kompaktowa 0 pozostawia go w osobnym procesie); chore: @iobroker/testing 6.3.2 i odnośnik do starszego dziennika zmian (sprawdzanie repozytorium)",
+				"uk": "зміна: адаптер підтримує компактний режим (компактна група 0 залишає його в окремому процесі); chore: @iobroker/testing 6.3.2 і посилання на старіший журнал змін (перевірка репозиторію)",
+				"zh-cn": "变更：适配器支持紧凑模式（紧凑组 0 使其保持在独立进程中）；chore：@iobroker/testing 6.3.2，并添加指向旧更新日志的链接（仓库检查）"
+			},
 			"0.8.1": {
 				"en": "fix: the address of the kiosk terminal and of the presence board carries the device token in its path (/terminal/<token>/), so a tablet keeps it when the page is added to the iOS home screen; older links with ?token= still work",
 				"de": "Fehlerbehebung: Die Adresse des Kiosk-Terminals und der Anwesenheitstafel trägt den Gerätetoken im Pfad (/terminal/<Token>/), damit ein Tablet ihn behält, wenn die Seite zum iOS-Home-Bildschirm hinzugefügt wird; ältere Links mit ?token= funktionieren weiter",
@@ -100,19 +113,6 @@
 				"pl": "fix: żaden przetłumaczony tekst nie jest taki sam jak angielski (aplikacja web, etykiety raportów, nazwy obiektów, administracja), co pilnuje test jednostkowy; dokumentacja bez wskazówek instalacji z GitHuba; usunięto nieużywane klucze tłumaczeń",
 				"uk": "fix: жоден перекладений текст не збігається з англійським (вебзастосунок, підписи звітів, імена об'єктів, адміністрування), що закріплено модульним тестом; у документації немає вказівок зі встановлення з GitHub; видалено невикористані ключі перекладу",
 				"zh-cn": "fix: 所有语言的译文均不再与英文相同（网页应用、报告标签、对象名称、管理界面），并有单元测试保证；文档中不再包含从 GitHub 安装的提示；已删除未使用的翻译键"
-			},
-			"0.7.23": {
-				"en": "fix: everything a user sees is English or follows a language setting: English default absence types, calendar names in the language of the employee or the instance, English page and manifest of the web app, a new account speaks the language of the instance",
-				"de": "fix: Alles, was ein Benutzer sieht, ist englisch oder folgt einer Spracheinstellung: englische Standard-Abwesenheitsarten, Kalendernamen in der Sprache des Mitarbeiters oder der Instanz, englische Seite und englisches Manifest der Web-App, ein neues Konto spricht die Sprache der Instanz",
-				"ru": "fix: всё, что видит пользователь, на английском или следует настройке языка: английские типы отсутствий по умолчанию, названия календарей на языке сотрудника или экземпляра, английские страница и манифест веб-приложения, новая учётная запись использует язык экземпляра",
-				"pt": "fix: tudo o que um utilizador vê está em inglês ou segue uma definição de idioma: tipos de ausência predefinidos em inglês, nomes de calendário no idioma do funcionário ou da instância, página e manifesto da aplicação web em inglês, uma nova conta usa o idioma da instância",
-				"nl": "fix: alles wat een gebruiker ziet is Engels of volgt een taalinstelling: Engelse standaard afwezigheidstypen, kalendernamen in de taal van de medewerker of de instantie, Engelse pagina en manifest van de webapp, een nieuw account spreekt de taal van de instantie",
-				"fr": "fix : tout ce que voit un utilisateur est en anglais ou suit un réglage de langue : types d'absence par défaut en anglais, noms de calendrier dans la langue de l'employé ou de l'instance, page et manifeste de l'application web en anglais, un nouveau compte utilise la langue de l'instance",
-				"it": "fix: tutto ciò che vede un utente è in inglese o segue un'impostazione della lingua: tipi di assenza predefiniti in inglese, nomi dei calendari nella lingua del dipendente o dell'istanza, pagina e manifesto dell'app web in inglese, un nuovo account usa la lingua dell'istanza",
-				"es": "fix: todo lo que ve un usuario está en inglés o sigue un ajuste de idioma: tipos de ausencia predeterminados en inglés, nombres de calendario en el idioma del empleado o de la instancia, página y manifiesto de la aplicación web en inglés, una cuenta nueva usa el idioma de la instancia",
-				"pl": "fix: wszystko, co widzi użytkownik, jest po angielsku lub zależy od ustawienia języka: domyślne typy nieobecności po angielsku, nazwy kalendarzy w języku pracownika lub instancji, angielska strona i manifest aplikacji web, nowe konto używa języka instancji",
-				"uk": "fix: усе, що бачить користувач, англійською або залежить від налаштування мови: типи відсутності за замовчуванням англійською, назви календарів мовою співробітника або екземпляра, англійські сторінка й маніфест вебзастосунку, новий обліковий запис використовує мову екземпляра",
-				"zh-cn": "fix: 用户看到的所有内容要么是英文，要么遵循语言设置：默认缺勤类型为英文，日历名称使用员工或实例的语言，网页应用的页面和清单为英文，新账户使用实例的语言"
 			}
 		},
 		"titleLang": {

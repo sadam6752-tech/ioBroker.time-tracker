@@ -8,6 +8,12 @@ Versions up to 0.1.9 were published as the npm package `iobroker.zeiterfassung`.
 `common.news` list therefore starts with 0.2.0 — the older entries would be reported as `E2004` (“do not exist at
 NPM”), as they only exist under the former package name.
 
+### 0.7.25 (2026-10-13)
+
+- (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
+  encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
+  adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
+
 ### 0.7.24 (2026-10-12)
 
 - (Alex) chore: own run of the reviewer's checklist (V3.5) against the repository: **no text of any language equals the

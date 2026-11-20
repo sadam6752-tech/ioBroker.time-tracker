@@ -547,6 +547,8 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 
 ### **WORK IN PROGRESS**
 
+### 0.8.2 (2026-11-20)
+
 - (Alex) change: the adapter supports the **compact mode** (`common.compact: true`, decision D2); compact group `0`
   keeps it in a process of its own.
 - (Alex) chore: `@iobroker/testing` 6.3.2, the changelog links to `CHANGELOG_OLD.md` (repository checker).
@@ -576,11 +578,6 @@ The documentation is English ([`docs/en/`](docs/en/)); the German originals are 
 - (Alex) docs: the help of the field _Server fingerprint_ says what to do: copy the fingerprint from the answer of
   **Test connection** or from the log after the first backup.
 
-### 0.7.25 (2026-10-13)
-
-- (Alex) feat: **copy of every backup to an external server over SFTP** (tab _Migration and backup_): password stored
-  encrypted, fingerprint pinning of the host key, upload under a temporary name with a size check, retention only for the
-  adapter's own backup files, **Test connection** button, states `info.lastRemoteBackup` and `info.remoteBackupError`.
 
 Older changes are listed in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
